@@ -38,13 +38,13 @@ export class User {
   })
   type: UserType;
 
-  @Column({ length: 15, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
   phone: string | null;
 
-  @Column({ length: 255, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   email: string | null;
 
-  @Column({ length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   name: string | null;
 
   @Column({ type: 'text', nullable: true })
@@ -58,10 +58,10 @@ export class User {
   status: UserStatus;
 
   // Social login identifiers
-  @Column({ length: 255, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   googleId: string | null;
 
-  @Column({ length: 255, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   appleId: string | null;
 
   // Push notification token

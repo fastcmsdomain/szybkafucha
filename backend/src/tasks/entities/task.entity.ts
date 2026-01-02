@@ -45,11 +45,11 @@ export class Task {
   contractor: User | null;
 
   // Task category (paczki, zakupy, kolejki, montaz, przeprowadzki, sprzatanie)
-  @Column({ length: 50 })
+  @Column({ type: 'varchar', length: 50 })
   category: string;
 
   // Short title for the task
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title: string;
 
   // Detailed description
@@ -89,7 +89,7 @@ export class Task {
   status: TaskStatus;
 
   // Photo proof of completion
-  @Column('simple-array', { nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
   completionPhotos: string[] | null;
 
   // Timestamps for task lifecycle

@@ -43,7 +43,7 @@ export class ContractorProfile {
   bio: string | null;
 
   // Categories the contractor can handle
-  @Column('simple-array', { default: '' })
+  @Column({ type: 'simple-array', default: '' })
   categories: string[];
 
   // Maximum service radius in kilometers
@@ -68,7 +68,7 @@ export class ContractorProfile {
   kycBankVerified: boolean;
 
   // Stripe Connect account for payouts
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   stripeAccountId: string | null;
 
   // Rating statistics

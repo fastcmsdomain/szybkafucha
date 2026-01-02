@@ -89,7 +89,7 @@
   - [x] 2.7 Create `Message` entity with fields: id, task_id, sender_id, content, read_at
   - [x] 2.8 Create `Payment` entity with fields: id, task_id, stripe_payment_intent_id, amount, status
   - [ ] 2.9 Run migrations: `npm run migration:run` (requires database)
-  - [ ] 2.10 Create seed data for development (test users, sample tasks)
+  - [x] 2.10 Create seed data for development (test users, sample tasks)
 
 - [x] **3.0 Authentication Module**
   - [x] 3.1 Install dependencies: `npm install @nestjs/passport passport passport-jwt @nestjs/jwt`
@@ -167,48 +167,48 @@
     - 45-second timeout before notifying next batch
   - [ ] 6.5 Write tests for matching algorithm
 
-- [ ] **7.0 Payments Module (Stripe Connect)**
-  - [ ] 7.1 Install Stripe: `npm install stripe`
-  - [ ] 7.2 Create Stripe account and get API keys
-  - [ ] 7.3 Create `PaymentsModule` with service
-  - [ ] 7.4 Implement contractor onboarding (Stripe Connect Express)
+- [x] **7.0 Payments Module (Stripe Connect)**
+  - [x] 7.1 Install Stripe: `npm install stripe`
+  - [ ] 7.2 Create Stripe account and get API keys (uses placeholder for dev)
+  - [x] 7.3 Create `PaymentsModule` with service
+  - [x] 7.4 Implement contractor onboarding (Stripe Connect Express)
     - Create connected account for contractor
     - Return onboarding link
-  - [ ] 7.5 Implement `POST /payments/create-intent`
+  - [x] 7.5 Implement `POST /payments/create-intent`
     - Create PaymentIntent with amount + platform fee
     - Store payment intent ID in Payment entity
     - Return client secret for mobile SDK
-  - [ ] 7.6 Implement payment hold (authorize but don't capture)
-  - [ ] 7.7 Implement `POST /payments/:id/capture`
+  - [x] 7.6 Implement payment hold (authorize but don't capture)
+  - [x] 7.7 Implement `POST /payments/:id/capture`
     - Capture payment
     - Transfer to contractor (minus commission)
-  - [ ] 7.8 Implement `POST /payments/:id/refund`
+  - [x] 7.8 Implement `POST /payments/:id/refund`
     - Full or partial refund
-  - [ ] 7.9 Implement webhook handler for Stripe events
-  - [ ] 7.10 Implement `GET /earnings` - contractor earnings summary
-  - [ ] 7.11 Implement `POST /earnings/withdraw` - trigger payout
+  - [x] 7.9 Implement webhook handler for Stripe events
+  - [x] 7.10 Implement `GET /earnings` - contractor earnings summary
+  - [x] 7.11 Implement `POST /earnings/withdraw` - trigger payout
   - [ ] 7.12 Write tests for payment flows
 
-- [ ] **8.0 Real-time Module (WebSockets)**
-  - [ ] 8.1 Install Socket.io: `npm install @nestjs/websockets @nestjs/platform-socket.io socket.io`
-  - [ ] 8.2 Create `RealtimeGateway` with authentication
-  - [ ] 8.3 Implement room management (one room per active task)
-  - [ ] 8.4 Implement `location:update` event - contractor sends GPS
-    - Store in Redis for fast access
+- [x] **8.0 Real-time Module (WebSockets)**
+  - [x] 8.1 Install Socket.io: `npm install @nestjs/websockets @nestjs/platform-socket.io socket.io`
+  - [x] 8.2 Create `RealtimeGateway` with authentication
+  - [x] 8.3 Implement room management (one room per active task)
+  - [x] 8.4 Implement `location:update` event - contractor sends GPS
+    - Store in memory (Redis in production)
     - Broadcast to task room (client sees update)
-  - [ ] 8.5 Implement `task:status` event - broadcasts status changes
-  - [ ] 8.6 Implement `message:new` event - real-time chat
-  - [ ] 8.7 Implement reconnection handling with message queue
+  - [x] 8.5 Implement `task:status` event - broadcasts status changes
+  - [x] 8.6 Implement `message:new` event - real-time chat
+  - [ ] 8.7 Implement reconnection handling with message queue (deferred to production)
   - [ ] 8.8 Write tests for WebSocket events
 
-- [ ] **9.0 Chat Module**
-  - [ ] 9.1 Create `MessagesModule` with controller and service
-  - [ ] 9.2 Implement `GET /tasks/:id/messages` - returns chat history
-  - [ ] 9.3 Implement `POST /tasks/:id/messages` - sends message
+- [x] **9.0 Chat Module**
+  - [x] 9.1 Create `MessagesModule` with controller and service
+  - [x] 9.2 Implement `GET /tasks/:id/messages` - returns chat history
+  - [x] 9.3 Implement `POST /tasks/:id/messages` - sends message
     - Store in database
-    - Emit via WebSocket
-    - Send push notification if recipient offline
-  - [ ] 9.4 Implement read receipts (update read_at on fetch)
+    - Emit via WebSocket (integrated with RealtimeModule)
+    - Push notification deferred to 11.0
+  - [x] 9.4 Implement read receipts (update read_at on fetch)
   - [ ] 9.5 Write tests for chat functionality
 
 ---
@@ -247,17 +247,17 @@
     - `new_message` - chat message received
   - [ ] 11.6 Write tests for notification sending
 
-- [ ] **12.0 Admin Dashboard Backend**
-  - [ ] 12.1 Create `AdminModule` with guards (admin role only)
-  - [ ] 12.2 Implement `GET /admin/dashboard` - returns key metrics
+- [x] **12.0 Admin Dashboard Backend**
+  - [x] 12.1 Create `AdminModule` with guards (admin role only)
+  - [x] 12.2 Implement `GET /admin/dashboard` - returns key metrics
     - Total users (clients, contractors)
     - Tasks today, this week, this month
     - GMV and revenue
     - Average completion time
-  - [ ] 12.3 Implement `GET /admin/users` - paginated user list with filters
-  - [ ] 12.4 Implement `PUT /admin/users/:id/status` - change user status
-  - [ ] 12.5 Implement `GET /admin/disputes` - list disputed tasks
-  - [ ] 12.6 Implement `PUT /admin/disputes/:id/resolve` - resolve dispute
+  - [x] 12.3 Implement `GET /admin/users` - paginated user list with filters
+  - [x] 12.4 Implement `PUT /admin/users/:id/status` - change user status
+  - [x] 12.5 Implement `GET /admin/disputes` - list disputed tasks
+  - [x] 12.6 Implement `PUT /admin/disputes/:id/resolve` - resolve dispute
     - Options: refund, pay_contractor, split
   - [ ] 12.7 Write tests for admin endpoints
 

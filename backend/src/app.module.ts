@@ -13,6 +13,10 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ContractorModule } from './contractor/contractor.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AdminModule } from './admin/admin.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { MessagesModule } from './messages/messages.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -52,6 +56,10 @@ import { Payment } from './payments/entities/payment.entity';
     UsersModule,
     TasksModule,
     ContractorModule,
+    PaymentsModule,
+    AdminModule,
+    RealtimeModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

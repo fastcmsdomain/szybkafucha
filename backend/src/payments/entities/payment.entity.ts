@@ -34,11 +34,11 @@ export class Payment {
   task: Task;
 
   // Stripe PaymentIntent ID
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   stripePaymentIntentId: string | null;
 
   // Stripe Transfer ID (for contractor payout)
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   stripeTransferId: string | null;
 
   // Total amount charged to client
