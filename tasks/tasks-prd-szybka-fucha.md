@@ -215,23 +215,23 @@
 
 ### Phase 3: KYC & Polish (Week 6-7)
 
-- [ ] **10.0 KYC Verification Module**
-  - [ ] 10.1 Create Onfido account and get API keys
-  - [ ] 10.2 Install Onfido SDK: `npm install @onfido/api`
-  - [ ] 10.3 Create `KycModule` with service
-  - [ ] 10.4 Implement `POST /contractor/kyc/id` - initiates ID verification
+- [x] **10.0 KYC Verification Module**
+  - [ ] 10.1 Create Onfido account and get API keys (USER ACTION REQUIRED)
+  - [x] 10.2 Install Onfido SDK: `npm install @onfido/api`
+  - [x] 10.3 Create `KycModule` with service
+  - [x] 10.4 Implement `POST /contractor/kyc/id` - initiates ID verification
     - Upload document to Onfido
     - Store check ID in contractor profile
-  - [ ] 10.5 Implement `POST /contractor/kyc/selfie` - face verification
+  - [x] 10.5 Implement `POST /contractor/kyc/selfie` - face verification
     - Upload selfie to Onfido
     - Trigger face match check
-  - [ ] 10.6 Implement `POST /contractor/kyc/bank` - verify bank account
+  - [x] 10.6 Implement `POST /contractor/kyc/bank` - verify bank account
     - Validate IBAN format
     - Store for Stripe payouts
-  - [ ] 10.7 Implement Onfido webhook handler
+  - [x] 10.7 Implement Onfido webhook handler
     - Update kyc_status based on results
     - Send notification to contractor
-  - [ ] 10.8 Create KYC status check endpoint
+  - [x] 10.8 Create KYC status check endpoint
   - [ ] 10.9 Write tests for KYC flow
 
 - [ ] **11.0 Push Notifications**

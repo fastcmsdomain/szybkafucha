@@ -17,6 +17,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { MessagesModule } from './messages/messages.module';
+import { KycModule } from './kyc/kyc.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -25,6 +26,7 @@ import { Task } from './tasks/entities/task.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
+import { KycCheck } from './kyc/entities/kyc-check.entity';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { Payment } from './payments/entities/payment.entity';
         username: configService.get<string>('DATABASE_USERNAME', 'szybkafucha'),
         password: configService.get<string>('DATABASE_PASSWORD', 'szybkafucha_dev_password'),
         database: configService.get<string>('DATABASE_NAME', 'szybkafucha'),
-        entities: [User, ContractorProfile, Task, Rating, Message, Payment],
+        entities: [User, ContractorProfile, Task, Rating, Message, Payment, KycCheck],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
@@ -60,6 +62,7 @@ import { Payment } from './payments/entities/payment.entity';
     AdminModule,
     RealtimeModule,
     MessagesModule,
+    KycModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -5,17 +5,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { KycController } from './kyc.controller';
+import { KycController, KycWebhookController } from './kyc.controller';
 import { KycService } from './kyc.service';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
+import { KycCheck } from './entities/kyc-check.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ContractorProfile, User]),
+    TypeOrmModule.forFeature([ContractorProfile, User, KycCheck]),
     ConfigModule,
   ],
-  controllers: [KycController],
+  controllers: [KycController, KycWebhookController],
   providers: [KycService],
   exports: [KycService],
 })
