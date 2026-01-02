@@ -1,0 +1,66 @@
+/**
+ * Auth Controller
+ * REST endpoints for authentication
+ */
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { RequestOtpDto } from './dto/request-otp.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
+import { AppleAuthDto } from './dto/apple-auth.dto';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  /**
+   * POST /auth/phone/request-otp
+   * Send OTP code to phone number
+   */
+  @Post('phone/request-otp')
+  @HttpCode(HttpStatus.OK)
+  async requestOtp(@Body() dto: RequestOtpDto) {
+    return this.authService.requestPhoneOtp(dto.phone);
+  }
+
+  /**
+   * POST /auth/phone/verify
+   * Verify OTP and return JWT token
+   */
+  @Post('phone/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyPhoneOtp(dto.phone, dto.code, dto.userType);
+  }
+
+  /**
+   * POST /auth/google
+   * Authenticate with Google ID token
+   */
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  async googleAuth(@Body() dto: GoogleAuthDto) {
+    return this.authService.authenticateWithGoogle(
+      dto.googleId,
+      dto.email,
+      dto.name,
+      dto.avatarUrl,
+      dto.userType,
+    );
+  }
+
+  /**
+   * POST /auth/apple
+   * Authenticate with Apple ID token
+   */
+  @Post('apple')
+  @HttpCode(HttpStatus.OK)
+  async appleAuth(@Body() dto: AppleAuthDto) {
+    return this.authService.authenticateWithApple(
+      dto.appleId,
+      dto.email,
+      dto.name,
+      dto.userType,
+    );
+  }
+}

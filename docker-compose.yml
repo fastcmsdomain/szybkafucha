@@ -1,0 +1,53 @@
+# Szybka Fucha - Docker Compose for Development
+# Run with: docker-compose up -d
+
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: szybkafucha-postgres
+    environment:
+      POSTGRES_USER: szybkafucha
+      POSTGRES_PASSWORD: szybkafucha_dev_password
+      POSTGRES_DB: szybkafucha
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U szybkafucha"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: szybkafucha-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin - Database management UI (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: szybkafucha-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@szybkafucha.pl
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:

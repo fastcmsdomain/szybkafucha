@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Szybka Fucha — UX Wireframes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #E94560;
+      --primary-dark: #d13a54;
+      --primary-light: #ff6b84;
+      --secondary: #16213E;
+      --accent: #0F3460;
+      --success: #10B981;
+      --success-light: #D1FAE5;
+      --warning: #F59E0B;
+      --warning-light: #FEF3C7;
+      --bg-light: #F8FAFC;
+      --text-primary: #1E293B;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+      --border: #E2E8F0;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.12);
+      --shadow-xl: 0 20px 50px rgba(0,0,0,0.15);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0F0F1A 0%, #1a1a2e 50%, #16213E 100%);
+      min-height: 100vh;
+      color: var(--text-primary);
+    }
+    .header {
+      background: rgba(15, 15, 26, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 32px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .logo-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px; font-weight: 700; color: white;
+    }
+    .logo-text span { color: var(--primary); }
+    .nav-tabs {
+      display: flex; gap: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 6px; border-radius: var(--radius-full);
+    }
+    .nav-tab {
+      padding: 10px 24px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-family: inherit;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .nav-tab:hover { color: white; }
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    }
+    .main-content {
+      padding: 100px 32px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px; font-weight: 700;
+      color: white; margin-bottom: 8px;
+    }
+    .section-subtitle {
+      color: rgba(255,255,255,0.6);
+      font-size: 16px; margin-bottom: 32px;
+    }
+    .flow-container { display: none; }
+    .flow-container.active {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .step-navigation {
+      display: flex; gap: 4px;
+      margin-bottom: 32px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .step-nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-full);
+      color: rgba(255,255,255,0.5);
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+    .step-nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .step-nav-item.active { background: white; color: var(--secondary); border-color: white; }
+    .step-nav-item.completed { background: rgba(16, 185, 129, 0.2); border-color: var(--success); color: var(--success); }
+    .step-number {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: currentColor;
+      color: var(--secondary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .step-nav-item.active .step-number { background: var(--primary); color: white; }
+    .step-nav-item.completed .step-number { background: var(--success); color: white; }
+    .phone-showcase {
+      display: flex; gap: 48px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .phone-frame {
+      width: 320px; height: 680px;
+      background: #1a1a2e;
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.1), var(--shadow-xl), 0 0 80px rgba(233, 69, 96, 0.2);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 12px; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 28px;
+      background: #0a0a14;
+      border-radius: 0 0 16px 16px;
+      z-index: 10;
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      background: var(--bg-light);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen-content { display: none; height: 100%; flex-direction: column; }
+    .screen-content.active { display: flex; animation: screenFade 0.3s ease; }
+    @keyframes screenFade { from { opacity: 0; } to { opacity: 1; } }
+    .status-bar {
+      height: 44px;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px; font-weight: 600;
+      color: var(--text-primary);
+    }
+    .status-bar-dark { color: white; }
+    .app-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-header-dark {
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+      color: white;
+      padding-top: 50px;
+      margin-top: -44px;
+    }
+    .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      color: inherit; font-size: 18px;
+      cursor: pointer;
+    }
+    .app-header h1 { font-size: 18px; font-weight: 700; flex: 1; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-family: inherit;
+      background: white;
+    }
+    .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(233, 69, 96, 0.1); }
+    .btn {
+      width: 100%;
+      padding: 16px 24px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4); }
+    .btn-secondary { background: white; color: var(--text-primary); border: 2px solid var(--border); }
+    .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+    .btn-success { background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; }
+    .card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 20px; }
+    .category-item {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      text-align: center;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .category-item:hover { border-color: var(--primary); transform: translateY(-2px); }
+    .category-item.selected { border-color: var(--primary); background: rgba(233, 69, 96, 0.05); }
+    .category-icon {
+      width: 48px; height: 48px;
+      margin: 0 auto 8px;
+      background: linear-gradient(135deg, var(--bg-light) 0%, #E2E8F0 100%);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .category-item.selected .category-icon { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
+    .category-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .executor-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin: 0 20px 12px;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    .executor-card:hover, .executor-card.selected { border-color: var(--primary); }
+    .executor-header { display: flex; gap: 12px; margin-bottom: 12px; }
+    .executor-avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 20px; font-weight: 700;
+    }
+    .executor-info { flex: 1; }
+    .executor-name { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .executor-rating { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+    .executor-rating .star { color: var(--warning); }
+    .executor-stats { display: flex; gap: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .executor-stat { text-align: center; flex: 1; }
+    .executor-stat-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .executor-stat-label { font-size: 11px; color: var(--text-secondary); }
+    .progress-tracker { padding: 20px; background: white; }
+    .progress-step { display: flex; gap: 12px; padding: 12px 0; position: relative; }
+    .progress-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px; top: 44px; bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .progress-step.completed:not(:last-child)::after { background: var(--success); }
+    .progress-step.active:not(:last-child)::after { background: linear-gradient(to bottom, var(--success) 0%, var(--border) 100%); }
+    .progress-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .progress-step.completed .progress-dot { background: var(--success); color: white; }
+    .progress-step.active .progress-dot { background: var(--primary); color: white; animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(233, 69, 96, 0); }
+    }
+    .progress-content h4 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .progress-content p { font-size: 12px; color: var(--text-secondary); }
+    .map-container {
+      height: 200px;
+      background: linear-gradient(135deg, #E8F4F8 0%, #D1E8F0 100%);
+      border-radius: var(--radius-lg);
+      margin: 0 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .map-container::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: 
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,0,0,0.03) 40px, rgba(0,0,0,0.03) 41px),
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,0,0,0.03) 40px, rgba(0,0,0,0.03) 41px);
+    }
+    .map-marker {
+      position: absolute;
+      width: 40px; height: 40px;
+      background: var(--primary);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    }
+    .map-marker.destination { top: 30%; left: 60%; background: var(--success); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    .map-marker.executor { top: 60%; left: 30%; background: var(--accent); animation: moveMarker 3s ease-in-out infinite; }
+    @keyframes moveMarker {
+      0%, 100% { transform: rotate(-45deg) translate(0, 0); }
+      50% { transform: rotate(-45deg) translate(20px, -20px); }
+    }
+    .map-marker span { transform: rotate(45deg); font-size: 16px; }
+    .bottom-nav {
+      display: flex;
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 8px 0 24px;
+      margin-top: auto;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      padding: 8px;
+      color: var(--text-muted);
+      font-size: 10px; font-weight: 500;
+    }
+    .bottom-nav-item.active { color: var(--primary); }
+    .bottom-nav-item .icon { font-size: 22px; }
+    .info-panel {
+      flex: 1;
+      max-width: 400px;
+      min-width: 300px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      color: white;
+    }
+    .info-panel h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px; font-weight: 700;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .info-panel h3 .step-badge {
+      background: var(--primary);
+      color: white;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .info-panel p { color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1.7; margin-bottom: 16px; }
+    .ux-notes {
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .ux-notes h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 12px; }
+    .ux-note { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: rgba(255,255,255,0.6); }
+    .ux-note .check { color: var(--success); font-size: 16px; }
+    .scrollable { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+    .welcome-screen {
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+      height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      color: white;
+    }
+    .welcome-logo {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 40px rgba(233, 69, 96, 0.4);
+    }
+    .welcome-title { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    .welcome-subtitle { font-size: 15px; opacity: 0.8; margin-bottom: 40px; line-height: 1.5; }
+    .welcome-buttons { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .success-screen {
+      height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+      background: white;
+    }
+    .success-icon {
+      width: 100px; height: 100px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 50px;
+      margin-bottom: 24px;
+      animation: successPop 0.5s ease;
+    }
+    @keyframes successPop { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .success-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .success-message { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; }
+    .earnings-card {
+      background: linear-gradient(135deg, var(--secondary) 0%, var(--accent) 100%);
+      margin: 0 20px 16px;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      color: white;
+    }
+    .earnings-label { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
+    .earnings-value { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 16px; }
+    .earnings-stats { display: flex; gap: 24px; }
+    .earnings-stat { text-align: center; }
+    .earnings-stat-value { font-size: 20px; font-weight: 700; }
+    .earnings-stat-label { font-size: 11px; opacity: 0.7; }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: white;
+      margin: 0 20px 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+    .toggle-label { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .toggle-sublabel { font-size: 12px; color: var(--text-secondary); }
+    .toggle {
+      width: 56px; height: 32px;
+      background: var(--border);
+      border-radius: var(--radius-full);
+      position: relative;
+      cursor: pointer;
+    }
+    .toggle.active { background: var(--success); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 26px; height: 26px;
+      background: white;
+      border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform 0.3s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .toggle.active::after { transform: translateX(24px); }
+    .section-divider { padding: 16px 20px 8px; }
+    .section-divider h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .task-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin: 0 20px 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+    .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .task-category-badge {
+      background: rgba(233, 69, 96, 0.1);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 600;
+    }
+    .task-price { font-size: 18px; font-weight: 700; color: var(--success); }
+    .task-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .task-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Szybka<span>Fucha</span></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchFlow('client')">👤 Zleceniodawca</button>
+      <button class="nav-tab" onclick="switchFlow('executor')">🛠️ Wykonawca</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- CLIENT FLOW -->
+    <div id="client-flow" class="flow-container active">
+      <h2 class="section-title">👤 Ścieżka Zleceniodawcy</h2>
+      <p class="section-subtitle">Kompletna podróż użytkownika od rejestracji do zakończenia zlecenia</p>
+      <div class="step-navigation" id="client-steps">
+        <button class="step-nav-item active" onclick="showClientScreen(1)"><span class="step-number">1</span>Powitanie</button>
+        <button class="step-nav-item" onclick="showClientScreen(2)"><span class="step-number">2</span>Rejestracja</button>
+        <button class="step-nav-item" onclick="showClientScreen(3)"><span class="step-number">3</span>Kategoria</button>
+        <button class="step-nav-item" onclick="showClientScreen(4)"><span class="step-number">4</span>Szczegóły</button>
+        <button class="step-nav-item" onclick="showClientScreen(5)"><span class="step-number">5</span>Wykonawcy</button>
+        <button class="step-nav-item" onclick="showClientScreen(6)"><span class="step-number">6</span>Płatność</button>
+        <button class="step-nav-item" onclick="showClientScreen(7)"><span class="step-number">7</span>Tracking</button>
+        <button class="step-nav-item" onclick="showClientScreen(8)"><span class="step-number">8</span>Zakończenie</button>
+      </div>
+      <div class="phone-showcase">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <!-- Screen 1: Welcome -->
+            <div class="screen-content active" id="client-screen-1">
+              <div class="welcome-screen">
+                <div class="welcome-logo">⚡</div>
+                <h1 class="welcome-title">Szybka Fucha</h1>
+                <p class="welcome-subtitle">Oszczędzaj czas na codziennych sprawunkach. Znajdź pomocnika w kilka minut.</p>
+                <div class="welcome-buttons">
+                  <button class="btn btn-primary" style="background: white; color: #16213E;">📱 Kontynuuj z Apple</button>
+                  <button class="btn btn-primary" style="background: white; color: #16213E;">🔵 Kontynuuj z Google</button>
+                  <button class="btn btn-outline" style="border-color: rgba(255,255,255,0.3); color: white;">📧 Zarejestruj przez e-mail</button>
+                </div>
+              </div>
+            </div>
+            <!-- Screen 2: Registration -->
+            <div class="screen-content" id="client-screen-2">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><div class="back-btn">←</div><h1>Rejestracja</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div class="form-group"><label class="form-label">Imię</label><input type="text" class="form-input" value="Anna"></div>
+                <div class="form-group"><label class="form-label">Numer telefonu</label><input type="tel" class="form-input" value="+48 512 345 678"></div>
+                <div class="form-group">
+                  <label class="form-label">Kod weryfikacyjny</label>
+                  <input type="text" class="form-input" style="text-align: center; font-size: 24px; font-weight: 700; letter-spacing: 8px;" value="4 8 2 7">
+                  <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; text-align: center;">Kod wysłany SMS-em</p>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 16px;">Potwierdź numer →</button>
+              </div>
+            </div>
+            <!-- Screen 3: Category -->
+            <div class="screen-content" id="client-screen-3">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><h1>Co chcesz zlecić?</h1></div>
+              <div class="scrollable">
+                <div class="category-grid">
+                  <div class="category-item selected"><div class="category-icon">📦</div><div class="category-name">Paczki</div></div>
+                  <div class="category-item"><div class="category-icon">🛒</div><div class="category-name">Zakupy</div></div>
+                  <div class="category-item"><div class="category-icon">⏰</div><div class="category-name">Kolejki</div></div>
+                  <div class="category-item"><div class="category-icon">🔧</div><div class="category-name">Montaż</div></div>
+                  <div class="category-item"><div class="category-icon">📦</div><div class="category-name">Przeprowadzki</div></div>
+                  <div class="category-item"><div class="category-icon">🧹</div><div class="category-name">Sprzątanie</div></div>
+                </div>
+                <div style="padding: 20px;"><button class="btn btn-primary">Dalej →</button></div>
+              </div>
+              <div class="bottom-nav">
+                <div class="bottom-nav-item active"><span class="icon">🏠</span><span>Start</span></div>
+                <div class="bottom-nav-item"><span class="icon">📋</span><span>Zlecenia</span></div>
+                <div class="bottom-nav-item"><span class="icon">💬</span><span>Chat</span></div>
+                <div class="bottom-nav-item"><span class="icon">👤</span><span>Profil</span></div>
+              </div>
+            </div>
+            <!-- Screen 4: Details -->
+            <div class="screen-content" id="client-screen-4">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><div class="back-btn">←</div><h1>Szczegóły zlecenia</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div style="background: rgba(233, 69, 96, 0.1); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 24px;">📦</span>
+                  <div><div style="font-weight: 600;">Paczki i przesyłki</div><div style="font-size: 12px; color: var(--text-secondary);">Odbiór, nadanie, dostarczenie</div></div>
+                </div>
+                <div class="form-group"><label class="form-label">Co trzeba zrobić?</label><textarea class="form-input" rows="3" style="resize: none;">Odebrać paczkę z paczkomatu InPost przy ul. Puławskiej 108</textarea></div>
+                <div class="form-group"><label class="form-label">Adres realizacji</label><input type="text" class="form-input" value="ul. Mokotowska 25, Warszawa"></div>
+                <div class="form-group">
+                  <label class="form-label">Kiedy?</label>
+                  <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" style="flex: 1; padding: 12px;">⚡ Teraz</button>
+                    <button class="btn btn-secondary" style="flex: 1; padding: 12px;">📅 Zaplanuj</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Twój budżet</label>
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <input type="range" style="flex: 1;" min="30" max="150" value="50">
+                    <div style="background: var(--bg-light); padding: 12px 20px; border-radius: var(--radius-md); font-weight: 700; color: var(--primary);">50 zł</div>
+                  </div>
+                </div>
+                <button class="btn btn-primary">Znajdź wykonawcę →</button>
+              </div>
+            </div>
+            <!-- Screen 5: Executors -->
+            <div class="screen-content" id="client-screen-5">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><div class="back-btn">←</div><h1>Dostępni wykonawcy</h1></div>
+              <div class="scrollable">
+                <div style="padding: 0 20px 12px; font-size: 13px; color: var(--text-secondary);">3 osoby w pobliżu • średni czas dojazdu 15 min</div>
+                <div class="executor-card selected">
+                  <div class="executor-header">
+                    <div class="executor-avatar">MK</div>
+                    <div class="executor-info">
+                      <div class="executor-name">Michał K.</div>
+                      <div class="executor-rating"><span class="star">★</span> 4.9 • 127 opinii • <span style="color: var(--success);">● Online</span></div>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--success);">45 zł</div>
+                  </div>
+                  <div class="executor-stats">
+                    <div class="executor-stat"><div class="executor-stat-value">127</div><div class="executor-stat-label">Zleceń</div></div>
+                    <div class="executor-stat"><div class="executor-stat-value">98%</div><div class="executor-stat-label">Pozytywnych</div></div>
+                    <div class="executor-stat"><div class="executor-stat-value">~12 min</div><div class="executor-stat-label">Dojazd</div></div>
+                  </div>
+                </div>
+                <div class="executor-card">
+                  <div class="executor-header">
+                    <div class="executor-avatar" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">AS</div>
+                    <div class="executor-info"><div class="executor-name">Anna S.</div><div class="executor-rating"><span class="star">★</span> 4.8 • 89 opinii</div></div>
+                    <div style="font-size: 18px; font-weight: 700; color: var(--success);">50 zł</div>
+                  </div>
+                </div>
+                <div style="padding: 16px 20px;"><button class="btn btn-primary">Wybierz Michała →</button></div>
+              </div>
+            </div>
+            <!-- Screen 6: Payment -->
+            <div class="screen-content" id="client-screen-6">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><div class="back-btn">←</div><h1>Podsumowanie</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div class="card" style="margin-bottom: 16px;">
+                  <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div class="executor-avatar" style="width: 48px; height: 48px; font-size: 16px;">MK</div>
+                    <div><div style="font-weight: 600;">Michał K.</div><div style="font-size: 13px; color: var(--text-secondary);">★ 4.9 • Dotrze za ~12 min</div></div>
+                  </div>
+                  <div style="background: var(--bg-light); border-radius: var(--radius-md); padding: 12px;">
+                    <div style="font-size: 12px; color: var(--text-secondary);">📦 Odbiór paczki</div>
+                    <div style="font-size: 14px;">Paczkomat InPost → ul. Mokotowska 25</div>
+                  </div>
+                </div>
+                <div class="card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 12px;">Metoda płatności</div>
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-light); border-radius: var(--radius-md); border: 2px solid var(--primary);">
+                    <span style="font-size: 24px;">💳</span>
+                    <div style="flex: 1;"><div style="font-weight: 500;">•••• 4242</div><div style="font-size: 12px; color: var(--text-secondary);">Visa</div></div>
+                    <span style="color: var(--primary);">✓</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-secondary);">Koszt zlecenia</span><span>45,00 zł</span></div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: var(--text-secondary);">Opłata serwisowa</span><span>6,75 zł</span></div>
+                  <div style="border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; display: flex; justify-content: space-between;">
+                    <span style="font-weight: 700;">Razem</span>
+                    <span style="font-weight: 700; font-size: 20px; color: var(--primary);">51,75 zł</span>
+                  </div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); padding: 12px; margin-top: 16px; display: flex; gap: 10px;">
+                  <span style="color: var(--success);">🔒</span>
+                  <p style="font-size: 12px; color: var(--text-secondary);">Płatność bezpieczna. Środki zostaną przekazane po realizacji.</p>
+                </div>
+                <button class="btn btn-success" style="margin-top: 20px;">Zapłać i zamów →</button>
+              </div>
+            </div>
+            <!-- Screen 7: Tracking -->
+            <div class="screen-content" id="client-screen-7">
+              <div class="status-bar status-bar-dark"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header app-header-dark"><div class="back-btn">←</div><h1>Śledzenie zlecenia</h1></div>
+              <div class="scrollable">
+                <div class="map-container">
+                  <div class="map-marker destination"><span>📍</span></div>
+                  <div class="map-marker executor"><span>🚶</span></div>
+                </div>
+                <div style="padding: 16px 20px;">
+                  <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+                    <div class="executor-avatar" style="width: 48px; height: 48px; font-size: 16px;">MK</div>
+                    <div style="flex: 1;"><div style="font-weight: 600;">Michał K.</div><div style="font-size: 13px; color: var(--success);">W drodze do paczkomatu</div></div>
+                    <button style="width: 44px; height: 44px; border-radius: 50%; background: var(--success); border: none; color: white; font-size: 18px; cursor: pointer;">📞</button>
+                  </div>
+                </div>
+                <div class="progress-tracker">
+                  <div class="progress-step completed"><div class="progress-dot">✓</div><div class="progress-content"><h4>Zlecenie przyjęte</h4><p>14:32</p></div></div>
+                  <div class="progress-step active"><div class="progress-dot">2</div><div class="progress-content"><h4>W drodze do paczkomatu</h4><p>Szacowany czas: 5 min</p></div></div>
+                  <div class="progress-step"><div class="progress-dot">3</div><div class="progress-content"><h4>Odbiór paczki</h4><p>—</p></div></div>
+                  <div class="progress-step"><div class="progress-dot">4</div><div class="progress-content"><h4>Dostawa pod Twój adres</h4><p>—</p></div></div>
+                </div>
+              </div>
+            </div>
+            <!-- Screen 8: Complete -->
+            <div class="screen-content" id="client-screen-8">
+              <div class="success-screen">
+                <div class="success-icon">✓</div>
+                <h2 class="success-title">Zlecenie zakończone!</h2>
+                <p class="success-message">Paczka została dostarczona. Dziękujemy!</p>
+                <div class="card" style="width: 100%; text-align: left; margin-bottom: 24px;">
+                  <div style="font-weight: 600; margin-bottom: 12px; text-align: center;">Jak oceniasz Michała?</div>
+                  <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                    <span style="font-size: 32px;">⭐⭐⭐⭐</span><span style="font-size: 32px; opacity: 0.3;">⭐</span>
+                  </div>
+                  <textarea class="form-input" rows="2" placeholder="Dodaj komentarz..." style="resize: none;"></textarea>
+                </div>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                  <button class="btn btn-outline" style="flex: 1;">Napiwek 💰</button>
+                  <button class="btn btn-primary" style="flex: 1;">Wyślij ocenę</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="info-panel" id="client-info"></div>
+      </div>
+    </div>
+
+    <!-- EXECUTOR FLOW -->
+    <div id="executor-flow" class="flow-container">
+      <h2 class="section-title">🛠️ Ścieżka Wykonawcy</h2>
+      <p class="section-subtitle">Od rejestracji przez weryfikację do realizacji zleceń i zarobków</p>
+      <div class="step-navigation" id="executor-steps">
+        <button class="step-nav-item active" onclick="showExecutorScreen(1)"><span class="step-number">1</span>Rejestracja</button>
+        <button class="step-nav-item" onclick="showExecutorScreen(2)"><span class="step-number">2</span>Weryfikacja</button>
+        <button class="step-nav-item" onclick="showExecutorScreen(3)"><span class="step-number">3</span>Dashboard</button>
+        <button class="step-nav-item" onclick="showExecutorScreen(4)"><span class="step-number">4</span>Nowe zlecenie</button>
+        <button class="step-nav-item" onclick="showExecutorScreen(5)"><span class="step-number">5</span>Realizacja</button>
+        <button class="step-nav-item" onclick="showExecutorScreen(6)"><span class="step-number">6</span>Zakończenie</button>
+      </div>
+      <div class="phone-showcase">
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <!-- Executor Screen 1 -->
+            <div class="screen-content active" id="executor-screen-1">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><h1>Dołącz jako wykonawca</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <div style="width: 80px; height: 80px; background: var(--bg-light); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 3px dashed var(--border);">📷</div>
+                  <p style="font-size: 13px; color: var(--primary);">Dodaj zdjęcie profilowe</p>
+                </div>
+                <div class="form-group"><label class="form-label">Imię i nazwisko</label><input type="text" class="form-input" value="Michał Kowalski"></div>
+                <div class="form-group"><label class="form-label">Numer telefonu</label><input type="tel" class="form-input" value="+48 601 234 567"></div>
+                <div class="form-group">
+                  <label class="form-label">Wybierz kategorie</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <span style="padding: 8px 14px; background: var(--primary); color: white; border-radius: var(--radius-full); font-size: 13px;">📦 Paczki ✓</span>
+                    <span style="padding: 8px 14px; background: var(--primary); color: white; border-radius: var(--radius-full); font-size: 13px;">🛒 Zakupy ✓</span>
+                    <span style="padding: 8px 14px; background: var(--bg-light); color: var(--text-secondary); border-radius: var(--radius-full); font-size: 13px;">⏰ Kolejki</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 16px;">Dalej: Weryfikacja →</button>
+              </div>
+            </div>
+            <!-- Executor Screen 2 -->
+            <div class="screen-content" id="executor-screen-2">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><div class="back-btn">←</div><h1>Weryfikacja tożsamości</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <div style="font-size: 48px; margin-bottom: 12px;">🛡️</div>
+                  <h3 style="font-size: 18px; margin-bottom: 8px;">Bezpieczeństwo przede wszystkim</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary);">Weryfikujemy tożsamość każdego wykonawcy</p>
+                </div>
+                <div class="card" style="margin-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 48px; height: 48px; background: var(--success-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">✓</div>
+                    <div style="flex: 1;"><div style="font-weight: 600;">Dowód osobisty</div><div style="font-size: 12px; color: var(--success);">Zweryfikowany</div></div>
+                  </div>
+                </div>
+                <div class="card" style="margin-bottom: 12px; border: 2px dashed var(--primary);">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 48px; height: 48px; background: rgba(233, 69, 96, 0.1); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">🤳</div>
+                    <div style="flex: 1;"><div style="font-weight: 600;">Selfie weryfikacyjne</div><div style="font-size: 12px; color: var(--primary);">Kliknij, aby zrobić zdjęcie</div></div>
+                  </div>
+                </div>
+                <div class="card" style="margin-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 48px; height: 48px; background: var(--bg-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px;">🏦</div>
+                    <div style="flex: 1;"><div style="font-weight: 600;">Konto bankowe</div><div style="font-size: 12px; color: var(--text-secondary);">Do wypłat zarobków</div></div>
+                  </div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 16px;">Zakończ weryfikację →</button>
+              </div>
+            </div>
+            <!-- Executor Screen 3: Dashboard -->
+            <div class="screen-content" id="executor-screen-3">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div style="padding: 16px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div><div style="font-size: 13px; color: var(--text-secondary);">Cześć,</div><div style="font-size: 20px; font-weight: 700;">Michał! 👋</div></div>
+                  <div class="executor-avatar" style="width: 44px; height: 44px; font-size: 16px;">MK</div>
+                </div>
+              </div>
+              <div class="scrollable">
+                <div class="earnings-card">
+                  <div class="earnings-label">Zarobki w tym tygodniu</div>
+                  <div class="earnings-value">1,240 zł</div>
+                  <div class="earnings-stats">
+                    <div class="earnings-stat"><div class="earnings-stat-value">18</div><div class="earnings-stat-label">Zleceń</div></div>
+                    <div class="earnings-stat"><div class="earnings-stat-value">4.9</div><div class="earnings-stat-label">Ocena</div></div>
+                    <div class="earnings-stat"><div class="earnings-stat-value">98%</div><div class="earnings-stat-label">Sukces</div></div>
+                  </div>
+                </div>
+                <div class="toggle-container">
+                  <div><div class="toggle-label">Jestem dostępny</div><div class="toggle-sublabel">Otrzymuj nowe zlecenia</div></div>
+                  <div class="toggle active"></div>
+                </div>
+                <div class="section-divider"><h3>📍 Zlecenia w pobliżu (3)</h3></div>
+                <div class="task-card" style="border: 2px solid var(--primary);">
+                  <div class="task-header"><span class="task-category-badge">📦 Paczki</span><span class="task-price">50 zł</span></div>
+                  <div class="task-title">Odbiór paczki z InPost</div>
+                  <div class="task-meta"><span>📍 1.2 km</span><span>⏰ Teraz</span></div>
+                </div>
+                <div class="task-card">
+                  <div class="task-header"><span class="task-category-badge">🛒 Zakupy</span><span class="task-price">75 zł</span></div>
+                  <div class="task-title">Zakupy spożywcze z Biedronki</div>
+                  <div class="task-meta"><span>📍 2.5 km</span><span>⏰ 14:00</span></div>
+                </div>
+              </div>
+              <div class="bottom-nav">
+                <div class="bottom-nav-item active"><span class="icon">🏠</span><span>Start</span></div>
+                <div class="bottom-nav-item"><span class="icon">📋</span><span>Zlecenia</span></div>
+                <div class="bottom-nav-item"><span class="icon">💰</span><span>Zarobki</span></div>
+                <div class="bottom-nav-item"><span class="icon">👤</span><span>Profil</span></div>
+              </div>
+            </div>
+            <!-- Executor Screen 4: New Task -->
+            <div class="screen-content" id="executor-screen-4">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); padding: 24px 20px; text-align: center; color: white;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">🔔 Nowe zlecenie!</div>
+                <div style="font-size: 32px; font-weight: 700; margin-bottom: 4px;">50 zł</div>
+                <div style="font-size: 13px; opacity: 0.8;">1.2 km od Ciebie</div>
+              </div>
+              <div class="scrollable" style="padding: 20px;">
+                <div class="card" style="margin-bottom: 16px;">
+                  <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">AW</div>
+                    <div><div style="font-weight: 600;">Anna W.</div><div style="font-size: 13px; color: var(--text-secondary);">★ 4.8 • 23 zlecenia</div></div>
+                  </div>
+                  <div style="background: var(--bg-light); border-radius: var(--radius-md); padding: 12px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">📦 Odbiór paczki</div>
+                    <div style="font-size: 14px;">Odebrać paczkę z paczkomatu InPost i dostarczyć pod adres.</div>
+                  </div>
+                </div>
+                <div style="background: var(--warning-light); border-radius: var(--radius-md); padding: 12px; margin-bottom: 20px; display: flex; gap: 10px;">
+                  <span>⏱️</span>
+                  <div><div style="font-weight: 600; font-size: 14px;">Czas na decyzję: 45s</div><div style="font-size: 12px; color: var(--text-secondary);">Zlecenie może zostać przydzielone komuś innemu</div></div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                  <button class="btn btn-secondary" style="flex: 1;">Odrzuć</button>
+                  <button class="btn btn-success" style="flex: 2;">✓ Przyjmuję za 50 zł</button>
+                </div>
+              </div>
+            </div>
+            <!-- Executor Screen 5: Active -->
+            <div class="screen-content" id="executor-screen-5">
+              <div class="status-bar status-bar-dark"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header app-header-dark"><h1>Aktywne zlecenie</h1></div>
+              <div class="scrollable">
+                <div class="map-container" style="height: 180px;"><div class="map-marker destination"><span>📍</span></div></div>
+                <div style="padding: 16px 20px;">
+                  <div class="card" style="margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">KROK 1 z 2</div>
+                    <div style="font-weight: 700; font-size: 16px; margin-bottom: 8px;">🎯 Odbierz paczkę</div>
+                    <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">Paczkomat InPost przy ul. Puławskiej 108</div>
+                    <div style="display: flex; gap: 8px;">
+                      <button class="btn btn-outline" style="flex: 1; padding: 10px;">📍 Nawiguj</button>
+                      <button class="btn btn-primary" style="flex: 1; padding: 10px;">✓ Odebrano</button>
+                    </div>
+                  </div>
+                  <div class="card" style="opacity: 0.6;">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">KROK 2 z 2</div>
+                    <div style="font-weight: 700; font-size: 16px;">📦 Dostarcz paczkę</div>
+                    <div style="font-size: 14px; color: var(--text-secondary);">ul. Mokotowska 25, Warszawa</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Executor Screen 6: Complete -->
+            <div class="screen-content" id="executor-screen-6">
+              <div class="status-bar"><span>9:41</span><div>📶 🔋</div></div>
+              <div class="app-header"><h1>Zakończ zlecenie</h1></div>
+              <div class="scrollable" style="padding: 0 20px;">
+                <div style="text-align: center; margin: 20px 0;">
+                  <div style="width: 80px; height: 80px; background: var(--success-light); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 40px;">📦</div>
+                  <h3 style="font-size: 18px; margin-bottom: 8px;">Paczka dostarczona?</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary);">Potwierdź zakończenie zlecenia</p>
+                </div>
+                <div class="card" style="margin-bottom: 16px;">
+                  <div style="font-weight: 600; margin-bottom: 12px;">📸 Dodaj zdjęcie jako potwierdzenie</div>
+                  <div style="display: flex; gap: 8px;">
+                    <div style="width: 80px; height: 80px; background: var(--bg-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px solid var(--success); font-size: 24px; color: var(--success);">✓</div>
+                    <div style="width: 80px; height: 80px; background: var(--bg-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border);"><span style="font-size: 24px; color: var(--text-muted);">+</span></div>
+                  </div>
+                </div>
+                <div class="card" style="background: linear-gradient(135deg, var(--success-light) 0%, #A7F3D0 100%); border: none;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div><div style="font-size: 13px; color: var(--success);">Twój zarobek</div><div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">45,00 zł</div></div>
+                    <div style="text-align: right;"><div style="font-size: 12px; color: var(--text-secondary);">Po prowizji 15%</div><div style="font-size: 12px; color: var(--text-secondary);">z 50 zł</div></div>
+                  </div>
+                </div>
+                <button class="btn btn-success" style="margin-top: 20px;">✓ Potwierdź zakończenie</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="info-panel" id="executor-info"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const clientInfo = {
+      1: { title: "Ekran powitalny", description: "Pierwszy kontakt z aplikacją. Social login jako domyślna opcja minimalizuje tarcie.", notes: ["Social login (Apple/Google) — mniej kroków", "Hasło 'Oszczędzaj czas' komunikuje korzyść", "Logo z błyskawicą = szybkość"] },
+      2: { title: "Weryfikacja SMS", description: "Szybka weryfikacja numeru telefonu. Użytkownik podaje tylko niezbędne dane.", notes: ["OTP zamiast hasła = mniej do pamiętania", "Auto-focus na polu kodu", "Timer 'Wyślij ponownie'"] },
+      3: { title: "Wybór kategorii", description: "Duże, czytelne ikony. Jeden tap = jeden wybór.", notes: ["Siatka 3x2 mieści się bez scrollowania", "Wizualne wyróżnienie wybranej kategorii", "Emotikony jako uniwersalne ikony"] },
+      4: { title: "Szczegóły zlecenia", description: "Formularz z inteligentnymi domyślnymi wartościami i suwakiem budżetu.", notes: ["Przyciski 'Teraz/Zaplanuj' zamiast pickera", "Suwak budżetu z live preview", "Sugerowana cena oparta na danych"] },
+      5: { title: "Lista wykonawców", description: "Karty z kluczowymi metrykami: ocena, liczba zleceń, czas dojazdu.", notes: ["Sortowanie: najlepsza kombinacja ceny i oceny", "Status 'Online' w czasie rzeczywistym", "3 metryki per wykonawca = szybka decyzja"] },
+      6: { title: "Podsumowanie i płatność", description: "Przejrzyste koszty. Płatność jednym przyciskiem z escrow.", notes: ["Rozbicie ceny = transparentność", "Ikona kłódki = zaufanie", "Zapisana karta = jeden tap"] },
+      7: { title: "Śledzenie na żywo", description: "Mapa z pozycją wykonawcy. Progress bar z etapami.", notes: ["Animowany marker na mapie", "4-etapowy progress tracker", "Chat/telefon zawsze widoczne"] },
+      8: { title: "Zakończenie i ocena", description: "Celebracja sukcesu + szybka ocena gwiazdkami.", notes: ["Animacja sukcesu = dopamina", "Opcjonalny komentarz", "Przycisk napiwku"] }
+    };
+    const executorInfo = {
+      1: { title: "Rejestracja wykonawcy", description: "Rozszerzony formularz z wyborem kategorii usług.", notes: ["Multi-select kategorii", "Zdjęcie profilowe obowiązkowe", "Tagi jako chipsy"] },
+      2: { title: "Weryfikacja KYC", description: "3-etapowa weryfikacja: dowód, selfie, konto bankowe.", notes: ["Checklist z wizualnym postępem", "Ikona tarczy = bezpieczeństwo", "Zielony checkmark przy ukończonych"] },
+      3: { title: "Dashboard wykonawcy", description: "Centrum dowodzenia: zarobki, dostępność, nowe zlecenia.", notes: ["Hero card z zarobkami = motywacja", "Toggle dostępności", "Lista zleceń z odległością i ceną"] },
+      4: { title: "Nowe zlecenie (push)", description: "Pełnoekranowe powiadomienie. Timer zwiększa urgency.", notes: ["Duża cena = natychmiastowa uwaga", "Timer 45s = FOMO", "Dwa przyciski: Odrzuć / Przyjmuję"] },
+      5: { title: "Realizacja zlecenia", description: "Krokowa nawigacja przez zadanie z mapą.", notes: ["Step-by-step checklist", "Przycisk 'Nawiguj' → Google Maps", "Kontakt do klienta widoczny"] },
+      6: { title: "Zakończenie zlecenia", description: "Potwierdzenie ze zdjęciem i kalkulacja zarobku.", notes: ["Zdjęcie jako dowód dostawy", "Przejrzysta kalkulacja prowizji", "Zielona karta = pozytywne skojarzenie"] }
+    };
+    let currentClient = 1, currentExecutor = 1;
+    function switchFlow(flow) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.flow-container').forEach(c => c.classList.remove('active'));
+      if (flow === 'client') {
+        document.querySelectorAll('.nav-tab')[0].classList.add('active');
+        document.getElementById('client-flow').classList.add('active');
+        updateInfo('client');
+      } else {
+        document.querySelectorAll('.nav-tab')[1].classList.add('active');
+        document.getElementById('executor-flow').classList.add('active');
+        updateInfo('executor');
+      }
+    }
+    function showClientScreen(n) {
+      currentClient = n;
+      document.querySelectorAll('#client-steps .step-nav-item').forEach((item, i) => {
+        item.classList.remove('active', 'completed');
+        if (i + 1 < n) item.classList.add('completed');
+        if (i + 1 === n) item.classList.add('active');
+      });
+      document.querySelectorAll('#client-flow .screen-content').forEach(s => s.classList.remove('active'));
+      document.getElementById('client-screen-' + n).classList.add('active');
+      updateInfo('client');
+    }
+    function showExecutorScreen(n) {
+      currentExecutor = n;
+      document.querySelectorAll('#executor-steps .step-nav-item').forEach((item, i) => {
+        item.classList.remove('active', 'completed');
+        if (i + 1 < n) item.classList.add('completed');
+        if (i + 1 === n) item.classList.add('active');
+      });
+      document.querySelectorAll('#executor-flow .screen-content').forEach(s => s.classList.remove('active'));
+      document.getElementById('executor-screen-' + n).classList.add('active');
+      updateInfo('executor');
+    }
+    function updateInfo(type) {
+      const info = type === 'client' ? clientInfo[currentClient] : executorInfo[currentExecutor];
+      const num = type === 'client' ? currentClient : currentExecutor;
+      document.getElementById(type + '-info').innerHTML = '<h3><span class="step-badge">' + num + '</span>' + info.title + '</h3><p>' + info.description + '</p><div class="ux-notes"><h4>💡 Decyzje UX</h4>' + info.notes.map(n => '<div class="ux-note"><span class="check">✓</span><span>' + n + '</span></div>').join('') + '</div>';
+    }
+    updateInfo('client');
+    updateInfo('executor');
+  </script>
+</body>
+</html>
