@@ -1,0 +1,15 @@
+# Szybka Fucha Project Rules
+
+## Project Structure
+- Backend: NestJS + TypeORM + PostgreSQL
+- Mobile: Flutter with Riverpod
+- Admin: React + TypeScript + Chakra UI
+
+## Conventions
+- Use Polish for user-facing strings
+- Use English for code (variables, functions, comments)
+- Every endpoint needs test coverage
+- Follow PRD in /tasks/prd-szybka-fucha.md
+
+## Current Task
+Check /tasks/tasks-prd-szybka-fucha.md for current progress
