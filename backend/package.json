@@ -17,7 +17,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
+    "seed:fresh": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts --fresh"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -29,14 +31,17 @@
     "@nestjs/platform-socket.io": "^11.1.11",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.11",
+    "@onfido/api": "^5.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "iban": "^0.0.14",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
+    "stripe": "^20.1.0",
     "typeorm": "^0.3.28",
     "uuid": "^13.0.0"
   },
