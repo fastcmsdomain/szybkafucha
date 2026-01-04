@@ -338,30 +338,104 @@
           <div class="our-app__visual">
             <div class="phone-mockup phone-mockup--preview">
               <div class="phone-mockup__screen">
-                <!-- App preview placeholder -->
-                <div class="placeholder-image placeholder-image--app" role="img" aria-label="Podgląd aplikacji Szybka Fucha">
-                  <div class="placeholder-content">
-                    <div class="placeholder-header"></div>
-                    <div class="placeholder-card"></div>
-                    <div class="placeholder-card"></div>
-                    <div class="placeholder-card"></div>
+                <!-- App preview - Task Detail View -->
+                <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Zlecenie sprzątania">
+                  <!-- App Status Bar -->
+                  <div class="app-preview__status-bar">
+                    <span>9:41</span>
+                    <div class="app-preview__status-icons">
+                      <span>📶</span>
+                      <span>🔋</span>
+                    </div>
+                  </div>
+                  
+                  <!-- App Header -->
+                  <div class="app-preview__header">
+                    <button class="app-preview__back">←</button>
+                    <h3 class="app-preview__title">Nowe zlecenie</h3>
+                    <span class="app-preview__badge app-preview__badge--new">🔔 Teraz</span>
+                  </div>
+                  
+                  <!-- Task Card -->
+                  <div class="app-preview__content">
+                    <!-- Price Hero -->
+                    <div class="app-preview__price-hero">
+                      <span class="app-preview__category-tag">🧹 Sprzątanie</span>
+                      <div class="app-preview__price">120 zł</div>
+                      <div class="app-preview__price-sub">za 2-3h pracy</div>
+                    </div>
+                    
+                    <!-- Task Details -->
+                    <div class="app-preview__task-card">
+                      <h4 class="app-preview__task-title">Sprzątanie mieszkania 50m²</h4>
+                      <p class="app-preview__task-desc">Odkurzanie, mycie podłóg, łazienka i kuchnia. Środki czystości zapewnione.</p>
+                      
+                      <div class="app-preview__task-meta">
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Mokotów, 1.2 km</span>
+                        </div>
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">⏰</span>
+                          <span>Dziś, 14:00</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Client Info -->
+                    <div class="app-preview__client-card">
+                      <div class="app-preview__client-avatar">AK</div>
+                      <div class="app-preview__client-info">
+                        <div class="app-preview__client-name">Anna K.</div>
+                        <div class="app-preview__client-rating">
+                          <span class="app-preview__stars">★★★★★</span>
+                          <span>4.9 • 23 zlecenia</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="app-preview__actions">
+                      <button class="app-preview__btn app-preview__btn--secondary">Szczegóły</button>
+                      <button class="app-preview__btn app-preview__btn--primary">✓ Przyjmuję</button>
+                    </div>
+                  </div>
+                  
+                  <!-- Bottom Nav -->
+                  <div class="app-preview__bottom-nav">
+                    <div class="app-preview__nav-item">
+                      <span class="app-preview__nav-icon">🏠</span>
+                      <span>Start</span>
+                    </div>
+                    <div class="app-preview__nav-item app-preview__nav-item--active">
+                      <span class="app-preview__nav-icon">📋</span>
+                      <span>Zlecenia</span>
+                    </div>
+                    <div class="app-preview__nav-item">
+                      <span class="app-preview__nav-icon">💬</span>
+                      <span>Chat</span>
+                    </div>
+                    <div class="app-preview__nav-item">
+                      <span class="app-preview__nav-icon">👤</span>
+                      <span>Profil</span>
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="phone-mockup__notch"></div>
             </div>
             <div class="floating-card floating-card--1">
-              <div class="floating-card__icon">🛒</div>
+              <div class="floating-card__icon">🧹</div>
               <div class="floating-card__text">
                 <strong>Nowe zlecenie!</strong>
-                <span>Zakupy spożywcze</span>
+                <span>Sprzątanie mieszkania</span>
               </div>
             </div>
             <div class="floating-card floating-card--2">
               <div class="floating-card__icon">💰</div>
               <div class="floating-card__text">
-                <strong>+85 zł</strong>
-                <span>Za sprzątanie</span>
+                <strong>+120 zł</strong>
+                <span>Do zarobienia</span>
               </div>
             </div>
           </div>
