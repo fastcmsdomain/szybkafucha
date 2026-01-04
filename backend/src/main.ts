@@ -15,12 +15,35 @@ async function bootstrap() {
   // Get config service
   const configService = app.get(ConfigService);
 
-  // Enable CORS for mobile app and admin dashboard
+  // Enable CORS for mobile app, admin dashboard, and landing page
+  const allowedOrigins = [
+    configService.get<string>('FRONTEND_URL', 'http://localhost:3001'),
+    configService.get<string>('ADMIN_URL', 'http://localhost:3002'),
+    'http://localhost:8080', // Landing page (development)
+    configService.get<string>('LANDING_PAGE_URL'), // Landing page (production)
+  ].filter(Boolean); // Remove undefined values
+
   app.enableCors({
-    origin: [
-      configService.get<string>('FRONTEND_URL', 'http://localhost:3001'),
-      configService.get<string>('ADMIN_URL', 'http://localhost:3002'),
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // In production, allow same-origin requests
+      const isProduction = configService.get<string>('NODE_ENV') === 'production';
+      if (isProduction) {
+        // Allow requests from same domain (for landing page on same domain)
+        return callback(null, true);
+      }
+      
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   });
 

@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { MessagesModule } from './messages/messages.module';
 import { KycModule } from './kyc/kyc.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -27,6 +28,7 @@ import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
 import { KycCheck } from './kyc/entities/kyc-check.entity';
+import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscriber.entity';
 
 @Module({
   imports: [
@@ -44,9 +46,21 @@ import { KycCheck } from './kyc/entities/kyc-check.entity';
         host: configService.get<string>('DATABASE_HOST', 'localhost'),
         port: configService.get<number>('DATABASE_PORT', 5432),
         username: configService.get<string>('DATABASE_USERNAME', 'szybkafucha'),
-        password: configService.get<string>('DATABASE_PASSWORD', 'szybkafucha_dev_password'),
+        password: configService.get<string>(
+          'DATABASE_PASSWORD',
+          'szybkafucha_dev_password',
+        ),
         database: configService.get<string>('DATABASE_NAME', 'szybkafucha'),
-        entities: [User, ContractorProfile, Task, Rating, Message, Payment, KycCheck],
+        entities: [
+          User,
+          ContractorProfile,
+          Task,
+          Rating,
+          Message,
+          Payment,
+          KycCheck,
+          NewsletterSubscriber,
+        ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
@@ -63,6 +77,7 @@ import { KycCheck } from './kyc/entities/kyc-check.entity';
     RealtimeModule,
     MessagesModule,
     KycModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

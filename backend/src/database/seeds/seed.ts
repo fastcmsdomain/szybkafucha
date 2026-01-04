@@ -29,7 +29,10 @@ import { SeedService } from './seed.service';
         host: configService.get<string>('DATABASE_HOST', 'localhost'),
         port: configService.get<number>('DATABASE_PORT', 5432),
         username: configService.get<string>('DATABASE_USERNAME', 'szybkafucha'),
-        password: configService.get<string>('DATABASE_PASSWORD', 'szybkafucha_dev_password'),
+        password: configService.get<string>(
+          'DATABASE_PASSWORD',
+          'szybkafucha_dev_password',
+        ),
         database: configService.get<string>('DATABASE_NAME', 'szybkafucha'),
         entities: [User, ContractorProfile, Task, Rating, Message, Payment],
         synchronize: true,
@@ -62,4 +65,4 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+void bootstrap();
