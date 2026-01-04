@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Szybka Fucha - Twój lokalny pomocnik na wyciągnięcie ręki. Zleć drobne zadania lub zarabiaj pomagając innym. Dostępne wkrótce w całej Polsce!">
+  <meta name="keywords" content="szybka fucha, zlecenia, zarabianie, pomocnik, usługi lokalne, drobne zlecenia, praca dorywcza, Polska">
+  <meta name="author" content="Szybka Fucha">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#E94560">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://szybkafucha.pl/">
+  <meta property="og:title" content="Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.">
+  <meta property="og:description" content="Połącz się z lokalnymi pomocnikami lub zacznij zarabiać wykonując drobne zlecenia. Zapisz się i bądź pierwszy!">
+  <meta property="og:image" content="https://szybkafucha.pl/assets/og-image.jpg">
+  <meta property="og:locale" content="pl_PL">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://szybkafucha.pl/">
+  <meta name="twitter:title" content="Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.">
+  <meta name="twitter:description" content="Połącz się z lokalnymi pomocnikami lub zacznij zarabiać wykonując drobne zlecenia.">
+  <meta name="twitter:image" content="https://szybkafucha.pl/assets/twitter-image.jpg">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://szybkafucha.pl/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  
+  <!-- Preconnect for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <title>Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.</title>
+  
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Structured Data for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": "Szybka Fucha",
+    "description": "Aplikacja łącząca osoby potrzebujące pomocy z lokalnymi wykonawcami drobnych zleceń.",
+    "operatingSystem": "iOS, Android",
+    "applicationCategory": "LifestyleApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PLN"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1250"
+    }
+  }
+  </script>
+  
+  <!-- FAQ Schema for AEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Czym jest Szybka Fucha?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Szybka Fucha to aplikacja mobilna łącząca osoby potrzebujące pomocy przy drobnych zadaniach z lokalnymi wykonawcami. Możesz zlecić zakupy, sprzątanie, drobne naprawy i wiele więcej."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Jak mogę zarabiać przez Szybka Fucha?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Zarejestruj się jako wykonawca, przejdź weryfikację i zacznij przyjmować zlecenia w swojej okolicy. Ty ustalasz stawki, my zapewniamy klientów."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "W jakich miastach działa Szybka Fucha?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Szybka Fucha startuje wkrótce w całej Polsce! Zapisz się do newslettera, aby być pierwszym, który dowie się o starcie w Twoim mieście."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <!-- Skip to main content for accessibility -->
+  <a href="#main" class="skip-link">Przejdź do głównej treści</a>
+  
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="container">
+      <div class="header__logo">
+      <!--/* <span class="logo-icon">⚡</span> */-->
+      <span class="logo-icon">⚡</span>
+        <!--/* <svg class="logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <circle cx="20" cy="20" r="20" fill="#E94560"/>
+          <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg> */-->
+        <!--/* <span class="logo-text">Szybka Fucha</span> */-->
+        <span class="logo-text">Szybka Fucha</span>
+
+      </div>
+      <nav class="header__nav" aria-label="Główna nawigacja">
+        <a href="#nasza-aplikacja" class="nav-link">Aplikacja</a>
+        <a href="#jak-dziala" class="nav-link">Jak to działa</a>
+        <a href="#dla-kogo" class="nav-link">Dla kogo</a>
+        <a href="#zapisz-sie" class="nav-link nav-link--cta">Zapisz się</a>
+      </nav>
+      <button class="mobile-menu-btn" aria-label="Otwórz menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+  
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <nav aria-label="Menu mobilne">
+      <a href="#nasza-aplikacja" class="mobile-nav__link">Aplikacja</a>
+      <a href="#jak-dziala" class="mobile-nav__link">Jak to działa</a>
+      <a href="#dla-kogo" class="mobile-nav__link">Dla kogo</a>
+      <a href="#zapisz-sie" class="mobile-nav__link mobile-nav__link--cta">Zapisz się</a>
+    </nav>
+  </div>
+  
+  <main id="main">
+    <!-- Hero Section -->
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero__bg">
+        <div class="hero__shape hero__shape--1"></div>
+        <div class="hero__shape hero__shape--2"></div>
+        <div class="hero__shape hero__shape--3"></div>
+      </div>
+      <div class="container hero__content">
+        <div class="hero__text">
+          <span class="hero__badge">🚀 Startujemy wkrótce!</span>
+          <h1 id="hero-heading" class="hero__title">
+            <span class="hero__title-line">Potrzebujesz pomocy?<br></span>
+            <span class="hero__title-line gradient-text">Znajdź ją w 5 minut.</span>
+          </h1>
+          <img src="assets/SzybkaFuchaHero.png" alt="Szybka Fucha" class="hero__image">
+          <!--/* <video src="assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video> */-->
+          <p class="hero__subtitle">
+            Szybka Fucha łączy zabieganych ludzi z lokalnymi pomocnikami. 
+            Zleć zakupy, sprzątanie, drobne naprawy — albo zarabiaj pomagając innym.
+          </p>
+          <div class="hero__cta">
+            <a href="#zapisz-sie" class="btn btn--primary btn--large">
+              Zapisz się jako pierwszy
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="#jak-dziala" class="btn btn--ghost">Dowiedz się więcej</a>
+          </div>
+          <!--/* <div class="hero__stats">
+            <div class="stat">
+              <span class="stat__number">10k+</span>
+              <span class="stat__label">Zainteresowanych</span>
+            </div>
+            <div class="stat">
+              <span class="stat__number">50+</span>
+              <span class="stat__label">Miast w Polsce</span>
+            </div>
+            <div class="stat">
+              <span class="stat__number">4.8★</span>
+              <span class="stat__label">Średnia ocena</span>
+            </div>
+          </div> */-->
+        </div>
+        <div class="hero__visual">
+          <div class="phone-mockup phone-mockup--form">
+            <div class="phone-mockup__screen">
+              <!-- Hero Form inside phone -->
+              <form id="hero-form" class="hero-phone-form" novalidate>
+                <div class="hero-phone-form__header">
+                  <span class="hero-phone-form__logo">⚡</span>
+                  <span class="hero-phone-form__title">Szybka Fucha</span>
+                </div>
+                
+                <div class="form-group form-group--compact">
+                <h3 class="form-title">Zapisz się!</h3>
+                  <label for="hero-name" class="form-label">Imię</label>
+                  <input 
+                    type="text" 
+                    id="hero-name" 
+                    name="name" 
+                    class="form-input form-input--small" 
+                    placeholder="Jan Kowalski"
+                    required
+                    autocomplete="name"
+                    aria-describedby="hero-name-error"
+                  >
+                  <span id="hero-name-error" class="form-error" role="alert"></span>
+                </div>
+                
+                <div class="form-group form-group--compact">
+                  <label for="hero-email" class="form-label">Adres e-mail</label>
+                  <input 
+                    type="email" 
+                    id="hero-email" 
+                    name="email" 
+                    class="form-input form-input--small" 
+                    placeholder="jan@email.com"
+                    required
+                    autocomplete="email"
+                    aria-describedby="hero-email-error"
+                  >
+                  <span id="hero-email-error" class="form-error" role="alert"></span>
+                </div>
+                
+                <fieldset class="form-group form-group--compact">
+                  <legend class="form-label">Jestem zainteresowany/a:</legend>
+                  <div class="radio-group radio-group--compact">
+                    <label class="radio-option radio-option--compact">
+                      <input type="radio" name="heroUserType" value="client" required>
+                      <span class="radio-custom"></span>
+                      <span class="radio-label"><strong>Chcę zlecać</strong><small class="radio-label-desc">(Zleceniodawca)</small></span>
+                    </label>
+                    <label class="radio-option radio-option--compact">
+                      <input type="radio" name="heroUserType" value="contractor">
+                      <span class="radio-custom"></span>
+                      <span class="radio-label"><strong>Chcę zarabiać</strong><small class="radio-label-desc">(Wykonawca)</small></span>
+                    </label>
+                  </div>
+                  <span id="hero-type-error" class="form-error" role="alert"></span>
+                </fieldset>
+                
+                <div class="form-group form-group--compact form-group--checkbox">
+                  <label class="checkbox-option checkbox-option--compact">
+                    <input type="checkbox" name="heroConsent" required aria-describedby="hero-consent-error">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label checkbox-label--small">Zgadzam się na kontakt marketingowy</span>
+                  </label>
+                  <span id="hero-consent-error" class="form-error" role="alert"></span>
+                </div>
+                
+                <button type="submit" class="btn btn--primary btn--full btn--small" id="hero-submit-btn">
+                  <span class="btn__text">Zapisz się</span>
+                  <span class="btn__loader" aria-hidden="true"></span>
+                </button>
+              </form>
+              
+              <!-- Hero Success Message -->
+              <div id="hero-success-message" class="hero-phone-form__success" hidden>
+                <div class="success-icon">
+                  <svg width="48" height="48" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                    <circle cx="32" cy="32" r="32" fill="#10B981"/>
+                    <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <h3 class="success-title">Dziękujemy!</h3>
+                <p class="success-text">Powiadomimy Cię o starcie.</p>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Social Proof -->
+    <section class="social-proof" aria-label="Zaufanie użytkowników">
+      <div class="container">
+        <p class="social-proof__text">Zaufali nam użytkownicy z całej Polski</p>
+        <div class="social-proof__logos">
+          <div class="logo-placeholder">Warszawa</div>
+          <div class="logo-placeholder">Kraków</div>
+          <div class="logo-placeholder">Wrocław</div>
+          <div class="logo-placeholder">Poznań</div>
+          <div class="logo-placeholder">Gdańsk</div>
+          <div class="logo-placeholder">Łódź</div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Our App Section -->
+    <section id="nasza-aplikacja" class="our-app" aria-labelledby="our-app-heading">
+      <div class="container">
+        <div class="our-app__content">
+          <div class="our-app__text">
+            <span class="section-tag">Nasza aplikacja</span>
+            <h2 id="our-app-heading" class="section-title">Wszystko w jednym miejscu</h2>
+            <p class="section-subtitle">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności. Aplikacja, która oszczędza Twój czas.</p>
+            
+            <ul class="our-app__features">
+              <li>
+                <div class="feature-icon">📱</div>
+                <div class="feature-text">
+                  <strong>Prosta obsługa</strong>
+                  <span>Zlecenie w mniej niż minutę</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-icon">🔒</div>
+                <div class="feature-text">
+                  <strong>Bezpieczne płatności</strong>
+                  <span>Stripe i escrow dla Twojej ochrony</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-icon">⭐</div>
+                <div class="feature-text">
+                  <strong>System ocen</strong>
+                  <span>Wybieraj sprawdzonych wykonawców</span>
+                </div>
+              </li>
+              <li>
+                <div class="feature-icon">💬</div>
+                <div class="feature-text">
+                  <strong>Chat w aplikacji</strong>
+                  <span>Komunikuj się bezpośrednio</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="our-app__visual">
+            <div class="phone-mockup phone-mockup--preview">
+              <div class="phone-mockup__screen">
+                <!-- App preview placeholder -->
+                <div class="placeholder-image placeholder-image--app" role="img" aria-label="Podgląd aplikacji Szybka Fucha">
+                  <div class="placeholder-content">
+                    <div class="placeholder-header"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                    <div class="placeholder-card"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="phone-mockup__notch"></div>
+            </div>
+            <div class="floating-card floating-card--1">
+              <div class="floating-card__icon">🛒</div>
+              <div class="floating-card__text">
+                <strong>Nowe zlecenie!</strong>
+                <span>Zakupy spożywcze</span>
+              </div>
+            </div>
+            <div class="floating-card floating-card--2">
+              <div class="floating-card__icon">💰</div>
+              <div class="floating-card__text">
+                <strong>+85 zł</strong>
+                <span>Za sprzątanie</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- How It Works -->
+    <section id="jak-dziala" class="how-it-works" aria-labelledby="how-heading">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Proste jak 1-2-3</span>
+          <h2 id="how-heading" class="section-title">Jak działa Szybka Fucha?</h2>
+          <p class="section-subtitle">Trzy kroki dzielą Cię od załatwienia sprawy lub zarobienia pieniędzy.</p>
+        </div>
+        
+        <div class="steps">
+          <article class="step">
+            <div class="step__number">1</div>
+            <div class="step__icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
+                <path d="M24 14V34M14 24H34" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3 class="step__title">Opisz zadanie</h3>
+            <p class="step__desc">Powiedz czego potrzebujesz, ustal budżet i lokalizację. To zajmie Ci mniej niż minutę.</p>
+          </article>
+          
+          <article class="step">
+            <div class="step__number">2</div>
+            <div class="step__icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
+                <circle cx="24" cy="20" r="6" stroke="#E94560" stroke-width="3"/>
+                <path d="M14 36C14 31.5817 18.4772 28 24 28C29.5228 28 34 31.5817 34 36" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3 class="step__title">Znajdź pomocnika</h3>
+            <p class="step__desc">Przeglądaj profile zweryfikowanych wykonawców, sprawdź opinie i wybierz najlepszego.</p>
+          </article>
+          
+          <article class="step">
+            <div class="step__number">3</div>
+            <div class="step__icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
+                <path d="M16 24L22 30L32 18" stroke="#E94560" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="step__title">Gotowe!</h3>
+            <p class="step__desc">Zadanie wykonane, płatność bezpieczna. Oceń wykonawcę i ciesz się wolnym czasem!</p>
+          </article>
+        </div>
+      </div>
+    </section>
+    
+    <!-- For Who Section -->
+    <section id="dla-kogo" class="for-who" aria-labelledby="for-who-heading">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Dla każdego</span>
+          <h2 id="for-who-heading" class="section-title">Szybka Fucha jest dla Ciebie</h2>
+        </div>
+        
+        <div class="audience-cards">
+          <!-- Clients Card -->
+          <article class="audience-card audience-card--client">
+            <div class="audience-card__image">
+              <!-- Placeholder for client image -->
+              <div class="placeholder-image placeholder-image--person" role="img" aria-label="Zdjęcie zleceniodawcy">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+                  <circle cx="40" cy="30" r="16" stroke="currentColor" stroke-width="3"/>
+                  <path d="M16 70C16 55.6406 26.7452 44 40 44C53.2548 44 64 55.6406 64 70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="audience-card__content">
+              <span class="audience-card__tag">Chcę zlecać</span>
+              <h3 class="audience-card__title">Dla zabieganych</h3>
+              <p class="audience-card__desc">Nie masz czasu na wszystko? Zleć drobne zadania i skup się na tym, co naprawdę ważne.</p>
+              <ul class="audience-card__list">
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Zakupy i dostawy
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Sprzątanie i porządki
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Drobne naprawy
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Opieka nad zwierzętami
+                </li>
+              </ul>
+            </div>
+          </article>
+          
+          <!-- Contractors Card -->
+          <article class="audience-card audience-card--contractor">
+            <div class="audience-card__image">
+              <!-- Placeholder for contractor image -->
+              <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Zdjęcie wykonawcy">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+                  <circle cx="40" cy="30" r="16" stroke="currentColor" stroke-width="3"/>
+                  <path d="M16 70C16 55.6406 26.7452 44 40 44C53.2548 44 64 55.6406 64 70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="audience-card__content">
+              <span class="audience-card__tag audience-card__tag--green">Chcę zarabiać</span>
+              <h3 class="audience-card__title">Dla przedsiębiorczych</h3>
+              <p class="audience-card__desc">Masz wolny czas i chęci? Zarabiaj pomagając sąsiadom. Ty decydujesz kiedy i ile.</p>
+              <ul class="audience-card__list">
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Elastyczne godziny pracy
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Zarabiaj nawet 150 zł/h
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Szybkie wypłaty
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Buduj swoją reputację
+                </li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Testimonials -->
+    <section class="testimonials" aria-labelledby="testimonials-heading">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Opinie beta testerów</span>
+          <h2 id="testimonials-heading" class="section-title">Co mówią nasi użytkownicy?</h2>
+        </div>
+        
+        <div class="testimonials-grid">
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
+            <p class="testimonial__text">"Znalazłam pomocnika do zakupów w 10 minut. Teraz mam więcej czasu dla rodziny!"</p>
+            <footer class="testimonial__author">
+              <div class="testimonial__avatar" aria-hidden="true">AK</div>
+              <div>
+                <cite class="testimonial__name">Anna K.</cite>
+                <span class="testimonial__role">Zleceniodawca, Warszawa</span>
+              </div>
+            </footer>
+          </blockquote>
+          
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
+            <p class="testimonial__text">"Zarabiam dodatkowe 2000 zł miesięcznie w wolnym czasie. Świetna aplikacja!"</p>
+            <footer class="testimonial__author">
+              <div class="testimonial__avatar" aria-hidden="true">MN</div>
+              <div>
+                <cite class="testimonial__name">Michał N.</cite>
+                <span class="testimonial__role">Wykonawca, Kraków</span>
+              </div>
+            </footer>
+          </blockquote>
+          
+          <blockquote class="testimonial">
+            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
+            <p class="testimonial__text">"Profesjonalna obsługa, bezpieczne płatności. Polecam każdemu!"</p>
+            <footer class="testimonial__author">
+              <div class="testimonial__avatar" aria-hidden="true">KW</div>
+              <div>
+                <cite class="testimonial__name">Kasia W.</cite>
+                <span class="testimonial__role">Zleceniodawca, Wrocław</span>
+              </div>
+            </footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Newsletter Signup Form -->
+    <section id="zapisz-sie" class="signup" aria-labelledby="signup-heading">
+      <div class="container">
+        <div class="signup-wrapper">
+          <div class="signup__content">
+            <span class="section-tag section-tag--light">Bądź pierwszy!</span>
+            <h2 id="signup-heading" class="signup__title">Zapisz się do newslettera</h2>
+            <p class="signup__subtitle">Otrzymaj powiadomienie o starcie w Twoim mieście i ekskluzywne korzyści dla pierwszych użytkowników.</p>
+            
+            <ul class="signup__benefits">
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Darmowe pierwsze zlecenie
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                0% prowizji przez pierwszy miesiąc
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Status VIP Early Adopter
+              </li>
+            </ul>
+          </div>
+          
+          <form id="newsletter-form" class="signup__form" novalidate>
+            <div class="form-group">
+              <label for="name" class="form-label">Imię i nazwisko</label>
+              <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                class="form-input" 
+                placeholder="Jan Kowalski"
+                required
+                autocomplete="name"
+                aria-describedby="name-error"
+              >
+              <span id="name-error" class="form-error" role="alert"></span>
+            </div>
+            
+            <div class="form-group">
+              <label for="email" class="form-label">Adres e-mail</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="jan@email.com"
+                required
+                autocomplete="email"
+                aria-describedby="email-error"
+              >
+              <span id="email-error" class="form-error" role="alert"></span>
+            </div>
+            
+            <fieldset class="form-group">
+              <legend class="form-label">Jestem zainteresowany/a jako:</legend>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input 
+                    type="radio" 
+                    name="userType" 
+                    value="client"
+                    required
+                  >
+                  <span class="radio-custom"></span>
+                  <span class="radio-label">
+                    <strong>Chcę zlecać</strong>
+                    <small>Szukam pomocników do zadań</small>
+                  </span>
+                </label>
+                <label class="radio-option">
+                  <input 
+                    type="radio" 
+                    name="userType" 
+                    value="contractor"
+                  >
+                  <span class="radio-custom"></span>
+                  <span class="radio-label">
+                    <strong>Chcę zarabiać</strong>
+                    <small>Chcę wykonywać zlecenia</small>
+                  </span>
+                </label>
+              </div>
+              <span id="type-error" class="form-error" role="alert"></span>
+            </fieldset>
+            
+            <div class="form-group form-group--checkbox">
+              <label class="checkbox-option">
+                <input 
+                  type="checkbox" 
+                  name="consent" 
+                  required
+                  aria-describedby="consent-error"
+                >
+                <span class="checkbox-custom"></span>
+                <span class="checkbox-label">
+                  Wyrażam zgodę na otrzymywanie informacji marketingowych od Szybka Fucha
+                </span>
+              </label>
+              <span id="consent-error" class="form-error" role="alert"></span>
+            </div>
+            
+            <button type="submit" class="btn btn--primary btn--full" id="submit-btn">
+              <span class="btn__text">Zapisz się do newslettera</span>
+              <span class="btn__loader" aria-hidden="true"></span>
+            </button>
+            
+            <p class="form-privacy">
+              Twoje dane są bezpieczne. Przeczytaj naszą 
+              <a href="#privacy">Politykę Prywatności</a>.
+            </p>
+          </form>
+          
+          <!-- Success Message -->
+          <div id="success-message" class="signup__success" hidden>
+            <div class="success-icon">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                <circle cx="32" cy="32" r="32" fill="#10B981"/>
+                <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h3 class="success-title">Dziękujemy za zapisanie się!</h3>
+            <p class="success-text">Sprawdź swoją skrzynkę e-mail. Powiadomimy Cię, gdy Szybka Fucha będzie dostępna w Twoim mieście.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- FAQ Section -->
+    <section class="faq" aria-labelledby="faq-heading">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Masz pytania?</span>
+          <h2 id="faq-heading" class="section-title">Najczęściej zadawane pytania</h2>
+        </div>
+        
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>Czym dokładnie jest Szybka Fucha?</span>
+              <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <p>Szybka Fucha to aplikacja mobilna, która łączy osoby potrzebujące pomocy przy drobnych zadaniach z zweryfikowanymi lokalnymi wykonawcami. Możesz zlecić zakupy, sprzątanie, drobne naprawy, opiekę nad zwierzętami i wiele więcej.</p>
+            </div>
+          </details>
+          
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>Jak mogę zarabiać jako wykonawca?</span>
+              <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <p>Po rejestracji jako wykonawca przejdziesz krótką weryfikację tożsamości. Następnie możesz przeglądać dostępne zlecenia w swojej okolicy, akceptować te które Ci odpowiadają i ustalać własne stawki. Wypłaty otrzymujesz szybko i bezpiecznie.</p>
+            </div>
+          </details>
+          
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>Czy korzystanie z aplikacji jest bezpieczne?</span>
+              <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <p>Bezpieczeństwo jest naszym priorytetem. Wszyscy wykonawcy przechodzą weryfikację tożsamości (KYC). Płatności są zabezpieczone przez Stripe. Dodatkowo masz możliwość oceny po każdym zleceniu, a nasz zespół wsparcia jest dostępny 24/7.</p>
+            </div>
+          </details>
+          
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>W jakich miastach działa Szybka Fucha?</span>
+              <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <p>Startujemy wkrótce w największych miastach Polski: Warszawa, Kraków, Wrocław, Poznań, Gdańsk i Łódź. Zapisz się do newslettera, aby być pierwszym, który dowie się o starcie w Twoim mieście!</p>
+            </div>
+          </details>
+          
+          <details class="faq-item">
+            <summary class="faq-question">
+              <span>Ile kosztuje korzystanie z platformy?</span>
+              <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </summary>
+            <div class="faq-answer">
+              <p>Rejestracja jest całkowicie darmowa. Dla zleceniodawców doliczamy niewielką opłatę serwisową do każdego zlecenia. Wykonawcy płacą prowizję od zrealizowanych zleceń. Zapisz się teraz i skorzystaj z 0% prowizji przez pierwszy miesiąc!</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Final CTA -->
+    <section class="final-cta" aria-labelledby="final-cta-heading">
+      <div class="container">
+        <div class="final-cta__content">
+          <h2 id="final-cta-heading" class="final-cta__title">Gotowy na Szybką Fuchę?</h2>
+          <p class="final-cta__text">Dołącz do tysięcy osób, które już zapisały się na listę oczekujących.</p>
+          <a href="#zapisz-sie" class="btn btn--primary btn--large">
+            Zapisz się teraz
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__main">
+        <div class="footer__brand">
+          <div class="footer__logo">
+            <svg class="logo-icon" width="32" height="32" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <circle cx="20" cy="20" r="20" fill="#E94560"/>
+              <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Szybka Fucha</span>
+          </div>
+          <p class="footer__tagline">Twój lokalny pomocnik na wyciągnięcie ręki.</p>
+          <div class="footer__social">
+            <a href="#" class="social-link" aria-label="Facebook">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 2H15C13.6739 2 12.4021 2.52678 11.4645 3.46447C10.5268 4.40215 10 5.67392 10 7V10H7V14H10V22H14V14H17L18 10H14V7C14 6.73478 14.1054 6.48043 14.2929 6.29289C14.4804 6.10536 14.7348 6 15 6H18V2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" aria-label="Instagram">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                <circle cx="18" cy="6" r="1" fill="currentColor"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" aria-label="LinkedIn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M16 8C17.5913 8 19.1174 8.63214 20.2426 9.75736C21.3679 10.8826 22 12.4087 22 14V21H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12C15.4696 12 14.9609 12.2107 14.5858 12.5858C14.2107 12.9609 14 13.4696 14 14V21H10V14C10 12.4087 10.6321 10.8826 11.7574 9.75736C12.8826 8.63214 14.4087 8 16 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="2" y="9" width="4" height="12" stroke="currentColor" stroke-width="2"/>
+                <circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </a>
+            <a href="#" class="social-link" aria-label="TikTok">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M9 12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V3H18C18 4.65685 19.3431 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+        
+        <nav class="footer__nav" aria-label="Stopka">
+          <div class="footer__col">
+            <h4>Produkt</h4>
+            <ul>
+              <li><a href="#jak-dziala">Jak to działa</a></li>
+              <li><a href="#dla-kogo">Dla kogo</a></li>
+              <li><a href="#zapisz-sie">Zapisz się</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Firma</h4>
+            <ul>
+              <li><a href="#about">O nas</a></li>
+              <li><a href="#careers">Kariera</a></li>
+              <li><a href="#contact">Kontakt</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Prawne</h4>
+            <ul>
+              <li><a href="#privacy">Polityka prywatności</a></li>
+              <li><a href="#terms">Regulamin</a></li>
+              <li><a href="#cookies">Cookies</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      
+      <div class="footer__bottom">
+        <p>&copy; 2026 Szybka Fucha. Wszelkie prawa zastrzeżone.</p>
+        <p>Made with ❤️ in Poland</p>
+      </div>
+    </div>
+  </footer>
+  
+  <script src="script.js"></script>
+</body>
+</html>
