@@ -1,0 +1,56 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A1A2E"/>
+      <stop offset="100%" style="stop-color:#16213E"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#E94560"/>
+      <stop offset="100%" style="stop-color:#d13a54"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="100" cy="530" r="200" fill="#E94560" opacity="0.1"/>
+  <circle cx="1100" cy="100" r="150" fill="#E94560" opacity="0.1"/>
+  
+  <!-- Logo area -->
+  <g transform="translate(80, 80)">
+    <!-- Lightning icon -->
+    <rect width="60" height="60" rx="12" fill="url(#accentGrad)"/>
+    <path d="M38 15L20 35H32L27 45L45 25H33L38 15Z" fill="white"/>
+    
+    <!-- Brand name -->
+    <text x="80" y="42" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">Szybka Fucha</text>
+  </g>
+  
+  <!-- Main headline -->
+  <text x="80" y="280" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">Zleć lub Zarabiaj.</text>
+  <text x="80" y="360" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">Lokalnie. Natychmiast.</text>
+  
+  <!-- Subheadline -->
+  <text x="80" y="430" font-family="Arial, sans-serif" font-size="28" fill="#9CA3AF">Połącz się z lokalnymi pomocnikami lub zacznij</text>
+  <text x="80" y="468" font-family="Arial, sans-serif" font-size="28" fill="#9CA3AF">zarabiać wykonując drobne zlecenia.</text>
+  
+  <!-- CTA Badge -->
+  <rect x="80" y="510" width="280" height="50" rx="25" fill="url(#accentGrad)"/>
+  <text x="220" y="543" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">Zapisz się teraz!</text>
+  
+  <!-- Phone mockup placeholder -->
+  <rect x="850" y="150" width="280" height="400" rx="30" fill="#2D3748" stroke="#4A5568" stroke-width="3"/>
+  <rect x="870" y="170" width="240" height="340" rx="5" fill="#1A1A2E"/>
+  
+  <!-- App preview in phone -->
+  <text x="990" y="260" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle">⚡ Szybka Fucha</text>
+  <rect x="890" y="290" width="200" height="40" rx="8" fill="#E94560"/>
+  <text x="990" y="317" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">Znajdź pomocnika</text>
+  <rect x="890" y="350" width="200" height="40" rx="8" fill="#10B981"/>
+  <text x="990" y="377" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">Zacznij zarabiać</text>
+  
+  <!-- Website URL -->
+  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="18" fill="#9CA3AF" text-anchor="end">szybkafucha.app</text>
+</svg>

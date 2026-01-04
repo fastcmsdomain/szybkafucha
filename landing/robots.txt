@@ -1,0 +1,31 @@
+# Robots.txt for szybkafucha.app
+# Last updated: 2026-01-04
+
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://szybkafucha.app/sitemap.xml
+
+# Crawl delay (optional - be nice to servers)
+Crawl-delay: 1
+
+# Block access to non-public directories (if any)
+Disallow: /api/
+Disallow: /admin/
+
+# Allow important files
+Allow: /assets/
+Allow: /*.css
+Allow: /*.js
+
+# Special rules for Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Special rules for Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1

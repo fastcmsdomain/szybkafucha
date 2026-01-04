@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Polityka Cookies serwisu Szybka Fucha - informacje o wykorzystywaniu plików cookies.">
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#E94560">
+  
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <title>Polityka Cookies - Szybka Fucha</title>
+  
+  <style>
+    :root {
+      --primary: #E94560;
+      --primary-dark: #D13A54;
+      --secondary: #1A1A2E;
+      --gray-900: #111827;
+      --gray-600: #4B5563;
+      --gray-400: #9CA3AF;
+      --gray-100: #F3F4F6;
+      --white: #FFFFFF;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.7;
+      color: var(--gray-900);
+      background: var(--gray-100);
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    
+    header {
+      background: var(--secondary);
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+    }
+    
+    .header-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    
+    .back-link {
+      color: var(--gray-400);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: var(--white);
+    }
+    
+    main {
+      background: var(--white);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: var(--secondary);
+    }
+    
+    .last-updated {
+      color: var(--gray-600);
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    
+    h2 {
+      font-size: 1.25rem;
+      margin: 2rem 0 1rem;
+      color: var(--secondary);
+      padding-top: 1rem;
+      border-top: 1px solid var(--gray-100);
+    }
+    
+    h2:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+    
+    h3 {
+      font-size: 1.1rem;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--gray-900);
+    }
+    
+    p {
+      margin-bottom: 1rem;
+      color: var(--gray-600);
+    }
+    
+    ul, ol {
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+      color: var(--gray-600);
+    }
+    
+    li {
+      margin-bottom: 0.5rem;
+    }
+    
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    .highlight-box {
+      background: var(--gray-100);
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.5rem;
+      margin: 1.5rem 0;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+    
+    .highlight-box p:last-child {
+      margin-bottom: 0;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+    
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    
+    th {
+      background: var(--gray-100);
+      font-weight: 600;
+      color: var(--secondary);
+    }
+    
+    td {
+      color: var(--gray-600);
+    }
+    
+    .cookie-type {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .cookie-type--essential {
+      background: #DCFCE7;
+      color: #166534;
+    }
+    
+    .cookie-type--analytics {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+    
+    .cookie-type--marketing {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      color: var(--gray-600);
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 640px) {
+      main {
+        padding: 1.5rem;
+        border-radius: 0;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      h2 {
+        font-size: 1.15rem;
+      }
+      
+      table {
+        font-size: 0.8rem;
+      }
+      
+      th, td {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <span class="logo-icon">⚡</span>
+        <span>Szybka Fucha</span>
+      </a>
+      <a href="index.html" class="back-link">
+        ← Powrót do strony głównej
+      </a>
+    </div>
+  </header>
+  
+  <div class="container">
+    <main>
+      <h1>Polityka Cookies</h1>
+      <p class="last-updated">Ostatnia aktualizacja: 4 stycznia 2026</p>
+      
+      <div class="highlight-box">
+        <p><strong>Czym są cookies?</strong> Pliki cookies (ciasteczka) to małe pliki tekstowe zapisywane na Twoim urządzeniu podczas odwiedzania stron internetowych. Służą do zapamiętywania preferencji i poprawy funkcjonowania serwisu.</p>
+      </div>
+      
+      <h2>1. Jak Wykorzystujemy Cookies</h2>
+      <p>Nasza strona wykorzystuje pliki cookies w następujących celach:</p>
+      <ul>
+        <li><strong>Niezbędne do działania strony</strong> – zapewniają podstawowe funkcje</li>
+        <li><strong>Analityczne</strong> – pomagają zrozumieć, jak użytkownicy korzystają z serwisu</li>
+        <li><strong>Funkcjonalne</strong> – zapamiętują Twoje preferencje</li>
+      </ul>
+      
+      <h2>2. Rodzaje Cookies</h2>
+      
+      <h3>Cookies Niezbędne</h3>
+      <p>Te pliki są niezbędne do prawidłowego działania strony. Bez nich niektóre funkcje mogą nie działać poprawnie.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Nazwa</th>
+            <th>Cel</th>
+            <th>Czas życia</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>cookie_consent</code></td>
+            <td>Zapamiętuje Twoje preferencje dotyczące cookies</td>
+            <td>1 rok</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h3>Cookies Analityczne</h3>
+      <p>Pomagają nam zrozumieć, jak użytkownicy korzystają z serwisu, co pozwala na jego ulepszanie.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Nazwa</th>
+            <th>Dostawca</th>
+            <th>Cel</th>
+            <th>Czas życia</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>_ga</code></td>
+            <td>Google Analytics</td>
+            <td>Rozróżnianie użytkowników</td>
+            <td>2 lata</td>
+          </tr>
+          <tr>
+            <td><code>_ga_*</code></td>
+            <td>Google Analytics 4</td>
+            <td>Utrzymywanie stanu sesji</td>
+            <td>2 lata</td>
+          </tr>
+          <tr>
+            <td><code>_gid</code></td>
+            <td>Google Analytics</td>
+            <td>Rozróżnianie użytkowników</td>
+            <td>24 godziny</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <h2>3. Zarządzanie Cookies</h2>
+      <p>Możesz kontrolować i zarządzać plikami cookies na kilka sposobów:</p>
+      
+      <h3>Ustawienia przeglądarki</h3>
+      <p>Większość przeglądarek pozwala na:</p>
+      <ul>
+        <li>Przeglądanie zapisanych cookies</li>
+        <li>Usuwanie wszystkich lub wybranych cookies</li>
+        <li>Blokowanie cookies z wybranych stron</li>
+        <li>Blokowanie wszystkich cookies</li>
+        <li>Blokowanie cookies firm trzecich</li>
+      </ul>
+      
+      <h3>Instrukcje dla popularnych przeglądarek:</h3>
+      <ul>
+        <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener">Google Chrome</a></li>
+        <li><a href="https://support.mozilla.org/pl/kb/ciasteczka" target="_blank" rel="noopener">Mozilla Firefox</a></li>
+        <li><a href="https://support.apple.com/pl-pl/guide/safari/sfri11471/mac" target="_blank" rel="noopener">Safari</a></li>
+        <li><a href="https://support.microsoft.com/pl-pl/microsoft-edge/usuwanie-plik%C3%B3w-cookie-w-przegl%C4%85darce-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener">Microsoft Edge</a></li>
+      </ul>
+      
+      <div class="highlight-box">
+        <p><strong>Uwaga:</strong> Wyłączenie cookies może wpłynąć na funkcjonowanie niektórych elementów strony.</p>
+      </div>
+      
+      <h2>4. Cookies Firm Trzecich</h2>
+      <p>Na naszej stronie mogą być wykorzystywane cookies pochodzące od następujących firm trzecich:</p>
+      <ul>
+        <li><strong>Google Analytics</strong> – analiza ruchu na stronie (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Polityka Prywatności Google</a>)</li>
+        <li><strong>Google Fonts</strong> – ładowanie czcionek</li>
+      </ul>
+      
+      <h2>5. Zgoda na Cookies</h2>
+      <p>Przy pierwszej wizycie na stronie możesz wyrazić zgodę na używanie cookies lub dostosować swoje preferencje. Twoja zgoda jest dobrowolna i możesz ją zmienić w każdej chwili.</p>
+      <p>Podstawowe (niezbędne) cookies są używane bez względu na wyrażoną zgodę, gdyż są konieczne do prawidłowego działania serwisu.</p>
+      
+      <h2>6. Aktualizacje Polityki</h2>
+      <p>Zastrzegamy sobie prawo do aktualizacji niniejszej Polityki Cookies. O istotnych zmianach poinformujemy poprzez stosowne ogłoszenie na stronie.</p>
+      
+      <h2>7. Kontakt</h2>
+      <p>W przypadku pytań dotyczących cookies prosimy o kontakt:</p>
+      <p>E-mail: <a href="mailto:kontakt@szybkafucha.app">kontakt@szybkafucha.app</a></p>
+      
+      <h2>8. Więcej Informacji</h2>
+      <p>Więcej informacji o plikach cookies można znaleźć na stronie <a href="https://wszystkoociasteczkach.pl/" target="_blank" rel="noopener">wszystkoociasteczkach.pl</a>.</p>
+      <p>Informacje o ochronie danych osobowych znajdują się w naszej <a href="privacy.html">Polityce Prywatności</a>.</p>
+    </main>
+    
+    <footer>
+      <p>© 2026 Szybka Fucha. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+</body>
+</html>
