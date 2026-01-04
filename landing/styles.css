@@ -508,6 +508,12 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: underline;
 }
 
+.form-privacy--hero {
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-2);
+  padding: 0 var(--space-2);
+}
+
 /* Placeholder Images */
 .placeholder-image {
   display: flex;
@@ -547,7 +553,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .placeholder-image--person {
   width: 100%;
-  height: 200px;
   background: linear-gradient(135deg, #FFE5EA 0%, #FFD6DD 100%);
 }
 
@@ -1039,7 +1044,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .audience-card__image {
-  height: 200px;
+  width: 100%;
 }
 
 .audience-card__content {
@@ -1464,6 +1469,12 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-md);
 }
 
+.form-input--medium {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+}
+
 .radio-group--compact {
   gap: var(--space-2);
 }
@@ -1506,6 +1517,11 @@ h1, h2, h3, h4, h5, h6 {
 .btn--small {
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-size-sm);
+}
+
+.btn--medium {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-size-base);
 }
 
 .hero-phone-form__success {

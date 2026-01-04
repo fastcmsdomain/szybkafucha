@@ -20,7 +20,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://szybkafucha.pl/">
-  <meta name="twitter:title" content="Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.">
+  <meta name="twitter:title" content="Szybka Fucha - Zleć lub Zarasocial-proofbiaj. Lokalnie. Natychmiast.">
   <meta name="twitter:description" content="Połącz się z lokalnymi pomocnikami lub zacznij zarabiać wykonując drobne zlecenia.">
   <meta name="twitter:image" content="https://szybkafucha.pl/assets/twitter-image.jpg">
   
@@ -28,8 +28,8 @@
   <link rel="canonical" href="https://szybkafucha.pl/">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/favicon.ico">
   
   <!-- Preconnect for fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -200,7 +200,7 @@
                     type="text" 
                     id="hero-name" 
                     name="name" 
-                    class="form-input form-input--small" 
+                    class="form-input form-input--medium" 
                     placeholder="Jan Kowalski"
                     required
                     autocomplete="name"
@@ -215,7 +215,7 @@
                     type="email" 
                     id="hero-email" 
                     name="email" 
-                    class="form-input form-input--small" 
+                    class="form-input form-input--medium" 
                     placeholder="jan@email.com"
                     required
                     autocomplete="email"
@@ -250,14 +250,19 @@
                   <span id="hero-consent-error" class="form-error" role="alert"></span>
                 </div>
                 
-                <button type="submit" class="btn btn--primary btn--full btn--small" id="hero-submit-btn">
+                <button type="submit" class="btn btn--primary btn--full btn--medium" id="hero-submit-btn">
                   <span class="btn__text">Zapisz się</span>
                   <span class="btn__loader" aria-hidden="true"></span>
                 </button>
+                
+                <p class="form-privacy form-privacy--hero">
+                  Twoje dane są bezpieczne. Przeczytaj naszą 
+                  <a href="#privacy">Politykę Prywatności</a>.
+                </p>
               </form>
               
               <!-- Hero Success Message -->
-              <div id="hero-success-message" class="hero-phone-form__success" hidden>
+              <div id="hero-success-message" class="hero-phone-form__success" style="display: none;">
                 <div class="success-icon">
                   <svg width="48" height="48" viewBox="0 0 64 64" fill="none" aria-hidden="true">
                     <circle cx="32" cy="32" r="32" fill="#10B981"/>
@@ -275,7 +280,7 @@
     </section>
     
     <!-- Social Proof -->
-    <section class="social-proof" aria-label="Zaufanie użytkowników">
+    <!--/* <section class="social-proof" aria-label="Zaufanie użytkowników">
       <div class="container">
         <p class="social-proof__text">Zaufali nam użytkownicy z całej Polski</p>
         <div class="social-proof__logos">
@@ -287,7 +292,7 @@
           <div class="logo-placeholder">Łódź</div>
         </div>
       </div>
-    </section>
+    </section> */-->
     
     <!-- Our App Section -->
     <section id="nasza-aplikacja" class="our-app" aria-labelledby="our-app-heading">
@@ -428,10 +433,7 @@
             <div class="audience-card__image">
               <!-- Placeholder for client image -->
               <div class="placeholder-image placeholder-image--person" role="img" aria-label="Zdjęcie zleceniodawcy">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-                  <circle cx="40" cy="30" r="16" stroke="currentColor" stroke-width="3"/>
-                  <path d="M16 70C16 55.6406 26.7452 44 40 44C53.2548 44 64 55.6406 64 70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                </svg>
+              <img src="assets/SzybkaFuchaZleceniodawca.png" alt="Szybka Fucha" class="audience-card__image">
               </div>
             </div>
             <div class="audience-card__content">
@@ -472,10 +474,7 @@
             <div class="audience-card__image">
               <!-- Placeholder for contractor image -->
               <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Zdjęcie wykonawcy">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-                  <circle cx="40" cy="30" r="16" stroke="currentColor" stroke-width="3"/>
-                  <path d="M16 70C16 55.6406 26.7452 44 40 44C53.2548 44 64 55.6406 64 70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                </svg>
+              <img src="assets/michal-urzywa-szybka-fucha.png" alt="Szybka Fucha" class="audience-card__image">
               </div>
             </div>
             <div class="audience-card__content">

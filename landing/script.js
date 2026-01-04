@@ -12,10 +12,29 @@
 // ========================================
 // Configuration
 // ========================================
+// Auto-detect API endpoint based on environment
+const getApiEndpoint = () => {
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // Development (localhost)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3000/api/v1/newsletter/subscribe';
+  }
+  
+  // Production - use same domain with /api path, or configure custom API domain
+  // Option 1: Same domain (recommended for simple setup)
+  // return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
+  
+  // Option 2: Custom API subdomain (recommended for production)
+  // Replace 'szybkafucha.pl' with your actual domain
+  const apiDomain = hostname.replace('www.', 'api.'); // www.szybkafucha.pl -> api.szybkafucha.pl
+  return `${protocol}//${apiDomain}/api/v1/newsletter/subscribe`;
+};
+
 const CONFIG = {
-  // API endpoint for newsletter signup
-  // Change to your backend URL in production (e.g., 'https://api.szybkafucha.pl/api/v1/newsletter/subscribe')
-  apiEndpoint: 'http://localhost:3000/api/v1/newsletter/subscribe',
+  // API endpoint for newsletter signup (auto-detected)
+  apiEndpoint: getApiEndpoint(),
   
   // Validation patterns
   patterns: {
@@ -550,7 +569,7 @@ async function handleHeroFormSubmit(event) {
     // Show success message
     form.style.display = 'none';
     if (successMessage) {
-      successMessage.hidden = false;
+      successMessage.style.display = 'flex';
     }
     
     // Track conversion
