@@ -1602,22 +1602,25 @@ flex-direction: column;
 }
 
 .our-app__features li {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
   padding: var(--space-4);
-  background: var(--color-white);
+  background: transparent;
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: visible;
   transition: all var(--transition-base);
 }
 
 .our-app__features li:hover {
-  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
 .feature-icon {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   width: 48px;
   height: 48px;
@@ -1630,6 +1633,8 @@ flex-direction: column;
 }
 
 .feature-text {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
 }
@@ -1645,10 +1650,41 @@ flex-direction: column;
   color: var(--color-gray-500);
 }
 
-.our-app__visual {
+.our-app__visual-container {
   position: relative;
+  flex: 1;
+  min-height: 700px;
+}
+
+.our-app__visual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+  pointer-events: none;
+}
+
+.our-app__visual--active {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Feature item clickable state */
+.our-app__feature-item {
+  cursor: pointer;
+}
+
+.our-app__feature-item--active {
+  transform: scale(1.02);
 }
 
 .phone-mockup--preview {
@@ -1666,10 +1702,12 @@ flex-direction: column;
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  display: none;
 }
 
 /* Animated rainbow border using pseudo-element */
-.our-app__visual .floating-card::before {
+.our-app__visual .floating-card::before,
+.our-app__features li::before {
   content: '';
   position: absolute;
   inset: -1px;
@@ -1689,12 +1727,13 @@ flex-direction: column;
   z-index: -2;
 }
 
-.our-app__visual .floating-card::after {
+.our-app__visual .floating-card::after,
+.our-app__features li::after {
   content: '';
   position: absolute;
-  inset: 2px;
+  inset: 1px;
   background: var(--color-white);
-  border-radius: calc(var(--radius-xl) - 2px);
+  border-radius: calc(var(--radius-xl) - 1px);
   z-index: -1;
 }
 
@@ -1726,7 +1765,7 @@ flex-direction: column;
 }
 
 .our-app__visual .floating-card--1 {
-  top: 20%;
+  top: 25%;
   left: 0;
   animation-delay: 0s;
 }
@@ -1736,7 +1775,7 @@ flex-direction: column;
 }
 
 .our-app__visual .floating-card--2 {
-  bottom: 45%;
+  bottom: 35%;
   right: 0;
   animation-delay: 1.5s;
 }
@@ -1746,7 +1785,7 @@ flex-direction: column;
 }
 
 .our-app__visual .floating-card--3 {
-  bottom: 10%;
+  bottom: 15%;
   left: 50%;
   transform: translateX(-50%);
   animation-delay: 2.5s;
@@ -1754,6 +1793,335 @@ flex-direction: column;
 
 .our-app__visual .floating-card--3::before {
   animation-delay: 2.5s;
+}
+
+/* ========================================
+   Feature 2: Payment Screen Styles
+   ======================================== */
+.app-preview__content--payment {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.app-preview__payment-card {
+  border: 2px solid #10B981;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-gray-900);
+}
+
+.app-preview__payment-icon {
+  font-size: 32px;
+  margin-bottom: var(--space-2);
+}
+
+.app-preview__payment-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.app-preview__payment-desc {
+  font-size: var(--font-size-xs);
+  opacity: 0.9;
+}
+
+.app-preview__payment-summary {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.app-preview__payment-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.app-preview__payment-row:last-child {
+  border-bottom: none;
+}
+
+.app-preview__payment-row--total {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-900);
+}
+
+.app-preview__payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.app-preview__payment-method {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.app-preview__payment-method--active {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.05);
+}
+
+.app-preview__btn--full {
+  width: 100%;
+  padding: var(--space-3);
+}
+
+.app-preview__payment-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+/* ========================================
+   Feature 3: Profile/Ratings Screen Styles
+   ======================================== */
+.app-preview__content--profile {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.app-preview__profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-preview__profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.app-preview__profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.app-preview__profile-name {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.app-preview__profile-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-600);
+}
+
+.app-preview__stars {
+  color: #F59E0B;
+}
+
+.app-preview__profile-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.app-preview__profile-stats {
+  display: flex;
+  justify-content: space-around;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.app-preview__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.app-preview__stat-value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.app-preview__stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+.app-preview__reviews {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.app-preview__reviews-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.app-preview__review {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.app-preview__review-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.app-preview__review-stars {
+  color: #F59E0B;
+  font-size: var(--font-size-xs);
+}
+
+.app-preview__review-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+}
+
+.app-preview__review-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-700);
+  font-style: italic;
+  margin-bottom: var(--space-1);
+}
+
+.app-preview__review-author {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+/* ========================================
+   Feature 4: Chat Screen Styles
+   ======================================== */
+.app-preview__header--chat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-preview__chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.app-preview__chat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-preview__chat-info .app-preview__title {
+  font-size: var(--font-size-sm);
+  margin-bottom: 0;
+}
+
+.app-preview__chat-status {
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+}
+
+.app-preview__content--chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-preview__messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+.app-preview__message {
+  max-width: 80%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+}
+
+.app-preview__message--sent {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: white;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.app-preview__message--received {
+  align-self: flex-start;
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.app-preview__message p {
+  margin-bottom: var(--space-1);
+}
+
+.app-preview__message-time {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.app-preview__chat-input {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-gray-200);
+  background: white;
+}
+
+.app-preview__chat-field {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  outline: none;
+}
+
+.app-preview__chat-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ========================================
@@ -1888,17 +2256,17 @@ flex-direction: column;
   
   /* Floating cards moved to our-app section */
   .our-app__visual .floating-card--1 {
-    left: -85px;
+    left: -55px;
   }
   
   .our-app__visual .floating-card--2 {
-    right: -95px;
+    right: -55px;
   }
   
   .our-app__visual .floating-card--3 {
     left: auto;
-    left: -85px;
-    bottom: 5%;
+    left: -45px;
+    bottom: 15%;
     transform: none;
   }
   
@@ -1986,6 +2354,10 @@ flex-direction: column;
   .signup__title,
   .final-cta__title {
     font-size: var(--font-size-4xl);
+  }
+
+  .our-app__visual .floating-card {
+    display: flex;
   }
 }
 

@@ -304,28 +304,28 @@
             <p class="section-subtitle">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności. Aplikacja, która oszczędza Twój czas.</p>
             
             <ul class="our-app__features">
-              <li>
+              <li class="our-app__feature-item our-app__feature-item--active" data-feature="1">
                 <div class="feature-icon">📱</div>
                 <div class="feature-text">
                   <strong>Prosta obsługa</strong>
                   <span>Zlecenie w mniej niż minutę</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="2">
                 <div class="feature-icon">🔒</div>
                 <div class="feature-text">
                   <strong>Bezpieczne płatności</strong>
                   <span>Stripe i escrow dla Twojej ochrony</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="3">
                 <div class="feature-icon">⭐</div>
                 <div class="feature-text">
                   <strong>System ocen</strong>
                   <span>Wybieraj sprawdzonych wykonawców</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="4">
                 <div class="feature-icon">💬</div>
                 <div class="feature-text">
                   <strong>Chat w aplikacji</strong>
@@ -334,210 +334,560 @@
               </li>
             </ul>
           </div>
-          
-          <div class="our-app__visual">
-            <div class="phone-mockup phone-mockup--preview">
-              <div class="phone-mockup__screen">
-                <!-- App preview - Task List View -->
-                <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Lista zleceń">
-                  <!-- App Status Bar -->
-                  <div class="app-preview__status-bar">
-                    <span>9:41</span>
-                    <div class="app-preview__status-icons">
-                      <span>📶</span>
-                      <span>🔋</span>
+          <div class="our-app__visual-container">
+          <!-- Feature 1: Prosta obsługa - Lista zleceń -->
+          <div class="our-app__visual our-app__visual--active" data-feature="1">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <!-- App preview - Task List View -->
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Lista zleceń">
+                <!-- App Status Bar -->
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <!-- App Header -->
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">📋 Dostępne zlecenia</h3>
+                  <span class="app-preview__badge app-preview__badge--count">3 nowe</span>
+                </div>
+                
+                <!-- Filter Bar -->
+                <div class="app-preview__filter-bar">
+                  <div class="app-preview__filter-scroll">
+                    <button class="app-preview__filter-btn">🧹 Sprzątanie</button>
+                    <button class="app-preview__filter-btn">🌿 Ogród</button>
+                    <button class="app-preview__filter-btn">🔧 Montaż</button>
+                    <button class="app-preview__filter-btn">🛒 Zakupy</button>
+                    <button class="app-preview__filter-btn">📦 Paczki</button>
+                    <button class="app-preview__filter-btn">⏰ Kolejki</button>
+                    <button class="app-preview__filter-btn">🏠 Naprawy</button>
+                  </div>
+                </div>
+                
+                <!-- Tasks List -->
+                <div class="app-preview__content app-preview__content--list">
+                  
+                  <!-- Task 1: Sprzątanie -->
+                  <div class="app-preview__unified-card">
+                    <div class="app-preview__card-header">
+                      <span class="app-preview__category-tag">🧹 Sprzątanie</span>
+                      <div class="app-preview__price-badge">200 zł</div>
                     </div>
-                  </div>
-                  
-                  <!-- App Header -->
-                  <div class="app-preview__header">
-                    <h3 class="app-preview__title">📋 Dostępne zlecenia</h3>
-                    <span class="app-preview__badge app-preview__badge--count">3 nowe</span>
-                  </div>
-                  
-                  <!-- Filter Bar -->
-                  <div class="app-preview__filter-bar">
-                    <div class="app-preview__filter-scroll">
-                      <button class="app-preview__filter-btn">🧹 Sprzątanie</button>
-                      <button class="app-preview__filter-btn">🌿 Ogród</button>
-                      <button class="app-preview__filter-btn">🔧 Montaż</button>
-                      <button class="app-preview__filter-btn">🛒 Zakupy</button>
-                      <button class="app-preview__filter-btn">📦 Paczki</button>
-                      <button class="app-preview__filter-btn">⏰ Kolejki</button>
-                      <button class="app-preview__filter-btn">🏠 Naprawy</button>
-                    </div>
-                  </div>
-                  
-                  <!-- Tasks List -->
-                  <div class="app-preview__content app-preview__content--list">
                     
-                    <!-- Task 1: Sprzątanie -->
-                    <div class="app-preview__unified-card">
-                      <div class="app-preview__card-header">
-                        <span class="app-preview__category-tag">🧹 Sprzątanie</span>
-                        <div class="app-preview__price-badge">200 zł</div>
-                      </div>
-                      
-                      <h4 class="app-preview__task-title">Sprzątanie mieszkania 50m²</h4>
-                      <p class="app-preview__task-desc">Odkurzanie, mycie podłóg, łazienka i kuchnia.</p>
-                      
-                      <div class="app-preview__task-meta">
-                        <div class="app-preview__meta-row">
-                          <div class="app-preview__meta-item">
-                            <span class="app-preview__meta-icon">📍</span>
-                            <span>Mokotów, 1.2 km</span>
-                          </div>
-                          <button class="app-preview__map-btn">🗺️ Mapa</button>
-                        </div>
+                    <h4 class="app-preview__task-title">Sprzątanie mieszkania 50m²</h4>
+                    <p class="app-preview__task-desc">Odkurzanie, mycie podłóg, łazienka i kuchnia.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
                         <div class="app-preview__meta-item">
-                          <span class="app-preview__meta-icon">⏰</span>
-                          <span>Dziś, 14:00</span>
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Mokotów, 1.2 km</span>
                         </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
                       </div>
-                      
-                      <div class="app-preview__card-footer">
-                        <div class="app-preview__client-mini">
-                          <img src="https://i.pravatar.cc/100?img=5" alt="Anna K." class="app-preview__client-photo">
-                          <div class="app-preview__client-info">
-                            <span class="app-preview__client-name">Anna K.</span>
-                            <span class="app-preview__client-rating">★ 4.9</span>
-                          </div>
-                        </div>
-                        <div class="app-preview__card-actions">
-                          <button class="app-preview__btn app-preview__btn--chat">💬</button>
-                          <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
-                          <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
-                        </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Dziś, 14:00</span>
                       </div>
                     </div>
                     
-                    <!-- Task 2: Ogród -->
-                    <div class="app-preview__unified-card app-preview__unified-card--garden">
-                      <div class="app-preview__card-header">
-                        <span class="app-preview__category-tag app-preview__category-tag--green">🌿 Ogród</span>
-                        <div class="app-preview__price-badge">150 zł</div>
-                      </div>
-                      
-                      <h4 class="app-preview__task-title">Porządkowanie ogrodu 100m²</h4>
-                      <p class="app-preview__task-desc">Grabienie liści, przycinanie żywopłotu, wywóz odpadów.</p>
-                      
-                      <div class="app-preview__task-meta">
-                        <div class="app-preview__meta-row">
-                          <div class="app-preview__meta-item">
-                            <span class="app-preview__meta-icon">📍</span>
-                            <span>Ursynów, 2.8 km</span>
-                          </div>
-                          <button class="app-preview__map-btn">🗺️ Mapa</button>
-                        </div>
-                        <div class="app-preview__meta-item">
-                          <span class="app-preview__meta-icon">⏰</span>
-                          <span>Sobota, 10:00</span>
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=5" alt="Anna K." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Anna K.</span>
+                          <span class="app-preview__client-rating">★ 4.9</span>
                         </div>
                       </div>
-                      
-                      <div class="app-preview__card-footer">
-                        <div class="app-preview__client-mini">
-                          <img src="https://i.pravatar.cc/100?img=12" alt="Jan N." class="app-preview__client-photo">
-                          <div class="app-preview__client-info">
-                            <span class="app-preview__client-name">Jan N.</span>
-                            <span class="app-preview__client-rating">★ 5.0</span>
-                          </div>
-                        </div>
-                        <div class="app-preview__card-actions">
-                          <button class="app-preview__btn app-preview__btn--chat">💬</button>
-                          <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
-                          <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
-                        </div>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
                       </div>
                     </div>
-                    
-                    <!-- Task 3: Meble IKEA -->
-                    <div class="app-preview__unified-card app-preview__unified-card--ikea">
-                      <div class="app-preview__card-header">
-                        <span class="app-preview__category-tag app-preview__category-tag--orange">🔧 Montaż</span>
-                        <div class="app-preview__price-badge">150 zł</div>
-                      </div>
-                      
-                      <h4 class="app-preview__task-title">Składanie mebli IKEA</h4>
-                      <p class="app-preview__task-desc">Szafa PAX + komoda MALM. Instrukcje w zestawie.</p>
-                      
-                      <div class="app-preview__task-meta">
-                        <div class="app-preview__meta-row">
-                          <div class="app-preview__meta-item">
-                            <span class="app-preview__meta-icon">📍</span>
-                            <span>Wola, 3.5 km</span>
-                          </div>
-                          <button class="app-preview__map-btn">🗺️ Mapa</button>
-                        </div>
-                        <div class="app-preview__meta-item">
-                          <span class="app-preview__meta-icon">⏰</span>
-                          <span>Niedziela, 11:00</span>
-                        </div>
-                      </div>
-                      
-                      <div class="app-preview__card-footer">
-                        <div class="app-preview__client-mini">
-                          <img src="https://i.pravatar.cc/100?img=32" alt="Tomek W." class="app-preview__client-photo">
-                          <div class="app-preview__client-info">
-                            <span class="app-preview__client-name">Tomek W.</span>
-                            <span class="app-preview__client-rating">★ 4.7</span>
-                          </div>
-                        </div>
-                        <div class="app-preview__card-actions">
-                          <button class="app-preview__btn app-preview__btn--chat">💬</button>
-                          <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
-                          <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
-                        </div>
-                      </div>
-                    </div>
-                    
                   </div>
                   
-                  <!-- Bottom Nav -->
-                  <div class="app-preview__bottom-nav">
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">🏠</span>
-                      <span>Start</span>
+                  <!-- Task 2: Ogród -->
+                  <div class="app-preview__unified-card app-preview__unified-card--garden">
+                    <div class="app-preview__card-header">
+                      <span class="app-preview__category-tag app-preview__category-tag--green">🌿 Ogród</span>
+                      <div class="app-preview__price-badge">150 zł</div>
                     </div>
-                    <div class="app-preview__nav-item app-preview__nav-item--active">
-                      <span class="app-preview__nav-icon">📋</span>
-                      <span>Zlecenia</span>
+                    
+                    <h4 class="app-preview__task-title">Porządkowanie ogrodu 100m²</h4>
+                    <p class="app-preview__task-desc">Grabienie liści, przycinanie żywopłotu, wywóz odpadów.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Ursynów, 2.8 km</span>
+                        </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
+                      </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Sobota, 10:00</span>
+                      </div>
                     </div>
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">💬</span>
-                      <span>Chat</span>
+                    
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=12" alt="Jan N." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Jan N.</span>
+                          <span class="app-preview__client-rating">★ 5.0</span>
+                        </div>
+                      </div>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
+                      </div>
                     </div>
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">👤</span>
-                      <span>Profil</span>
+                  </div>
+                  
+                  <!-- Task 3: Meble IKEA -->
+                  <div class="app-preview__unified-card app-preview__unified-card--ikea">
+                    <div class="app-preview__card-header">
+                      <span class="app-preview__category-tag app-preview__category-tag--orange">🔧 Montaż</span>
+                      <div class="app-preview__price-badge">150 zł</div>
                     </div>
+                    
+                    <h4 class="app-preview__task-title">Składanie mebli IKEA</h4>
+                    <p class="app-preview__task-desc">Szafa PAX + komoda MALM. Instrukcje w zestawie.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Wola, 3.5 km</span>
+                        </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
+                      </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Niedziela, 11:00</span>
+                      </div>
+                    </div>
+                    
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=32" alt="Tomek W." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Tomek W.</span>
+                          <span class="app-preview__client-rating">★ 4.7</span>
+                        </div>
+                      </div>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+                
+                <!-- Bottom Nav -->
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
                   </div>
                 </div>
               </div>
-              <div class="phone-mockup__notch"></div>
             </div>
-            <div class="floating-card floating-card--1">
-              <div class="floating-card__icon">🧹</div>
-              <div class="floating-card__content">
-                <div class="floating-card__price">+200 zł</div>
-                <div class="floating-card__task">Sprzątanie mieszkania</div>
-              </div>
-            </div>
-            <div class="floating-card floating-card--2 floating-card--green">
-              <div class="floating-card__icon">🌿</div>
-              <div class="floating-card__content">
-                <div class="floating-card__price">+150 zł</div>
-                <div class="floating-card__task">Porządkowanie ogrodu</div>
-              </div>
-            </div>
-            <div class="floating-card floating-card--3 floating-card--orange">
-              <div class="floating-card__icon">🔧</div>
-              <div class="floating-card__content">
-                <div class="floating-card__price">+150 zł</div>
-                <div class="floating-card__task">Składanie mebli IKEA</div>
-              </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">🧹</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+200 zł</div>
+              <div class="floating-card__task">Sprzątanie mieszkania</div>
             </div>
           </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">🌿</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+150 zł</div>
+              <div class="floating-card__task">Porządkowanie ogrodu</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--3 floating-card--orange">
+            <div class="floating-card__icon">🔧</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+150 zł</div>
+              <div class="floating-card__task">Składanie mebli IKEA</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 2: Bezpieczne płatności -->
+        <div class="our-app__visual" data-feature="2">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Płatności">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">💳 Płatność</h3>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--payment">
+                  <div class="app-preview__payment-card">
+                    <div class="app-preview__payment-icon">🔒</div>
+                    <h4 class="app-preview__payment-title">Bezpieczna płatność</h4>
+                    <p class="app-preview__payment-desc">Twoje środki są chronione do zakończenia zlecenia</p>
+                  </div>
+                  
+                  <div class="app-preview__payment-summary">
+                    <div class="app-preview__payment-row">
+                      <span>Sprzątanie mieszkania</span>
+                      <span>200 zł</span>
+                    </div>
+                    <div class="app-preview__payment-row">
+                      <span>Opłata serwisowa</span>
+                      <span>10 zł</span>
+                    </div>
+                    <div class="app-preview__payment-row app-preview__payment-row--total">
+                      <span>Razem</span>
+                      <span>210 zł</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__payment-methods">
+                    <div class="app-preview__payment-method app-preview__payment-method--active">
+                      <span>💳</span>
+                      <span>Karta •••• 4242</span>
+                    </div>
+                    <div class="app-preview__payment-method">
+                      <span>🏦</span>
+                      <span>BLIK</span>
+                    </div>
+                  </div>
+                  
+                  <button class="app-preview__btn app-preview__btn--primary app-preview__btn--full">
+                    Zapłać 210 zł
+                  </button>
+                  
+                  <div class="app-preview__payment-secure">
+                    <span>🔐</span>
+                    <span>Powered by Stripe</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">💳</span>
+                    <span>Płatności</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">🔒</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Escrow</div>
+              <div class="floating-card__task">Środki chronione</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">✓</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Stripe</div>
+              <div class="floating-card__task">Bezpieczne płatności</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 3: System ocen -->
+        <div class="our-app__visual" data-feature="3">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Oceny">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">⭐ Profil wykonawcy</h3>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--profile">
+                  <div class="app-preview__profile-header">
+                    <img src="https://i.pravatar.cc/100?img=68" alt="Marek K." class="app-preview__profile-avatar">
+                    <div class="app-preview__profile-info">
+                      <h4 class="app-preview__profile-name">Marek K.</h4>
+                      <div class="app-preview__profile-rating">
+                        <span class="app-preview__stars">★★★★★</span>
+                        <span>4.9 (127 opinii)</span>
+                      </div>
+                      <span class="app-preview__profile-badge">✓ Zweryfikowany</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__profile-stats">
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">156</span>
+                      <span class="app-preview__stat-label">Zleceń</span>
+                    </div>
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">98%</span>
+                      <span class="app-preview__stat-label">Sukces</span>
+                    </div>
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">2 lata</span>
+                      <span class="app-preview__stat-label">Staż</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__reviews">
+                    <h5 class="app-preview__reviews-title">Ostatnie opinie</h5>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">2 dni temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Super robota! Polecam serdecznie."</p>
+                      <span class="app-preview__review-author">— Anna K.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">5 dni temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Punktualny i profesjonalny."</p>
+                      <span class="app-preview__review-author">— Tomek W.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 tydzień temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Bardzo zadowolona z jakości pracy. Wszystko wykonane na czas!"</p>
+                      <span class="app-preview__review-author">— Katarzyna M.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 tydzień temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Świetny kontakt, szybka odpowiedź. Polecam!"</p>
+                      <span class="app-preview__review-author">— Piotr S.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★☆</span>
+                        <span class="app-preview__review-date">2 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Dobra robota, małe opóźnienie ale ogólnie OK."</p>
+                      <span class="app-preview__review-author">— Magda L.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">2 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Profesjonalista z pasją. Wszystko dopięte na ostatni guzik."</p>
+                      <span class="app-preview__review-author">— Robert K.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">3 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Najlepszy wykonawca jakiego miałem! Na pewno jeszcze skorzystam."</p>
+                      <span class="app-preview__review-author">— Janusz P.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">3 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Bardzo miły i pomocny. Wszystko zgodnie z umową."</p>
+                      <span class="app-preview__review-author">— Ewa D.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 miesiąc temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Solidny wykonawca, godny zaufania. Polecam wszystkim!"</p>
+                      <span class="app-preview__review-author">— Michał R.</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">⭐</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">4.9/5</div>
+              <div class="floating-card__task">Średnia ocena</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">✓</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">127</div>
+              <div class="floating-card__task">Pozytywnych opinii</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 4: Chat w aplikacji -->
+        <div class="our-app__visual" data-feature="4">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Chat">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header app-preview__header--chat">
+                  <img src="https://i.pravatar.cc/100?img=5" alt="Anna K." class="app-preview__chat-avatar">
+                  <div class="app-preview__chat-info">
+                    <h3 class="app-preview__title">Anna K.</h3>
+                    <span class="app-preview__chat-status">🟢 Online</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--chat">
+                  <div class="app-preview__messages">
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Cześć! Czy możesz przyjść dziś o 14:00?</p>
+                      <span class="app-preview__message-time">13:42</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Tak, będę punktualnie! 👍</p>
+                      <span class="app-preview__message-time">13:43</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Super! Kod do domofonu: 1234</p>
+                      <span class="app-preview__message-time">13:44</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Dzięki, do zobaczenia!</p>
+                      <span class="app-preview__message-time">13:45</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>📍 Wysłano lokalizację</p>
+                      <span class="app-preview__message-time">13:46</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__chat-input">
+                    <input type="text" placeholder="Napisz wiadomość..." class="app-preview__chat-field">
+                    <button class="app-preview__chat-send">📤</button>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">💬</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Real-time</div>
+              <div class="floating-card__task">Natychmiastowe wiadomości</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">📍</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Lokalizacja</div>
+              <div class="floating-card__task">Udostępnianie miejsca</div>
+            </div>
+          </div>
+        </div>
+        
+        </div>
         </div>
       </div>
     </section>
@@ -687,7 +1037,7 @@
     </section>
     
     <!-- Testimonials -->
-    <section class="testimonials" aria-labelledby="testimonials-heading">
+    <!--/* <section class="testimonials" aria-labelledby="testimonials-heading">
       <div class="container">
         <div class="section-header">
           <span class="section-tag">Opinie beta testerów</span>
@@ -732,7 +1082,7 @@
           </blockquote>
         </div>
       </div>
-    </section>
+    </section> */-->
     
     <!-- Newsletter Signup Form -->
     <section id="zapisz-sie" class="signup" aria-labelledby="signup-heading">

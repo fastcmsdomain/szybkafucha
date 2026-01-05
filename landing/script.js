@@ -790,6 +790,7 @@ function init() {
   initSmoothScroll();
   initHeaderScroll();
   initFAQ();
+  initFeatureSwitcher();
   
   // Track page view
   trackEvent('page_view', {
@@ -797,6 +798,50 @@ function init() {
   });
   
   console.log('🚀 Szybka Fucha Landing Page initialized');
+}
+
+// ========================================
+// Feature Switcher for Our App Section
+// ========================================
+/**
+ * Initializes the feature switcher for the Our App section
+ * Links feature list items to phone simulations
+ */
+function initFeatureSwitcher() {
+  const featureItems = document.querySelectorAll('.our-app__feature-item[data-feature]');
+  const visualContainers = document.querySelectorAll('.our-app__visual[data-feature]');
+  
+  if (featureItems.length === 0 || visualContainers.length === 0) {
+    return;
+  }
+  
+  featureItems.forEach(item => {
+    item.addEventListener('click', function() {
+      const featureId = this.getAttribute('data-feature');
+      
+      // Update active feature item
+      featureItems.forEach(fi => {
+        fi.classList.remove('our-app__feature-item--active');
+      });
+      this.classList.add('our-app__feature-item--active');
+      
+      // Update active visual container
+      visualContainers.forEach(vc => {
+        const vcFeatureId = vc.getAttribute('data-feature');
+        if (vcFeatureId === featureId) {
+          vc.classList.add('our-app__visual--active');
+        } else {
+          vc.classList.remove('our-app__visual--active');
+        }
+      });
+      
+      // Track feature view
+      trackEvent('feature_view', {
+        feature_id: featureId,
+        feature_name: this.querySelector('.feature-text strong')?.textContent || '',
+      });
+    });
+  });
 }
 
 // Run when DOM is ready
