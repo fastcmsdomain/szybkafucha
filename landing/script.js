@@ -720,6 +720,37 @@ function initSmoothScroll() {
         }
       }
       
+      // Special handling for newsletter form anchor - scroll to newsletter form and focus first input
+      if (targetId === '#newsletter-form') {
+        event.preventDefault();
+        const newsletterForm = document.getElementById('newsletter-form');
+        const newsletterNameInput = document.getElementById('name');
+        
+        if (newsletterForm && newsletterNameInput) {
+          // Calculate offset for fixed header
+          const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
+          const newsletterFormPosition = newsletterForm.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
+          
+          window.scrollTo({
+            top: newsletterFormPosition,
+            behavior: 'smooth',
+          });
+          
+          // Set focus on first input after scroll animation
+          setTimeout(() => {
+            newsletterNameInput.focus();
+          }, 500); // Wait for smooth scroll to complete
+          
+          // Track navigation event
+          trackEvent('navigation', {
+            target: 'newsletter_form',
+            source: 'cta_button',
+          });
+          
+          return;
+        }
+      }
+      
       const targetElement = document.querySelector(targetId);
       
       if (targetElement) {

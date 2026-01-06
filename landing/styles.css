@@ -1131,6 +1131,14 @@ flex-direction: column;
   flex-shrink: 0;
 }
 
+.audience-card__cta {
+  margin-top: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
 /* Testimonials */
 .testimonials {
   padding: var(--space-16) 0;
@@ -1240,6 +1248,10 @@ flex-direction: column;
   align-items: center;
   gap: var(--space-3);
   color: rgba(255, 255, 255, 0.9);
+}
+
+.signup__cta {
+  margin-top: var(--space-8);
 }
 
 .signup__form {
@@ -1412,7 +1424,7 @@ flex-direction: column;
 
 .footer__nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-6);
 }
 

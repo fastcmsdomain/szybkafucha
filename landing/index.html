@@ -118,6 +118,8 @@
         <a href="#nasza-aplikacja" class="nav-link">Aplikacja</a>
         <a href="#jak-dziala" class="nav-link">Jak to działa</a>
         <a href="#dla-kogo" class="nav-link">Dla kogo</a>
+        <a href="#newsletter" class="nav-link">Newsletter</a>
+        <a href="#faq" class="nav-link">FAQ</a>
         <a href="#zapisz-sie" class="nav-link nav-link--cta">Zapisz się</a>
       </nav>
       <button class="mobile-menu-btn" aria-label="Otwórz menu" aria-expanded="false">
@@ -134,13 +136,15 @@
       <a href="#nasza-aplikacja" class="mobile-nav__link">Aplikacja</a>
       <a href="#jak-dziala" class="mobile-nav__link">Jak to działa</a>
       <a href="#dla-kogo" class="mobile-nav__link">Dla kogo</a>
+      <a href="#newsletter" class="mobile-nav__link">Newsletter</a>
+      <a href="#faq" class="mobile-nav__link">FAQ</a>
       <a href="#zapisz-sie" class="mobile-nav__link mobile-nav__link--cta">Zapisz się</a>
     </nav>
   </div>
   
   <main id="main">
     <!-- Hero Section -->
-    <section class="hero" aria-labelledby="hero-heading">
+    <section id="zapisz-sie" class="hero" aria-labelledby="hero-heading">
       <div class="hero__bg">
         <div class="hero__shape hero__shape--1"></div>
         <div class="hero__shape hero__shape--2"></div>
@@ -243,14 +247,14 @@
                 
                 <div class="form-group form-group--compact form-group--checkbox">
                   <label class="checkbox-option checkbox-option--compact">
-                    <input type="checkbox" name="heroConsent" required aria-describedby="hero-consent-error">
+                    <input type="checkbox" name="heroConsent" required aria-describedby="hero-consent-error" checked>
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label checkbox-label--small">Zgadzam się na kontakt marketingowy</span>
                   </label>
                   <span id="hero-consent-error" class="form-error" role="alert"></span>
                 </div>
                 
-                <button type="submit" class="btn btn--primary btn--full btn--medium" id="hero-submit-btn">
+                <button type="submit" class="btn btn--primary btn--medium" id="hero-submit-btn">
                   <span class="btn__text">Zapisz się</span>
                   <span class="btn__loader" aria-hidden="true"></span>
                 </button>
@@ -1024,6 +1028,12 @@
                   Opieka nad zwierzętami
                 </li>
               </ul>
+              <a href="#zapisz-sie" class="btn btn--primary audience-card__cta">
+                Zapisz się
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
             </div>
           </article>
           
@@ -1065,6 +1075,12 @@
         Buduj swoją reputację
       </li>
     </ul>
+    <a href="#zapisz-sie" class="btn btn--primary audience-card__cta">
+      Zapisz się
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </div>
 </article>
         </div>
@@ -1072,7 +1088,7 @@
     </section> */-->
     
     <!-- Newsletter Signup Form -->
-    <section id="zapisz-sie" class="signup" aria-labelledby="signup-heading">
+    <section id="newsletter" class="signup" aria-labelledby="signup-heading">
       <div class="container">
         <div class="signup-wrapper">
           <div class="signup__content">
@@ -1099,7 +1115,40 @@
                 </svg>
                 Status VIP Early Adopter
               </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Priorytetowy dostęp do aplikacji
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Ekskluzywne promocje i zniżki
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Powiadomienia o nowych funkcjach
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Wsparcie techniczne 24/7
+              </li>
             </ul>
+            
+            <div class="signup__cta">
+              <a href="#newsletter-form" class="btn btn--primary btn--large">
+                Zapisz się teraz
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+            </div>
           </div>
           
           <form id="newsletter-form" class="signup__form" novalidate>
@@ -1172,6 +1221,7 @@
                   name="consent" 
                   required
                   aria-describedby="consent-error"
+                  checked
                 >
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-label">
@@ -1208,7 +1258,7 @@
     </section>
     
     <!-- FAQ Section -->
-    <section class="faq" aria-labelledby="faq-heading">
+    <section id="faq" class="faq" aria-labelledby="faq-heading">
       <div class="container">
         <div class="section-header">
           <span class="section-tag">Masz pytania?</span>
@@ -1347,14 +1397,14 @@
               <li><a href="#zapisz-sie">Zapisz się</a></li>
             </ul>
           </div>
-          <div class="footer__col">
+          <!--/* <div class="footer__col">
             <h4>Firma</h4>
             <ul>
               <li><a href="#about">O nas</a></li>
               <li><a href="#careers">Kariera</a></li>
               <li><a href="#contact">Kontakt</a></li>
             </ul>
-          </div>
+          </div> */-->
           <div class="footer__col">
             <h4>Prawne</h4>
             <ul>
