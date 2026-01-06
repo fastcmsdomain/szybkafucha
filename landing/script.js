@@ -689,6 +689,37 @@ function initSmoothScroll() {
         return;
       }
       
+      // Special handling for "Zapisz się" links - scroll to Hero form and focus first input
+      if (targetId === '#zapisz-sie') {
+        event.preventDefault();
+        const heroForm = document.getElementById('hero-form');
+        const heroNameInput = document.getElementById('hero-name');
+        
+        if (heroForm && heroNameInput) {
+          // Calculate offset for fixed header
+          const headerHeight = document.querySelector('.header')?.offsetHeight || 0;
+          const heroFormPosition = heroForm.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20;
+          
+          window.scrollTo({
+            top: heroFormPosition,
+            behavior: 'smooth',
+          });
+          
+          // Set focus on first input after scroll animation
+          setTimeout(() => {
+            heroNameInput.focus();
+          }, 500); // Wait for smooth scroll to complete
+          
+          // Track navigation event
+          trackEvent('navigation', {
+            target: 'hero_form',
+            source: 'cta_button',
+          });
+          
+          return;
+        }
+      }
+      
       const targetElement = document.querySelector(targetId);
       
       if (targetElement) {

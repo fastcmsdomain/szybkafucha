@@ -644,6 +644,8 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-primary);
   color: var(--color-white);
   border-radius: var(--radius-lg);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
 }
 
 .nav-link--cta:hover,
