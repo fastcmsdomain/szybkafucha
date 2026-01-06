@@ -104,13 +104,7 @@
   <header class="header" role="banner">
     <div class="container">
       <div class="header__logo">
-      <!--/* <span class="logo-icon">⚡</span> */-->
       <span class="logo-icon">⚡</span>
-        <!--/* <svg class="logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <circle cx="20" cy="20" r="20" fill="#E94560"/>
-          <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg> */-->
-        <!--/* <span class="logo-text">Szybka Fucha</span> */-->
         <span class="logo-text">Szybka Fucha</span>
 
       </div>
@@ -118,6 +112,8 @@
         <a href="#nasza-aplikacja" class="nav-link">Aplikacja</a>
         <a href="#jak-dziala" class="nav-link">Jak to działa</a>
         <a href="#dla-kogo" class="nav-link">Dla kogo</a>
+        <a href="#newsletter" class="nav-link">Newsletter</a>
+        <a href="#faq" class="nav-link">FAQ</a>
         <a href="#zapisz-sie" class="nav-link nav-link--cta">Zapisz się</a>
       </nav>
       <button class="mobile-menu-btn" aria-label="Otwórz menu" aria-expanded="false">
@@ -134,13 +130,15 @@
       <a href="#nasza-aplikacja" class="mobile-nav__link">Aplikacja</a>
       <a href="#jak-dziala" class="mobile-nav__link">Jak to działa</a>
       <a href="#dla-kogo" class="mobile-nav__link">Dla kogo</a>
+      <a href="#newsletter" class="mobile-nav__link">Newsletter</a>
+      <a href="#faq" class="mobile-nav__link">FAQ</a>
       <a href="#zapisz-sie" class="mobile-nav__link mobile-nav__link--cta">Zapisz się</a>
     </nav>
   </div>
   
   <main id="main">
     <!-- Hero Section -->
-    <section class="hero" aria-labelledby="hero-heading">
+    <section id="zapisz-sie" class="hero" aria-labelledby="hero-heading">
       <div class="hero__bg">
         <div class="hero__shape hero__shape--1"></div>
         <div class="hero__shape hero__shape--2"></div>
@@ -151,13 +149,12 @@
           <span class="hero__badge">🚀 Startujemy wkrótce!</span>
           <h1 id="hero-heading" class="hero__title">
             <span class="hero__title-line">Potrzebujesz pomocy?<br></span>
-            <span class="hero__title-line gradient-text">Znajdź ją w 5 minut.</span>
+            <span class="hero__title-line gradient-text">Znajdź ją w 5 minut.<br></span>
           </h1>
-          <img src="assets/SzybkaFuchaHero.png" alt="Szybka Fucha" class="hero__image">
-          <!--/* <video src="assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video> */-->
+          <video src="assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video>
+          <h2 class="hero__title-line promo-text">Szybka Fucha pomaga znaleźć pomoc.</h2>
           <p class="hero__subtitle">
-            Szybka Fucha łączy zabieganych ludzi z lokalnymi pomocnikami. 
-            Zleć zakupy, sprzątanie, drobne naprawy — albo zarabiaj pomagając innym.
+            Zleć zakupy, sprzątanie, drobne naprawy — albo <strong>zarabiaj pomagając innym.</strong>
           </p>
           <div class="hero__cta">
             <a href="#zapisz-sie" class="btn btn--primary btn--large">
@@ -194,7 +191,7 @@
                 </div>
                 
                 <div class="form-group form-group--compact">
-                <h3 class="form-title">Zapisz się!</h3>
+                <h3 class="form-title gradient-text">Zapisz się!</h3>
                   <label for="hero-name" class="form-label">Imię</label>
                   <input 
                     type="text" 
@@ -243,14 +240,14 @@
                 
                 <div class="form-group form-group--compact form-group--checkbox">
                   <label class="checkbox-option checkbox-option--compact">
-                    <input type="checkbox" name="heroConsent" required aria-describedby="hero-consent-error">
+                    <input type="checkbox" name="heroConsent" required aria-describedby="hero-consent-error" checked>
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-label checkbox-label--small">Zgadzam się na kontakt marketingowy</span>
                   </label>
                   <span id="hero-consent-error" class="form-error" role="alert"></span>
                 </div>
                 
-                <button type="submit" class="btn btn--primary btn--full btn--medium" id="hero-submit-btn">
+                <button type="submit" class="btn btn--primary btn--medium" id="hero-submit-btn">
                   <span class="btn__text">Zapisz się</span>
                   <span class="btn__loader" aria-hidden="true"></span>
                 </button>
@@ -299,33 +296,40 @@
       <div class="container">
         <div class="our-app__content">
           <div class="our-app__text">
-            <span class="section-tag">Nasza aplikacja</span>
-            <h2 id="our-app-heading" class="section-title">Wszystko w jednym miejscu</h2>
-            <p class="section-subtitle">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności. Aplikacja, która oszczędza Twój czas.</p>
+            <div class="section-logo">
+              <span class="logo-icon">⚡</span>
+              <span class="logo-text">Szybka Fucha</span>
+            </div>
+            <h2 id="our-app-heading" class="section-title">
+              <span>Wszystko w jednym miejscu<br></span>
+              <span class="gradient-text">Poznaj naszą intuicyjną aplikację.</span>
+            </h2>
+            </h2>
+            <p class="section-subtitle">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności.<br> <strong>Aplikacja, która oszczędza Twój czas.</strong></p>
             
             <ul class="our-app__features">
-              <li>
+              <li class="our-app__feature-item our-app__feature-item--active" data-feature="1">
                 <div class="feature-icon">📱</div>
                 <div class="feature-text">
                   <strong>Prosta obsługa</strong>
                   <span>Zlecenie w mniej niż minutę</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="2">
                 <div class="feature-icon">🔒</div>
                 <div class="feature-text">
                   <strong>Bezpieczne płatności</strong>
                   <span>Stripe i escrow dla Twojej ochrony</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="3">
                 <div class="feature-icon">⭐</div>
                 <div class="feature-text">
                   <strong>System ocen</strong>
                   <span>Wybieraj sprawdzonych wykonawców</span>
                 </div>
               </li>
-              <li>
+              <li class="our-app__feature-item" data-feature="4">
                 <div class="feature-icon">💬</div>
                 <div class="feature-text">
                   <strong>Chat w aplikacji</strong>
@@ -334,111 +338,588 @@
               </li>
             </ul>
           </div>
-          
-          <div class="our-app__visual">
-            <div class="phone-mockup phone-mockup--preview">
-              <div class="phone-mockup__screen">
-                <!-- App preview - Task Detail View -->
-                <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Zlecenie sprzątania">
-                  <!-- App Status Bar -->
-                  <div class="app-preview__status-bar">
-                    <span>9:41</span>
-                    <div class="app-preview__status-icons">
-                      <span>📶</span>
-                      <span>🔋</span>
-                    </div>
+          <div class="our-app__visual-container">
+          <!-- Feature 1: Prosta obsługa - Lista zleceń -->
+          <div class="our-app__visual our-app__visual--active" data-feature="1">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <!-- App preview - Task List View -->
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Lista zleceń">
+                <!-- App Status Bar -->
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
                   </div>
-                  
-                  <!-- App Header -->
-                  <div class="app-preview__header">
-                    <button class="app-preview__back">←</button>
-                    <h3 class="app-preview__title">Nowe zlecenie</h3>
-                    <span class="app-preview__badge app-preview__badge--new">🔔 Teraz</span>
+                </div>
+                
+                <!-- App Header -->
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">📋 Dostępne zlecenia</h3>
+                  <span class="app-preview__badge app-preview__badge--count">3 nowe</span>
+                </div>
+                
+                <!-- Filter Bar -->
+                <div class="app-preview__filter-bar">
+                  <div class="app-preview__filter-scroll">
+                    <button class="app-preview__filter-btn">🧹 Sprzątanie</button>
+                    <button class="app-preview__filter-btn">🌿 Ogród</button>
+                    <button class="app-preview__filter-btn">🔧 Montaż</button>
+                    <button class="app-preview__filter-btn">🛒 Zakupy</button>
+                    <button class="app-preview__filter-btn">📦 Paczki</button>
+                    <button class="app-preview__filter-btn">⏰ Kolejki</button>
+                    <button class="app-preview__filter-btn">🏠 Naprawy</button>
                   </div>
+                </div>
+                
+                <!-- Tasks List -->
+                <div class="app-preview__content app-preview__content--list">
                   
-                  <!-- Task Card -->
-                  <div class="app-preview__content">
-                    <!-- Price Hero -->
-                    <div class="app-preview__price-hero">
+                  <!-- Task 1: Sprzątanie -->
+                  <div class="app-preview__unified-card">
+                    <div class="app-preview__card-header">
                       <span class="app-preview__category-tag">🧹 Sprzątanie</span>
-                      <div class="app-preview__price">120 zł</div>
-                      <div class="app-preview__price-sub">za 2-3h pracy</div>
+                      <div class="app-preview__price-badge">200 zł</div>
                     </div>
                     
-                    <!-- Task Details -->
-                    <div class="app-preview__task-card">
-                      <h4 class="app-preview__task-title">Sprzątanie mieszkania 50m²</h4>
-                      <p class="app-preview__task-desc">Odkurzanie, mycie podłóg, łazienka i kuchnia. Środki czystości zapewnione.</p>
-                      
-                      <div class="app-preview__task-meta">
+                    <h4 class="app-preview__task-title">Sprzątanie mieszkania 50m²</h4>
+                    <p class="app-preview__task-desc">Odkurzanie, mycie podłóg, łazienka i kuchnia.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
                         <div class="app-preview__meta-item">
                           <span class="app-preview__meta-icon">📍</span>
                           <span>Mokotów, 1.2 km</span>
                         </div>
-                        <div class="app-preview__meta-item">
-                          <span class="app-preview__meta-icon">⏰</span>
-                          <span>Dziś, 14:00</span>
-                        </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
+                      </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Dziś, 14:00</span>
                       </div>
                     </div>
                     
-                    <!-- Client Info -->
-                    <div class="app-preview__client-card">
-                      <div class="app-preview__client-avatar">AK</div>
-                      <div class="app-preview__client-info">
-                        <div class="app-preview__client-name">Anna K.</div>
-                        <div class="app-preview__client-rating">
-                          <span class="app-preview__stars">★★★★★</span>
-                          <span>4.9 • 23 zlecenia</span>
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=5" alt="Anna K." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Anna K.</span>
+                          <span class="app-preview__client-rating">★ 4.9</span>
                         </div>
                       </div>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="app-preview__actions">
-                      <button class="app-preview__btn app-preview__btn--secondary">Szczegóły</button>
-                      <button class="app-preview__btn app-preview__btn--primary">✓ Przyjmuję</button>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
+                      </div>
                     </div>
                   </div>
                   
-                  <!-- Bottom Nav -->
-                  <div class="app-preview__bottom-nav">
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">🏠</span>
-                      <span>Start</span>
+                  <!-- Task 2: Ogród -->
+                  <div class="app-preview__unified-card app-preview__unified-card--garden">
+                    <div class="app-preview__card-header">
+                      <span class="app-preview__category-tag app-preview__category-tag--green">🌿 Ogród</span>
+                      <div class="app-preview__price-badge">150 zł</div>
                     </div>
-                    <div class="app-preview__nav-item app-preview__nav-item--active">
-                      <span class="app-preview__nav-icon">📋</span>
-                      <span>Zlecenia</span>
+                    
+                    <h4 class="app-preview__task-title">Porządkowanie ogrodu 100m²</h4>
+                    <p class="app-preview__task-desc">Grabienie liści, przycinanie żywopłotu, wywóz odpadów.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Ursynów, 2.8 km</span>
+                        </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
+                      </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Sobota, 10:00</span>
+                      </div>
                     </div>
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">💬</span>
-                      <span>Chat</span>
+                    
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=12" alt="Jan N." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Jan N.</span>
+                          <span class="app-preview__client-rating">★ 5.0</span>
+                        </div>
+                      </div>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
+                      </div>
                     </div>
-                    <div class="app-preview__nav-item">
-                      <span class="app-preview__nav-icon">👤</span>
-                      <span>Profil</span>
+                  </div>
+                  
+                  <!-- Task 3: Meble IKEA -->
+                  <div class="app-preview__unified-card app-preview__unified-card--ikea">
+                    <div class="app-preview__card-header">
+                      <span class="app-preview__category-tag app-preview__category-tag--orange">🔧 Montaż</span>
+                      <div class="app-preview__price-badge">150 zł</div>
                     </div>
+                    
+                    <h4 class="app-preview__task-title">Składanie mebli IKEA</h4>
+                    <p class="app-preview__task-desc">Szafa PAX + komoda MALM. Instrukcje w zestawie.</p>
+                    
+                    <div class="app-preview__task-meta">
+                      <div class="app-preview__meta-row">
+                        <div class="app-preview__meta-item">
+                          <span class="app-preview__meta-icon">📍</span>
+                          <span>Wola, 3.5 km</span>
+                        </div>
+                        <button class="app-preview__map-btn">🗺️ Mapa</button>
+                      </div>
+                      <div class="app-preview__meta-item">
+                        <span class="app-preview__meta-icon">⏰</span>
+                        <span>Niedziela, 11:00</span>
+                      </div>
+                    </div>
+                    
+                    <div class="app-preview__card-footer">
+                      <div class="app-preview__client-mini">
+                        <img src="https://i.pravatar.cc/100?img=32" alt="Tomek W." class="app-preview__client-photo">
+                        <div class="app-preview__client-info">
+                          <span class="app-preview__client-name">Tomek W.</span>
+                          <span class="app-preview__client-rating">★ 4.7</span>
+                        </div>
+                      </div>
+                      <div class="app-preview__card-actions">
+                        <button class="app-preview__btn app-preview__btn--chat">💬</button>
+                        <button class="app-preview__btn app-preview__btn--danger app-preview__btn--small">Szczegóły</button>
+                        <button class="app-preview__btn app-preview__btn--primary app-preview__btn--small">Przyjmuję</button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+                
+                <!-- Bottom Nav -->
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
                   </div>
                 </div>
               </div>
-              <div class="phone-mockup__notch"></div>
             </div>
-            <div class="floating-card floating-card--1">
-              <div class="floating-card__icon">🧹</div>
-              <div class="floating-card__text">
-                <strong>Nowe zlecenie!</strong>
-                <span>Sprzątanie mieszkania</span>
-              </div>
-            </div>
-            <div class="floating-card floating-card--2">
-              <div class="floating-card__icon">💰</div>
-              <div class="floating-card__text">
-                <strong>+120 zł</strong>
-                <span>Do zarobienia</span>
-              </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">🧹</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+200 zł</div>
+              <div class="floating-card__task">Sprzątanie mieszkania</div>
             </div>
           </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">🌿</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+150 zł</div>
+              <div class="floating-card__task">Porządkowanie ogrodu</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--3 floating-card--orange">
+            <div class="floating-card__icon">🔧</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">+150 zł</div>
+              <div class="floating-card__task">Składanie mebli IKEA</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 2: Bezpieczne płatności -->
+        <div class="our-app__visual" data-feature="2">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Płatności">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">💳 Płatność</h3>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--payment">
+                  <div class="app-preview__payment-card">
+                    <div class="app-preview__payment-icon">🔒</div>
+                    <h4 class="app-preview__payment-title">Bezpieczna płatność</h4>
+                    <p class="app-preview__payment-desc">Twoje środki są chronione do zakończenia zlecenia</p>
+                  </div>
+                  
+                  <div class="app-preview__payment-summary">
+                    <div class="app-preview__payment-row">
+                      <span>Sprzątanie mieszkania</span>
+                      <span>200 zł</span>
+                    </div>
+                    <div class="app-preview__payment-row">
+                      <span>Opłata serwisowa</span>
+                      <span>10 zł</span>
+                    </div>
+                    <div class="app-preview__payment-row app-preview__payment-row--total">
+                      <span>Razem</span>
+                      <span>210 zł</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__payment-methods">
+                    <div class="app-preview__payment-method app-preview__payment-method--active">
+                      <span>💳</span>
+                      <span>Karta •••• 4242</span>
+                    </div>
+                    <div class="app-preview__payment-method">
+                      <span>🏦</span>
+                      <span>BLIK</span>
+                    </div>
+                  </div>
+                  
+                  <button class="app-preview__btn app-preview__btn--primary app-preview__btn--full">
+                    Zapłać 210 zł
+                  </button>
+                  
+                  <div class="app-preview__payment-secure">
+                    <span>🔐</span>
+                    <span>Powered by Stripe</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">💳</span>
+                    <span>Płatności</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">🔒</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Escrow</div>
+              <div class="floating-card__task">Środki chronione</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">✓</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Stripe</div>
+              <div class="floating-card__task">Bezpieczne płatności</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 3: System ocen -->
+        <div class="our-app__visual" data-feature="3">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Oceny">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header">
+                  <h3 class="app-preview__title">⭐ Profil wykonawcy</h3>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--profile">
+                  <div class="app-preview__profile-header">
+                    <img src="https://i.pravatar.cc/100?img=68" alt="Marek K." class="app-preview__profile-avatar">
+                    <div class="app-preview__profile-info">
+                      <h4 class="app-preview__profile-name">Marek K.</h4>
+                      <div class="app-preview__profile-rating">
+                        <span class="app-preview__stars">★★★★★</span>
+                        <span>4.9 (127 opinii)</span>
+                      </div>
+                      <span class="app-preview__profile-badge">✓ Zweryfikowany</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__profile-stats">
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">156</span>
+                      <span class="app-preview__stat-label">Zleceń</span>
+                    </div>
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">98%</span>
+                      <span class="app-preview__stat-label">Sukces</span>
+                    </div>
+                    <div class="app-preview__stat">
+                      <span class="app-preview__stat-value">2 lata</span>
+                      <span class="app-preview__stat-label">Staż</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__reviews">
+                    <h5 class="app-preview__reviews-title">Ostatnie opinie</h5>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">2 dni temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Super robota! Polecam serdecznie."</p>
+                      <span class="app-preview__review-author">— Anna K.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">5 dni temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Punktualny i profesjonalny."</p>
+                      <span class="app-preview__review-author">— Tomek W.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 tydzień temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Bardzo zadowolona z jakości pracy. Wszystko wykonane na czas!"</p>
+                      <span class="app-preview__review-author">— Katarzyna M.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 tydzień temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Świetny kontakt, szybka odpowiedź. Polecam!"</p>
+                      <span class="app-preview__review-author">— Piotr S.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★☆</span>
+                        <span class="app-preview__review-date">2 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Dobra robota, małe opóźnienie ale ogólnie OK."</p>
+                      <span class="app-preview__review-author">— Magda L.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">2 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Profesjonalista z pasją. Wszystko dopięte na ostatni guzik."</p>
+                      <span class="app-preview__review-author">— Robert K.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">3 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Najlepszy wykonawca jakiego miałem! Na pewno jeszcze skorzystam."</p>
+                      <span class="app-preview__review-author">— Janusz P.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">3 tygodnie temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Bardzo miły i pomocny. Wszystko zgodnie z umową."</p>
+                      <span class="app-preview__review-author">— Ewa D.</span>
+                    </div>
+                    <div class="app-preview__review">
+                      <div class="app-preview__review-header">
+                        <span class="app-preview__review-stars">★★★★★</span>
+                        <span class="app-preview__review-date">1 miesiąc temu</span>
+                      </div>
+                      <p class="app-preview__review-text">"Solidny wykonawca, godny zaufania. Polecam wszystkim!"</p>
+                      <span class="app-preview__review-author">— Michał R.</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">⭐</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">4.9/5</div>
+              <div class="floating-card__task">Średnia ocena</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">✓</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">127</div>
+              <div class="floating-card__task">Pozytywnych opinii</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Feature 4: Chat w aplikacji -->
+        <div class="our-app__visual" data-feature="4">
+          <div class="phone-mockup phone-mockup--preview">
+            <div class="phone-mockup__screen">
+              <div class="app-preview" role="img" aria-label="Podgląd aplikacji Szybka Fucha - Chat">
+                <div class="app-preview__status-bar">
+                  <span>9:41</span>
+                  <div class="app-preview__status-icons">
+                    <span>📶</span>
+                    <span>🔋</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__header app-preview__header--chat">
+                  <img src="https://i.pravatar.cc/100?img=5" alt="Anna K." class="app-preview__chat-avatar">
+                  <div class="app-preview__chat-info">
+                    <h3 class="app-preview__title">Anna K.</h3>
+                    <span class="app-preview__chat-status">🟢 Online</span>
+                  </div>
+                </div>
+                
+                <div class="app-preview__content app-preview__content--chat">
+                  <div class="app-preview__messages">
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Cześć! Czy możesz przyjść dziś o 14:00?</p>
+                      <span class="app-preview__message-time">13:42</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Tak, będę punktualnie! 👍</p>
+                      <span class="app-preview__message-time">13:43</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Super! Kod do domofonu: 1234</p>
+                      <span class="app-preview__message-time">13:44</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Dzięki, do zobaczenia!</p>
+                      <span class="app-preview__message-time">13:45</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>📍 Wysłano lokalizację</p>
+                      <span class="app-preview__message-time">13:46</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Proszę posprzątać: kuchnię (mycie podłóg, blaty), łazienkę (wanna, umywalka) i salon (odkurzanie). Dzięki!</p>
+                      <span class="app-preview__message-time">13:47</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Jasne! Zaczynam od kuchni, potem łazienka i salon. Zajmie mi około 2 godziny.</p>
+                      <span class="app-preview__message-time">14:05</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Kuchnia gotowa! Przechodzę do łazienki 🧹</p>
+                      <span class="app-preview__message-time">14:35</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Wszystko gotowe! Kuchnia, łazienka i salon posprzątane. Możesz sprawdzić 😊</p>
+                      <span class="app-preview__message-time">15:20</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Super! Wszystko wygląda świetnie! 💳 Płatność 200 zł została zrealizowana. Dziękuję!</p>
+                      <span class="app-preview__message-time">15:25</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--sent">
+                      <p>Dzięki! Cieszę się, że jesteś zadowolona! ⭐</p>
+                      <span class="app-preview__message-time">15:26</span>
+                    </div>
+                    <div class="app-preview__message app-preview__message--received">
+                      <p>Na pewno jeszcze skorzystam z Twoich usług! Polecam innym 👍</p>
+                      <span class="app-preview__message-time">15:27</span>
+                    </div>
+                  </div>
+                  
+                  <div class="app-preview__chat-input">
+                    <input type="text" placeholder="Napisz wiadomość..." class="app-preview__chat-field">
+                    <button class="app-preview__chat-send">📤</button>
+                  </div>
+                </div>
+                
+                <div class="app-preview__bottom-nav">
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">🏠</span>
+                    <span>Start</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">📋</span>
+                    <span>Zlecenia</span>
+                  </div>
+                  <div class="app-preview__nav-item app-preview__nav-item--active">
+                    <span class="app-preview__nav-icon">💬</span>
+                    <span>Chat</span>
+                  </div>
+                  <div class="app-preview__nav-item">
+                    <span class="app-preview__nav-icon">👤</span>
+                    <span>Profil</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-mockup__notch"></div>
+          </div>
+          <div class="floating-card floating-card--1">
+            <div class="floating-card__icon">💬</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Real-time</div>
+              <div class="floating-card__task">Natychmiastowe wiadomości</div>
+            </div>
+          </div>
+          <div class="floating-card floating-card--2 floating-card--green">
+            <div class="floating-card__icon">📍</div>
+            <div class="floating-card__content">
+              <div class="floating-card__price">Lokalizacja</div>
+              <div class="floating-card__task">Udostępnianie miejsca</div>
+            </div>
+          </div>
+        </div>
+        
+        </div>
         </div>
       </div>
     </section>
@@ -540,103 +1021,67 @@
                   Opieka nad zwierzętami
                 </li>
               </ul>
+              <a href="#zapisz-sie" class="btn btn--primary audience-card__cta">
+                Zapisz się
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
             </div>
           </article>
           
-          <!-- Contractors Card -->
-          <article class="audience-card audience-card--contractor">
-            <div class="audience-card__image">
-              <!-- Placeholder for contractor image -->
-              <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Zdjęcie wykonawcy">
-              <img src="assets/michal-urzywa-szybka-fucha.png" alt="Szybka Fucha" class="audience-card__image">
-              </div>
-            </div>
-            <div class="audience-card__content">
-              <span class="audience-card__tag audience-card__tag--green">Chcę zarabiać</span>
-              <h3 class="audience-card__title">Dla przedsiębiorczych</h3>
-              <p class="audience-card__desc">Masz wolny czas i chęci? Zarabiaj pomagając sąsiadom. Ty decydujesz kiedy i ile.</p>
-              <ul class="audience-card__list">
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Elastyczne godziny pracy
-                </li>
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Zarabiaj nawet 150 zł/h
-                </li>
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Szybkie wypłaty
-                </li>
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Buduj swoją reputację
-                </li>
-              </ul>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-    
-    <!-- Testimonials -->
-    <section class="testimonials" aria-labelledby="testimonials-heading">
-      <div class="container">
-        <div class="section-header">
-          <span class="section-tag">Opinie beta testerów</span>
-          <h2 id="testimonials-heading" class="section-title">Co mówią nasi użytkownicy?</h2>
-        </div>
-        
-        <div class="testimonials-grid">
-          <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
-            <p class="testimonial__text">"Znalazłam pomocnika do zakupów w 10 minut. Teraz mam więcej czasu dla rodziny!"</p>
-            <footer class="testimonial__author">
-              <div class="testimonial__avatar" aria-hidden="true">AK</div>
-              <div>
-                <cite class="testimonial__name">Anna K.</cite>
-                <span class="testimonial__role">Zleceniodawca, Warszawa</span>
-              </div>
-            </footer>
-          </blockquote>
-          
-          <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
-            <p class="testimonial__text">"Zarabiam dodatkowe 2000 zł miesięcznie w wolnym czasie. Świetna aplikacja!"</p>
-            <footer class="testimonial__author">
-              <div class="testimonial__avatar" aria-hidden="true">MN</div>
-              <div>
-                <cite class="testimonial__name">Michał N.</cite>
-                <span class="testimonial__role">Wykonawca, Kraków</span>
-              </div>
-            </footer>
-          </blockquote>
-          
-          <blockquote class="testimonial">
-            <div class="testimonial__stars" aria-label="Ocena 5 na 5">★★★★★</div>
-            <p class="testimonial__text">"Profesjonalna obsługa, bezpieczne płatności. Polecam każdemu!"</p>
-            <footer class="testimonial__author">
-              <div class="testimonial__avatar" aria-hidden="true">KW</div>
-              <div>
-                <cite class="testimonial__name">Kasia W.</cite>
-                <span class="testimonial__role">Zleceniodawca, Wrocław</span>
-              </div>
-            </footer>
-          </blockquote>
+  <!-- Contractors Card -->
+  <article class="audience-card audience-card--contractor">
+  <div class="audience-card__image">
+    <!-- Placeholder for contractor image -->
+    <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Zdjęcie wykonawcy">
+    <img src="assets/michal-urzywa-szybka-fucha.png" alt="Szybka Fucha" class="audience-card__image">
+    </div>
+  </div>
+  <div class="audience-card__content">
+    <span class="audience-card__tag audience-card__tag--green">Chcę zarabiać</span>
+    <h3 class="audience-card__title">Dla przedsiębiorczych</h3>
+    <p class="audience-card__desc">Masz wolny czas i chęci? Zarabiaj pomagając sąsiadom. Ty decydujesz kiedy i ile.</p>
+    <ul class="audience-card__list">
+      <li>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Elastyczne godziny pracy
+      </li>
+      <li>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Zarabiaj nawet 150 zł/h
+      </li>
+      <li>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Szybkie wypłaty
+      </li>
+      <li>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4 10L8 14L16 6" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Buduj swoją reputację
+      </li>
+    </ul>
+    <a href="#zapisz-sie" class="btn btn--primary audience-card__cta">
+      Zapisz się
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+</article>
         </div>
       </div>
     </section>
     
     <!-- Newsletter Signup Form -->
-    <section id="zapisz-sie" class="signup" aria-labelledby="signup-heading">
+    <section id="newsletter" class="signup" aria-labelledby="signup-heading">
       <div class="container">
         <div class="signup-wrapper">
           <div class="signup__content">
@@ -663,7 +1108,40 @@
                 </svg>
                 Status VIP Early Adopter
               </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Priorytetowy dostęp do aplikacji
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Ekskluzywne promocje i zniżki
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Powiadomienia o nowych funkcjach
+              </li>
+              <li>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Wsparcie techniczne 24/7
+              </li>
             </ul>
+            
+            <div class="signup__cta">
+              <a href="#newsletter-form" class="btn btn--primary btn--large">
+                Zapisz się teraz
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+            </div>
           </div>
           
           <form id="newsletter-form" class="signup__form" novalidate>
@@ -736,6 +1214,7 @@
                   name="consent" 
                   required
                   aria-describedby="consent-error"
+                  checked
                 >
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-label">
@@ -772,7 +1251,7 @@
     </section>
     
     <!-- FAQ Section -->
-    <section class="faq" aria-labelledby="faq-heading">
+    <section id="faq" class="faq" aria-labelledby="faq-heading">
       <div class="container">
         <div class="section-header">
           <span class="section-tag">Masz pytania?</span>
@@ -911,20 +1390,20 @@
               <li><a href="#zapisz-sie">Zapisz się</a></li>
             </ul>
           </div>
-          <div class="footer__col">
+          <!--/* <div class="footer__col">
             <h4>Firma</h4>
             <ul>
               <li><a href="#about">O nas</a></li>
               <li><a href="#careers">Kariera</a></li>
               <li><a href="#contact">Kontakt</a></li>
             </ul>
-          </div>
+          </div> */-->
           <div class="footer__col">
             <h4>Prawne</h4>
             <ul>
-              <li><a href="#privacy">Polityka prywatności</a></li>
-              <li><a href="#terms">Regulamin</a></li>
-              <li><a href="#cookies">Cookies</a></li>
+              <li><a href="privacy.html">Polityka prywatności</a></li>
+              <li><a href="terms.html">Regulamin</a></li>
+              <li><a href="cookies.html">Cookies</a></li>
             </ul>
           </div>
         </nav>
