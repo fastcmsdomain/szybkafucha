@@ -205,7 +205,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  /* background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%); */
+  background-image: url('/assets/rainbow_bg.jpg');
+  background-size: 100% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -766,12 +768,22 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero__shape--1 {
-  width: 400px;
-  height: 400px;
-  background: var(--color-primary);
+  width: 600px;
+  height: 600px;
+  background: linear-gradient(
+    135deg,
+    #E94560 0%,
+    #F59E0B 16.66%,
+    #10B981 33.33%,
+    #3B82F6 50%,
+    #8B5CF6 66.66%,
+    #EC4899 83.33%,
+    #E94560 100%
+  );
+  background-size: 200% 200%;
   top: -100px;
   right: -100px;
-  opacity: 0.15;
+  animation: rainbow-background 8s linear infinite, glow-fade 4s ease-in-out infinite;
 }
 
 .hero__shape--2 {
@@ -825,7 +837,7 @@ flex-direction: column;
   font-size: var(--font-size-lg);
   color: var(--color-gray-600);
   margin-bottom: var(--space-8);
-  max-width: 540px;
+  max-width: 740px;
 }
 
 .hero__cta {
@@ -1974,7 +1986,6 @@ flex-direction: column;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-height: 280px;
   overflow-y: auto;
   padding-right: var(--space-2);
 }
@@ -2142,6 +2153,31 @@ flex-direction: column;
   }
   100% {
     background-position: 200% 50%;
+  }
+}
+
+@keyframes rainbow-background {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes glow-fade {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+    filter: blur(60px);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.1);
+    filter: blur(80px);
   }
 }
 
@@ -2798,6 +2834,13 @@ flex-direction: column;
   .form-input {
     border-width: 3px;
   }
+}
+
+.section-logo {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  gap: var(--space-2);
 }
 
 /* Dark Mode Support */
