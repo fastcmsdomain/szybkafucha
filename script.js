@@ -19,15 +19,11 @@ const getApiEndpoint = () => {
   
   // Development (localhost)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3000/api/v1/newsletter/subscribe';
+    return 'http://localhost:8000/api/subscribe.php';
   }
   
-  // Production - use API subdomain
-  // Backend runs on api.szybkafucha.app
-  return `${protocol}//api.szybkafucha.app/api/v1/newsletter/subscribe`;
-  
-  // Alternative: Same domain with /api path (if using nginx reverse proxy)
-  // return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
+  // Production - PHP API on same domain
+  return `${protocol}//${hostname}/api/subscribe.php`;
 };
 
 const CONFIG = {
@@ -908,6 +904,7 @@ function init() {
   });
   
   console.log('🚀 Szybka Fucha Landing Page initialized');
+  console.log('📡 API Endpoint:', CONFIG.apiEndpoint);
 }
 
 // ========================================
