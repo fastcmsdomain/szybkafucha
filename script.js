@@ -22,13 +22,12 @@ const getApiEndpoint = () => {
     return 'http://localhost:3000/api/v1/newsletter/subscribe';
   }
   
-  // Production - use same domain with /api path
-  // If you have a separate API domain, update this accordingly
-  return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
+  // Production - use API subdomain
+  // Backend runs on api.szybkafucha.app
+  return `${protocol}//api.szybkafucha.app/api/v1/newsletter/subscribe`;
   
-  // Alternative: Custom API subdomain (uncomment if needed)
-  // const apiDomain = hostname.replace('www.', 'api.'); // www.szybkafucha.app -> api.szybkafucha.app
-  // return `${protocol}//${apiDomain}/api/v1/newsletter/subscribe`;
+  // Alternative: Same domain with /api path (if using nginx reverse proxy)
+  // return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
 };
 
 const CONFIG = {
