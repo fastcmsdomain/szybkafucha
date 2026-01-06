@@ -22,14 +22,13 @@ const getApiEndpoint = () => {
     return 'http://localhost:3000/api/v1/newsletter/subscribe';
   }
   
-  // Production - use same domain with /api path, or configure custom API domain
-  // Option 1: Same domain (recommended for simple setup)
-  // return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
+  // Production - use same domain with /api path
+  // If you have a separate API domain, update this accordingly
+  return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
   
-  // Option 2: Custom API subdomain (recommended for production)
-  // Replace 'szybkafucha.pl' with your actual domain
-  const apiDomain = hostname.replace('www.', 'api.'); // www.szybkafucha.pl -> api.szybkafucha.pl
-  return `${protocol}//${apiDomain}/api/v1/newsletter/subscribe`;
+  // Alternative: Custom API subdomain (uncomment if needed)
+  // const apiDomain = hostname.replace('www.', 'api.'); // www.szybkafucha.app -> api.szybkafucha.app
+  // return `${protocol}//${apiDomain}/api/v1/newsletter/subscribe`;
 };
 
 const CONFIG = {
@@ -328,10 +327,21 @@ async function handleFormSubmit(event) {
       body: JSON.stringify(formData),
     });
     
-    const result = await response.json();
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type');
+    let result;
+    
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      // If not JSON, get text for error message
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 200));
+      throw new Error('Serwer zwrócił nieprawidłową odpowiedź. Sprawdź konfigurację API.');
+    }
     
     if (!response.ok) {
-      throw new Error(result.message || 'Network response was not ok');
+      throw new Error(result.message || `Błąd serwera: ${response.status}`);
     }
     
     // Log for debugging
@@ -557,10 +567,21 @@ async function handleHeroFormSubmit(event) {
       body: JSON.stringify(formData),
     });
     
-    const result = await response.json();
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type');
+    let result;
+    
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      // If not JSON, get text for error message
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 200));
+      throw new Error('Serwer zwrócił nieprawidłową odpowiedź. Sprawdź konfigurację API.');
+    }
     
     if (!response.ok) {
-      throw new Error(result.message || 'Network response was not ok');
+      throw new Error(result.message || `Błąd serwera: ${response.status}`);
     }
     
     // Log for debugging
@@ -580,6 +601,34 @@ async function handleHeroFormSubmit(event) {
     
   } catch (error) {
     console.error('Hero form submission error:', error);
+    
+    // Display error to user
+    const errorAlert = document.createElement('div');
+    errorAlert.className = 'form-error-alert';
+    errorAlert.setAttribute('role', 'alert');
+    errorAlert.textContent = error.message || 'Wystąpił błąd podczas wysyłania formularza. Spróbuj ponownie.';
+    errorAlert.style.cssText = `
+      padding: 0.75rem;
+      background: #FEE2E2;
+      border: 1px solid #FCA5A5;
+      border-radius: 0.5rem;
+      color: #991B1B;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    `;
+    
+    // Remove existing error alert if any
+    const existingAlert = form.querySelector('.form-error-alert');
+    if (existingAlert) {
+      existingAlert.remove();
+    }
+    
+    // Insert error at the top of form
+    form.insertBefore(errorAlert, form.firstChild);
+    
+    // Scroll to error
+    errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } finally {
     submitBtn.classList.remove('loading');
     submitBtn.disabled = false;
