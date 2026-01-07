@@ -1,126 +1,331 @@
 /**
  * Dashboard Page
  * Overview metrics and charts
+ * Connected to real database via API
  */
-import React from 'react';
-import { Box, Flex, Text, HStack } from '@chakra-ui/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Flex, Text, HStack, Spinner, VStack, Button } from '@chakra-ui/react';
 
-// Mock data for dashboard
-const STATS = [
-  { label: 'Aktywni użytkownicy', value: '1,234', change: '+12%', icon: '👥', bgColor: '#3B82F615' },
-  { label: 'Zlecenia dzisiaj', value: '89', change: '+8%', icon: '📋', bgColor: '#10B98115' },
-  { label: 'GMV (tydzień)', value: '45,230 zł', change: '+23%', icon: '💰', bgColor: '#8B5CF615' },
-  { label: 'Śr. czas realizacji', value: '1h 42m', change: '-5%', icon: '⏱️', bgColor: '#F59E0B15' },
-];
+// Types
+interface Subscriber {
+  id: string;
+  name: string;
+  email: string;
+  userType: 'client' | 'contractor';
+  source: string;
+  isActive: boolean;
+  services: string[];
+  comments: string;
+  subscribedAt: string | null;
+  createdAt: string;
+}
 
-const RECENT_TASKS = [
-  { id: '1', client: 'Anna K.', contractor: 'Michał W.', category: 'Paczki', status: 'completed', amount: 45 },
-  { id: '2', client: 'Tomasz M.', contractor: 'Karolina S.', category: 'Zakupy', status: 'in_progress', amount: 75 },
-  { id: '3', client: 'Ewa P.', contractor: '—', category: 'Kolejki', status: 'created', amount: 60 },
-  { id: '4', client: 'Piotr Z.', contractor: 'Adam B.', category: 'Montaż', status: 'accepted', amount: 120 },
-  { id: '5', client: 'Maria L.', contractor: 'Jan K.', category: 'Sprzątanie', status: 'completed', amount: 150 },
-];
-
-// Status label helper
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, { text: string; bgColor: string; color: string }> = {
-    created: { text: 'Nowe', bgColor: '#64748B20', color: '#64748B' },
-    accepted: { text: 'Przyjęte', bgColor: '#3B82F620', color: '#3B82F6' },
-    in_progress: { text: 'W trakcie', bgColor: '#F59E0B20', color: '#F59E0B' },
-    completed: { text: 'Zakończone', bgColor: '#10B98120', color: '#10B981' },
+interface ApiResponse {
+  success: boolean;
+  data: Subscriber[];
+  stats: {
+    total: number;
+    active: number;
+    inactive: number;
+    clients: number;
+    contractors: number;
   };
-  return labels[status] || { text: status, bgColor: '#64748B20', color: '#64748B' };
+}
+
+// Service labels mapping
+const SERVICE_LABELS: Record<string, string> = {
+  cleaning: '🧹 Sprzątanie',
+  shopping: '🛒 Zakupy',
+  repairs: '🔧 Naprawy',
+  garden: '🌿 Ogród',
+  pets: '🐕 Zwierzęta',
+  assembly: '🏠 Montaż',
+  moving: '📦 Przeprowadzki',
+  queues: '⏰ Kolejki',
+  transport: '🚗 Transport',
+  it: '📱 IT',
+  tutoring: '🎓 Korepetycje',
+  events: '🎉 Wydarzenia',
+};
+
+// API endpoint configuration
+const getApiEndpoint = (): string => {
+  // Always use production API (PHP not available locally)
+  return 'https://szybkafucha.app/api/subscribers.php';
 };
 
 const Dashboard: React.FC = () => {
+  // State
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [stats, setStats] = useState<ApiResponse['stats'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch subscribers from API
+  const fetchSubscribers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(getApiEndpoint());
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.success) {
+        setSubscribers(data.data);
+        setStats(data.stats);
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching subscribers:', err);
+      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas pobierania danych');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchSubscribers();
+  }, [fetchSubscribers]);
+
+  // Calculate service popularity
+  const getServiceStats = (): { service: string; count: number }[] => {
+    const serviceCounts: Record<string, number> = {};
+    
+    subscribers.forEach((sub) => {
+      if (sub.services && Array.isArray(sub.services)) {
+        sub.services.forEach((service) => {
+          serviceCounts[service] = (serviceCounts[service] || 0) + 1;
+        });
+      }
+    });
+    
+    return Object.entries(serviceCounts)
+      .map(([service, count]) => ({ service, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  };
+
+  // Get recent subscribers
+  const getRecentSubscribers = (): Subscriber[] => {
+    return subscribers.slice(0, 5);
+  };
+
+  // Format date
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minH="400px">
+        <VStack gap={4}>
+          <Spinner size="xl" color="red.500" borderWidth="4px" />
+          <Text color="gray.500">Ładowanie danych...</Text>
+        </VStack>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box>
+        <Text fontSize="2xl" fontWeight="bold" mb={6}>Dashboard</Text>
+        <Box bg="red.50" p={6} borderRadius="xl" border="1px solid" borderColor="red.200">
+          <Text color="red.600" fontWeight="medium">❌ Błąd ładowania danych</Text>
+          <Text color="red.500" fontSize="sm" mt={2}>{error}</Text>
+          <Button mt={4} colorScheme="red" size="sm" onClick={fetchSubscribers}>
+            Spróbuj ponownie
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  const serviceStats = getServiceStats();
+  const recentSubscribers = getRecentSubscribers();
+
   return (
     <Box>
-      <Text fontSize="2xl" fontWeight="bold" mb={6}>Dashboard</Text>
+      <Flex justify="space-between" align="center" mb={6}>
+        <Text fontSize="2xl" fontWeight="bold">Dashboard</Text>
+        <Button colorScheme="red" size="sm" onClick={fetchSubscribers}>
+          🔄 Odśwież
+        </Button>
+      </Flex>
 
-      {/* Alert */}
-      <Box bg="orange.50" p={3} borderRadius="lg" mb={6}>
+      {/* Info Alert */}
+      <Box bg="blue.50" p={3} borderRadius="lg" mb={6}>
         <HStack gap={2}>
-          <span>⚠️</span>
-          <Text fontSize="sm">3 nowe spory do rozwiązania</Text>
+          <span>📊</span>
+          <Text fontSize="sm">Dane z formularza ulepszeń aplikacji (newsletter)</Text>
         </HStack>
       </Box>
 
       {/* Stats Grid */}
-      <Flex gap={6} mb={8} flexWrap="wrap">
-        {STATS.map((stat, i) => (
-          <Box
-            key={i}
-            bg="white"
-            p={5}
-            borderRadius="xl"
-            boxShadow="sm"
-            flex="1"
-            minW="200px"
-          >
+      {stats && (
+        <Flex gap={6} mb={8} flexWrap="wrap">
+          <Box bg="white" p={5} borderRadius="xl" boxShadow="sm" flex="1" minW="200px">
             <Box mb={3}>
-              <Box
-                display="inline-flex"
-                p={2}
-                borderRadius="lg"
-                bg={stat.bgColor}
-                fontSize="xl"
-              >
-                {stat.icon}
+              <Box display="inline-flex" p={2} borderRadius="lg" bg="#3B82F615" fontSize="xl">
+                👥
               </Box>
             </Box>
-            <Text color="gray.500" fontSize="sm" mb={1}>{stat.label}</Text>
-            <Text fontSize="2xl" fontWeight="bold">{stat.value}</Text>
-            <Text fontSize="sm" color={stat.change.startsWith('+') ? 'green.500' : 'red.500'}>
-              {stat.change} vs poprzedni tydzień
+            <Text color="gray.500" fontSize="sm" mb={1}>Wszystkich zapisanych</Text>
+            <Text fontSize="2xl" fontWeight="bold">{stats.total}</Text>
+            <Text fontSize="sm" color="green.500">
+              {stats.active} aktywnych
             </Text>
           </Box>
-        ))}
-      </Flex>
 
-      {/* Recent Tasks */}
-      <Box bg="white" borderRadius="xl" boxShadow="sm" overflow="hidden">
-        <Box p={4} borderBottom="1px solid" borderColor="gray.100">
-          <Text fontWeight="semibold">Ostatnie zlecenia</Text>
+          <Box bg="white" p={5} borderRadius="xl" boxShadow="sm" flex="1" minW="200px">
+            <Box mb={3}>
+              <Box display="inline-flex" p={2} borderRadius="lg" bg="#3B82F615" fontSize="xl">
+                🙋
+              </Box>
+            </Box>
+            <Text color="gray.500" fontSize="sm" mb={1}>Zleceniodawcy</Text>
+            <Text fontSize="2xl" fontWeight="bold" color="blue.500">{stats.clients}</Text>
+            <Text fontSize="sm" color="gray.500">
+              {stats.total > 0 ? Math.round((stats.clients / stats.total) * 100) : 0}% wszystkich
+            </Text>
+          </Box>
+
+          <Box bg="white" p={5} borderRadius="xl" boxShadow="sm" flex="1" minW="200px">
+            <Box mb={3}>
+              <Box display="inline-flex" p={2} borderRadius="lg" bg="#8B5CF615" fontSize="xl">
+                💪
+              </Box>
+            </Box>
+            <Text color="gray.500" fontSize="sm" mb={1}>Wykonawcy</Text>
+            <Text fontSize="2xl" fontWeight="bold" color="purple.500">{stats.contractors}</Text>
+            <Text fontSize="sm" color="gray.500">
+              {stats.total > 0 ? Math.round((stats.contractors / stats.total) * 100) : 0}% wszystkich
+            </Text>
+          </Box>
+
+          <Box bg="white" p={5} borderRadius="xl" boxShadow="sm" flex="1" minW="200px">
+            <Box mb={3}>
+              <Box display="inline-flex" p={2} borderRadius="lg" bg="#10B98115" fontSize="xl">
+                💬
+              </Box>
+            </Box>
+            <Text color="gray.500" fontSize="sm" mb={1}>Z komentarzami</Text>
+            <Text fontSize="2xl" fontWeight="bold" color="green.500">
+              {subscribers.filter((s) => s.comments && s.comments.length > 0).length}
+            </Text>
+            <Text fontSize="sm" color="gray.500">
+              sugestie użytkowników
+            </Text>
+          </Box>
+        </Flex>
+      )}
+
+      {/* Two columns: Popular Services & Recent Subscribers */}
+      <Flex gap={6} flexWrap="wrap">
+        {/* Popular Services */}
+        <Box bg="white" borderRadius="xl" boxShadow="sm" flex="1" minW="300px">
+          <Box p={4} borderBottom="1px solid" borderColor="gray.100">
+            <Text fontWeight="semibold">🎯 Najpopularniejsze usługi</Text>
+          </Box>
+          <Box p={4}>
+            {serviceStats.length > 0 ? (
+              <VStack align="stretch" gap={3}>
+                {serviceStats.map(({ service, count }) => (
+                  <Flex key={service} justify="space-between" align="center">
+                    <Text>{SERVICE_LABELS[service] || service}</Text>
+                    <Box
+                      bg="red.50"
+                      color="red.600"
+                      px={3}
+                      py={1}
+                      borderRadius="full"
+                      fontSize="sm"
+                      fontWeight="medium"
+                    >
+                      {count} osób
+                    </Box>
+                  </Flex>
+                ))}
+              </VStack>
+            ) : (
+              <Text color="gray.500" fontSize="sm">Brak danych o usługach</Text>
+            )}
+          </Box>
         </Box>
-        <Box overflowX="auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Klient</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Wykonawca</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Kategoria</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Kwota</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RECENT_TASKS.map((task) => {
-                const status = getStatusLabel(task.status);
-                return (
-                  <tr key={task.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '12px 16px' }}>{task.client}</td>
-                    <td style={{ padding: '12px 16px', color: task.contractor === '—' ? '#94A3B8' : 'inherit' }}>{task.contractor}</td>
-                    <td style={{ padding: '12px 16px' }}>{task.category}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '9999px',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        backgroundColor: status.bgColor,
-                        color: status.color
-                      }}>
-                        {status.text}
-                      </span>
+
+        {/* Recent Subscribers */}
+        <Box bg="white" borderRadius="xl" boxShadow="sm" flex="2" minW="400px" overflow="hidden">
+          <Box p={4} borderBottom="1px solid" borderColor="gray.100">
+            <Text fontWeight="semibold">🆕 Ostatnio zapisani</Text>
+          </Box>
+          <Box overflowX="auto">
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Użytkownik</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Typ</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Źródło</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentSubscribers.length > 0 ? (
+                  recentSubscribers.map((sub) => (
+                    <tr key={sub.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <Box>
+                          <Text fontWeight="medium">{sub.name}</Text>
+                          <Text fontSize="sm" color="gray.500">{sub.email}</Text>
+                        </Box>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          backgroundColor: sub.userType === 'contractor' ? '#8B5CF620' : '#3B82F620',
+                          color: sub.userType === 'contractor' ? '#8B5CF6' : '#3B82F6'
+                        }}>
+                          {sub.userType === 'contractor' ? 'Wykonawca' : 'Zleceniodawca'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <Text fontSize="sm" color="gray.600">{sub.source || 'landing_page'}</Text>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <Text fontSize="sm">{formatDate(sub.subscribedAt || sub.createdAt)}</Text>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} style={{ padding: '20px', textAlign: 'center' }}>
+                      <Text color="gray.500">Brak zapisanych użytkowników</Text>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 500 }}>{task.amount} zł</td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </Box>
         </Box>
-      </Box>
+      </Flex>
     </Box>
   );
 };

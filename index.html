@@ -178,6 +178,7 @@
               </svg>
             </a>
             <a href="#jak-dziala" class="btn btn--ghost">Dowiedz się więcej</a>
+            <a href="#newsletter-form" class="btn btn--ghost gradient-button">Pomóż nam ulepszyć aplikację</a>
           </div>
           <!--/* <div class="hero__stats">
             <div class="stat">
@@ -268,7 +269,7 @@
                 
                 <p class="form-privacy form-privacy--hero">
                   Twoje dane są bezpieczne. Przeczytaj naszą 
-                  <a href="#privacy">Politykę Prywatności</a>.
+                  <a href="privacy.html">Politykę Prywatności</a>.
                 </p>
               </form>
               
@@ -319,7 +320,7 @@
               <span class="gradient-text">Poznaj naszą intuicyjną aplikację.</span>
             </h2>
             </h2>
-            <p class="section-subtitle">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności.<br> <strong>Aplikacja, która oszczędza Twój czas.</strong></p>
+            <p class="section-text">Intuicyjny interfejs, szybkie zlecenia, bezpieczne płatności.<br> <strong>Aplikacja, która oszczędza Twój czas.</strong><br></p>
             
             <ul class="our-app__features">
               <li class="our-app__feature-item our-app__feature-item--active" data-feature="1">
@@ -942,47 +943,233 @@
     <section id="jak-dziala" class="how-it-works" aria-labelledby="how-heading">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">Proste jak 1-2-3</span>
-          <h2 id="how-heading" class="section-title">Jak działa Szybka Fucha?</h2>
-          <p class="section-subtitle">Trzy kroki dzielą Cię od załatwienia sprawy lub zarobienia pieniędzy.</p>
+          <h3 class="section-subtitle">Proste jak 1-2-3</h3>
+          <h3 id="how-heading" class="section-title gradient-text">Jak działa Szybka Fucha?</h3>
+          <p class="section-text">Trzy kroki dzielą Cię od załatwienia sprawy lub zarobienia pieniędzy.</p>
         </div>
         
         <div class="steps">
-          <article class="step">
+          <article class="step step--with-demo">
             <div class="step__number">1</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <path d="M24 14V34M14 24H34" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-            </div>
             <h3 class="step__title">Opisz zadanie</h3>
-            <p class="step__desc">Powiedz czego potrzebujesz, ustal budżet i lokalizację. To zajmie Ci mniej niż minutę.</p>
+            <!-- Mini Phone Demo -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header with back button -->
+                  <div class="step-demo__header">
+                    <button class="step-demo__back" aria-label="Wróć">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="step-demo__header-title">Nowe zlecenie</span>
+                  </div>
+                  
+                  <!-- Form content -->
+                  <div class="step-demo__content">
+                    <div class="step-demo__field">
+                      <label class="step-demo__label">Tytuł</label>
+                      <div class="step-demo__input step-demo__input--filled">
+                        Sprzątanie w domu jednorodzinnym
+                      </div>
+                    </div>
+                    
+                    <div class="step-demo__field">
+                      <label class="step-demo__label">Opis</label>
+                      <div class="step-demo__textarea step-demo__input--filled">
+                        Posprzątanie 3 pokoi, kuchni i łazienki. Odkurzanie, mycie podłóg i okien. Około 4h pracy.
+                      </div>
+                    </div>
+                    
+                    <div class="step-demo__row">
+                      <div class="step-demo__field step-demo__field--half">
+                        <label class="step-demo__label">Budżet</label>
+                        <div class="step-demo__input step-demo__input--filled">200 zł</div>
+                      </div>
+                      <div class="step-demo__field step-demo__field--half">
+                        <label class="step-demo__label">Lokalizacja</label>
+                        <div class="step-demo__input step-demo__input--filled">Warszawa</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Send button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Wyślij zlecenie
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="step__desc"><br>Powiedz czego potrzebujesz, ustal budżet i lokalizację. <b>To zajmie Ci mniej niż minutę.</b><br></p>
           </article>
           
-          <article class="step">
+          <article class="step step--with-demo">
             <div class="step__number">2</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <circle cx="24" cy="20" r="6" stroke="#E94560" stroke-width="3"/>
-                <path d="M14 36C14 31.5817 18.4772 28 24 28C29.5228 28 34 31.5817 34 36" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-            </div>
             <h3 class="step__title">Znajdź pomocnika</h3>
-            <p class="step__desc">Przeglądaj profile zweryfikowanych wykonawców, sprawdź opinie i wybierz najlepszego.</p>
+            
+            <!-- Mini Phone Demo - Worker Profiles -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header -->
+                  <div class="step-demo__header">
+                    <button class="step-demo__back" aria-label="Wróć">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="step-demo__header-title">Dostępni wykonawcy</span>
+                  </div>
+                  
+                  <!-- Workers list -->
+                  <div class="step-demo__content step-demo__content--workers">
+                    <!-- Worker 1 -->
+                    <div class="step-demo__worker step-demo__worker--selected">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#E94560"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#E94560" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Anna K.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★★</span>
+                          <span class="step-demo__rating-text">4.9 (127)</span>
+                        </div>
+                        <span class="step-demo__worker-price">180 zł</span>
+                      </div>
+                      <div class="step-demo__worker-badge">✓</div>
+                    </div>
+                    
+                    <!-- Worker 2 -->
+                    <div class="step-demo__worker">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#64748B"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#64748B" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Tomek M.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★☆</span>
+                          <span class="step-demo__rating-text">4.7 (89)</span>
+                        </div>
+                        <span class="step-demo__worker-price">200 zł</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Worker 3 -->
+                    <div class="step-demo__worker">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#64748B"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#64748B" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Ewa S.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★★</span>
+                          <span class="step-demo__rating-text">5.0 (54)</span>
+                        </div>
+                        <span class="step-demo__worker-price">220 zł</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Select button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Wybierz wykonawcę
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="step__desc"><br>Przeglądaj profile zweryfikowanych wykonawców, <b>sprawdź opinie i wybierz najlepszego.</b><br></p>
           </article>
           
-          <article class="step">
+          <article class="step step--with-demo">
             <div class="step__number">3</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <path d="M16 24L22 30L32 18" stroke="#E94560" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
             <h3 class="step__title">Gotowe!</h3>
-            <p class="step__desc">Zadanie wykonane, płatność bezpieczna. Oceń wykonawcę i ciesz się wolnym czasem!</p>
+            
+            <!-- Mini Phone Demo - Task Complete -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header -->
+                  <div class="step-demo__header step-demo__header--success">
+                    <span class="step-demo__header-title">Zlecenie zakończone</span>
+                  </div>
+                  
+                  <!-- Success content -->
+                  <div class="step-demo__content step-demo__content--success">
+                    <!-- Success icon -->
+                    <div class="step-demo__success-icon">
+                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="22" fill="#10B981" fill-opacity="0.15"/>
+                        <path d="M14 24L21 31L34 17" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    
+                    <div class="step-demo__success-text">
+                      <span class="step-demo__success-title">Zadanie wykonane!</span>
+                      <span class="step-demo__success-subtitle">Sprzątanie w domu</span>
+                    </div>
+                    
+                    <!-- Payment info -->
+                    <div class="step-demo__payment-info">
+                      <div class="step-demo__payment-row">
+                        <span>Kwota:</span>
+                        <span class="step-demo__payment-amount">180 zł</span>
+                      </div>
+                      <div class="step-demo__payment-row">
+                        <span>Status:</span>
+                        <span class="step-demo__payment-status">Opłacone ✓</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Rating section -->
+                    <div class="step-demo__rating-section">
+                      <span class="step-demo__rating-label">Oceń wykonawcę:</span>
+                      <div class="step-demo__rating-stars">
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Done button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn step-demo__btn--success">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Wróć do strony głównej
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="step__desc"><br>Zadanie wykonane, płatność bezpieczna.<br> <b>Oceń wykonawcę i ciesz się wolnym czasem!</b><br></p>
           </article>
         </div>
       </div>
@@ -992,8 +1179,8 @@
     <section id="dla-kogo" class="for-who" aria-labelledby="for-who-heading">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">Dla każdego</span>
-          <h2 id="for-who-heading" class="section-title">Szybka Fucha jest dla Ciebie</h2>
+          <h4 class="section-subtitle">Dla każdego</h4>
+          <h3 id="for-who-heading" class="section-title gradient-text">Szybka Fucha jest dla Ciebie</h3>
         </div>
         
         <div class="audience-cards">
@@ -1008,7 +1195,7 @@
             <div class="audience-card__content">
               <span class="audience-card__tag">Chcę zlecać</span>
               <h3 class="audience-card__title">Dla zabieganych</h3>
-              <p class="audience-card__desc">Nie masz czasu na wszystko? Zleć drobne zadania i skup się na tym, co naprawdę ważne.</p>
+              <p class="audience-card__desc">Nie masz czasu? Potrzebujesz pomocy? Zleć drobne zadania i skup się na tym, co naprawdę ważne.</p>
               <ul class="audience-card__list">
                 <li>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -1055,7 +1242,7 @@
   <div class="audience-card__content">
     <span class="audience-card__tag audience-card__tag--green">Chcę zarabiać</span>
     <h3 class="audience-card__title">Dla przedsiębiorczych</h3>
-    <p class="audience-card__desc">Masz wolny czas i chęci? Zarabiaj pomagając sąsiadom. Ty decydujesz kiedy i ile.</p>
+    <p class="audience-card__desc">Masz wolny czas i chęci? Zarabiaj pomagając sąsiadom.<br> Ty decydujesz kiedy i ile.</p>
     <ul class="audience-card__list">
       <li>
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -1099,58 +1286,59 @@
       <div class="container">
         <div class="signup-wrapper">
           <div class="signup__content">
-            <span class="section-tag section-tag--light">Bądź pierwszy!</span>
-            <h2 id="signup-heading" class="signup__title">Zapisz się do newslettera</h2>
-            <p class="signup__subtitle">Otrzymaj powiadomienie o starcie w Twoim mieście i ekskluzywne korzyści dla pierwszych użytkowników.</p>
+            <span class="section-tag section-tag--light">Twoja opinia tworzy aplikację!</span>
+            <h2 id="signup-heading" class="signup__title">Pomóż nam stworzyć aplikację idealną dla Ciebie</h2>
+            <p class="signup__subtitle">Podziel się swoimi pomysłami i potrzebami. Twój głos kształtuje przyszłość Szybkiej Fuchy — budujemy ją razem z Tobą!<br><br>
+            💡 Twoje odpowiedzi pomogą nam stworzyć aplikację, która naprawdę odpowiada na Twoje potrzeby.<br></p>
             
             <ul class="signup__benefits">
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Darmowe pierwsze zlecenie
+                Współtwórz funkcje aplikacji
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                0% prowizji przez pierwszy miesiąc
+                Wpływaj na rozwój platformy
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Status VIP Early Adopter
+                Dostęp do ekskluzywnych benefitów
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Priorytetowy dostęp do aplikacji
+                Priorytetowy start w Twoim mieście
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Ekskluzywne promocje i zniżki
+                Specjalne zniżki dla badaczy rynku
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Powiadomienia o nowych funkcjach
+                Status VIP Współtwórcy
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Wsparcie techniczne 24/7
+                Bezpośredni wpływ na UX aplikacji
               </li>
             </ul>
             
             <div class="signup__cta">
               <a href="#newsletter-form" class="btn btn--primary btn--large">
-                Zapisz się teraz
+                Podziel się opinią
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -1202,7 +1390,6 @@
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Chcę zlecać</strong>
-                    <small>Szukam pomocników do zadań</small>
                   </span>
                 </label>
                 <label class="radio-option">
@@ -1214,12 +1401,94 @@
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Chcę zarabiać</strong>
-                    <small>Chcę wykonywać zlecenia</small>
                   </span>
                 </label>
               </div>
               <span id="type-error" class="form-error" role="alert"></span>
             </fieldset>
+            
+            <!-- Services Checkboxes -->
+            <fieldset class="form-group form-group--services">
+              <legend class="form-label form-label--small">Które usługi są dla Ciebie najważniejsze? (opcjonalnie)</legend>
+              <p class="form-help-text">Zaznacz usługi, z których chciałbyś/chciałabyś korzystać lub które chciałbyś/chciałabyś świadczyć:</p>
+              <div class="services-grid">
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="cleaning">
+                  <span class="service-icon">🧹</span>
+                  <span class="service-label">Sprzątanie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="shopping">
+                  <span class="service-icon">🛒</span>
+                  <span class="service-label">Zakupy i dostawy</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="repairs">
+                  <span class="service-icon">🔧</span>
+                  <span class="service-label">Drobne naprawy</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="garden">
+                  <span class="service-icon">🌿</span>
+                  <span class="service-label">Prace w ogrodzie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="pets">
+                  <span class="service-icon">🐕</span>
+                  <span class="service-label">Opieka nad zwierzętami</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="assembly">
+                  <span class="service-icon">🏠</span>
+                  <span class="service-label">Montaż mebli</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="moving">
+                  <span class="service-icon">📦</span>
+                  <span class="service-label">Pomoc przy przeprowadzce</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="queues">
+                  <span class="service-icon">⏰</span>
+                  <span class="service-label">Stanie w kolejkach</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="transport">
+                  <span class="service-icon">🚗</span>
+                  <span class="service-label">Pomoc przy transporcie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="it">
+                  <span class="service-icon">📱</span>
+                  <span class="service-label">Pomoc techniczna (IT)</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="tutoring">
+                  <span class="service-icon">🎓</span>
+                  <span class="service-label">Korepetycje</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="events">
+                  <span class="service-icon">🎉</span>
+                  <span class="service-label">Organizacja wydarzeń</span>
+                </label>
+              </div>
+            </fieldset>
+            
+            <!-- Comments Textarea -->
+            <div class="form-group">
+              <label for="comments" class="form-label form-label--small">Podziel się swoimi pomysłami! (opcjonalnie)</label>
+              <p class="form-help-text">Co sprawia, że aplikacja byłaby idealna dla Ciebie? Jakie funkcje są kluczowe? Czego brakuje na rynku?</p>
+              <textarea 
+                id="comments" 
+                name="comments" 
+                class="form-textarea" 
+                placeholder="Np. 'Potrzebuję aplikacji, która...' lub 'Najważniejsze dla mnie jest...' lub 'Chciałbym/chciałabym mieć możliwość...'"
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <span class="form-hint">Każda sugestia się liczy! Max 500 znaków</span>
+            </div>
             
             <div class="form-group form-group--checkbox">
               <label class="checkbox-option">
@@ -1239,13 +1508,14 @@
             </div>
             
             <button type="submit" class="btn btn--primary btn--full" id="submit-btn">
-              <span class="btn__text">Zapisz się do newslettera</span>
+              <span class="btn__text">Wyślij opinię i dołącz do badania</span>
               <span class="btn__loader" aria-hidden="true"></span>
             </button>
             
             <p class="form-privacy">
-              Twoje dane są bezpieczne. Przeczytaj naszą 
-              <a href="#privacy">Politykę Prywatności</a>.
+              <strong>🔒 Twoje dane są w pełni bezpieczne.</strong><br>
+              Używamy ich wyłącznie do badania rynku i komunikacji. 
+              <a href="privacy.html">Polityka Prywatności</a>.
             </p>
           </form>
           
@@ -1359,10 +1629,7 @@
       <div class="footer__main">
         <div class="footer__brand">
           <div class="footer__logo">
-            <svg class="logo-icon" width="32" height="32" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <circle cx="20" cy="20" r="20" fill="#E94560"/>
-              <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <span class="logo-icon">⚡</span>
             <span>Szybka Fucha</span>
           </div>
           <p class="footer__tagline">Twój lokalny pomocnik na wyciągnięcie ręki.</p>

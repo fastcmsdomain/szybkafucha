@@ -19,15 +19,11 @@ const getApiEndpoint = () => {
   
   // Development (localhost)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:3000/api/v1/newsletter/subscribe';
+    return 'http://localhost:8000/api/subscribe.php';
   }
   
-  // Production - use API subdomain
-  // Backend runs on api.szybkafucha.app
-  return `${protocol}//api.szybkafucha.app/api/v1/newsletter/subscribe`;
-  
-  // Alternative: Same domain with /api path (if using nginx reverse proxy)
-  // return `${protocol}//${hostname}/api/v1/newsletter/subscribe`;
+  // Production - PHP API on same domain
+  return `${protocol}//${hostname}/api/subscribe.php`;
 };
 
 const CONFIG = {
@@ -313,8 +309,20 @@ async function handleFormSubmit(event) {
     email: form.querySelector(SELECTORS.emailInput).value.trim(),
     userType: form.querySelector(`${SELECTORS.userTypeInputs}:checked`).value,
     consent: true,
-    source: 'landing_page',
+    source: 'formularz_ulepszen_apki',
   };
+  
+  // Collect selected services
+  const serviceCheckboxes = form.querySelectorAll('input[name="services[]"]:checked');
+  if (serviceCheckboxes.length > 0) {
+    formData.services = Array.from(serviceCheckboxes).map(cb => cb.value);
+  }
+  
+  // Collect comments if provided
+  const commentsInput = form.querySelector('textarea[name="comments"]');
+  if (commentsInput && commentsInput.value.trim()) {
+    formData.comments = commentsInput.value.trim();
+  }
   
   try {
     // Call backend API
@@ -908,6 +916,7 @@ function init() {
   });
   
   console.log('🚀 Szybka Fucha Landing Page initialized');
+  console.log('📡 API Endpoint:', CONFIG.apiEndpoint);
 }
 
 // ========================================
