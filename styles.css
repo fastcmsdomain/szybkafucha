@@ -257,6 +257,14 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:focus {
+  transform: translateY(-2px);
+}
+
 .btn--primary {
   background: var(--color-primary);
   color: var(--color-white);
@@ -265,7 +273,6 @@ h1, h2, h3, h4, h5, h6 {
 .btn--primary:hover,
 .btn--primary:focus {
   background: var(--color-primary-dark);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -307,6 +314,73 @@ h1, h2, h3, h4, h5, h6 {
 .btn.loading .btn__loader {
   display: block;
   position: absolute;
+}
+
+/* Gradient Button - Global rainbow border effect (2px border) */
+.gradient-button {
+  position: relative;
+  z-index: 0;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.gradient-button::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    #E94560 0%,
+    #F59E0B 16.66%,
+    #10B981 33.33%,
+    #3B82F6 50%,
+    #8B5CF6 66.66%,
+    #EC4899 83.33%,
+    #E94560 100%
+  );
+  background-size: 200% 100%;
+  animation: rainbow-border 3s linear infinite;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.gradient-button::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: var(--color-white);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gradient-button:hover::after {
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+/* For buttons, ensure proper background */
+.btn.gradient-button::after {
+  background: var(--color-white);
+}
+
+.btn--ghost.gradient-button {
+  border: none;
+}
+
+.btn--ghost.gradient-button::after {
+  background: var(--color-white);
+}
+
+.btn--primary.gradient-button::after {
+  background: var(--color-primary);
+}
+
+/* For elements with dark backgrounds */
+.gradient-button[class*="dark"]::after,
+.gradient-button[style*="background:"]::after {
+  background: inherit;
 }
 
 /* Section Headers */
@@ -2173,6 +2247,10 @@ flex-direction: column;
   font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-gray-900);
+}
+
+.hero-phone-form .radio-group {
+  flex-direction: column;
 }
 
 /* Compact form styles for phone mockup */
