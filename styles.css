@@ -535,6 +535,164 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0 var(--space-2);
 }
 
+/* Form Label Small */
+.form-label--small {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+/* Services Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.services-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-2);
+}
+
+/* Service Checkbox */
+.service-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  background: var(--color-white);
+  text-align: left;
+}
+
+.service-checkbox:hover {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.service-checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.service-checkbox input:checked + .service-icon + .service-label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.service-checkbox input:checked ~ .service-icon,
+.service-checkbox:has(input:checked) .service-icon {
+  transform: scale(1.1);
+}
+
+.service-checkbox:has(input:checked) {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.08);
+  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+.service-checkbox--compact {
+  padding: var(--space-2);
+  gap: var(--space-1);
+}
+
+.service-icon {
+  font-size: 24px;
+  transition: transform var(--transition-base);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.service-checkbox--compact .service-icon {
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+}
+
+.service-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  transition: all var(--transition-base);
+  flex: 1;
+  line-height: 1.4;
+}
+
+.service-checkbox--compact .service-label {
+  font-size: var(--font-size-xs);
+}
+
+/* Form Textarea */
+.form-textarea {
+  width: 100%;
+  padding: var(--space-4);
+  border: 2px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  color: var(--color-gray-900);
+  background: var(--color-white);
+  resize: vertical;
+  transition: all var(--transition-base);
+  line-height: var(--line-height-relaxed);
+}
+
+.form-textarea--compact {
+  padding: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.form-textarea::placeholder {
+  color: var(--color-gray-400);
+}
+
+.form-textarea:hover {
+  border-color: var(--color-gray-300);
+}
+
+.form-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+  outline: none;
+}
+
+.form-textarea.error {
+  border-color: var(--color-error);
+}
+
+/* Form Hint */
+.form-hint {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  margin-top: var(--space-1);
+}
+
+.form-help-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
+  line-height: var(--line-height-relaxed);
+}
+
+/* Form Group Services */
+.form-group--services {
+  margin-top: var(--space-4);
+}
+
 /* Placeholder Images */
 .placeholder-image {
   display: flex;
@@ -1690,6 +1848,27 @@ flex-direction: column;
   margin-top: var(--space-8);
 }
 
+.signup__note {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: rgba(16, 185, 129, 0.05);
+  border-left: 4px solid var(--color-success);
+  border-radius: var(--radius-md);
+}
+
+.signup__note p {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+.signup__note strong {
+  color: var(--color-gray-900);
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
 .signup__form {
   background: var(--color-white);
   padding: var(--space-8);
@@ -2750,7 +2929,7 @@ flex-direction: column;
   }
   
   .radio-group {
-    flex-direction: column;
+    flex-direction: row;
   }
   
   .radio-option {
@@ -2847,6 +3026,7 @@ flex-direction: column;
   
   .signup__content {
     flex: 1;
+    width: 300px;
     text-align: left;
   }
   
@@ -2856,7 +3036,7 @@ flex-direction: column;
   
   .signup__form {
     flex: 1;
-    max-width: 480px;
+    max-width: 800px;
   }
   
   .footer__main {
@@ -3536,6 +3716,30 @@ flex-direction: column;
   padding: var(--space-8) var(--space-6);
   color: var(--color-gray-600);
   font-size: var(--font-size-sm);
+}
+
+/* Services Grid Responsive */
+@media (max-width: 640px) {
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+  
+  .services-grid--compact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .service-checkbox {
+    padding: var(--space-2);
+  }
+  
+  .service-icon {
+    font-size: 20px;
+  }
+  
+  .service-label {
+    font-size: var(--font-size-xs);
+  }
 }
 
 /* Legal page responsive */

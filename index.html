@@ -254,7 +254,7 @@
                 
                 <p class="form-privacy form-privacy--hero">
                   Twoje dane są bezpieczne. Przeczytaj naszą 
-                  <a href="#privacy">Politykę Prywatności</a>.
+                  <a href="privacy.html">Politykę Prywatności</a>.
                 </p>
               </form>
               
@@ -1271,58 +1271,59 @@
       <div class="container">
         <div class="signup-wrapper">
           <div class="signup__content">
-            <span class="section-tag section-tag--light">Bądź pierwszy!</span>
-            <h2 id="signup-heading" class="signup__title">Zapisz się do newslettera</h2>
-            <p class="signup__subtitle">Otrzymaj powiadomienie o starcie w Twoim mieście i ekskluzywne korzyści dla pierwszych użytkowników.</p>
+            <span class="section-tag section-tag--light">Twoja opinia tworzy aplikację!</span>
+            <h2 id="signup-heading" class="signup__title">Pomóż nam stworzyć aplikację idealną dla Ciebie</h2>
+            <p class="signup__subtitle">Podziel się swoimi pomysłami i potrzebami. Twój głos kształtuje przyszłość Szybkiej Fuchy — budujemy ją razem z Tobą!<br><br>
+            💡 Twoje odpowiedzi pomogą nam stworzyć aplikację, która naprawdę odpowiada na Twoje potrzeby.<br></p>
             
             <ul class="signup__benefits">
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Darmowe pierwsze zlecenie
+                Współtwórz funkcje aplikacji
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                0% prowizji przez pierwszy miesiąc
+                Wpływaj na rozwój platformy
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Status VIP Early Adopter
+                Dostęp do ekskluzywnych benefitów
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Priorytetowy dostęp do aplikacji
+                Priorytetowy start w Twoim mieście
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Ekskluzywne promocje i zniżki
+                Specjalne zniżki dla badaczy rynku
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Powiadomienia o nowych funkcjach
+                Status VIP Współtwórcy
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Wsparcie techniczne 24/7
+                Bezpośredni wpływ na UX aplikacji
               </li>
             </ul>
             
             <div class="signup__cta">
               <a href="#newsletter-form" class="btn btn--primary btn--large">
-                Zapisz się teraz
+                Podziel się opinią
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -1374,7 +1375,6 @@
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Chcę zlecać</strong>
-                    <small>Szukam pomocników do zadań</small>
                   </span>
                 </label>
                 <label class="radio-option">
@@ -1386,12 +1386,94 @@
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Chcę zarabiać</strong>
-                    <small>Chcę wykonywać zlecenia</small>
                   </span>
                 </label>
               </div>
               <span id="type-error" class="form-error" role="alert"></span>
             </fieldset>
+            
+            <!-- Services Checkboxes -->
+            <fieldset class="form-group form-group--services">
+              <legend class="form-label form-label--small">Które usługi są dla Ciebie najważniejsze? (opcjonalnie)</legend>
+              <p class="form-help-text">Zaznacz usługi, z których chciałbyś/chciałabyś korzystać lub które chciałbyś/chciałabyś świadczyć:</p>
+              <div class="services-grid">
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="cleaning">
+                  <span class="service-icon">🧹</span>
+                  <span class="service-label">Sprzątanie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="shopping">
+                  <span class="service-icon">🛒</span>
+                  <span class="service-label">Zakupy i dostawy</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="repairs">
+                  <span class="service-icon">🔧</span>
+                  <span class="service-label">Drobne naprawy</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="garden">
+                  <span class="service-icon">🌿</span>
+                  <span class="service-label">Prace w ogrodzie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="pets">
+                  <span class="service-icon">🐕</span>
+                  <span class="service-label">Opieka nad zwierzętami</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="assembly">
+                  <span class="service-icon">🏠</span>
+                  <span class="service-label">Montaż mebli</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="moving">
+                  <span class="service-icon">📦</span>
+                  <span class="service-label">Pomoc przy przeprowadzce</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="queues">
+                  <span class="service-icon">⏰</span>
+                  <span class="service-label">Stanie w kolejkach</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="transport">
+                  <span class="service-icon">🚗</span>
+                  <span class="service-label">Pomoc przy transporcie</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="it">
+                  <span class="service-icon">📱</span>
+                  <span class="service-label">Pomoc techniczna (IT)</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="tutoring">
+                  <span class="service-icon">🎓</span>
+                  <span class="service-label">Korepetycje</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="events">
+                  <span class="service-icon">🎉</span>
+                  <span class="service-label">Organizacja wydarzeń</span>
+                </label>
+              </div>
+            </fieldset>
+            
+            <!-- Comments Textarea -->
+            <div class="form-group">
+              <label for="comments" class="form-label form-label--small">Podziel się swoimi pomysłami! (opcjonalnie)</label>
+              <p class="form-help-text">Co sprawia, że aplikacja byłaby idealna dla Ciebie? Jakie funkcje są kluczowe? Czego brakuje na rynku?</p>
+              <textarea 
+                id="comments" 
+                name="comments" 
+                class="form-textarea" 
+                placeholder="Np. 'Potrzebuję aplikacji, która...' lub 'Najważniejsze dla mnie jest...' lub 'Chciałbym/chciałabym mieć możliwość...'"
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <span class="form-hint">Każda sugestia się liczy! Max 500 znaków</span>
+            </div>
             
             <div class="form-group form-group--checkbox">
               <label class="checkbox-option">
@@ -1411,13 +1493,14 @@
             </div>
             
             <button type="submit" class="btn btn--primary btn--full" id="submit-btn">
-              <span class="btn__text">Zapisz się do newslettera</span>
+              <span class="btn__text">Wyślij opinię i dołącz do badania</span>
               <span class="btn__loader" aria-hidden="true"></span>
             </button>
             
             <p class="form-privacy">
-              Twoje dane są bezpieczne. Przeczytaj naszą 
-              <a href="#privacy">Politykę Prywatności</a>.
+              <strong>🔒 Twoje dane są w pełni bezpieczne.</strong><br>
+              Używamy ich wyłącznie do badania rynku i komunikacji. 
+              <a href="privacy.html">Polityka Prywatności</a>.
             </p>
           </form>
           
@@ -1531,10 +1614,7 @@
       <div class="footer__main">
         <div class="footer__brand">
           <div class="footer__logo">
-            <svg class="logo-icon" width="32" height="32" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <circle cx="20" cy="20" r="20" fill="#E94560"/>
-              <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <span class="logo-icon">⚡</span>
             <span>Szybka Fucha</span>
           </div>
           <p class="footer__tagline">Twój lokalny pomocnik na wyciągnięcie ręki.</p>

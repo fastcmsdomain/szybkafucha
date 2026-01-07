@@ -1,6 +1,6 @@
 <?php
 /**
- * Szybka Fucha - Newsletter Subscribe API
+ * Szybka Fucha - Formularz Ulepszeń Aplikacji API
  * 
  * Endpoint: POST /api/subscribe.php
  * 
@@ -10,7 +10,9 @@
  *   "email": "jan@example.com",
  *   "userType": "client" | "contractor",
  *   "consent": true,
- *   "source": "landing_page"
+ *   "source": "formularz_ulepszen_apki",
+ *   "services": ["cleaning", "shopping", "repairs"],
+ *   "comments": "Chciałbym mieć możliwość..."
  * }
  */
 
@@ -92,7 +94,29 @@ if (!empty($errors)) {
 $name = trim(htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8'));
 $email = strtolower(trim($data['email']));
 $userType = $data['userType'];
-$source = isset($data['source']) ? trim(htmlspecialchars($data['source'], ENT_QUOTES, 'UTF-8')) : 'landing_page';
+$source = isset($data['source']) ? trim(htmlspecialchars($data['source'], ENT_QUOTES, 'UTF-8')) : 'formularz_ulepszen_apki';
+
+// Handle optional fields: services (array) and comments (string)
+$services = null;
+if (isset($data['services']) && is_array($data['services']) && !empty($data['services'])) {
+    // Validate and sanitize services array
+    $allowedServices = ['cleaning', 'shopping', 'repairs', 'garden', 'pets', 'assembly', 'moving', 'queues', 'transport', 'it', 'tutoring', 'events'];
+    $validServices = array_filter($data['services'], function($service) use ($allowedServices) {
+        return in_array($service, $allowedServices);
+    });
+    if (!empty($validServices)) {
+        $services = json_encode($validServices, JSON_UNESCAPED_UNICODE);
+    }
+}
+
+$comments = null;
+if (isset($data['comments']) && !empty(trim($data['comments']))) {
+    $comments = trim(htmlspecialchars($data['comments'], ENT_QUOTES, 'UTF-8'));
+    // Limit to 500 characters
+    if (strlen($comments) > 500) {
+        $comments = substr($comments, 0, 500);
+    }
+}
 
 try {
     // Connect to database
@@ -115,25 +139,84 @@ try {
     if ($existing) {
         // Email exists
         if ($existing['is_active']) {
-            // Already subscribed and active
+            // Already subscribed and active - update services and comments if provided
+            // Check if services and comments columns exist
+            $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
+            $hasServicesColumn = $columnsCheck !== false;
+            
+            $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
+            $hasCommentsColumn = $columnsCheckComments !== false;
+            
+            if ($hasServicesColumn && $hasCommentsColumn && ($services !== null || $comments !== null)) {
+                // Update services and/or comments if provided
+                $updateFields = [];
+                $updateValues = [];
+                
+                if ($services !== null) {
+                    $updateFields[] = "services = ?";
+                    $updateValues[] = $services;
+                }
+                if ($comments !== null) {
+                    $updateFields[] = "comments = ?";
+                    $updateValues[] = $comments;
+                }
+                
+                if (!empty($updateFields)) {
+                    $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
+                    $updateValues[] = $email;
+                    
+                    $stmt = $pdo->prepare("
+                        UPDATE newsletter_subscribers 
+                        SET " . implode(", ", $updateFields) . "
+                        WHERE email = ?
+                    ");
+                    $stmt->execute($updateValues);
+                }
+            }
+            
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => 'Już jesteś zapisany do newslettera!'
+                'message' => 'Dziękujemy za aktualizację danych!'
             ]);
         } else {
             // Was unsubscribed, reactivate
-            $stmt = $pdo->prepare("
-                UPDATE newsletter_subscribers 
-                SET is_active = TRUE, 
-                    name = ?,
-                    user_type = ?,
-                    source = ?,
-                    unsubscribed_at = NULL,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE email = ?
-            ");
-            $stmt->execute([$name, $userType, $source, $email]);
+            // Check if services and comments columns exist
+            $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
+            $hasServicesColumn = $columnsCheck !== false;
+            
+            $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
+            $hasCommentsColumn = $columnsCheckComments !== false;
+            
+            if ($hasServicesColumn && $hasCommentsColumn) {
+                // Update with new fields
+                $stmt = $pdo->prepare("
+                    UPDATE newsletter_subscribers 
+                    SET is_active = TRUE, 
+                        name = ?,
+                        user_type = ?,
+                        source = ?,
+                        services = ?,
+                        comments = ?,
+                        unsubscribed_at = NULL,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE email = ?
+                ");
+                $stmt->execute([$name, $userType, $source, $services, $comments, $email]);
+            } else {
+                // Update without new fields (backward compatibility)
+                $stmt = $pdo->prepare("
+                    UPDATE newsletter_subscribers 
+                    SET is_active = TRUE, 
+                        name = ?,
+                        user_type = ?,
+                        source = ?,
+                        unsubscribed_at = NULL,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE email = ?
+                ");
+                $stmt->execute([$name, $userType, $source, $email]);
+            }
             
             http_response_code(200);
             echo json_encode([
@@ -143,12 +226,30 @@ try {
         }
     } else {
         // New subscriber - insert
-        $stmt = $pdo->prepare("
-            INSERT INTO newsletter_subscribers 
-            (name, email, user_type, consent, source, is_active, subscribed_at) 
-            VALUES (?, ?, ?, TRUE, ?, TRUE, CURRENT_TIMESTAMP)
-        ");
-        $stmt->execute([$name, $email, $userType, $source]);
+        // Check if services and comments columns exist
+        $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
+        $hasServicesColumn = $columnsCheck !== false;
+        
+        $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
+        $hasCommentsColumn = $columnsCheckComments !== false;
+        
+        if ($hasServicesColumn && $hasCommentsColumn) {
+            // Insert with new fields
+            $stmt = $pdo->prepare("
+                INSERT INTO newsletter_subscribers 
+                (name, email, user_type, consent, source, services, comments, is_active, subscribed_at) 
+                VALUES (?, ?, ?, TRUE, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)
+            ");
+            $stmt->execute([$name, $email, $userType, $source, $services, $comments]);
+        } else {
+            // Insert without new fields (backward compatibility)
+            $stmt = $pdo->prepare("
+                INSERT INTO newsletter_subscribers 
+                (name, email, user_type, consent, source, is_active, subscribed_at) 
+                VALUES (?, ?, ?, TRUE, ?, TRUE, CURRENT_TIMESTAMP)
+            ");
+            $stmt->execute([$name, $email, $userType, $source]);
+        }
 
         http_response_code(200);
         echo json_encode([

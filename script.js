@@ -309,8 +309,20 @@ async function handleFormSubmit(event) {
     email: form.querySelector(SELECTORS.emailInput).value.trim(),
     userType: form.querySelector(`${SELECTORS.userTypeInputs}:checked`).value,
     consent: true,
-    source: 'landing_page',
+    source: 'formularz_ulepszen_apki',
   };
+  
+  // Collect selected services
+  const serviceCheckboxes = form.querySelectorAll('input[name="services[]"]:checked');
+  if (serviceCheckboxes.length > 0) {
+    formData.services = Array.from(serviceCheckboxes).map(cb => cb.value);
+  }
+  
+  // Collect comments if provided
+  const commentsInput = form.querySelector('textarea[name="comments"]');
+  if (commentsInput && commentsInput.value.trim()) {
+    formData.comments = commentsInput.value.trim();
+  }
   
   try {
     // Call backend API
