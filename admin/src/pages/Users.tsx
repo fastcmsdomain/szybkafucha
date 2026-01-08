@@ -22,6 +22,7 @@ interface Subscriber {
   id: string;
   name: string;
   email: string;
+  city: string | null;
   userType: 'client' | 'contractor';
   consent: boolean;
   source: string;
@@ -118,10 +119,11 @@ const Users: React.FC = () => {
 
   // Filter subscribers
   const filteredSubscribers = subscribers.filter((subscriber) => {
-    // Search filter
+    // Search filter (including city)
     const matchesSearch = 
       subscriber.name.toLowerCase().includes(search.toLowerCase()) ||
       subscriber.email.toLowerCase().includes(search.toLowerCase()) ||
+      (subscriber.city && subscriber.city.toLowerCase().includes(search.toLowerCase())) ||
       (subscriber.comments && subscriber.comments.toLowerCase().includes(search.toLowerCase()));
     
     // Type filter
@@ -225,7 +227,7 @@ const Users: React.FC = () => {
           <HStack gap={2} flex="1" minW="250px">
             <span style={{ color: '#94A3B8' }}>🔍</span>
             <Input
-              placeholder="Szukaj po imieniu, emailu lub komentarzu..."
+              placeholder="Szukaj po imieniu, emailu, mieście lub komentarzu..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               border="1px solid"
@@ -318,6 +320,10 @@ const Users: React.FC = () => {
                     <Text fontSize="sm" color="gray.500">Email</Text>
                     <Text fontWeight="medium">{selectedUser.email}</Text>
                   </Box>
+                  <Box flex="1" minW="200px">
+                    <Text fontSize="sm" color="gray.500">📍 Miasto</Text>
+                    <Text fontWeight="medium">{selectedUser.city || '—'}</Text>
+                  </Box>
                 </Flex>
                 <Flex gap={4} flexWrap="wrap" mt={3}>
                   <Box flex="1" minW="200px">
@@ -404,10 +410,11 @@ const Users: React.FC = () => {
       {/* Users table */}
       <Box bg="white" borderRadius="xl" boxShadow="sm" overflow="hidden">
         <Box overflowX="auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Użytkownik</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Miasto</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Typ</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Status</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Źródło</th>
@@ -419,7 +426,7 @@ const Users: React.FC = () => {
             <tbody>
               {filteredSubscribers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center' }}>
+                  <td colSpan={8} style={{ padding: '40px', textAlign: 'center' }}>
                     <Text color="gray.500">Brak użytkowników spełniających kryteria</Text>
                   </td>
                 </tr>
@@ -450,6 +457,11 @@ const Users: React.FC = () => {
                         <Text fontWeight="medium">{subscriber.name}</Text>
                         <Text fontSize="sm" color="gray.500">{subscriber.email}</Text>
                       </Box>
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <Text fontSize="sm" color="gray.600">
+                        {subscriber.city ? `📍 ${subscriber.city}` : '—'}
+                      </Text>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <Badge

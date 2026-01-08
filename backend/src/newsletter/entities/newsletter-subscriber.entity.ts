@@ -29,6 +29,9 @@ export class NewsletterSubscriber {
   @Column({ type: 'varchar', length: 255 })
   email: string;
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  city: string | null;
+
   @Column({
     type: 'varchar',
     length: 20,
@@ -37,6 +40,12 @@ export class NewsletterSubscriber {
 
   @Column({ type: 'boolean', default: true })
   consent: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  services: string | null; // JSON string of selected services
+
+  @Column({ type: 'text', nullable: true })
+  comments: string | null; // User feedback/suggestions (max 500 chars)
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   source: string | null; // e.g., 'landing_page', 'landing_page_hero'

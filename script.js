@@ -69,6 +69,7 @@ const SELECTORS = {
   heroSuccessMessage: '#hero-success-message',
   heroNameInput: '#hero-name',
   heroEmailInput: '#hero-email',
+  heroCityInput: '#hero-city',
   heroUserTypeInputs: 'input[name="heroUserType"]',
   heroConsentInput: 'input[name="heroConsent"]',
 };
@@ -238,7 +239,7 @@ function validateForm(form) {
   } else {
     clearError(emailInput);
   }
-  
+
   // Validate user type
   const userTypeInputs = form.querySelectorAll(SELECTORS.userTypeInputs);
   const userTypeResult = validateField(null, null, 'userType');
@@ -444,13 +445,13 @@ function initNewsletterForm() {
         clearError(emailInput);
       }
     });
-    
+
     // Clear error on input
     emailInput.addEventListener('input', () => {
       clearError(emailInput);
     });
   }
-  
+
   // Clear radio error when selection is made
   const userTypeInputs = form.querySelectorAll(SELECTORS.userTypeInputs);
   userTypeInputs.forEach((input) => {
@@ -501,7 +502,22 @@ function validateHeroForm(form) {
   } else {
     clearError(emailInput);
   }
-  
+
+  // Validate city
+  const cityInput = form.querySelector(SELECTORS.heroCityInput);
+  if (!cityInput.value || cityInput.value === '') {
+    const errorElement = document.getElementById('hero-city-error');
+    if (errorElement) {
+      errorElement.textContent = 'Wybierz miasto';
+    }
+    isValid = false;
+  } else {
+    const errorElement = document.getElementById('hero-city-error');
+    if (errorElement) {
+      errorElement.textContent = '';
+    }
+  }
+
   // Validate user type
   const checkedType = form.querySelector(`${SELECTORS.heroUserTypeInputs}:checked`);
   if (!checkedType) {
@@ -559,6 +575,7 @@ async function handleHeroFormSubmit(event) {
   const formData = {
     name: form.querySelector(SELECTORS.heroNameInput).value.trim(),
     email: form.querySelector(SELECTORS.heroEmailInput).value.trim(),
+    city: form.querySelector(SELECTORS.heroCityInput).value,
     userType: form.querySelector(`${SELECTORS.heroUserTypeInputs}:checked`).value,
     consent: true,
     source: 'landing_page_hero',
@@ -682,7 +699,18 @@ function initHeroForm() {
     });
     emailInput.addEventListener('input', () => clearError(emailInput));
   }
-  
+
+  // City dropdown validation
+  const cityInput = form.querySelector(SELECTORS.heroCityInput);
+  if (cityInput) {
+    cityInput.addEventListener('change', () => {
+      const errorElement = document.getElementById('hero-city-error');
+      if (errorElement) {
+        errorElement.textContent = '';
+      }
+    });
+  }
+
   // Clear errors on interaction
   const userTypeInputs = form.querySelectorAll(SELECTORS.heroUserTypeInputs);
   userTypeInputs.forEach((input) => {

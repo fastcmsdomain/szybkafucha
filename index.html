@@ -152,9 +152,8 @@
             <span class="hero__title-line gradient-text">Znajdź ją w 5 minut.<br></span>
           </h1>
           <video src="assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video>
-          <h2 class="hero__title-line promo-text">Szybka Fucha pomaga znaleźć pomoc.</h2>
-          <p class="hero__subtitle">
-            Zleć zakupy, sprzątanie, drobne naprawy — albo <strong>zarabiaj pomagając innym.</strong>
+          <h2 class="hero__title-line promo-text">Szybka Fucha łączy Cię z pomocnikami w Twojej okolicy.</h2>
+          <p class="hero__subtitle">Zleć zakupy, sprzątanie lub drobne naprawy.<strong> Zarabiaj, wykonując zlecenia..</strong>
           </p>
           <div class="hero__cta">
             <a href="#zapisz-sie" class="btn btn--primary btn--large">
@@ -209,11 +208,11 @@
                 
                 <div class="form-group form-group--compact">
                   <label for="hero-email" class="form-label">Adres e-mail</label>
-                  <input 
-                    type="email" 
-                    id="hero-email" 
-                    name="email" 
-                    class="form-input form-input--medium" 
+                  <input
+                    type="email"
+                    id="hero-email"
+                    name="email"
+                    class="form-input form-input--medium"
                     placeholder="jan@email.com"
                     required
                     autocomplete="email"
@@ -221,7 +220,43 @@
                   >
                   <span id="hero-email-error" class="form-error" role="alert"></span>
                 </div>
-                
+
+                <div class="form-group form-group--compact">
+                  <label for="hero-city" class="form-label">Miasto</label>
+                  <select
+                    id="hero-city"
+                    name="city"
+                    class="form-input form-input--medium"
+                    required
+                    aria-describedby="hero-city-error"
+                  >
+                    <option value="" disabled selected>Wybierz miasto</option>
+                    <option value="Warszawa">Warszawa</option>
+                    <option value="Kraków">Kraków</option>
+                    <option value="Wrocław">Wrocław</option>
+                    <option value="Poznań">Poznań</option>
+                    <option value="Gdańsk">Gdańsk</option>
+                    <option value="Szczecin">Szczecin</option>
+                    <option value="Bydgoszcz">Bydgoszcz</option>
+                    <option value="Lublin">Lublin</option>
+                    <option value="Białystok">Białystok</option>
+                    <option value="Katowice">Katowice</option>
+                    <option value="Gdynia">Gdynia</option>
+                    <option value="Częstochowa">Częstochowa</option>
+                    <option value="Radom">Radom</option>
+                    <option value="Sosnowiec">Sosnowiec</option>
+                    <option value="Toruń">Toruń</option>
+                    <option value="Kielce">Kielce</option>
+                    <option value="Gliwice">Gliwice</option>
+                    <option value="Zabrze">Zabrze</option>
+                    <option value="Olsztyn">Olsztyn</option>
+                    <option value="Rzeszów">Rzeszów</option>
+                    <option value="Łódź">Łódź</option>
+                    <option value="Inne">Inne miasto</option>
+                  </select>
+                  <span id="hero-city-error" class="form-error" role="alert"></span>
+                </div>
+
                 <fieldset class="form-group form-group--compact">
                   <legend class="form-label">Jestem zainteresowany/a:</legend>
                   <div class="radio-group radio-group--compact">
@@ -1350,11 +1385,11 @@
             
             <div class="form-group">
               <label for="email" class="form-label">Adres e-mail</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email" 
-                class="form-input" 
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-input"
                 placeholder="jan@email.com"
                 required
                 autocomplete="email"
@@ -1362,7 +1397,7 @@
               >
               <span id="email-error" class="form-error" role="alert"></span>
             </div>
-            
+
             <fieldset class="form-group">
               <legend class="form-label">Jestem zainteresowany/a jako:</legend>
               <div class="radio-group">

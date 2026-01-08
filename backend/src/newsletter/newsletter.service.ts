@@ -50,8 +50,11 @@ export class NewsletterService {
       // If unsubscribed, reactivate
       existing.isActive = true;
       existing.name = dto.name;
+      existing.city = dto.city || null;
       existing.userType = dto.userType as UserType;
       existing.consent = dto.consent;
+      existing.services = dto.services ? JSON.stringify(dto.services) : null;
+      existing.comments = dto.comments || null;
       existing.source = dto.source || null;
       existing.subscribedAt = new Date();
       existing.unsubscribedAt = null;
@@ -69,8 +72,11 @@ export class NewsletterService {
     const subscriber = this.newsletterRepository.create({
       name: dto.name,
       email: dto.email.toLowerCase(),
+      city: dto.city || null,
       userType: dto.userType as UserType,
       consent: dto.consent,
+      services: dto.services ? JSON.stringify(dto.services) : null,
+      comments: dto.comments || null,
       source: dto.source || 'landing_page',
       isActive: true,
       subscribedAt: new Date(),
