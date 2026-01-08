@@ -160,7 +160,7 @@
       </div>
       <div class="container hero__content">
         <div class="hero__text">
-          <span class="hero__badge">🚀 Скоро стартуємо!</span>
+          <!--<span class="hero__badge">🚀 Скоро стартуємо!</span>-->
           <h1 id="hero-heading" class="hero__title">
             <span class="hero__title-line">Потрібна допомога?<br></span>
             <span class="hero__title-line gradient-text">Знайди її за 5 хвилин.<br></span>
@@ -1099,58 +1099,59 @@
       <div class="container">
         <div class="signup-wrapper">
           <div class="signup__content">
-            <span class="section-tag section-tag--light">Будь першим!</span>
-            <h2 id="signup-heading" class="signup__title">Запишись до розсилки</h2>
-            <p class="signup__subtitle">Отримай сповіщення про старт у твоєму місті та ексклюзивні переваги для перших користувачів.</p>
-            
+            <span class="section-tag section-tag--light">Твоя думка створює додаток!</span>
+            <h2 id="signup-heading" class="signup__title">Допоможи нам створити ідеальний додаток для тебе</h2>
+            <p class="signup__subtitle">Поділися своїми ідеями та потребами. Твій голос формує майбутнє Szybka Fucha — ми будуємо його разом з тобою!<br><br>
+            💡 Твої відповіді допоможуть нам створити додаток, який справді відповідає твоїм потребам.<br></p>
+
             <ul class="signup__benefits">
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Безкоштовне перше замовлення
+                Співтвори функції додатку
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                0% комісії протягом першого місяця
+                Впливай на розвиток платформи
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Статус VIP Early Adopter
+                Доступ до ексклюзивних бенефітів
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Пріоритетний доступ до додатку
+                Пріоритетний старт у твоєму місті
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Ексклюзивні акції та знижки
+                Спеціальні знижки для дослідників ринку
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Сповіщення про нові функції
+                Статус VIP Співтворця
               </li>
               <li>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M5 12L10 17L19 8" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Технічна підтримка 24/7
+                Безпосередній вплив на UX додатку
               </li>
             </ul>
-            
+
             <div class="signup__cta">
               <a href="#newsletter-form" class="btn btn--primary btn--large">
-                Записатися зараз
+                Поділитися думкою
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                   <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -1193,34 +1194,115 @@
               <legend class="form-label">Я зацікавлений/а як:</legend>
               <div class="radio-group">
                 <label class="radio-option">
-                  <input 
-                    type="radio" 
-                    name="userType" 
+                  <input
+                    type="radio"
+                    name="userType"
                     value="client"
                     required
                   >
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Хочу доручати</strong>
-                    <small>Шукаю помічників для завдань</small>
                   </span>
                 </label>
                 <label class="radio-option">
-                  <input 
-                    type="radio" 
-                    name="userType" 
+                  <input
+                    type="radio"
+                    name="userType"
                     value="contractor"
                   >
                   <span class="radio-custom"></span>
                   <span class="radio-label">
                     <strong>Хочу заробляти</strong>
-                    <small>Хочу виконувати замовлення</small>
                   </span>
                 </label>
               </div>
               <span id="type-error" class="form-error" role="alert"></span>
             </fieldset>
-            
+
+            <!-- Services Checkboxes -->
+            <fieldset class="form-group form-group--services">
+              <legend class="form-label form-label--small">Які послуги для тебе найважливіші? (опціонально)</legend>
+              <p class="form-help-text">Обери послуги, якими хотів/хотіла би користуватись або які хотів/хотіла би надавати:</p>
+              <div class="services-grid">
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="cleaning">
+                  <span class="service-icon">🧹</span>
+                  <span class="service-label">Прибирання</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="shopping">
+                  <span class="service-icon">🛒</span>
+                  <span class="service-label">Покупки та доставка</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="repairs">
+                  <span class="service-icon">🔧</span>
+                  <span class="service-label">Дрібні ремонти</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="garden">
+                  <span class="service-icon">🌿</span>
+                  <span class="service-label">Роботи в саду</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="pets">
+                  <span class="service-icon">🐕</span>
+                  <span class="service-label">Догляд за тваринами</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="assembly">
+                  <span class="service-icon">🏠</span>
+                  <span class="service-label">Монтаж меблів</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="moving">
+                  <span class="service-icon">📦</span>
+                  <span class="service-label">Допомога при переїзді</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="queues">
+                  <span class="service-icon">⏰</span>
+                  <span class="service-label">Стояння в чергах</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="transport">
+                  <span class="service-icon">🚗</span>
+                  <span class="service-label">Допомога при транспортуванні</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="it">
+                  <span class="service-icon">📱</span>
+                  <span class="service-label">Технічна допомога (IT)</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="tutoring">
+                  <span class="service-icon">🎓</span>
+                  <span class="service-label">Репетиторство</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" name="services[]" value="events">
+                  <span class="service-icon">🎉</span>
+                  <span class="service-label">Організація подій</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- Comments Textarea -->
+            <div class="form-group">
+              <label for="comments" class="form-label form-label--small">Поділися своїми ідеями! (опціонально)</label>
+              <p class="form-help-text">Що робить додаток ідеальним для тебе? Які функції є ключовими? Чого бракує на ринку?</p>
+              <textarea
+                id="comments"
+                name="comments"
+                class="form-textarea"
+                placeholder="Наприклад, 'Мені потрібен додаток, який...' або 'Найважливіше для мене це...' або 'Хотів/хотіла би мати можливість...'"
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <span class="form-hint">Кожна пропозиція важлива! Макс. 500 символів</span>
+            </div>
+
             <div class="form-group form-group--checkbox">
               <label class="checkbox-option">
                 <input 
@@ -1239,13 +1321,14 @@
             </div>
             
             <button type="submit" class="btn btn--primary btn--full" id="submit-btn">
-              <span class="btn__text">Записатися до розсилки</span>
+              <span class="btn__text">Надіслати думку та приєднатися до дослідження</span>
               <span class="btn__loader" aria-hidden="true"></span>
             </button>
-            
+
             <p class="form-privacy">
-              Ваші дані безпечні. Прочитайте нашу 
-              <a href="privacy.html">Політику конфіденційності</a>.
+              <strong>🔒 Твої дані повністю безпечні.</strong><br>
+              Ми використовуємо їх виключно для дослідження ринку та комунікації.
+              <a href="privacy.html">Політика конфіденційності</a>.
             </p>
           </form>
           
