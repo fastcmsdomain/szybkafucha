@@ -408,6 +408,18 @@ async function handleFormSubmit(event) {
       throw new Error(result.message || `Błąd serwera: ${response.status}`);
     }
     
+    // Log for debugging
+    console.log('Newsletter signup successful:', result);
+    
+    // Push event to Google Tag Manager dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'newsletter_signup_success',
+      form_name: 'newsletter',
+      page_path: location.pathname,
+      user_type: formData.userType,
+    });
+    
     // Show success message
     form.style.display = 'none';
     if (successMessage) {
@@ -666,7 +678,19 @@ async function handleHeroFormSubmit(event) {
     
     if (!response.ok) {
       throw new Error(result.message || `Błąd serwera: ${response.status}`);
+    }
     
+    // Log for debugging
+    console.log('Hero form signup successful:', result);
+    
+    // Push event to Google Tag Manager dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'newsletter_signup_success',
+      form_name: 'hero',
+      page_path: location.pathname,
+      user_type: formData.userType,
+    });
     
     // Show success message
     form.style.display = 'none';
