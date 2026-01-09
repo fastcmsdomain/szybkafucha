@@ -28,8 +28,8 @@
   <link rel="canonical" href="https://szybkafucha.pl/index-en.html">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-  <link rel="apple-touch-icon" href="assets/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+  <link rel="apple-touch-icon" href="../assets/favicon.ico">
 
   <!-- Preconnect for fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +38,7 @@
 
   <title>Szybka Fucha - Delegate or Earn. Locally. Instantly.</title>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../styles.css">
 
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
@@ -165,7 +165,7 @@
             <span class="hero__title-line">Need Help?<br></span>
             <span class="hero__title-line gradient-text">Find It in 5 Minutes.<br></span>
           </h1>
-          <video src="assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video>
+          <video src="../assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video"></video>
           <h2 class="hero__title-line promo-text">Szybka Fucha helps you find help.</h2>
           <p class="hero__subtitle">
             Delegate shopping, cleaning, small repairs — or <strong>earn money helping others.</strong>
@@ -268,7 +268,7 @@
 
                 <p class="form-privacy form-privacy--hero">
                   Your data is safe. Read our
-                  <a href="#privacy">Privacy Policy</a>.
+                  <a href="../privacy.html">Privacy Policy</a>.
                 </p>
               </form>
 
@@ -319,7 +319,7 @@
               <span class="gradient-text">Discover our intuitive app.</span>
             </h2>
             </h2>
-            <p class="section-subtitle">Intuitive interface, quick tasks, secure payments.<br> <strong>The app that saves your time.</strong></p>
+            <p class="section-text">Intuitive interface, quick tasks, secure payments.<br> <strong>The app that saves your time.</strong></p>
 
             <ul class="our-app__features">
               <li class="our-app__feature-item our-app__feature-item--active" data-feature="1">
@@ -942,47 +942,233 @@
     <section id="jak-dziala" class="how-it-works" aria-labelledby="how-heading">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag">Simple as 1-2-3</span>
-          <h2 id="how-heading" class="section-title">How Does Szybka Fucha Work?</h2>
-          <p class="section-subtitle">Three steps separate you from getting things done or earning money.</p>
+          <h3 class="section-subtitle">Simple as 1-2-3</h3>
+          <h3 id="how-heading" class="section-title gradient-text">How Does Szybka Fucha Work?</h3>
+          <p class="section-text">Three steps separate you from getting things done or earning money.</p>
         </div>
-
+        
         <div class="steps">
-          <article class="step">
+          <article class="step step--with-demo">
             <div class="step__number">1</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <path d="M24 14V34M14 24H34" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-            </div>
             <h3 class="step__title">Describe your task</h3>
-            <p class="step__desc">Tell us what you need, set your budget and location. It'll take you less than a minute.</p>
+            <!-- Mini Phone Demo -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header with back button -->
+                  <div class="step-demo__header">
+                    <button class="step-demo__back" aria-label="Back">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="step-demo__header-title">New task</span>
+                  </div>
+                  
+                  <!-- Form content -->
+                  <div class="step-demo__content">
+                    <div class="step-demo__field">
+                      <label class="step-demo__label">Title</label>
+                      <div class="step-demo__input step-demo__input--filled">
+                        House cleaning
+                      </div>
+                    </div>
+                    
+                    <div class="step-demo__field">
+                      <label class="step-demo__label">Description</label>
+                      <div class="step-demo__textarea step-demo__input--filled">
+                        Cleaning 3 rooms, kitchen and bathroom. Vacuuming, mopping floors and windows. About 4h work.
+                      </div>
+                    </div>
+                    
+                    <div class="step-demo__row">
+                      <div class="step-demo__field step-demo__field--half">
+                        <label class="step-demo__label">Budget</label>
+                        <div class="step-demo__input step-demo__input--filled">200 zł</div>
+                      </div>
+                      <div class="step-demo__field step-demo__field--half">
+                        <label class="step-demo__label">Location</label>
+                        <div class="step-demo__input step-demo__input--filled">Warsaw</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Send button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Send task
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="step__desc"><br>Tell us what you need, set your budget and location. <b>It'll take you less than a minute.</b><br></p>
           </article>
-
-          <article class="step">
+          
+          <article class="step step--with-demo">
             <div class="step__number">2</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <circle cx="24" cy="20" r="6" stroke="#E94560" stroke-width="3"/>
-                <path d="M14 36C14 31.5817 18.4772 28 24 28C29.5228 28 34 31.5817 34 36" stroke="#E94560" stroke-width="3" stroke-linecap="round"/>
-              </svg>
-            </div>
             <h3 class="step__title">Find a helper</h3>
-            <p class="step__desc">Browse profiles of verified contractors, check reviews and choose the best one.</p>
-          </article>
-
-          <article class="step">
-            <div class="step__number">3</div>
-            <div class="step__icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#E94560" fill-opacity="0.1"/>
-                <path d="M16 24L22 30L32 18" stroke="#E94560" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            
+            <!-- Mini Phone Demo - Worker Profiles -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header -->
+                  <div class="step-demo__header">
+                    <button class="step-demo__back" aria-label="Back">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="step-demo__header-title">Available contractors</span>
+                  </div>
+                  
+                  <!-- Workers list -->
+                  <div class="step-demo__content step-demo__content--workers">
+                    <!-- Worker 1 -->
+                    <div class="step-demo__worker step-demo__worker--selected">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#E94560"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#E94560" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Anna K.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★★</span>
+                          <span class="step-demo__rating-text">4.9 (127)</span>
+                        </div>
+                        <span class="step-demo__worker-price">180 zł</span>
+                      </div>
+                      <div class="step-demo__worker-badge">✓</div>
+                    </div>
+                    
+                    <!-- Worker 2 -->
+                    <div class="step-demo__worker">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#64748B"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#64748B" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Tom M.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★☆</span>
+                          <span class="step-demo__rating-text">4.7 (89)</span>
+                        </div>
+                        <span class="step-demo__worker-price">200 zł</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Worker 3 -->
+                    <div class="step-demo__worker">
+                      <div class="step-demo__worker-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="8" r="4" fill="#64748B"/>
+                          <path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="#64748B" stroke-width="2"/>
+                        </svg>
+                      </div>
+                      <div class="step-demo__worker-info">
+                        <span class="step-demo__worker-name">Eva S.</span>
+                        <div class="step-demo__worker-rating">
+                          <span class="step-demo__stars">★★★★★</span>
+                          <span class="step-demo__rating-text">5.0 (54)</span>
+                        </div>
+                        <span class="step-demo__worker-price">220 zł</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Select button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Select contractor
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
+            <p class="step__desc"><br>Browse profiles of verified contractors, <b>check reviews and choose the best one.</b><br></p>
+          </article>
+          
+          <article class="step step--with-demo">
+            <div class="step__number">3</div>
             <h3 class="step__title">Done!</h3>
-            <p class="step__desc">Task completed, payment secure. Rate your contractor and enjoy your free time!</p>
+            
+            <!-- Mini Phone Demo - Task Complete -->
+            <div class="step-demo">
+              <div class="step-demo__phone">
+                <div class="step-demo__notch"></div>
+                <div class="step-demo__screen">
+                  <!-- Header -->
+                  <div class="step-demo__header step-demo__header--success">
+                    <span class="step-demo__header-title">Task completed</span>
+                  </div>
+                  
+                  <!-- Success content -->
+                  <div class="step-demo__content step-demo__content--success">
+                    <!-- Success icon -->
+                    <div class="step-demo__success-icon">
+                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="22" fill="#10B981" fill-opacity="0.15"/>
+                        <path d="M14 24L21 31L34 17" stroke="#10B981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    
+                    <div class="step-demo__success-text">
+                      <span class="step-demo__success-title">Task completed!</span>
+                      <span class="step-demo__success-subtitle">House cleaning</span>
+                    </div>
+                    
+                    <!-- Payment info -->
+                    <div class="step-demo__payment-info">
+                      <div class="step-demo__payment-row">
+                        <span>Amount:</span>
+                        <span class="step-demo__payment-amount">180 zł</span>
+                      </div>
+                      <div class="step-demo__payment-row">
+                        <span>Status:</span>
+                        <span class="step-demo__payment-status">Paid ✓</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Rating section -->
+                    <div class="step-demo__rating-section">
+                      <span class="step-demo__rating-label">Rate contractor:</span>
+                      <div class="step-demo__rating-stars">
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                        <span class="step-demo__star step-demo__star--filled">★</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Done button -->
+                  <div class="step-demo__footer">
+                    <button class="step-demo__btn step-demo__btn--success">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12L5 10M5 10L12 3L19 10M5 10V20C5 20.5523 5.44772 21 6 21H9M19 10L21 12M19 10V20C19 20.5523 18.5523 21 18 21H15M9 21C9.55228 21 10 20.5523 10 20V16C10 15.4477 10.4477 15 11 15H13C13.5523 15 14 15.4477 14 16V20C14 20.5523 14.4477 21 15 21M9 21H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Back to home
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="step__desc"><br>Task completed, payment secure.<br> <b>Rate your contractor and enjoy your free time!</b><br></p>
           </article>
         </div>
       </div>
@@ -1002,7 +1188,7 @@
             <div class="audience-card__image">
               <!-- Placeholder for client image -->
               <div class="placeholder-image placeholder-image--person" role="img" aria-label="Client photo">
-              <img src="assets/SzybkaFuchaZleceniodawca.png" alt="Szybka Fucha" class="audience-card__image">
+              <img src="../assets/SzybkaFuchaZleceniodawca.png" alt="Szybka Fucha" class="audience-card__image">
               </div>
             </div>
             <div class="audience-card__content">
@@ -1049,7 +1235,7 @@
   <div class="audience-card__image">
     <!-- Placeholder for contractor image -->
     <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Contractor photo">
-    <img src="assets/michal-urzywa-szybka-fucha.png" alt="Szybka Fucha" class="audience-card__image">
+    <img src="../assets/michal-urzywa-szybka-fucha.png" alt="Szybka Fucha" class="audience-card__image">
     </div>
   </div>
   <div class="audience-card__content">
@@ -1498,9 +1684,9 @@
           <div class="footer__col">
             <h4>Legal</h4>
             <ul>
-              <li><a href="privacy.html">Privacy Policy</a></li>
-              <li><a href="terms.html">Terms of Service</a></li>
-              <li><a href="cookies.html">Cookies</a></li>
+              <li><a href="../privacy.html">Privacy Policy</a></li>
+              <li><a href="../terms.html">Terms of Service</a></li>
+              <li><a href="../cookies.html">Cookies</a></li>
             </ul>
           </div>
         </nav>
@@ -1513,6 +1699,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="../script.js"></script>
 </body>
 </html>
