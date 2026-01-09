@@ -117,11 +117,11 @@
         <a href="#zapisz-sie" class="nav-link nav-link--cta">Sign Up</a>
       </nav>
       <div class="header__lang-switcher">
-        <a href="index.html" class="lang-switcher__link" aria-label="Polish" lang="pl">PL</a>
+        <a href="https://szybkafucha.app/" class="lang-switcher__link" aria-label="Polish" lang="pl">PL</a>
         <span class="lang-switcher__separator">|</span>
-        <a href="index-ua.html" class="lang-switcher__link" aria-label="Ukrainian" lang="uk">UA</a>
-        <span class="lang-switcher__separator">|</span>
-        <a href="index-en.html" class="lang-switcher__link lang-switcher__link--active" aria-label="English" lang="en">EN</a>
+        <!-- <a href="index-ua.html" class="lang-switcher__link" aria-label="Ukrainian" lang="uk">UA</a> -->
+        <!-- <span class="lang-switcher__separator">|</span> -->
+        <a href="https://szybkafucha.app/en/index.html" class="lang-switcher__link lang-switcher__link--active" aria-label="English" lang="en">EN</a>
       </div>
       <button class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">
         <span></span>
@@ -178,6 +178,8 @@
               </svg>
             </a>
             <a href="#jak-dziala" class="btn btn--ghost">Learn More</a>
+            <a href="#newsletter-form" class="btn btn--ghost gradient-button">Help Us Improve the App</a>
+
           </div>
           <!--/* <div class="hero__stats">
             <div class="stat">
@@ -233,6 +235,42 @@
                     aria-describedby="hero-email-error"
                   >
                   <span id="hero-email-error" class="form-error" role="alert"></span>
+                </div>
+
+                <div class="form-group form-group--compact">
+                  <label for="hero-city" class="form-label">City</label>
+                  <select
+                    id="hero-city"
+                    name="city"
+                    class="form-input form-input--medium"
+                    required
+                    aria-describedby="hero-city-error"
+                  >
+                    <option value="" disabled selected>Select city</option>
+                    <option value="Warszawa">Warsaw</option>
+                    <option value="Kraków">Kraków</option>
+                    <option value="Wrocław">Wrocław</option>
+                    <option value="Poznań">Poznań</option>
+                    <option value="Gdańsk">Gdańsk</option>
+                    <option value="Szczecin">Szczecin</option>
+                    <option value="Bydgoszcz">Bydgoszcz</option>
+                    <option value="Lublin">Lublin</option>
+                    <option value="Białystok">Białystok</option>
+                    <option value="Katowice">Katowice</option>
+                    <option value="Gdynia">Gdynia</option>
+                    <option value="Częstochowa">Częstochowa</option>
+                    <option value="Radom">Radom</option>
+                    <option value="Sosnowiec">Sosnowiec</option>
+                    <option value="Toruń">Toruń</option>
+                    <option value="Kielce">Kielce</option>
+                    <option value="Gliwice">Gliwice</option>
+                    <option value="Zabrze">Zabrze</option>
+                    <option value="Olsztyn">Olsztyn</option>
+                    <option value="Rzeszów">Rzeszów</option>
+                    <option value="Łódź">Łódź</option>
+                    <option value="Inne">Other city</option>
+                  </select>
+                  <span id="hero-city-error" class="form-error" role="alert"></span>
                 </div>
 
                 <fieldset class="form-group form-group--compact">

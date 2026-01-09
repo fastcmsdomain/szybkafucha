@@ -2006,6 +2006,10 @@ flex-direction: column;
   margin-bottom: var(--space-6);
 }
 
+.success-icon svg {
+  display: inline;
+}
+
 .success-title {
   font-size: var(--font-size-2xl);
   margin-bottom: var(--space-3);

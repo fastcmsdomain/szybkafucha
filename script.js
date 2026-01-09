@@ -26,6 +26,69 @@ const getApiEndpoint = () => {
   return `${protocol}//${hostname}/api/subscribe.php`;
 };
 
+// ========================================
+// Language Detection & i18n
+// ========================================
+
+/**
+ * Detect current page language from <html lang=""> attribute
+ * @returns {string} - Language code ('pl', 'en', 'uk')
+ */
+const getPageLanguage = () => {
+  const htmlLang = document.documentElement.lang || 'pl';
+  // Normalize language codes (e.g., 'en-GB' -> 'en', 'pl' -> 'pl')
+  const lang = htmlLang.split('-')[0].toLowerCase();
+  return ['pl', 'en', 'uk'].includes(lang) ? lang : 'pl';
+};
+
+/**
+ * Multilingual error messages
+ */
+const MESSAGES = {
+  pl: {
+    nameRequired: 'Proszę podać imię i nazwisko',
+    nameInvalid: 'Imię i nazwisko może zawierać tylko litery',
+    emailRequired: 'Proszę podać adres e-mail',
+    emailInvalid: 'Proszę podać poprawny adres e-mail',
+    typeRequired: 'Proszę wybrać jedną z opcji',
+    consentRequired: 'Wymagana jest zgoda na przetwarzanie danych',
+    cityRequired: 'Wybierz miasto',
+    submitError: 'Wystąpił błąd. Spróbuj ponownie później.',
+    submitSuccess: 'Dziękujemy za zapisanie się!',
+  },
+  en: {
+    nameRequired: 'Please enter your name',
+    nameInvalid: 'Name can only contain letters',
+    emailRequired: 'Please enter your email address',
+    emailInvalid: 'Please enter a valid email address',
+    typeRequired: 'Please select one option',
+    consentRequired: 'Consent is required',
+    cityRequired: 'Please select a city',
+    submitError: 'An error occurred. Please try again later.',
+    submitSuccess: 'Thank you for signing up!',
+  },
+  uk: {
+    nameRequired: "Будь ласка, введіть ім'я та прізвище",
+    nameInvalid: "Ім'я може містити лише літери",
+    emailRequired: 'Будь ласка, введіть адресу електронної пошти',
+    emailInvalid: 'Будь ласка, введіть дійсну адресу електронної пошти',
+    typeRequired: 'Будь ласка, виберіть один варіант',
+    consentRequired: 'Потрібна згода на обробку даних',
+    cityRequired: 'Виберіть місто',
+    submitError: 'Сталася помилка. Спробуйте пізніше.',
+    submitSuccess: 'Дякуємо за реєстрацію!',
+  },
+};
+
+/**
+ * Get messages for current page language
+ * @returns {Object} - Messages object for current language
+ */
+const getMessages = () => {
+  const lang = getPageLanguage();
+  return MESSAGES[lang] || MESSAGES.pl;
+};
+
 const CONFIG = {
   // API endpoint for newsletter signup (auto-detected)
   apiEndpoint: getApiEndpoint(),
@@ -33,19 +96,12 @@ const CONFIG = {
   // Validation patterns
   patterns: {
     email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-    name: /^[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]{2,100}$/,
+    name: /^[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻіїєґІЇЄҐ\s-]{2,100}$/,
   },
   
-  // Error messages in Polish
-  messages: {
-    nameRequired: 'Proszę podać imię i nazwisko',
-    nameInvalid: 'Imię i nazwisko może zawierać tylko litery',
-    emailRequired: 'Proszę podać adres e-mail',
-    emailInvalid: 'Proszę podać poprawny adres e-mail',
-    typeRequired: 'Proszę wybrać jedną z opcji',
-    consentRequired: 'Wymagana jest zgoda na przetwarzanie danych',
-    submitError: 'Wystąpił błąd. Spróbuj ponownie później.',
-    submitSuccess: 'Dziękujemy za zapisanie się!',
+  // Error messages - dynamically loaded based on page language
+  get messages() {
+    return getMessages();
   },
 };
 
@@ -503,18 +559,20 @@ function validateHeroForm(form) {
     clearError(emailInput);
   }
 
-  // Validate city
+  // Validate city (optional - only if city input exists on the page)
   const cityInput = form.querySelector(SELECTORS.heroCityInput);
-  if (!cityInput.value || cityInput.value === '') {
-    const errorElement = document.getElementById('hero-city-error');
-    if (errorElement) {
-      errorElement.textContent = 'Wybierz miasto';
-    }
-    isValid = false;
-  } else {
-    const errorElement = document.getElementById('hero-city-error');
-    if (errorElement) {
-      errorElement.textContent = '';
+  if (cityInput) {
+    if (!cityInput.value || cityInput.value === '') {
+      const errorElement = document.getElementById('hero-city-error');
+      if (errorElement) {
+        errorElement.textContent = CONFIG.messages.cityRequired;
+      }
+      isValid = false;
+    } else {
+      const errorElement = document.getElementById('hero-city-error');
+      if (errorElement) {
+        errorElement.textContent = '';
+      }
     }
   }
 
@@ -575,11 +633,16 @@ async function handleHeroFormSubmit(event) {
   const formData = {
     name: form.querySelector(SELECTORS.heroNameInput).value.trim(),
     email: form.querySelector(SELECTORS.heroEmailInput).value.trim(),
-    city: form.querySelector(SELECTORS.heroCityInput).value,
     userType: form.querySelector(`${SELECTORS.heroUserTypeInputs}:checked`).value,
     consent: true,
     source: 'landing_page_hero',
   };
+  
+  // Add city if present on the form
+  const cityInput = form.querySelector(SELECTORS.heroCityInput);
+  if (cityInput && cityInput.value) {
+    formData.city = cityInput.value;
+  }
   
   try {
     // Call backend API
