@@ -47,15 +47,21 @@ try {
     );
 
     // Check if new columns exist
+    $columnsCheckCity = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'city'")->fetch();
+    $hasCityColumn = $columnsCheckCity !== false;
+
     $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
     $hasServicesColumn = $columnsCheck !== false;
-    
+
     $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
     $hasCommentsColumn = $columnsCheckComments !== false;
 
     // Build query based on available columns
     $selectFields = "id, name, email, user_type, consent, source, is_active, subscribed_at, unsubscribed_at, created_at, updated_at";
-    
+
+    if ($hasCityColumn) {
+        $selectFields .= ", city";
+    }
     if ($hasServicesColumn) {
         $selectFields .= ", services";
     }
@@ -68,7 +74,7 @@ try {
     $subscribers = $stmt->fetchAll();
 
     // Transform data for frontend
-    $transformedSubscribers = array_map(function($subscriber) use ($hasServicesColumn, $hasCommentsColumn) {
+    $transformedSubscribers = array_map(function($subscriber) use ($hasCityColumn, $hasServicesColumn, $hasCommentsColumn) {
         $result = [
             'id' => $subscriber['id'],
             'name' => $subscriber['name'],
@@ -82,21 +88,28 @@ try {
             'createdAt' => $subscriber['created_at'],
             'updatedAt' => $subscriber['updated_at'],
         ];
-        
+
+        // Add city if column exists
+        if ($hasCityColumn && isset($subscriber['city'])) {
+            $result['city'] = $subscriber['city'] ?? null;
+        } else {
+            $result['city'] = null;
+        }
+
         // Add services if column exists
         if ($hasServicesColumn && isset($subscriber['services'])) {
             $result['services'] = $subscriber['services'] ? json_decode($subscriber['services'], true) : [];
         } else {
             $result['services'] = [];
         }
-        
+
         // Add comments if column exists
         if ($hasCommentsColumn && isset($subscriber['comments'])) {
             $result['comments'] = $subscriber['comments'] ?? '';
         } else {
             $result['comments'] = '';
         }
-        
+
         return $result;
     }, $subscribers);
 
@@ -118,6 +131,7 @@ try {
             'contractors' => $contractorCount,
         ],
         'meta' => [
+            'hasCityColumn' => $hasCityColumn,
             'hasServicesColumn' => $hasServicesColumn,
             'hasCommentsColumn' => $hasCommentsColumn,
         ]

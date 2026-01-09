@@ -34,6 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Pure**: Vanilla HTML5, CSS3, JavaScript
 - **No frameworks**: Zero dependencies for maximum performance
 - **Responsive**: Mobile-first design with WCAG 2.2 compliance
+- **Multi-language**: Polish (index.html), English (index-en.html), Ukrainian (index-ua.html)
 
 ## Repository Structure
 
@@ -58,13 +59,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │       ├── pages/           # Dashboard, Users, Tasks, Disputes
 │       └── components/      # Reusable UI components
 ├── api/              # Legacy PHP endpoints (to be replaced)
-├── assets/           # Landing page images
+├── assets/           # Landing page images & videos
 ├── tasks/            # Project documentation
 │   ├── prd-szybka-fucha.md            # Product Requirements Document
 │   └── tasks-prd-szybka-fucha.md      # Development progress tracker
-├── index.html        # Landing page
-├── styles.css        # Landing page styles
-├── script.js         # Landing page JS (form validation, analytics)
+├── index.html        # Landing page (Polish)
+├── index-en.html     # Landing page (English/British)
+├── index-ua.html     # Landing page (Ukrainian)
+├── privacy.html      # Privacy policy
+├── terms.html        # Terms of service
+├── cookies.html      # Cookie policy
+├── styles.css        # Shared landing page styles
+├── script.js         # Shared landing page JS (form validation, analytics)
 └── docker-compose.yml # Local development environment
 ```
 
@@ -126,6 +132,11 @@ python3 -m http.server 8000
 
 # Or with Node.js
 npx serve
+
+# Access different language versions:
+# Polish: http://localhost:8000/index.html
+# English: http://localhost:8000/index-en.html
+# Ukrainian: http://localhost:8000/index-ua.html
 ```
 
 ### Docker Development Environment
@@ -246,9 +257,40 @@ const CONFIG = {
 
 ### Code Language Rules
 
-- **User-facing strings**: Always in Polish (UI labels, validation messages, emails)
+- **User-facing strings**: Language-specific per target audience
+  - Polish for Polish users (index.html)
+  - British English for English-speaking users (index-en.html)
+  - Ukrainian for Ukrainian users (index-ua.html)
 - **Code**: Always in English (variables, functions, classes, comments, commit messages)
 - **Documentation**: PRD and task tracking in English, README files context-dependent
+
+### Multi-Language Landing Page Structure
+
+The landing page exists in three language versions with shared assets:
+
+**Shared Resources:**
+- `styles.css` - Single stylesheet for all language versions
+- `script.js` - Single JavaScript file (form validation works across all languages)
+- `assets/` - Images, videos, and icons are language-agnostic
+
+**Language-Specific Files:**
+- `index.html` - Polish version (primary)
+- `index-en.html` - British English translation
+- `index-ua.html` - Ukrainian translation
+
+**Key Implementation Details:**
+- All three versions share identical HTML structure and CSS classes
+- Language switcher in header/footer links between versions (PL | UA | EN)
+- Meta tags (title, description, og:locale) are localized per language
+- Structured data (JSON-LD) is translated for each version
+- Form validation messages come from `script.js` (currently Polish, can be extended)
+
+**When Updating Landing Page Content:**
+1. Make changes to `index.html` (Polish version) first
+2. Translate and sync changes to `index-en.html` (British English spelling)
+3. Translate and sync changes to `index-ua.html` (Ukrainian)
+4. Verify all three versions maintain identical structure and styling
+5. Test language switcher links work correctly across all pages
 
 ### Testing Requirements
 
@@ -281,6 +323,35 @@ deletedAt: Date;
 ```
 
 ## Key Business Logic
+
+### Newsletter/Market Research Form
+
+The landing page includes a comprehensive signup form that serves dual purposes:
+
+**Form Fields:**
+1. **Name** (required) - Full name
+2. **Email** (required) - Email address for contact
+3. **User Type** (required) - Radio buttons:
+   - "Chcę zlecać" (I want to hire) - Client
+   - "Chcę zarabiać" (I want to earn) - Contractor
+4. **Services** (optional) - 12 checkboxes for service preferences:
+   - Cleaning, Shopping & delivery, Minor repairs, Garden work
+   - Pet care, Furniture assembly, Moving assistance, Queue waiting
+   - Transport help, Tech support (IT), Tutoring, Event planning
+5. **Comments** (optional) - Textarea for user ideas and suggestions (max 500 chars)
+6. **Consent** (required) - Checkbox for marketing communications
+
+**Purpose:**
+- Originally: Simple newsletter signup for early adopters
+- Current: Market research + newsletter combined
+- Collects user preferences and feedback to shape product development
+- Emphasizes co-creation: "Your opinion creates the app!"
+
+**Form Submission:**
+- Validates all required fields
+- POSTs to backend `/api/v1/newsletter/subscribe` endpoint
+- Success: Shows confirmation message
+- Form data includes services array and comments for market insights
 
 ### User Types
 
@@ -362,7 +433,8 @@ npm run seed:fresh  # Drop everything and recreate
 Refer to `/tasks/tasks-prd-szybka-fucha.md` for current progress and remaining tasks.
 
 **Completed**:
-- Landing page with newsletter collection
+- Multi-language landing page (Polish, English, Ukrainian)
+- Market research form with service preferences and feedback collection
 - Backend API structure with all core modules
 - Admin panel with user management dashboard
 - Database schema and relationships
@@ -382,6 +454,37 @@ Refer to `/tasks/tasks-prd-szybka-fucha.md` for current progress and remaining t
 - **Project Rules**: `/.cursorrules` - Code style and conventions
 
 ## Common Tasks
+
+### Update Landing Page Content
+
+When syncing changes across language versions:
+
+1. **Modify Polish version** (`index.html`) first - this is the source of truth
+2. **Identify changed sections** - look for new HTML elements, updated copy, or structural changes
+3. **Translate to English** (`index-en.html`):
+   - Use British English spellings (organise, whilst, colour)
+   - Keep brand name "Szybka Fucha" untranslated
+   - Maintain engaging, conversational tone
+   - Update meta tags, structured data, and all user-facing strings
+4. **Translate to Ukrainian** (`index-ua.html`):
+   - Use appropriate Ukrainian translations
+   - Keep brand name "Szybka Fucha" untranslated
+   - Update meta tags and structured data
+5. **Test all versions**:
+   - Visual inspection in browser (desktop + mobile)
+   - Language switcher links work correctly
+   - Forms submit successfully
+   - No layout breaks or missing translations
+
+**Common elements to translate:**
+- Meta tags (`<title>`, `<meta name="description">`, Open Graph tags)
+- Structured data (JSON-LD schemas for MobileApplication and FAQPage)
+- Navigation labels
+- Hero section (heading, subtitle, CTA buttons)
+- Feature lists and benefits
+- Form labels, placeholders, and button text
+- FAQ questions and answers
+- Footer content
 
 ### Add New Endpoint
 

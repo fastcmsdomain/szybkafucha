@@ -8,9 +8,10 @@
  * {
  *   "name": "Jan Kowalski",
  *   "email": "jan@example.com",
+ *   "city": "Warszawa",
  *   "userType": "client" | "contractor",
  *   "consent": true,
- *   "source": "formularz_ulepszen_apki",
+ *   "source": "formularz_ulepszen_apki" | "landing_page_hero",
  *   "services": ["cleaning", "shopping", "repairs"],
  *   "comments": "Chciałbym mieć możliwość..."
  * }
@@ -96,6 +97,12 @@ $email = strtolower(trim($data['email']));
 $userType = $data['userType'];
 $source = isset($data['source']) ? trim(htmlspecialchars($data['source'], ENT_QUOTES, 'UTF-8')) : 'formularz_ulepszen_apki';
 
+// Handle optional city field
+$city = null;
+if (isset($data['city']) && !empty(trim($data['city']))) {
+    $city = trim(htmlspecialchars($data['city'], ENT_QUOTES, 'UTF-8'));
+}
+
 // Handle optional fields: services (array) and comments (string)
 $services = null;
 if (isset($data['services']) && is_array($data['services']) && !empty($data['services'])) {
@@ -139,39 +146,46 @@ try {
     if ($existing) {
         // Email exists
         if ($existing['is_active']) {
-            // Already subscribed and active - update services and comments if provided
-            // Check if services and comments columns exist
+            // Already subscribed and active - update data if provided
+            // Check if optional columns exist
             $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
             $hasServicesColumn = $columnsCheck !== false;
             
             $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
             $hasCommentsColumn = $columnsCheckComments !== false;
             
-            if ($hasServicesColumn && $hasCommentsColumn && ($services !== null || $comments !== null)) {
-                // Update services and/or comments if provided
-                $updateFields = [];
-                $updateValues = [];
+            $columnsCheckCity = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'city'")->fetch();
+            $hasCityColumn = $columnsCheckCity !== false;
+            
+            // Build dynamic update query
+            $updateFields = [];
+            $updateValues = [];
+            
+            if ($hasCityColumn && $city !== null) {
+                $updateFields[] = "city = ?";
+                $updateValues[] = $city;
+            }
+            
+            if ($hasServicesColumn && $services !== null) {
+                $updateFields[] = "services = ?";
+                $updateValues[] = $services;
+            }
+            
+            if ($hasCommentsColumn && $comments !== null) {
+                $updateFields[] = "comments = ?";
+                $updateValues[] = $comments;
+            }
+            
+            if (!empty($updateFields)) {
+                $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
+                $updateValues[] = $email;
                 
-                if ($services !== null) {
-                    $updateFields[] = "services = ?";
-                    $updateValues[] = $services;
-                }
-                if ($comments !== null) {
-                    $updateFields[] = "comments = ?";
-                    $updateValues[] = $comments;
-                }
-                
-                if (!empty($updateFields)) {
-                    $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
-                    $updateValues[] = $email;
-                    
-                    $stmt = $pdo->prepare("
-                        UPDATE newsletter_subscribers 
-                        SET " . implode(", ", $updateFields) . "
-                        WHERE email = ?
-                    ");
-                    $stmt->execute($updateValues);
-                }
+                $stmt = $pdo->prepare("
+                    UPDATE newsletter_subscribers 
+                    SET " . implode(", ", $updateFields) . "
+                    WHERE email = ?
+                ");
+                $stmt->execute($updateValues);
             }
             
             http_response_code(200);
@@ -181,42 +195,50 @@ try {
             ]);
         } else {
             // Was unsubscribed, reactivate
-            // Check if services and comments columns exist
+            // Check if optional columns exist
             $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
             $hasServicesColumn = $columnsCheck !== false;
             
             $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
             $hasCommentsColumn = $columnsCheckComments !== false;
             
-            if ($hasServicesColumn && $hasCommentsColumn) {
-                // Update with new fields
-                $stmt = $pdo->prepare("
-                    UPDATE newsletter_subscribers 
-                    SET is_active = TRUE, 
-                        name = ?,
-                        user_type = ?,
-                        source = ?,
-                        services = ?,
-                        comments = ?,
-                        unsubscribed_at = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE email = ?
-                ");
-                $stmt->execute([$name, $userType, $source, $services, $comments, $email]);
-            } else {
-                // Update without new fields (backward compatibility)
-                $stmt = $pdo->prepare("
-                    UPDATE newsletter_subscribers 
-                    SET is_active = TRUE, 
-                        name = ?,
-                        user_type = ?,
-                        source = ?,
-                        unsubscribed_at = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE email = ?
-                ");
-                $stmt->execute([$name, $userType, $source, $email]);
+            $columnsCheckCity = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'city'")->fetch();
+            $hasCityColumn = $columnsCheckCity !== false;
+            
+            // Build dynamic UPDATE query
+            $updateFields = [
+                "is_active = TRUE",
+                "name = ?",
+                "user_type = ?",
+                "source = ?",
+            ];
+            $updateValues = [$name, $userType, $source];
+            
+            if ($hasCityColumn) {
+                $updateFields[] = "city = ?";
+                $updateValues[] = $city;
             }
+            
+            if ($hasServicesColumn) {
+                $updateFields[] = "services = ?";
+                $updateValues[] = $services;
+            }
+            
+            if ($hasCommentsColumn) {
+                $updateFields[] = "comments = ?";
+                $updateValues[] = $comments;
+            }
+            
+            $updateFields[] = "unsubscribed_at = NULL";
+            $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
+            $updateValues[] = $email;
+            
+            $stmt = $pdo->prepare("
+                UPDATE newsletter_subscribers 
+                SET " . implode(", ", $updateFields) . "
+                WHERE email = ?
+            ");
+            $stmt->execute($updateValues);
             
             http_response_code(200);
             echo json_encode([
@@ -226,30 +248,45 @@ try {
         }
     } else {
         // New subscriber - insert
-        // Check if services and comments columns exist
+        // Check if optional columns exist
         $columnsCheck = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'services'")->fetch();
         $hasServicesColumn = $columnsCheck !== false;
         
         $columnsCheckComments = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'comments'")->fetch();
         $hasCommentsColumn = $columnsCheckComments !== false;
         
-        if ($hasServicesColumn && $hasCommentsColumn) {
-            // Insert with new fields
-            $stmt = $pdo->prepare("
-                INSERT INTO newsletter_subscribers 
-                (name, email, user_type, consent, source, services, comments, is_active, subscribed_at) 
-                VALUES (?, ?, ?, TRUE, ?, ?, ?, TRUE, CURRENT_TIMESTAMP)
-            ");
-            $stmt->execute([$name, $email, $userType, $source, $services, $comments]);
-        } else {
-            // Insert without new fields (backward compatibility)
-            $stmt = $pdo->prepare("
-                INSERT INTO newsletter_subscribers 
-                (name, email, user_type, consent, source, is_active, subscribed_at) 
-                VALUES (?, ?, ?, TRUE, ?, TRUE, CURRENT_TIMESTAMP)
-            ");
-            $stmt->execute([$name, $email, $userType, $source]);
+        $columnsCheckCity = $pdo->query("SHOW COLUMNS FROM newsletter_subscribers LIKE 'city'")->fetch();
+        $hasCityColumn = $columnsCheckCity !== false;
+        
+        // Build dynamic INSERT query based on available columns
+        $columns = ['name', 'email', 'user_type', 'consent', 'source', 'is_active', 'subscribed_at'];
+        $placeholders = ['?', '?', '?', 'TRUE', '?', 'TRUE', 'CURRENT_TIMESTAMP'];
+        $values = [$name, $email, $userType, $source];
+        
+        if ($hasCityColumn) {
+            $columns[] = 'city';
+            $placeholders[] = '?';
+            $values[] = $city;
         }
+        
+        if ($hasServicesColumn) {
+            $columns[] = 'services';
+            $placeholders[] = '?';
+            $values[] = $services;
+        }
+        
+        if ($hasCommentsColumn) {
+            $columns[] = 'comments';
+            $placeholders[] = '?';
+            $values[] = $comments;
+        }
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO newsletter_subscribers 
+            (" . implode(', ', $columns) . ") 
+            VALUES (" . implode(', ', $placeholders) . ")
+        ");
+        $stmt->execute($values);
 
         http_response_code(200);
         echo json_encode([

@@ -11,6 +11,7 @@ import {
   IsOptional,
   MaxLength,
   MinLength,
+  IsArray,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -28,6 +29,11 @@ export class SubscribeNewsletterDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
   email: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: 'Miasto może mieć maksymalnie 100 znaków' })
+  city?: string;
+
   @IsString()
   @IsNotEmpty({ message: 'Proszę wybrać typ użytkownika' })
   @IsIn(['client', 'contractor'], { message: 'Typ użytkownika musi być "client" lub "contractor"' })
@@ -36,6 +42,16 @@ export class SubscribeNewsletterDto {
   @IsBoolean()
   @IsNotEmpty({ message: 'Zgoda jest wymagana' })
   consent: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  services?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: 'Komentarz może mieć maksymalnie 500 znaków' })
+  comments?: string;
 
   @IsOptional()
   @IsString()

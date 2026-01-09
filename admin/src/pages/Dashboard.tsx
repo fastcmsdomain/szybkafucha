@@ -11,6 +11,7 @@ interface Subscriber {
   id: string;
   name: string;
   email: string;
+  city: string | null;
   userType: 'client' | 'contractor';
   source: string;
   isActive: boolean;
@@ -280,6 +281,7 @@ const Dashboard: React.FC = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Użytkownik</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Miasto</th>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Typ</th>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Źródło</th>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Data</th>
@@ -294,6 +296,9 @@ const Dashboard: React.FC = () => {
                           <Text fontWeight="medium">{sub.name}</Text>
                           <Text fontSize="sm" color="gray.500">{sub.email}</Text>
                         </Box>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <Text fontSize="sm" color="gray.600">{sub.city || '—'}</Text>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{
@@ -316,7 +321,7 @@ const Dashboard: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} style={{ padding: '20px', textAlign: 'center' }}>
+                    <td colSpan={5} style={{ padding: '20px', textAlign: 'center' }}>
                       <Text color="gray.500">Brak zapisanych użytkowników</Text>
                     </td>
                   </tr>
