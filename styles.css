@@ -2299,7 +2299,8 @@ flex-direction: column;
 }
 
 .hero-phone-form .radio-group {
-  flex-direction: column;
+  flex-direction: row;
+  gap: var(--space-2);
 }
 
 /* Compact form styles for phone mockup */
@@ -2332,20 +2333,38 @@ flex-direction: column;
 .radio-option--compact {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  border: 2px solid var(--color-gray-200);
+  transition: all var(--transition-base);
 }
 
-.radio-option--compact .radio-custom {
-  width: 18px;
-  height: 18px;
+.radio-option--compact:hover {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.05);
 }
 
-.radio-option--compact .radio-custom::after {
-  width: 8px;
-  height: 8px;
+/* When radio is checked, change parent label border to red */
+.radio-option--compact:has(input:checked) {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.1);
+}
+
+/* Fallback for browsers without :has() support - using class added by JS */
+.radio-option--compact.radio-option--checked {
+  border-color: var(--color-primary);
+  background: rgba(233, 69, 96, 0.1);
+}
+
+/* Hide radio-custom in hero form */
+.hero-phone-form .radio-option--compact .radio-custom {
+  display: none;
 }
 
 .radio-option--compact .radio-label {
   font-size: var(--font-size-sm);
+  width: 100%;
 }
 
 .checkbox-option--compact {

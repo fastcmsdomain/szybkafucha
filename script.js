@@ -411,6 +411,15 @@ async function handleFormSubmit(event) {
     // Log for debugging
     console.log('Newsletter signup successful:', result);
     
+    // Push event to Google Tag Manager dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'newsletter_signup_success',
+      form_name: 'newsletter',
+      page_path: location.pathname,
+      user_type: formData.userType,
+    });
+    
     // Show success message
     form.style.display = 'none';
     if (successMessage) {
@@ -674,6 +683,15 @@ async function handleHeroFormSubmit(event) {
     // Log for debugging
     console.log('Hero form signup successful:', result);
     
+    // Push event to Google Tag Manager dataLayer
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'newsletter_signup_success',
+      form_name: 'hero',
+      page_path: location.pathname,
+      user_type: formData.userType,
+    });
+    
     // Show success message
     form.style.display = 'none';
     if (successMessage) {
@@ -774,7 +792,7 @@ function initHeroForm() {
     });
   }
 
-  // Clear errors on interaction
+  // Clear errors on interaction and update visual state
   const userTypeInputs = form.querySelectorAll(SELECTORS.heroUserTypeInputs);
   userTypeInputs.forEach((input) => {
     input.addEventListener('change', () => {
@@ -782,7 +800,27 @@ function initHeroForm() {
       if (errorElement) {
         errorElement.textContent = '';
       }
+      
+      // Update visual state for radio buttons (border color)
+      const allRadioOptions = form.querySelectorAll('.radio-option--compact');
+      allRadioOptions.forEach(option => {
+        option.classList.remove('radio-option--checked');
+      });
+      
+      // Add checked class to selected option
+      const selectedOption = input.closest('.radio-option--compact');
+      if (selectedOption) {
+        selectedOption.classList.add('radio-option--checked');
+      }
     });
+    
+    // Set initial state if radio is already checked
+    if (input.checked) {
+      const selectedOption = input.closest('.radio-option--compact');
+      if (selectedOption) {
+        selectedOption.classList.add('radio-option--checked');
+      }
+    }
   });
   
   const consentInput = form.querySelector(SELECTORS.heroConsentInput);
