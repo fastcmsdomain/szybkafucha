@@ -16,12 +16,12 @@
 const getApiEndpoint = () => {
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
-  
+
   // Development (localhost)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:8000/api/subscribe.php';
   }
-  
+
   // Production - PHP API on same domain
   return `${protocol}//${hostname}/api/subscribe.php`;
 };
