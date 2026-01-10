@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Main Polish Landing Page -->
+  <url>
+    <loc>https://szybkafucha.app/</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://szybkafucha.app/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://szybkafucha.app/en/index.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://szybkafucha.app/" />
+    <image:image>
+      <image:loc>https://szybkafucha.app/assets/SzybkaFuchaHero.png</image:loc>
+      <image:title>Szybka Fucha - Landing Page Hero</image:title>
+      <image:caption>Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- English Landing Page -->
+  <url>
+    <loc>https://szybkafucha.app/en/index.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://szybkafucha.app/en/index.html" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://szybkafucha.app/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://szybkafucha.app/" />
+    <image:image>
+      <image:loc>https://szybkafucha.app/assets/SzybkaFuchaHero.png</image:loc>
+      <image:title>Szybka Fucha - Landing Page Hero</image:title>
+      <image:caption>Szybka Fucha - Delegate or Earn. Locally. Instantly.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Legal Pages - Polish -->
+  <url>
+    <loc>https://szybkafucha.app/privacy.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://szybkafucha.app/terms.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://szybkafucha.app/cookies.html</loc>
+    <lastmod>2026-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>

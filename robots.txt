@@ -1,0 +1,43 @@
+# robots.txt for Szybka Fucha
+# https://szybkafucha.app
+
+User-agent: *
+Allow: /
+Allow: /en/
+Allow: /assets/
+
+# Disallow admin and backend paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /backend/
+Disallow: /tasks/
+Disallow: /docs/
+
+# Disallow sensitive files
+Disallow: /*.env
+Disallow: /*.json
+Disallow: /*.md
+Disallow: /.git/
+Disallow: /.htaccess
+
+# Crawl rate
+Crawl-delay: 0
+
+# Sitemap location
+Sitemap: https://szybkafucha.app/sitemap.xml
+
+# Search engine specific rules
+User-agent: Googlebot
+Allow: /
+Allow: /en/
+Allow: /assets/
+
+User-agent: Bingbot
+Allow: /
+Allow: /en/
+Allow: /assets/
+
+User-agent: Slurp
+Allow: /
+Allow: /en/
+Allow: /assets/
