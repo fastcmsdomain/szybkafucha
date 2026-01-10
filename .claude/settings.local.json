@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(test:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(lsof:*)"
     ]
   }
 }

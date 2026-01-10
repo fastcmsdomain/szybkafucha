@@ -3,6 +3,7 @@
  * REST endpoints for authentication
  */
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
@@ -16,9 +17,11 @@ export class AuthController {
   /**
    * POST /auth/phone/request-otp
    * Send OTP code to phone number
+   * Rate limit: 3 requests per 60 seconds (SMS cost protection)
    */
   @Post('phone/request-otp')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async requestOtp(@Body() dto: RequestOtpDto) {
     return this.authService.requestPhoneOtp(dto.phone);
   }
@@ -26,9 +29,11 @@ export class AuthController {
   /**
    * POST /auth/phone/verify
    * Verify OTP and return JWT token
+   * Rate limit: 5 verification attempts per 60 seconds
    */
   @Post('phone/verify')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyPhoneOtp(dto.phone, dto.code, dto.userType);
   }

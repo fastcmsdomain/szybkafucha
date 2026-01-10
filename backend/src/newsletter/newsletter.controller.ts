@@ -12,6 +12,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { NewsletterService, type SubscribeResponse } from './newsletter.service';
 import { SubscribeNewsletterDto } from './dto/subscribe-newsletter.dto';
 import { UserType } from './entities/newsletter-subscriber.entity';
@@ -24,9 +25,11 @@ export class NewsletterController {
   /**
    * POST /newsletter/subscribe
    * Subscribe to newsletter (public endpoint)
+   * Rate limit: 3 requests per 60 seconds to prevent spam
    */
   @Post('subscribe')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async subscribe(@Body() dto: SubscribeNewsletterDto): Promise<SubscribeResponse> {
     return this.newsletterService.subscribe(dto);
   }
@@ -54,9 +57,11 @@ export class NewsletterController {
   /**
    * POST /newsletter/unsubscribe
    * Unsubscribe from newsletter (public endpoint)
+   * Rate limit: 3 requests per 60 seconds
    */
   @Post('unsubscribe')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async unsubscribe(@Query('email') email: string): Promise<SubscribeResponse> {
     return this.newsletterService.unsubscribe(email);
   }

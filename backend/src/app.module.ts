@@ -5,6 +5,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -19,6 +23,7 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { MessagesModule } from './messages/messages.module';
 import { KycModule } from './kyc/kyc.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { HealthModule } from './health/health.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -67,6 +72,22 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
       inject: [ConfigService],
     }),
 
+    // Redis cache for OTP storage and session management
+    CacheModule.register({
+      isGlobal: true, // Make cache available globally
+      store: redisStore as any,
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD || undefined,
+      ttl: 300, // Default TTL: 5 minutes (in seconds)
+    }),
+
+    // Rate limiting - protect against spam and DoS
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // Time window in milliseconds (60 seconds)
+      limit: 10,  // Max 10 requests per TTL window
+    }]),
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -78,8 +99,16 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     MessagesModule,
     KycModule,
     NewsletterModule,
+    HealthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Global rate limiting guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
