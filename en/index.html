@@ -34,6 +34,11 @@
   <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
   <link rel="apple-touch-icon" href="../assets/favicon.ico">
 
+  <!-- Preload critical LCP image with highest priority -->
+  <link rel="preload" href="../assets/SzybkaFuchaHero.jpeg" as="image" type="image/jpeg" fetchpriority="high">
+  <link rel="preload" href="../assets/SzybkaFuchaZleceniodawca.jpeg" as="image" type="image/jpeg" fetchpriority="high">
+  <link rel="preload" href="../assets/michal-urzywa-szybka-fucha.jpeg" as="image" type="image/jpeg" fetchpriority="high">
+
   <!-- Preconnect for fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,39 +51,6 @@
 
   <link rel="preload" href="../styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="../styles.css"></noscript>
-
-  <!-- Critical CSS inlined for instant render -->
-  <style>
-    /* Critical above-the-fold styles */
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-    body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#0F172A;background:#FAFBFC;overflow-x:hidden}
-    .skip-link{position:absolute;top:-40px;left:0;background:#E94560;color:#fff;padding:8px;text-decoration:none;z-index:100}
-    .skip-link:focus{top:0}
-    .header{position:fixed;top:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);box-shadow:0 2px 8px rgba(0,0,0,.04);z-index:1000;transition:all .3s ease}
-    .container{max-width:1200px;margin:0 auto;padding:0 1.5rem}
-    .header .container{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem}
-    .header__logo{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:1.25rem;color:#E94560;text-decoration:none}
-    .logo-icon{font-size:1.5rem}
-    .header__nav{display:none;gap:2rem}
-    @media(min-width:768px){.header__nav{display:flex}}
-    .nav-link{color:#475569;font-weight:500;text-decoration:none;transition:color .2s}
-    .nav-link:hover{color:#E94560}
-    .nav-link--cta{background:#E94560;color:#fff;padding:.5rem 1.25rem;border-radius:8px}
-    .hero{min-height:100vh;padding:6rem 0 4rem;position:relative;overflow:hidden;display:flex;align-items:center}
-    .hero__bg{position:absolute;inset:0;z-index:0;overflow:hidden}
-    .hero__content{position:relative;z-index:1;display:grid;gap:3rem;align-items:center}
-    @media(min-width:1024px){.hero__content{grid-template-columns:1fr 1fr;gap:4rem}}
-    .hero__title{font-size:2.5rem;line-height:1.1;font-weight:800;color:#0F172A;margin-bottom:1.5rem}
-    @media(min-width:768px){.hero__title{font-size:3.5rem}}
-    .gradient-text{background:linear-gradient(135deg,#E94560 0%,#FF6B6B 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .btn{display:inline-flex;align-items:center;gap:.75rem;padding:.875rem 1.75rem;border:none;border-radius:12px;font-weight:600;font-size:1rem;cursor:pointer;transition:all .2s;text-decoration:none}
-    .btn--primary{background:#E94560;color:#fff;box-shadow:0 4px 14px rgba(233,69,96,.3)}
-    .btn--primary:hover{background:#D63850;transform:translateY(-2px);box-shadow:0 6px 20px rgba(233,69,96,.4)}
-    .mobile-menu-btn{display:flex;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:8px}
-    @media(min-width:768px){.mobile-menu-btn{display:none}}
-    .mobile-menu-btn span{width:24px;height:2px;background:#475569;border-radius:2px;transition:all .3s}
-  </style>
 
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
@@ -205,7 +177,7 @@
             <span class="hero__title-line">Need Help?<br></span>
             <span class="hero__title-line gradient-text">Find It in 5 Minutes.<br></span>
           </h1>
-          <video src="../assets/SzybkaFuchaHero.mp4" autoplay muted loop class="hero__video" poster="../assets/SzybkaFuchaHero.jpeg"></video>
+          <video src="../assets/SzybkaFuchaHero.mp4" autoplay muted loop playsinline preload="none" class="hero__video" poster="../assets/SzybkaFuchaHero.jpeg" fetchpriority="high"></video>
           <h2 class="hero__title-line promo-text">Szybka Fucha helps you find help.</h2>
           <p class="hero__subtitle">
             Delegate shopping, cleaning, small repairs — or <strong>earn money helping others.</strong>
@@ -1266,7 +1238,7 @@
             <div class="audience-card__image">
               <!-- Placeholder for client image -->
               <div class="placeholder-image placeholder-image--person" role="img" aria-label="Client photo">
-              <img src="../assets/SzybkaFuchaZleceniodawca.jpeg" alt="Szybka Fucha" class="audience-card__image">
+              <img src="../assets/SzybkaFuchaZleceniodawca.jpeg" alt="Szybka Fucha" class="audience-card__image" fetchpriority="high" loading="eager">
               </div>
             </div>
             <div class="audience-card__content">
@@ -1313,7 +1285,7 @@
   <div class="audience-card__image">
     <!-- Placeholder for contractor image -->
     <div class="placeholder-image placeholder-image--person placeholder-image--contractor" role="img" aria-label="Contractor photo">
-    <img src="../assets/michal-urzywa-szybka-fucha.jpeg" alt="Szybka Fucha" class="audience-card__image">
+    <img src="../assets/michal-urzywa-szybka-fucha.jpeg" alt="Szybka Fucha" class="audience-card__image" fetchpriority="high" loading="eager">
     </div>
   </div>
   <div class="audience-card__content">
