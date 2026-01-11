@@ -19,6 +19,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { UserType } from '../users/entities/user.entity';
+import { AuthenticatedUser } from '../auth/types/auth-user.type';
+
+interface AuthenticatedRequest extends Request {
+  user: AuthenticatedUser;
+}
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
@@ -30,7 +35,10 @@ export class TasksController {
    * Create a new task (client only)
    */
   @Post()
-  async create(@Request() req: any, @Body() createTaskDto: CreateTaskDto) {
+  async create(
+    @Request() req: AuthenticatedRequest,
+    @Body() createTaskDto: CreateTaskDto,
+  ) {
     return this.tasksService.create(req.user.id, createTaskDto);
   }
 
@@ -42,7 +50,7 @@ export class TasksController {
    */
   @Get()
   async findAll(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('lat') lat?: number,
     @Query('lng') lng?: number,
     @Query('categories') categories?: string,
@@ -81,7 +89,10 @@ export class TasksController {
    * Contractor accepts a task
    */
   @Put(':id/accept')
-  async accept(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async accept(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.tasksService.acceptTask(id, req.user.id);
   }
 
@@ -90,7 +101,10 @@ export class TasksController {
    * Contractor starts the task
    */
   @Put(':id/start')
-  async start(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async start(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.tasksService.startTask(id, req.user.id);
   }
 
@@ -100,7 +114,7 @@ export class TasksController {
    */
   @Put(':id/complete')
   async complete(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('completionPhotos') completionPhotos?: string[],
   ) {
@@ -112,7 +126,10 @@ export class TasksController {
    * Client confirms task completion
    */
   @Put(':id/confirm')
-  async confirm(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async confirm(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.tasksService.confirmTask(id, req.user.id);
   }
 
@@ -122,7 +139,7 @@ export class TasksController {
    */
   @Put(':id/cancel')
   async cancel(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason?: string,
   ) {
@@ -135,7 +152,7 @@ export class TasksController {
    */
   @Post(':id/rate')
   async rate(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() rateTaskDto: RateTaskDto,
   ) {
@@ -158,7 +175,7 @@ export class TasksController {
    */
   @Post(':id/tip')
   async addTip(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('amount') amount: number,
   ) {

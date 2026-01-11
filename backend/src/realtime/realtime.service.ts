@@ -253,7 +253,7 @@ export class RealtimeService {
    */
   getOnlineContractors(): string[] {
     const onlineContractors: string[] = [];
-    for (const [socketId, connection] of this.activeConnections.entries()) {
+    for (const [, connection] of this.activeConnections.entries()) {
       if (connection.userType === 'contractor') {
         onlineContractors.push(connection.userId);
       }

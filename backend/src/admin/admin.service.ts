@@ -9,7 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThan, ILike } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
@@ -88,7 +88,9 @@ export class AdminService {
 
     const byStatus: Record<string, number> = {};
     for (const row of tasksByStatus) {
-      byStatus[row.status] = parseInt(row.count, 10);
+      const status = row.status as string;
+      const count = row.count as string;
+      byStatus[status] = parseInt(count, 10);
     }
 
     // Average completion time
@@ -100,8 +102,9 @@ export class AdminService {
       .andWhere('task.startedAt IS NOT NULL')
       .getRawOne();
 
-    const averageCompletionTimeMinutes = completedTasks?.avgMinutes
-      ? Math.round(parseFloat(completedTasks.avgMinutes))
+    const avgMinutes = completedTasks?.avgMinutes as string | undefined;
+    const averageCompletionTimeMinutes = avgMinutes
+      ? Math.round(parseFloat(avgMinutes))
       : null;
 
     // Revenue metrics (from captured payments)
@@ -172,7 +175,8 @@ export class AdminService {
     }
 
     const result = await query.getRawOne();
-    return parseFloat(result?.total || '0');
+    const total = result?.total as string | undefined;
+    return parseFloat(total || '0');
   }
 
   /**
@@ -189,7 +193,8 @@ export class AdminService {
     }
 
     const result = await query.getRawOne();
-    return parseFloat(result?.total || '0');
+    const total = result?.total as string | undefined;
+    return parseFloat(total || '0');
   }
 
   /**
@@ -493,7 +498,8 @@ export class AdminService {
       .andWhere('payment.status = :status', { status: PaymentStatus.CAPTURED })
       .getRawOne();
 
-    return parseFloat(result?.total || '0');
+    const total = result?.total as string | undefined;
+    return parseFloat(total || '0');
   }
 
   private async calculateAverageRating(contractorId: string): Promise<number> {
@@ -503,6 +509,7 @@ export class AdminService {
       .where('rating.toUserId = :contractorId', { contractorId })
       .getRawOne();
 
-    return parseFloat(result?.avg || '0');
+    const avg = result?.avg as string | undefined;
+    return parseFloat(avg || '0');
   }
 }
