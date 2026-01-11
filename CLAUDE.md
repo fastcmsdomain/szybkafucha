@@ -507,3 +507,9 @@ When syncing changes across language versions:
 - Check database: Connect to pgAdmin at `localhost:5050`
 - Check API responses: Use Postman or `curl` commands
 - Enable TypeORM logging: Set `logging: true` in `app.module.ts`
+
+## Documentation Standards
+After completing any significant task:
+1. Generate a summary document 
+2. Include changed files, key decisions, and next steps
+3. Save to docs/task-summaries-name/ with timestamp
