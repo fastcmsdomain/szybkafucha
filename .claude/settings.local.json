@@ -8,7 +8,13 @@
       "Bash(npm install:*)",
       "Bash(chmod:*)",
       "Bash(docker-compose up:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(docker ps:*)",
+      "Bash(npm run typeorm:*)",
+      "Bash(npx typeorm migration:create:*)",
+      "Bash(docker exec:*)",
+      "Bash(npm run migration:run:*)",
+      "Bash(npm run migration:show:*)"
     ]
   }
 }
