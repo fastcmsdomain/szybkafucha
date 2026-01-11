@@ -83,13 +83,10 @@ describe('AuthService', () => {
     it('should generate a valid JWT token', () => {
       const result = service.generateToken(mockUser);
 
-      expect(jwtService.sign).toHaveBeenCalledWith(
-        {
-          sub: mockUser.id,
-          type: mockUser.type,
-        },
-        undefined,
-      );
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: mockUser.id,
+        type: mockUser.type,
+      });
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.user.id).toBe(mockUser.id);
       expect(result.user.type).toBe(mockUser.type);
