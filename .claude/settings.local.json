@@ -14,7 +14,9 @@
       "Bash(npx typeorm migration:create:*)",
       "Bash(docker exec:*)",
       "Bash(npm run migration:run:*)",
-      "Bash(npm run migration:show:*)"
+      "Bash(npm run migration:show:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:e2e:*)"
     ]
   }
 }

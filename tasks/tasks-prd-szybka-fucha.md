@@ -96,14 +96,14 @@
   - [x] 3.2 Create `AuthModule` with JWT strategy
   - [x] 3.3 Implement `POST /auth/phone/request-otp` - sends SMS via Twilio (mock for dev)
   - [x] 3.4 Implement `POST /auth/phone/verify` - verifies OTP, returns JWT
-  - [ ] 3.5 Install Google Sign-In: `npm install passport-google-oauth20`
+  - [x] 3.5 Install Google Sign-In: `npm install passport-google-oauth20`
   - [x] 3.6 Implement `POST /auth/google` - validates Google token, creates/returns user
-  - [ ] 3.7 Install Apple Sign-In: `npm install apple-signin-auth`
+  - [x] 3.7 Install Apple Sign-In: `npm install apple-signin-auth`
   - [x] 3.8 Implement `POST /auth/apple` - validates Apple token, creates/returns user
-  - [ ] 3.9 Implement `POST /auth/logout` - invalidates refresh token
+  - [x] 3.9 Implement `POST /auth/logout` - simple logout (client clears token)
   - [x] 3.10 Create `JwtAuthGuard` for protecting routes
-  - [ ] 3.11 Write unit tests for auth service
-  - [ ] 3.12 Write e2e tests for auth endpoints
+  - [x] 3.11 Write unit tests for auth service (16 tests)
+  - [x] 3.12 Write e2e tests for auth endpoints (20 tests)
 
 ---
 

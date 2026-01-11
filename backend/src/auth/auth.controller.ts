@@ -2,13 +2,21 @@
  * Auth Controller
  * REST endpoints for authentication
  */
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { AppleAuthDto } from './dto/apple-auth.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -67,5 +75,17 @@ export class AuthController {
       dto.name,
       dto.userType,
     );
+  }
+
+  /**
+   * POST /auth/logout
+   * Logout the current user
+   * Client should clear stored tokens after this call
+   */
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async logout() {
+    return { message: 'Logged out successfully' };
   }
 }
