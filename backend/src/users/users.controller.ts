@@ -13,6 +13,11 @@ import {
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthenticatedUser } from '../auth/types/auth-user.type';
+
+interface AuthenticatedRequest extends Request {
+  user: AuthenticatedUser;
+}
 
 @Controller('users')
 export class UsersController {
@@ -24,7 +29,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getProfile(@Request() req: any) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     return this.usersService.findByIdOrFail(req.user.id);
   }
 
@@ -34,7 +39,10 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Put('me')
-  async updateProfile(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
+  async updateProfile(
+    @Request() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update(req.user.id, updateUserDto);
   }
 }

@@ -18,7 +18,7 @@ import { User } from '../users/entities/user.entity';
     TypeOrmModule.forFeature([Task, Message, ContractorProfile, User]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
       }),
       inject: [ConfigService],

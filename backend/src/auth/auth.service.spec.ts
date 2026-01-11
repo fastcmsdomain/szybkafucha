@@ -10,11 +10,17 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 
+interface MockCacheManager {
+  get: jest.Mock;
+  set: jest.Mock;
+  del: jest.Mock;
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
-  let cacheManager: jest.Mocked<any>;
+  let cacheManager: MockCacheManager;
 
   const mockUser: User = {
     id: 'user-123',
@@ -66,19 +72,22 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get(UsersService);
-    jwtService = module.get(JwtService);
-    cacheManager = module.get(CACHE_MANAGER);
+    usersService = module.get<UsersService>(UsersService);
+    jwtService = module.get<JwtService>(JwtService);
+    cacheManager = module.get<MockCacheManager>(CACHE_MANAGER);
   });
 
   describe('generateToken', () => {
     it('should generate a valid JWT token', () => {
       const result = service.generateToken(mockUser);
 
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: mockUser.id,
-        type: mockUser.type,
-      });
+      expect(jwtService.sign).toHaveBeenCalledWith(
+        {
+          sub: mockUser.id,
+          type: mockUser.type,
+        },
+        undefined,
+      );
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.user.id).toBe(mockUser.id);
       expect(result.user.type).toBe(mockUser.type);
@@ -103,10 +112,11 @@ describe('AuthService', () => {
       const result = await service.requestPhoneOtp(phone);
 
       expect(cacheManager.set).toHaveBeenCalled();
-      const setCall = cacheManager.set.mock.calls[0];
+      const setCall = cacheManager.set.mock.calls[0] as unknown[];
       expect(setCall[0]).toBe(`otp:${phone}`);
-      expect(setCall[1]).toHaveProperty('code');
-      expect(setCall[1].code).toHaveLength(6);
+      const otpData = setCall[1] as { code: string; expiresAt: Date };
+      expect(otpData).toHaveProperty('code');
+      expect(otpData.code).toHaveLength(6);
       expect(result.message).toBe('OTP sent successfully');
       expect(result.expiresIn).toBe(300); // 5 minutes
     });
