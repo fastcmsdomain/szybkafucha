@@ -99,10 +99,18 @@ export class InitialSchema1768161108457 implements MigrationInterface {
     `);
 
     // Create indexes on users
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_email" ON "users" ("email") WHERE "email" IS NOT NULL`);
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_phone" ON "users" ("phone") WHERE "phone" IS NOT NULL`);
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_googleId" ON "users" ("googleId") WHERE "googleId" IS NOT NULL`);
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_appleId" ON "users" ("appleId") WHERE "appleId" IS NOT NULL`);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_email" ON "users" ("email") WHERE "email" IS NOT NULL`,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_phone" ON "users" ("phone") WHERE "phone" IS NOT NULL`,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_googleId" ON "users" ("googleId") WHERE "googleId" IS NOT NULL`,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_users_appleId" ON "users" ("appleId") WHERE "appleId" IS NOT NULL`,
+    );
 
     // Create contractor_profiles table
     await queryRunner.query(`
@@ -162,9 +170,15 @@ export class InitialSchema1768161108457 implements MigrationInterface {
     `);
 
     // Create indexes on tasks
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_tasks_status" ON "tasks" ("status")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_tasks_clientId" ON "tasks" ("clientId")`);
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_tasks_contractorId" ON "tasks" ("contractorId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_tasks_status" ON "tasks" ("status")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_tasks_clientId" ON "tasks" ("clientId")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_tasks_contractorId" ON "tasks" ("contractorId")`,
+    );
 
     // Create ratings table
     await queryRunner.query(`
@@ -200,7 +214,9 @@ export class InitialSchema1768161108457 implements MigrationInterface {
     `);
 
     // Create index on messages
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_messages_taskId" ON "messages" ("taskId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_messages_taskId" ON "messages" ("taskId")`,
+    );
 
     // Create payments table
     await queryRunner.query(`
@@ -241,7 +257,9 @@ export class InitialSchema1768161108457 implements MigrationInterface {
     `);
 
     // Create index on kyc_checks
-    await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_kyc_checks_userId" ON "kyc_checks" ("userId")`);
+    await queryRunner.query(
+      `CREATE INDEX IF NOT EXISTS "IDX_kyc_checks_userId" ON "kyc_checks" ("userId")`,
+    );
 
     // Create newsletter_subscribers table
     await queryRunner.query(`
@@ -265,26 +283,42 @@ export class InitialSchema1768161108457 implements MigrationInterface {
     `);
 
     // Create unique index on newsletter_subscribers email
-    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS "IDX_newsletter_subscribers_email" ON "newsletter_subscribers" ("email")`);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_newsletter_subscribers_email" ON "newsletter_subscribers" ("email")`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop tables in reverse order of dependencies
-    await queryRunner.query(`DROP TABLE IF EXISTS "newsletter_subscribers" CASCADE`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "newsletter_subscribers" CASCADE`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "kyc_checks" CASCADE`);
     await queryRunner.query(`DROP TABLE IF EXISTS "payments" CASCADE`);
     await queryRunner.query(`DROP TABLE IF EXISTS "messages" CASCADE`);
     await queryRunner.query(`DROP TABLE IF EXISTS "ratings" CASCADE`);
     await queryRunner.query(`DROP TABLE IF EXISTS "tasks" CASCADE`);
-    await queryRunner.query(`DROP TABLE IF EXISTS "contractor_profiles" CASCADE`);
+    await queryRunner.query(
+      `DROP TABLE IF EXISTS "contractor_profiles" CASCADE`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "users" CASCADE`);
 
     // Drop enum types
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."kyc_checks_result_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."kyc_checks_status_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."kyc_checks_type_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."payments_status_enum"`);
-    await queryRunner.query(`DROP TYPE IF EXISTS "public"."contractor_profiles_kycstatus_enum"`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."kyc_checks_result_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."kyc_checks_status_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."kyc_checks_type_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."payments_status_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS "public"."contractor_profiles_kycstatus_enum"`,
+    );
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."tasks_status_enum"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."users_status_enum"`);
     await queryRunner.query(`DROP TYPE IF EXISTS "public"."users_type_enum"`);

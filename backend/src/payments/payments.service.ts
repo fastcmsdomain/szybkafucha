@@ -21,7 +21,7 @@ import { User } from '../users/entities/user.entity';
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly stripe: Stripe;
+  private readonly stripe: Stripe | null;
   private readonly platformFeePercent: number;
 
   constructor(
@@ -36,23 +36,31 @@ export class PaymentsService {
     private readonly configService: ConfigService,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    
+
     if (!stripeSecretKey || stripeSecretKey === 'sk_test_placeholder') {
       this.logger.warn('⚠️ Stripe not configured. Using mock mode.');
-      this.stripe = null as any;
+      this.stripe = null;
     } else {
       this.stripe = new Stripe(stripeSecretKey);
     }
 
-    this.platformFeePercent = this.configService.get<number>('STRIPE_PLATFORM_FEE_PERCENT', 17);
+    this.platformFeePercent = this.configService.get<number>(
+      'STRIPE_PLATFORM_FEE_PERCENT',
+      17,
+    );
   }
 
   /**
    * Create Stripe Connect Express account for contractor onboarding
    */
-  async createConnectAccount(userId: string, email: string): Promise<{ accountId: string; onboardingUrl: string }> {
-    const profile = await this.contractorProfileRepository.findOne({ where: { userId } });
-    
+  async createConnectAccount(
+    userId: string,
+    email: string,
+  ): Promise<{ accountId: string; onboardingUrl: string }> {
+    const profile = await this.contractorProfileRepository.findOne({
+      where: { userId },
+    });
+
     if (!profile) {
       throw new NotFoundException('Contractor profile not found');
     }
@@ -65,8 +73,10 @@ export class PaymentsService {
     // Mock mode for development
     if (!this.stripe) {
       const mockAccountId = `acct_mock_${userId.slice(0, 8)}`;
-      await this.contractorProfileRepository.update(userId, { stripeAccountId: mockAccountId });
-      
+      await this.contractorProfileRepository.update(userId, {
+        stripeAccountId: mockAccountId,
+      });
+
       return {
         accountId: mockAccountId,
         onboardingUrl: `http://localhost:3002/mock-stripe-onboarding?account=${mockAccountId}`,
@@ -90,20 +100,26 @@ export class PaymentsService {
       });
 
       // Save account ID to contractor profile
-      await this.contractorProfileRepository.update(userId, { stripeAccountId: account.id });
+      await this.contractorProfileRepository.update(userId, {
+        stripeAccountId: account.id,
+      });
 
       // Generate onboarding link
       return this.generateOnboardingLink(account.id);
     } catch (error) {
       this.logger.error('Failed to create Stripe Connect account:', error);
-      throw new InternalServerErrorException('Failed to create payment account');
+      throw new InternalServerErrorException(
+        'Failed to create payment account',
+      );
     }
   }
 
   /**
    * Generate Stripe Connect onboarding link
    */
-  private async generateOnboardingLink(accountId: string): Promise<{ accountId: string; onboardingUrl: string }> {
+  private async generateOnboardingLink(
+    accountId: string,
+  ): Promise<{ accountId: string; onboardingUrl: string }> {
     if (!this.stripe) {
       return {
         accountId,
@@ -125,7 +141,9 @@ export class PaymentsService {
       };
     } catch (error) {
       this.logger.error('Failed to generate onboarding link:', error);
-      throw new InternalServerErrorException('Failed to generate onboarding link');
+      throw new InternalServerErrorException(
+        'Failed to generate onboarding link',
+      );
     }
   }
 
@@ -139,8 +157,10 @@ export class PaymentsService {
     chargesEnabled: boolean;
     detailsSubmitted: boolean;
   }> {
-    const profile = await this.contractorProfileRepository.findOne({ where: { userId } });
-    
+    const profile = await this.contractorProfileRepository.findOne({
+      where: { userId },
+    });
+
     if (!profile?.stripeAccountId) {
       return {
         hasAccount: false,
@@ -163,8 +183,10 @@ export class PaymentsService {
     }
 
     try {
-      const account = await this.stripe.accounts.retrieve(profile.stripeAccountId);
-      
+      const account = await this.stripe.accounts.retrieve(
+        profile.stripeAccountId,
+      );
+
       return {
         hasAccount: true,
         accountId: profile.stripeAccountId,
@@ -174,7 +196,9 @@ export class PaymentsService {
       };
     } catch (error) {
       this.logger.error('Failed to retrieve Stripe account:', error);
-      throw new InternalServerErrorException('Failed to check payment account status');
+      throw new InternalServerErrorException(
+        'Failed to check payment account status',
+      );
     }
   }
 
@@ -186,7 +210,7 @@ export class PaymentsService {
     clientId: string,
   ): Promise<{ clientSecret: string; paymentId: string }> {
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
-    
+
     if (!task) {
       throw new NotFoundException('Task not found');
     }
@@ -210,7 +234,9 @@ export class PaymentsService {
 
     // Calculate amounts (in grosz - Polish cents)
     const amountInGrosz = Math.round(task.budgetAmount * 100);
-    const commissionInGrosz = Math.round(amountInGrosz * (this.platformFeePercent / 100));
+    const commissionInGrosz = Math.round(
+      amountInGrosz * (this.platformFeePercent / 100),
+    );
     const contractorAmountInGrosz = amountInGrosz - commissionInGrosz;
 
     // Create payment record
@@ -226,7 +252,7 @@ export class PaymentsService {
     if (!this.stripe) {
       payment.stripePaymentIntentId = `pi_mock_${Date.now()}`;
       await this.paymentRepository.save(payment);
-      
+
       return {
         clientSecret: `mock_secret_${payment.id}`,
         paymentId: payment.id,
@@ -275,8 +301,10 @@ export class PaymentsService {
    * Confirm payment hold (after client confirms payment in app)
    */
   async confirmPaymentHold(paymentId: string): Promise<Payment> {
-    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
-    
+    const payment = await this.paymentRepository.findOne({
+      where: { id: paymentId },
+    });
+
     if (!payment) {
       throw new NotFoundException('Payment not found');
     }
@@ -293,8 +321,10 @@ export class PaymentsService {
 
     try {
       // Verify PaymentIntent status
-      const paymentIntent = await this.stripe.paymentIntents.retrieve(payment.stripePaymentIntentId!);
-      
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(
+        payment.stripePaymentIntentId!,
+      );
+
       if (paymentIntent.status === 'requires_capture') {
         payment.status = PaymentStatus.HELD;
         return this.paymentRepository.save(payment);
@@ -329,10 +359,12 @@ export class PaymentsService {
 
     try {
       // Capture the PaymentIntent
-      const paymentIntent = await this.stripe.paymentIntents.capture(payment.stripePaymentIntentId!);
+      const paymentIntent = await this.stripe.paymentIntents.capture(
+        payment.stripePaymentIntentId!,
+      );
 
       payment.status = PaymentStatus.CAPTURED;
-      
+
       // Transfer ID is created automatically if transfer_data was set
       if (paymentIntent.transfer_data?.destination) {
         payment.stripeTransferId = paymentIntent.latest_charge as string;
@@ -366,8 +398,13 @@ export class PaymentsService {
       throw new BadRequestException('Payment already refunded');
     }
 
-    if (payment.status !== PaymentStatus.HELD && payment.status !== PaymentStatus.CAPTURED) {
-      throw new BadRequestException('Payment cannot be refunded in current status');
+    if (
+      payment.status !== PaymentStatus.HELD &&
+      payment.status !== PaymentStatus.CAPTURED
+    ) {
+      throw new BadRequestException(
+        'Payment cannot be refunded in current status',
+      );
     }
 
     // Mock mode
@@ -474,7 +511,10 @@ export class PaymentsService {
   /**
    * Request payout to contractor's bank account
    */
-  async requestPayout(contractorId: string, amount: number): Promise<{ payoutId: string; status: string }> {
+  async requestPayout(
+    contractorId: string,
+    amount: number,
+  ): Promise<{ payoutId: string; status: string }> {
     const profile = await this.contractorProfileRepository.findOne({
       where: { userId: contractorId },
     });
@@ -521,8 +561,10 @@ export class PaymentsService {
       return;
     }
 
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
-    
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+
     if (!webhookSecret) {
       this.logger.warn('Stripe webhook secret not configured');
       return;
@@ -531,7 +573,11 @@ export class PaymentsService {
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+      event = this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        webhookSecret,
+      );
     } catch (error) {
       this.logger.error('Webhook signature verification failed:', error);
       throw new BadRequestException('Webhook signature verification failed');
@@ -541,20 +587,22 @@ export class PaymentsService {
 
     switch (event.type) {
       case 'payment_intent.succeeded':
-        await this.handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
+        await this.handlePaymentSucceeded(event.data.object);
         break;
       case 'payment_intent.payment_failed':
-        await this.handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+        await this.handlePaymentFailed(event.data.object);
         break;
       case 'account.updated':
-        await this.handleAccountUpdated(event.data.object as Stripe.Account);
+        await this.handleAccountUpdated(event.data.object);
         break;
       default:
         this.logger.log(`Unhandled webhook event: ${event.type}`);
     }
   }
 
-  private async handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  private async handlePaymentSucceeded(
+    paymentIntent: Stripe.PaymentIntent,
+  ): Promise<void> {
     const payment = await this.paymentRepository.findOne({
       where: { stripePaymentIntentId: paymentIntent.id },
     });
@@ -566,7 +614,9 @@ export class PaymentsService {
     }
   }
 
-  private async handlePaymentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  private async handlePaymentFailed(
+    paymentIntent: Stripe.PaymentIntent,
+  ): Promise<void> {
     const payment = await this.paymentRepository.findOne({
       where: { stripePaymentIntentId: paymentIntent.id },
     });
@@ -585,7 +635,9 @@ export class PaymentsService {
 
     if (profile && account.details_submitted && account.payouts_enabled) {
       // Could update KYC status or send notification
-      this.logger.log(`Contractor ${profile.userId} Stripe account is now fully set up`);
+      this.logger.log(
+        `Contractor ${profile.userId} Stripe account is now fully set up`,
+      );
     }
   }
 

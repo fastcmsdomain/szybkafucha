@@ -62,21 +62,33 @@ export class AdminService {
     startOfMonth.setDate(1);
 
     // User metrics
-    const [totalUsers, clients, contractors, newToday, newThisWeek] = await Promise.all([
-      this.userRepository.count(),
-      this.userRepository.count({ where: { type: UserType.CLIENT } }),
-      this.userRepository.count({ where: { type: UserType.CONTRACTOR } }),
-      this.userRepository.count({ where: { createdAt: MoreThan(startOfDay) } }),
-      this.userRepository.count({ where: { createdAt: MoreThan(startOfWeek) } }),
-    ]);
+    const [totalUsers, clients, contractors, newToday, newThisWeek] =
+      await Promise.all([
+        this.userRepository.count(),
+        this.userRepository.count({ where: { type: UserType.CLIENT } }),
+        this.userRepository.count({ where: { type: UserType.CONTRACTOR } }),
+        this.userRepository.count({
+          where: { createdAt: MoreThan(startOfDay) },
+        }),
+        this.userRepository.count({
+          where: { createdAt: MoreThan(startOfWeek) },
+        }),
+      ]);
 
     // Task metrics
-    const [totalTasks, tasksToday, tasksThisWeek, tasksThisMonth] = await Promise.all([
-      this.taskRepository.count(),
-      this.taskRepository.count({ where: { createdAt: MoreThan(startOfDay) } }),
-      this.taskRepository.count({ where: { createdAt: MoreThan(startOfWeek) } }),
-      this.taskRepository.count({ where: { createdAt: MoreThan(startOfMonth) } }),
-    ]);
+    const [totalTasks, tasksToday, tasksThisWeek, tasksThisMonth] =
+      await Promise.all([
+        this.taskRepository.count(),
+        this.taskRepository.count({
+          where: { createdAt: MoreThan(startOfDay) },
+        }),
+        this.taskRepository.count({
+          where: { createdAt: MoreThan(startOfWeek) },
+        }),
+        this.taskRepository.count({
+          where: { createdAt: MoreThan(startOfMonth) },
+        }),
+      ]);
 
     // Tasks by status
     const tasksByStatus = await this.taskRepository
@@ -84,25 +96,26 @@ export class AdminService {
       .select('task.status', 'status')
       .addSelect('COUNT(*)', 'count')
       .groupBy('task.status')
-      .getRawMany();
+      .getRawMany<{ status: TaskStatus; count: string }>();
 
-    const byStatus: Record<string, number> = {};
-    for (const row of tasksByStatus) {
-      const status = row.status as string;
-      const count = row.count as string;
+    const byStatus: Record<TaskStatus, number> = {};
+    for (const { status, count } of tasksByStatus) {
       byStatus[status] = parseInt(count, 10);
     }
 
     // Average completion time
     const completedTasks = await this.taskRepository
       .createQueryBuilder('task')
-      .select('AVG(EXTRACT(EPOCH FROM (task.completedAt - task.startedAt)) / 60)', 'avgMinutes')
+      .select(
+        'AVG(EXTRACT(EPOCH FROM (task.completedAt - task.startedAt)) / 60)',
+        'avgMinutes',
+      )
       .where('task.status = :status', { status: TaskStatus.COMPLETED })
       .andWhere('task.completedAt IS NOT NULL')
       .andWhere('task.startedAt IS NOT NULL')
-      .getRawOne();
+      .getRawOne<{ avgMinutes: string | null }>();
 
-    const avgMinutes = completedTasks?.avgMinutes as string | undefined;
+    const avgMinutes = completedTasks?.avgMinutes ?? null;
     const averageCompletionTimeMinutes = avgMinutes
       ? Math.round(parseFloat(avgMinutes))
       : null;
@@ -115,12 +128,13 @@ export class AdminService {
       this.calculateGmv(startOfMonth),
     ]);
 
-    const [revenueTotal, revenueToday, revenueThisWeek, revenueThisMonth] = await Promise.all([
-      this.calculateRevenue(),
-      this.calculateRevenue(startOfDay),
-      this.calculateRevenue(startOfWeek),
-      this.calculateRevenue(startOfMonth),
-    ]);
+    const [revenueTotal, revenueToday, revenueThisWeek, revenueThisMonth] =
+      await Promise.all([
+        this.calculateRevenue(),
+        this.calculateRevenue(startOfDay),
+        this.calculateRevenue(startOfWeek),
+        this.calculateRevenue(startOfMonth),
+      ]);
 
     // Disputes
     const [totalDisputes, pendingDisputes] = await Promise.all([
@@ -174,9 +188,9 @@ export class AdminService {
       query.andWhere('payment.createdAt >= :since', { since });
     }
 
-    const result = await query.getRawOne();
-    const total = result?.total as string | undefined;
-    return parseFloat(total || '0');
+    const result = await query.getRawOne<{ total: string | null }>();
+    const total = result?.total ?? '0';
+    return parseFloat(total);
   }
 
   /**
@@ -192,9 +206,9 @@ export class AdminService {
       query.andWhere('payment.createdAt >= :since', { since });
     }
 
-    const result = await query.getRawOne();
-    const total = result?.total as string | undefined;
-    return parseFloat(total || '0');
+    const result = await query.getRawOne<{ total: string | null }>();
+    const total = result?.total ?? '0';
+    return parseFloat(total);
   }
 
   /**
@@ -416,7 +430,14 @@ export class AdminService {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Task>> {
-    const { status, category, clientId, contractorId, page = 1, limit = 20 } = filters;
+    const {
+      status,
+      category,
+      clientId,
+      contractorId,
+      page = 1,
+      limit = 20,
+    } = filters;
 
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
@@ -436,7 +457,9 @@ export class AdminService {
     }
 
     if (contractorId) {
-      queryBuilder.andWhere('task.contractorId = :contractorId', { contractorId });
+      queryBuilder.andWhere('task.contractorId = :contractorId', {
+        contractorId,
+      });
     }
 
     const total = await queryBuilder.getCount();
@@ -467,18 +490,19 @@ export class AdminService {
       where: { userId: contractorId },
     });
 
-    const [completedTasks, earnings, avgRating, recentTasks] = await Promise.all([
-      this.taskRepository.count({
-        where: { contractorId, status: TaskStatus.COMPLETED },
-      }),
-      this.calculateContractorEarnings(contractorId),
-      this.calculateAverageRating(contractorId),
-      this.taskRepository.find({
-        where: { contractorId },
-        order: { createdAt: 'DESC' },
-        take: 5,
-      }),
-    ]);
+    const [completedTasks, earnings, avgRating, recentTasks] =
+      await Promise.all([
+        this.taskRepository.count({
+          where: { contractorId, status: TaskStatus.COMPLETED },
+        }),
+        this.calculateContractorEarnings(contractorId),
+        this.calculateAverageRating(contractorId),
+        this.taskRepository.find({
+          where: { contractorId },
+          order: { createdAt: 'DESC' },
+          take: 5,
+        }),
+      ]);
 
     return {
       profile,
@@ -489,17 +513,19 @@ export class AdminService {
     };
   }
 
-  private async calculateContractorEarnings(contractorId: string): Promise<number> {
+  private async calculateContractorEarnings(
+    contractorId: string,
+  ): Promise<number> {
     const result = await this.paymentRepository
       .createQueryBuilder('payment')
       .innerJoin('payment.task', 'task')
       .select('SUM(payment.contractorAmount)', 'total')
       .where('task.contractorId = :contractorId', { contractorId })
       .andWhere('payment.status = :status', { status: PaymentStatus.CAPTURED })
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
-    const total = result?.total as string | undefined;
-    return parseFloat(total || '0');
+    const total = result?.total ?? '0';
+    return parseFloat(total);
   }
 
   private async calculateAverageRating(contractorId: string): Promise<number> {
@@ -507,9 +533,9 @@ export class AdminService {
       .createQueryBuilder('rating')
       .select('AVG(rating.rating)', 'avg')
       .where('rating.toUserId = :contractorId', { contractorId })
-      .getRawOne();
+      .getRawOne<{ avg: string | null }>();
 
-    const avg = result?.avg as string | undefined;
-    return parseFloat(avg || '0');
+    const avg = result?.avg ?? '0';
+    return parseFloat(avg);
   }
 }

@@ -2,22 +2,11 @@
  * Users Controller
  * REST endpoints for user operations
  */
-import {
-  Controller,
-  Get,
-  Put,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthenticatedUser } from '../auth/types/auth-user.type';
-
-interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
-}
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('users')
 export class UsersController {

@@ -83,10 +83,12 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     }),
 
     // Rate limiting - protect against spam and DoS
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // Time window in milliseconds (60 seconds)
-      limit: 10,  // Max 10 requests per TTL window
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time window in milliseconds (60 seconds)
+        limit: 10, // Max 10 requests per TTL window
+      },
+    ]),
 
     // Feature modules
     AuthModule,

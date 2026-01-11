@@ -38,7 +38,9 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     cacheManager = moduleFixture.get<MockCacheManager>(CACHE_MANAGER);
@@ -67,7 +69,8 @@ describe('AuthController (e2e)', () => {
         .send({ phone: '987654321' })
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('OTP sent successfully');
+          const body = res.body as AuthResponse;
+          expect(body.message).toBe('OTP sent successfully');
         });
     });
 
@@ -194,7 +197,8 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.user.type).toBe('contractor');
+          const body = res.body as AuthResponse;
+          expect(body.user?.type).toBe('contractor');
         });
     });
   });
@@ -224,7 +228,8 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.accessToken).toBeDefined();
+          const body = res.body as AuthResponse;
+          expect(body.accessToken).toBeDefined();
         });
     });
 
@@ -264,9 +269,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should reject request without authentication', () => {
-      return request(app.getHttpServer())
-        .post('/auth/logout')
-        .expect(401);
+      return request(app.getHttpServer()).post('/auth/logout').expect(401);
     });
 
     it('should reject request with invalid token', () => {
@@ -300,9 +303,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should deny access to protected route without token', () => {
-      return request(app.getHttpServer())
-        .get('/users/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/users/me').expect(401);
     });
 
     it('should deny access with malformed Authorization header', () => {

@@ -68,7 +68,11 @@ export class RealtimeService {
   /**
    * Register a new connection
    */
-  registerConnection(socketId: string, userId: string, userType: 'client' | 'contractor'): void {
+  registerConnection(
+    socketId: string,
+    userId: string,
+    userType: 'client' | 'contractor',
+  ): void {
     const connection: ActiveConnection = {
       socketId,
       userId,
@@ -79,7 +83,9 @@ export class RealtimeService {
     this.activeConnections.set(socketId, connection);
     this.userToSocket.set(userId, socketId);
 
-    this.logger.log(`User ${userId} connected (${userType}) - Socket: ${socketId}`);
+    this.logger.log(
+      `User ${userId} connected (${userType}) - Socket: ${socketId}`,
+    );
   }
 
   /**
@@ -87,7 +93,7 @@ export class RealtimeService {
    */
   removeConnection(socketId: string): void {
     const connection = this.activeConnections.get(socketId);
-    
+
     if (connection) {
       this.userToSocket.delete(connection.userId);
       this.activeConnections.delete(socketId);
@@ -100,7 +106,9 @@ export class RealtimeService {
         }
       }
 
-      this.logger.log(`User ${connection.userId} disconnected - Socket: ${socketId}`);
+      this.logger.log(
+        `User ${connection.userId} disconnected - Socket: ${socketId}`,
+      );
     }
   }
 
@@ -160,7 +168,9 @@ export class RealtimeService {
       lastLocationAt: timestamp,
     });
 
-    this.logger.debug(`Location updated for contractor ${userId}: ${latitude}, ${longitude}`);
+    this.logger.debug(
+      `Location updated for contractor ${userId}: ${latitude}, ${longitude}`,
+    );
   }
 
   /**
@@ -181,7 +191,9 @@ export class RealtimeService {
       createdAt: message.createdAt,
     });
 
-    this.logger.debug(`Message saved for task ${message.taskId} from ${message.senderId}`);
+    this.logger.debug(
+      `Message saved for task ${message.taskId} from ${message.senderId}`,
+    );
     return savedMessage;
   }
 
@@ -214,7 +226,10 @@ export class RealtimeService {
   /**
    * Check if user is authorized for a task
    */
-  async isUserAuthorizedForTask(userId: string, taskId: string): Promise<boolean> {
+  async isUserAuthorizedForTask(
+    userId: string,
+    taskId: string,
+  ): Promise<boolean> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
       select: ['clientId', 'contractorId'],

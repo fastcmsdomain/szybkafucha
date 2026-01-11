@@ -2,7 +2,12 @@
  * Auth Service
  * Handles authentication logic for all methods
  */
-import { Injectable, BadRequestException, UnauthorizedException, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -36,7 +41,9 @@ export class AuthService {
       this.twilioClient = twilio(accountSid, authToken);
       this.logger.log('Twilio client initialized successfully');
     } else {
-      this.logger.warn('Twilio credentials not configured - OTP will only be logged to console');
+      this.logger.warn(
+        'Twilio credentials not configured - OTP will only be logged to console',
+      );
     }
   }
 
@@ -67,13 +74,17 @@ export class AuthService {
    * Request OTP for phone authentication
    * Stores OTP in Redis with automatic TTL expiration
    */
-  async requestPhoneOtp(phone: string): Promise<{ message: string; expiresIn: number }> {
+  async requestPhoneOtp(
+    phone: string,
+  ): Promise<{ message: string; expiresIn: number }> {
     // Normalize phone number
     const normalizedPhone = this.normalizePhone(phone);
 
     // Generate 6-digit OTP
     const code = this.generateOtp();
-    const expiresAt = new Date(Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
 
     // Store OTP in Redis with TTL (milliseconds)
     await this.cacheManager.set(
@@ -107,12 +118,15 @@ export class AuthService {
     const normalizedPhone = this.normalizePhone(phone);
 
     // Get stored OTP from Redis
-    const storedOtp = await this.cacheManager.get<{ code: string; expiresAt: Date }>(
-      `otp:${normalizedPhone}`,
-    );
+    const storedOtp = await this.cacheManager.get<{
+      code: string;
+      expiresAt: Date;
+    }>(`otp:${normalizedPhone}`);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP not found or expired. Please request a new one.');
+      throw new BadRequestException(
+        'OTP not found or expired. Please request a new one.',
+      );
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
@@ -251,7 +265,9 @@ export class AuthService {
       this.logger.log(`SMS OTP sent successfully to ${phone}`);
     } catch (error) {
       this.logger.error(`Failed to send SMS to ${phone}`, error);
-      throw new BadRequestException('Nie udało się wysłać SMS z kodem weryfikacyjnym');
+      throw new BadRequestException(
+        'Nie udało się wysłać SMS z kodem weryfikacyjnym',
+      );
     }
   }
 

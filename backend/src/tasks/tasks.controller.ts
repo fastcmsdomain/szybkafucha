@@ -19,11 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { UserType } from '../users/entities/user.entity';
-import { AuthenticatedUser } from '../auth/types/auth-user.type';
-
-interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
-}
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)

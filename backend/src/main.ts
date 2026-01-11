@@ -5,6 +5,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
@@ -21,17 +22,19 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Security headers with Helmet.js
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https:'],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
       },
-    },
-    crossOriginEmbedderPolicy: false, // Allow Stripe webhooks
-  }));
+      crossOriginEmbedderPolicy: false, // Allow Stripe webhooks
+    }),
+  );
 
   // Enable CORS for mobile app, admin dashboard, and landing page
   const allowedOrigins = [
@@ -41,23 +44,30 @@ async function bootstrap() {
     configService.get<string>('LANDING_PAGE_URL'), // Landing page (production)
   ].filter(Boolean); // Remove undefined values
 
-  app.enableCors({
-    origin: (origin, callback) => {
+  const corsOptions: CorsOptions = {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) {
-        return callback(null, true);
+        callback(null, true);
+        return;
       }
-      
+
       // Check if origin is in allowed list
       if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
+        callback(null, true);
+        return;
       }
-      
+
       // Reject all other origins
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
-  });
+  };
+
+  app.enableCors(corsOptions);
 
   // Global validation pipe with class-validator
   app.useGlobalPipes(
@@ -93,4 +103,7 @@ async function bootstrap() {
   `);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to start application', error);
+  process.exit(1);
+});

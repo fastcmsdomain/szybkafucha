@@ -11,14 +11,7 @@ import { Rating } from '../../tasks/entities/rating.entity';
 import { SeedService } from './seed.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      User,
-      ContractorProfile,
-      Task,
-      Rating,
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([User, ContractorProfile, Task, Rating])],
   providers: [SeedService],
   exports: [SeedService],
 })

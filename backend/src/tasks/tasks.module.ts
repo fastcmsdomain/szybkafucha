@@ -11,10 +11,7 @@ import { TasksController } from './tasks.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Task, Rating]),
-    UsersModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Task, Rating]), UsersModule],
   controllers: [TasksController],
   providers: [TasksService],
   exports: [TasksService],
