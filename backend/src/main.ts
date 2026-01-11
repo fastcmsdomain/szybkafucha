@@ -6,6 +6,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -14,6 +16,22 @@ async function bootstrap() {
 
   // Get config service
   const configService = app.get(ConfigService);
+
+  // Global exception filter for consistent error responses
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Security headers with Helmet.js
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Allow Stripe webhooks
+  }));
 
   // Enable CORS for mobile app, admin dashboard, and landing page
   const allowedOrigins = [
@@ -35,13 +53,7 @@ async function bootstrap() {
         return callback(null, true);
       }
       
-      // In production, allow same-origin requests
-      const isProduction = configService.get<string>('NODE_ENV') === 'production';
-      if (isProduction) {
-        // Allow requests from same domain (for landing page on same domain)
-        return callback(null, true);
-      }
-      
+      // Reject all other origins
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
