@@ -232,7 +232,7 @@
     - Update kyc_status based on results
     - Send notification to contractor
   - [x] 10.8 Create KYC status check endpoint
-  - [ ] 10.9 Write tests for KYC flow
+  - [x] 10.9 Write tests for KYC flow
 
 - [ ] **11.0 Push Notifications**
   - [ ] 11.1 Set up Firebase project
