@@ -113,13 +113,13 @@
   - [x] 4.1 Create `UsersModule` with controller and service
   - [x] 4.2 Implement `GET /users/me` - returns current user profile
   - [x] 4.3 Implement `PUT /users/me` - updates user profile (name, avatar)
-  - [ ] 4.4 Implement `POST /users/me/avatar` - uploads avatar to S3/CloudStorage
+  - [x] 4.4 Implement `POST /users/me/avatar` - uploads avatar to S3/CloudStorage
   - [x] 4.5 Create `ContractorProfileService` for contractor-specific operations
   - [x] 4.6 Implement `GET /contractor/profile` - returns contractor profile
   - [x] 4.7 Implement `PUT /contractor/profile` - updates bio, categories, radius
   - [x] 4.8 Implement `PUT /contractor/availability` - toggles online/offline
   - [x] 4.9 Implement `PUT /contractor/location` - updates GPS coordinates
-  - [ ] 4.10 Write tests for user endpoints
+  - [x] 4.10 Write tests for user endpoints
 
 - [x] **5.0 Task Management Module**
   - [x] 5.1 Create `TasksModule` with controller and service
