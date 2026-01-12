@@ -7,28 +7,63 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Inject,
+  forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
+import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 // Platform commission percentage
 const COMMISSION_RATE = 0.17;
 
+// Scoring weights for contractor matching
+const SCORING_WEIGHTS = {
+  RATING: 0.4,
+  COMPLETIONS: 0.3,
+  PROXIMITY: 0.3,
+};
+
+// Maximum completions for normalization (contractors with 100+ tasks get max score)
+const MAX_COMPLETIONS_FOR_NORMALIZATION = 100;
+
+// Maximum contractors to notify for a new task
+const MAX_CONTRACTORS_TO_NOTIFY = 5;
+
+/**
+ * Ranked contractor result with score and distance
+ */
+export interface RankedContractor {
+  contractorId: string;
+  profile: ContractorProfile;
+  score: number;
+  distance: number;
+}
+
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>,
     @InjectRepository(Rating)
     private readonly ratingsRepository: Repository<Rating>,
+    @InjectRepository(ContractorProfile)
+    private readonly contractorProfileRepository: Repository<ContractorProfile>,
+    @Inject(forwardRef(() => RealtimeGateway))
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   /**
    * Create a new task
+   * After creation, notifies nearby available contractors
    */
   async create(clientId: string, dto: CreateTaskDto): Promise<Task> {
     const task = this.tasksRepository.create({
@@ -37,7 +72,14 @@ export class TasksService {
       scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
     });
 
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Notify available contractors asynchronously (don't block response)
+    this.notifyAvailableContractors(savedTask).catch((error) => {
+      this.logger.error(`Failed to notify contractors for task ${savedTask.id}`, error);
+    });
+
+    return savedTask;
   }
 
   /**
@@ -286,7 +328,7 @@ export class TasksService {
   /**
    * Calculate distance between two coordinates (Haversine formula)
    */
-  private calculateDistance(
+  calculateDistance(
     lat1: number,
     lng1: number,
     lat2: number,
@@ -307,5 +349,166 @@ export class TasksService {
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  /**
+   * Calculate contractor score for matching algorithm
+   * Score = (rating * 0.4) + (completions * 0.3) + (proximity * 0.3)
+   *
+   * @param rating - Contractor's average rating (0-5)
+   * @param completedTasks - Number of completed tasks
+   * @param distance - Distance from task location in km
+   * @param maxRadius - Maximum radius for proximity calculation in km
+   * @returns Score between 0 and 1
+   */
+  calculateContractorScore(
+    rating: number,
+    completedTasks: number,
+    distance: number,
+    maxRadius: number,
+  ): number {
+    // Normalize rating (0-5) to (0-1)
+    const normalizedRating = Math.min(Number(rating) / 5, 1);
+
+    // Normalize completions (0-100+) to (0-1), cap at 100
+    const normalizedCompletions = Math.min(
+      completedTasks / MAX_COMPLETIONS_FOR_NORMALIZATION,
+      1,
+    );
+
+    // Calculate proximity (0-1), where 1 = same location, 0 = at max radius
+    // Contractors beyond maxRadius are filtered out before scoring
+    const proximity = Math.max(0, 1 - distance / maxRadius);
+
+    // Apply weights
+    const score =
+      normalizedRating * SCORING_WEIGHTS.RATING +
+      normalizedCompletions * SCORING_WEIGHTS.COMPLETIONS +
+      proximity * SCORING_WEIGHTS.PROXIMITY;
+
+    return Number(score.toFixed(4));
+  }
+
+  /**
+   * Find and rank contractors for a task based on scoring algorithm
+   * Returns contractors sorted by score (highest first)
+   *
+   * @param task - Task to find contractors for
+   * @param maxRadius - Maximum search radius in km (default 20km)
+   * @param limit - Maximum number of contractors to return
+   */
+  async findAndRankContractors(
+    task: Task,
+    maxRadius: number = 20,
+    limit: number = MAX_CONTRACTORS_TO_NOTIFY,
+  ): Promise<RankedContractor[]> {
+    // Find all verified, online contractors with matching category
+    const contractors = await this.contractorProfileRepository.find({
+      where: {
+        isOnline: true,
+        kycStatus: KycStatus.VERIFIED,
+      },
+      relations: ['user'],
+    });
+
+    const rankedContractors: RankedContractor[] = [];
+
+    for (const profile of contractors) {
+      // Skip if contractor doesn't have location set
+      if (!profile.lastLocationLat || !profile.lastLocationLng) {
+        continue;
+      }
+
+      // Skip if contractor doesn't handle this category
+      if (!profile.categories.includes(task.category)) {
+        continue;
+      }
+
+      // Calculate distance
+      const distance = this.calculateDistance(
+        Number(task.locationLat),
+        Number(task.locationLng),
+        Number(profile.lastLocationLat),
+        Number(profile.lastLocationLng),
+      );
+
+      // Skip if beyond max radius
+      if (distance > maxRadius) {
+        continue;
+      }
+
+      // Calculate score
+      const score = this.calculateContractorScore(
+        profile.ratingAvg,
+        profile.completedTasksCount,
+        distance,
+        maxRadius,
+      );
+
+      rankedContractors.push({
+        contractorId: profile.userId,
+        profile,
+        score,
+        distance: Number(distance.toFixed(2)),
+      });
+    }
+
+    // Sort by score (highest first)
+    rankedContractors.sort((a, b) => b.score - a.score);
+
+    // Return top N contractors
+    return rankedContractors.slice(0, limit);
+  }
+
+  /**
+   * Notify available contractors about a new task via WebSocket
+   * Sends notification to top-ranked contractors
+   */
+  async notifyAvailableContractors(task: Task): Promise<void> {
+    // Find top contractors for this task
+    const rankedContractors = await this.findAndRankContractors(task);
+
+    if (rankedContractors.length === 0) {
+      this.logger.debug(`No available contractors found for task ${task.id}`);
+      return;
+    }
+
+    this.logger.log(
+      `Notifying ${rankedContractors.length} contractors for task ${task.id}`,
+    );
+
+    // Prepare notification payload
+    const notification = {
+      type: 'task:new_available',
+      task: {
+        id: task.id,
+        category: task.category,
+        title: task.title,
+        budgetAmount: task.budgetAmount,
+        address: task.address,
+        locationLat: task.locationLat,
+        locationLng: task.locationLng,
+        createdAt: task.createdAt,
+      },
+    };
+
+    // Send to each contractor via WebSocket
+    for (const ranked of rankedContractors) {
+      const sent = this.realtimeGateway.sendToUser(
+        ranked.contractorId,
+        'task:new_available',
+        {
+          ...notification,
+          score: ranked.score,
+          distance: ranked.distance,
+        },
+      );
+
+      if (sent) {
+        this.logger.debug(
+          `Notified contractor ${ranked.contractorId} (score: ${ranked.score}, distance: ${ranked.distance}km)`,
+        );
+      }
+    }
   }
 }

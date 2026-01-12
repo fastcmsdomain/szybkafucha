@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(test:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(npm run build:*)",
+      "Bash(/opt/homebrew/bin/npm run build)",
+      "Bash(source ~/.zshrc)"
     ]
   }
 }

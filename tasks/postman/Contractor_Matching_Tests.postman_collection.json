@@ -1,0 +1,935 @@
+{
+  "info": {
+    "_postman_id": "contractor-matching-tests",
+    "name": "Szybka Fucha - Contractor Matching Tests",
+    "description": "Complete test collection for the contractor matching algorithm.\n\n## Setup Instructions\n\n1. Start services: `docker-compose up -d && cd backend && npm run start:dev`\n2. Seed database: `npm run seed:fresh`\n3. Run requests in order (Auth → Contractor Setup → Task Creation)\n\n## Test Accounts\n\n- Client: +48111111111\n- Contractor (Marek): +48222222221\n- OTP Code: 123456",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "clientToken",
+      "value": ""
+    },
+    {
+      "key": "contractorToken",
+      "value": ""
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Get JWT tokens for client and contractor",
+      "item": [
+        {
+          "name": "1.1 Request OTP (Client)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+48111111111\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/request-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "request-otp"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Verify OTP (Client)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('clientToken', jsonData.accessToken);",
+                  "    console.log('Client token saved');",
+                  "}",
+                  "",
+                  "pm.test('Response has accessToken', function() {",
+                  "    pm.expect(jsonData).to.have.property('accessToken');",
+                  "});",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+48111111111\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "verify"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Request OTP (Contractor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+48222222221\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/request-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "request-otp"]
+            }
+          }
+        },
+        {
+          "name": "1.4 Verify OTP (Contractor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('contractorToken', jsonData.accessToken);",
+                  "    console.log('Contractor token saved');",
+                  "}",
+                  "",
+                  "pm.test('Response has accessToken', function() {",
+                  "    pm.expect(jsonData).to.have.property('accessToken');",
+                  "});",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+48222222221\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/phone/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "phone", "verify"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Contractor Setup",
+      "description": "Verify and configure contractor profile",
+      "item": [
+        {
+          "name": "2.1 Get Contractor Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Contractor is verified', function() {",
+                  "    pm.expect(jsonData.kycStatus).to.equal('verified');",
+                  "});",
+                  "",
+                  "pm.test('Contractor is online', function() {",
+                  "    pm.expect(jsonData.isOnline).to.equal(true);",
+                  "});",
+                  "",
+                  "pm.test('Has location set', function() {",
+                  "    pm.expect(jsonData.lastLocationLat).to.not.be.null;",
+                  "    pm.expect(jsonData.lastLocationLng).to.not.be.null;",
+                  "});",
+                  "",
+                  "pm.test('Has paczki category', function() {",
+                  "    pm.expect(jsonData.categories).to.include('paczki');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contractor/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["contractor", "profile"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Update Contractor Location",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Location updated', function() {",
+                  "    pm.expect(jsonData.lastLocationLat).to.equal('52.2300');",
+                  "    pm.expect(jsonData.lastLocationLng).to.equal('21.0130');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 52.2300,\n  \"lng\": 21.0130\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contractor/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["contractor", "location"]
+            }
+          }
+        },
+        {
+          "name": "2.3 Set Contractor Online",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Contractor is now online', function() {",
+                  "    pm.expect(jsonData.isOnline).to.equal(true);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isOnline\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contractor/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["contractor", "availability"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Task Creation & Matching",
+      "description": "Create tasks and test matching algorithm",
+      "item": [
+        {
+          "name": "3.1 Create Task - Paczki (Should Match)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Task created with correct data', function() {",
+                  "    pm.expect(jsonData.category).to.equal('paczki');",
+                  "    pm.expect(jsonData.status).to.equal('created');",
+                  "    pm.expect(jsonData.budgetAmount).to.equal(50);",
+                  "});",
+                  "",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('taskId', jsonData.id);",
+                  "    console.log('Task ID saved:', jsonData.id);",
+                  "}",
+                  "",
+                  "// Note: Check backend logs for notification output",
+                  "console.log('Check backend logs for: [TasksService] Notifying contractors...');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"paczki\",\n  \"title\": \"Test delivery - matching\",\n  \"description\": \"Pick up package from paczkomat and deliver to my address\",\n  \"locationLat\": 52.2297,\n  \"locationLng\": 21.0122,\n  \"address\": \"ul. Marszałkowska 100, 00-001 Warszawa\",\n  \"budgetAmount\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "3.2 Create Task - Sprzatanie (No Match - Offline)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Task created', function() {",
+                  "    pm.expect(jsonData.category).to.equal('sprzatanie');",
+                  "});",
+                  "",
+                  "// Kasia (sprzatanie contractor) is offline, so no notifications",
+                  "console.log('Expected: No contractors notified (Kasia is offline)');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"sprzatanie\",\n  \"title\": \"Apartment cleaning\",\n  \"description\": \"Deep cleaning needed for 60m2 apartment\",\n  \"locationLat\": 52.2297,\n  \"locationLng\": 21.0122,\n  \"address\": \"ul. Koszykowa 10, 00-564 Warszawa\",\n  \"budgetAmount\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "3.3 Create Task - Far Location (No Match)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Krakow is ~250km from Warsaw, outside 20km radius",
+                  "console.log('Expected: No contractors notified (Krakow is 250km from Warsaw)');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"paczki\",\n  \"title\": \"Delivery in Krakow\",\n  \"description\": \"Pick up package in Krakow center\",\n  \"locationLat\": 50.0647,\n  \"locationLng\": 19.9450,\n  \"address\": \"Rynek Główny 1, 31-042 Kraków\",\n  \"budgetAmount\": 60\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "3.4 Create Task - Montaz (Match Tomasz)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Task category is montaz', function() {",
+                  "    pm.expect(jsonData.category).to.equal('montaz');",
+                  "});",
+                  "",
+                  "// Tomasz handles montaz category",
+                  "console.log('Expected: Tomasz Złota Rączka notified');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"montaz\",\n  \"title\": \"IKEA PAX wardrobe assembly\",\n  \"description\": \"Need help assembling a large PAX wardrobe with sliding doors\",\n  \"locationLat\": 52.2400,\n  \"locationLng\": 21.0200,\n  \"address\": \"ul. Targowa 72, 03-734 Warszawa\",\n  \"budgetAmount\": 200\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Contractor View",
+      "description": "View available tasks as contractor",
+      "item": [
+        {
+          "name": "4.1 Get Available Tasks (Contractor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function() {",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Tasks match contractor categories', function() {",
+                  "    jsonData.forEach(function(task) {",
+                  "        pm.expect(['paczki', 'zakupy', 'kolejki']).to.include(task.category);",
+                  "    });",
+                  "});",
+                  "",
+                  "console.log('Available tasks for contractor:', jsonData.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "4.2 Get Task Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Task has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('category');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('budgetAmount');",
+                  "    pm.expect(jsonData).to.have.property('locationLat');",
+                  "    pm.expect(jsonData).to.have.property('locationLng');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Task Lifecycle",
+      "description": "Test full task flow: accept → start → complete",
+      "item": [
+        {
+          "name": "5.1 Accept Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Task status is accepted', function() {",
+                  "    pm.expect(jsonData.status).to.equal('accepted');",
+                  "});",
+                  "",
+                  "pm.test('Contractor assigned', function() {",
+                  "    pm.expect(jsonData.contractorId).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Start Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Task status is in_progress', function() {",
+                  "    pm.expect(jsonData.status).to.equal('in_progress');",
+                  "});",
+                  "",
+                  "pm.test('Started timestamp set', function() {",
+                  "    pm.expect(jsonData.startedAt).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "start"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Complete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Task status is completed', function() {",
+                  "    pm.expect(jsonData.status).to.equal('completed');",
+                  "});",
+                  "",
+                  "pm.test('Completion photos attached', function() {",
+                  "    pm.expect(jsonData.completionPhotos).to.be.an('array');",
+                  "    pm.expect(jsonData.completionPhotos.length).to.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{contractorToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"photoUrls\": [\"https://example.com/proof1.jpg\", \"https://example.com/proof2.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "5.4 Confirm Task (Client)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Task status is confirmed', function() {",
+                  "    pm.expect(jsonData.status).to.equal('confirmed');",
+                  "});",
+                  "",
+                  "pm.test('Commission calculated', function() {",
+                  "    pm.expect(jsonData.commissionAmount).to.not.be.null;",
+                  "    // 17% of 50 = 8.5",
+                  "    pm.expect(jsonData.commissionAmount).to.equal(8.5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "5.5 Rate Contractor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Rating saved', function() {",
+                  "    pm.expect(jsonData.rating).to.equal(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent service! Very fast delivery.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/{{taskId}}/rate",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "{{taskId}}", "rate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Edge Cases",
+      "description": "Test error handling and edge cases",
+      "item": [
+        {
+          "name": "6.1 Create Task - Invalid Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Error message present', function() {",
+                  "    pm.expect(jsonData.message).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"invalid_category\",\n  \"title\": \"Test\",\n  \"description\": \"Test description\",\n  \"locationLat\": 52.2297,\n  \"locationLng\": 21.0122,\n  \"address\": \"Test address\",\n  \"budgetAmount\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "6.2 Create Task - Missing Budget",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"paczki\",\n  \"title\": \"Test\",\n  \"description\": \"Test description\",\n  \"locationLat\": 52.2297,\n  \"locationLng\": 21.0122,\n  \"address\": \"Test address\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        },
+        {
+          "name": "6.3 Unauthorized Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"paczki\",\n  \"title\": \"Test\",\n  \"description\": \"Test\",\n  \"locationLat\": 52.2297,\n  \"locationLng\": 21.0122,\n  \"address\": \"Test\",\n  \"budgetAmount\": 50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

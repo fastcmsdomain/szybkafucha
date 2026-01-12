@@ -62,11 +62,11 @@ export class SeedService {
     this.logger.log('🗑️ Clearing existing data...');
 
     try {
-      // Delete in reverse order (respecting foreign key constraints)
-      await this.ratingRepository.delete({});
-      await this.taskRepository.delete({});
-      await this.contractorProfileRepository.delete({});
-      await this.userRepository.delete({});
+      // Clear tables in reverse order (respecting foreign key constraints)
+      await this.ratingRepository.createQueryBuilder().delete().execute();
+      await this.taskRepository.createQueryBuilder().delete().execute();
+      await this.contractorProfileRepository.createQueryBuilder().delete().execute();
+      await this.userRepository.createQueryBuilder().delete().execute();
 
       this.logger.log('✅ Data cleared. Running seed...');
       await this.seed();

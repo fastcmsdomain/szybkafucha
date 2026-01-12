@@ -15,6 +15,7 @@ const otpStore: Map<string, { code: string; expiresAt: Date }> = new Map();
 const OTP_CONFIG = {
   LENGTH: 6,
   EXPIRES_IN_MINUTES: 5,
+  DEV_CODE: '123456', // Fixed code for development/testing
 };
 
 @Injectable()
@@ -56,8 +57,9 @@ export class AuthService {
     // Normalize phone number
     const normalizedPhone = this.normalizePhone(phone);
 
-    // Generate 6-digit OTP
-    const code = this.generateOtp();
+    // Use fixed code in development, random in production
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
+    const code = isDev ? OTP_CONFIG.DEV_CODE : this.generateOtp();
     const expiresAt = new Date(Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000);
 
     // Store OTP (in production, use Redis with TTL)
@@ -65,7 +67,9 @@ export class AuthService {
 
     // TODO: Send SMS via Twilio
     // For development, log the OTP
-    console.log(`[DEV] OTP for ${normalizedPhone}: ${code}`);
+    if (isDev) {
+      console.log(`[DEV] OTP for ${normalizedPhone}: ${code}`);
+    }
 
     return {
       message: 'OTP sent successfully',

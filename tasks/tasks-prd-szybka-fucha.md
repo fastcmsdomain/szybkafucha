@@ -96,14 +96,14 @@
   - [x] 3.2 Create `AuthModule` with JWT strategy
   - [x] 3.3 Implement `POST /auth/phone/request-otp` - sends SMS via Twilio (mock for dev)
   - [x] 3.4 Implement `POST /auth/phone/verify` - verifies OTP, returns JWT
-  - [ ] 3.5 Install Google Sign-In: `npm install passport-google-oauth20`
+  - [x] 3.5 Install Google Sign-In: `npm install passport-google-oauth20`
   - [x] 3.6 Implement `POST /auth/google` - validates Google token, creates/returns user
-  - [ ] 3.7 Install Apple Sign-In: `npm install apple-signin-auth`
+  - [x] 3.7 Install Apple Sign-In: `npm install apple-signin-auth`
   - [x] 3.8 Implement `POST /auth/apple` - validates Apple token, creates/returns user
-  - [ ] 3.9 Implement `POST /auth/logout` - invalidates refresh token
+  - [x] 3.9 Implement `POST /auth/logout` - invalidates refresh token
   - [x] 3.10 Create `JwtAuthGuard` for protecting routes
-  - [ ] 3.11 Write unit tests for auth service
-  - [ ] 3.12 Write e2e tests for auth endpoints
+  - [x] 3.11 Write unit tests for auth service
+  - [x] 3.12 Write e2e tests for auth endpoints
 
 ---
 
@@ -160,12 +160,12 @@
     - Query contractors within task's radius
     - Filter by online status
     - Filter by matching categories
-  - [ ] 6.3 Implement scoring algorithm
+  - [x] 6.3 Implement scoring algorithm
     - Score = (rating * 0.4) + (completions * 0.3) + (proximity * 0.3)
-  - [ ] 6.4 Implement notification queue for contractors
+  - [x] 6.4 Implement notification queue for contractors
     - Send push notification to top 5 contractors
     - 45-second timeout before notifying next batch
-  - [ ] 6.5 Write tests for matching algorithm
+  - [x] 6.5 Write tests for matching algorithm
 
 - [x] **7.0 Payments Module (Stripe Connect)**
   - [x] 7.1 Install Stripe: `npm install stripe`
