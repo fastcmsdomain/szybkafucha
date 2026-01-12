@@ -2,14 +2,13 @@
  * Newsletter Service
  * Handles newsletter subscription logic
  */
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NewsletterSubscriber, UserType } from './entities/newsletter-subscriber.entity';
+import {
+  NewsletterSubscriber,
+  UserType,
+} from './entities/newsletter-subscriber.entity';
 import { SubscribeNewsletterDto } from './dto/subscribe-newsletter.dto';
 
 // Response interface for subscribe method

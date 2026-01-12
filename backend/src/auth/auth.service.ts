@@ -2,14 +2,19 @@
  * Auth Service
  * Handles authentication logic for all methods
  */
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
-
-// OTP storage (in production, use Redis)
-const otpStore: Map<string, { code: string; expiresAt: Date }> = new Map();
+import twilio from 'twilio';
 
 // Configuration constants
 const OTP_CONFIG = {
@@ -20,11 +25,28 @@ const OTP_CONFIG = {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private twilioClient: twilio.Twilio | null = null;
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {
+    // Initialize Twilio client if credentials are provided
+    const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
+    const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
+
+    if (accountSid && authToken) {
+      this.twilioClient = twilio(accountSid, authToken);
+      this.logger.log('Twilio client initialized successfully');
+    } else {
+      this.logger.warn(
+        'Twilio credentials not configured - OTP will only be logged to console',
+      );
+    }
+  }
 
   /**
    * Generate JWT token for a user
@@ -51,24 +73,33 @@ export class AuthService {
 
   /**
    * Request OTP for phone authentication
-   * In production, integrate with Twilio
+   * Stores OTP in Redis with automatic TTL expiration
    */
-  async requestPhoneOtp(phone: string): Promise<{ message: string; expiresIn: number }> {
+  async requestPhoneOtp(
+    phone: string,
+  ): Promise<{ message: string; expiresIn: number }> {
     // Normalize phone number
     const normalizedPhone = this.normalizePhone(phone);
 
     // Use fixed code in development, random in production
     const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
     const code = isDev ? OTP_CONFIG.DEV_CODE : this.generateOtp();
-    const expiresAt = new Date(Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000);
+    const expiresAt = new Date(
+      Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
 
-    // Store OTP (in production, use Redis with TTL)
-    otpStore.set(normalizedPhone, { code, expiresAt });
+    // Store OTP in Redis with TTL (milliseconds)
+    await this.cacheManager.set(
+      `otp:${normalizedPhone}`,
+      { code, expiresAt },
+      OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
 
-    // TODO: Send SMS via Twilio
-    // For development, log the OTP
-    if (isDev) {
-      console.log(`[DEV] OTP for ${normalizedPhone}: ${code}`);
+    // Send SMS (in production) or log (in development)
+    if (!isDev) {
+      await this.sendOtpSms(normalizedPhone, code);
+    } else {
+      this.logger.debug(`[DEV] OTP for ${normalizedPhone}: ${code}`);
     }
 
     return {
@@ -79,6 +110,7 @@ export class AuthService {
 
   /**
    * Verify phone OTP and authenticate user
+   * Retrieves OTP from Redis and validates it
    */
   async verifyPhoneOtp(
     phone: string,
@@ -87,24 +119,27 @@ export class AuthService {
   ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
     const normalizedPhone = this.normalizePhone(phone);
 
-    // Get stored OTP
-    const storedOtp = otpStore.get(normalizedPhone);
+    // Get stored OTP from Redis
+    const storedOtp = await this.cacheManager.get<{
+      code: string;
+      expiresAt: Date;
+    }>(`otp:${normalizedPhone}`);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP not found. Please request a new one.');
+      throw new BadRequestException('OTP not found or expired');
     }
 
-    if (new Date() > storedOtp.expiresAt) {
-      otpStore.delete(normalizedPhone);
+    if (new Date() > new Date(storedOtp.expiresAt)) {
+      await this.cacheManager.del(`otp:${normalizedPhone}`);
       throw new BadRequestException('OTP expired. Please request a new one.');
     }
 
     if (storedOtp.code !== code) {
-      throw new BadRequestException('Invalid OTP code.');
+      throw new BadRequestException('Invalid OTP code');
     }
 
-    // OTP is valid, remove from store
-    otpStore.delete(normalizedPhone);
+    // OTP is valid, remove from Redis (one-time use)
+    await this.cacheManager.del(`otp:${normalizedPhone}`);
 
     // Find or create user
     let user = await this.usersService.findByPhone(normalizedPhone);
@@ -210,6 +245,30 @@ export class AuthService {
    */
   private generateOtp(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * Send OTP via Twilio SMS
+   */
+  private async sendOtpSms(phone: string, code: string): Promise<void> {
+    if (!this.twilioClient) {
+      this.logger.warn('Twilio not configured - OTP will only be logged');
+      return;
+    }
+
+    try {
+      await this.twilioClient.messages.create({
+        body: `Twój kod weryfikacyjny Szybka Fucha: ${code}. Ważny przez ${OTP_CONFIG.EXPIRES_IN_MINUTES} minut.`,
+        from: this.configService.get<string>('TWILIO_PHONE_NUMBER'),
+        to: phone,
+      });
+      this.logger.log(`SMS OTP sent successfully to ${phone}`);
+    } catch (error) {
+      this.logger.error(`Failed to send SMS to ${phone}`, error);
+      throw new BadRequestException(
+        'Nie udało się wysłać SMS z kodem weryfikacyjnym',
+      );
+    }
   }
 
   /**

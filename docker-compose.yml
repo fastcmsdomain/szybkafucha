@@ -1,12 +1,10 @@
 # Szybka Fucha - Docker Compose for Development
 # Run with: docker-compose up -d
 
-version: "3.8"
-
 services:
   # PostgreSQL Database
   postgres:
-    image: postgis/postgis:15-3.3
+    image: postgres:15-alpine
     container_name: szybkafucha-postgres
     environment:
       POSTGRES_USER: szybkafucha

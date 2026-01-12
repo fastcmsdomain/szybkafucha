@@ -20,13 +20,17 @@ export class SubscribeNewsletterDto {
   @IsNotEmpty({ message: 'Imię jest wymagane' })
   @MinLength(2, { message: 'Imię musi mieć co najmniej 2 znaki' })
   @MaxLength(255, { message: 'Imię może mieć maksymalnie 255 znaków' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
   name: string;
 
   @IsEmail({}, { message: 'Proszę podać poprawny adres e-mail' })
   @IsNotEmpty({ message: 'Adres e-mail jest wymagany' })
   @MaxLength(255, { message: 'Email może mieć maksymalnie 255 znaków' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : undefined,
+  )
   email: string;
 
   @IsOptional()
@@ -36,7 +40,9 @@ export class SubscribeNewsletterDto {
 
   @IsString()
   @IsNotEmpty({ message: 'Proszę wybrać typ użytkownika' })
-  @IsIn(['client', 'contractor'], { message: 'Typ użytkownika musi być "client" lub "contractor"' })
+  @IsIn(['client', 'contractor'], {
+    message: 'Typ użytkownika musi być "client" lub "contractor"',
+  })
   userType: 'client' | 'contractor';
 
   @IsBoolean()

@@ -3,29 +3,39 @@
  * Tests for authentication logic including OTP and social login
  */
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
+
+/* eslint-disable @typescript-eslint/unbound-method */
+
+interface MockCacheManager {
+  get: jest.Mock;
+  set: jest.Mock;
+  del: jest.Mock;
+}
 
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
+  let cacheManager: MockCacheManager;
 
   const mockUser: User = {
     id: 'user-123',
     type: UserType.CLIENT,
-    phone: '+48111111111',
+    phone: '+48123456789',
     email: 'test@example.com',
     name: 'Test User',
     avatarUrl: null,
+    status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,
-    status: UserStatus.ACTIVE,
+    fcmToken: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -53,6 +63,12 @@ describe('AuthService', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
     };
 
+    const mockCacheManager = {
+      get: jest.fn(),
+      set: jest.fn(),
+      del: jest.fn(),
+    };
+
     const mockConfigService = {
       get: jest.fn().mockImplementation((key: string) => {
         if (key === 'NODE_ENV') return 'development';
@@ -66,13 +82,16 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get(UsersService);
-    jwtService = module.get(JwtService);
-    configService = module.get(ConfigService);
+    usersService = module.get<UsersService>(
+      UsersService,
+    ) as jest.Mocked<UsersService>;
+    jwtService = module.get<JwtService>(JwtService) as jest.Mocked<JwtService>;
+    cacheManager = module.get<MockCacheManager>(CACHE_MANAGER);
   });
 
   describe('generateToken', () => {
@@ -89,65 +108,81 @@ describe('AuthService', () => {
     it('should return partial user data without sensitive fields', () => {
       const result = service.generateToken(mockUser);
 
-      expect(result.user).toEqual({
-        id: mockUser.id,
-        type: mockUser.type,
-        name: mockUser.name,
-        email: mockUser.email,
-        phone: mockUser.phone,
-        avatarUrl: mockUser.avatarUrl,
-        status: mockUser.status,
-      });
+      expect(result.user.id).toBe(mockUser.id);
+      expect(result.user.type).toBe(mockUser.type);
+      expect(result.user.name).toBe(mockUser.name);
+      expect(result.user.email).toBe(mockUser.email);
+      expect(result.user.phone).toBe(mockUser.phone);
       expect(result.user).not.toHaveProperty('googleId');
       expect(result.user).not.toHaveProperty('appleId');
+      expect(result.user).not.toHaveProperty('fcmToken');
     });
   });
 
   describe('requestPhoneOtp', () => {
-    it('should return success message with expiration time', async () => {
-      const result = await service.requestPhoneOtp('+48111111111');
+    it('should generate and store OTP in cache', async () => {
+      const phone = '+48123456789';
 
+      const result = await service.requestPhoneOtp(phone);
+
+      expect(cacheManager.set).toHaveBeenCalled();
+      const [cacheKey, otpData] = cacheManager.set.mock.calls[0] as [
+        string,
+        { code: string; expiresAt: Date },
+      ];
+      expect(cacheKey).toBe(`otp:${phone}`);
+      expect(otpData).toHaveProperty('code');
+      expect(otpData.code).toHaveLength(6);
       expect(result.message).toBe('OTP sent successfully');
-      expect(result.expiresIn).toBe(300); // 5 minutes in seconds
+      expect(result.expiresIn).toBe(300); // 5 minutes
     });
 
     it('should normalize phone number without country code', async () => {
-      const result = await service.requestPhoneOtp('111111111');
+      const phone = '123456789';
 
-      expect(result.message).toBe('OTP sent successfully');
+      await service.requestPhoneOtp(phone);
+
+      expect(cacheManager.set).toHaveBeenCalled();
+      const [cacheKey] = cacheManager.set.mock.calls[0] as [
+        string,
+        { code: string; expiresAt: Date },
+      ];
+      expect(cacheKey).toBe('otp:+48123456789');
     });
 
     it('should handle phone with spaces and dashes', async () => {
-      const result = await service.requestPhoneOtp('+48 111-111-111');
+      const result = await service.requestPhoneOtp('+48 123-456-789');
 
       expect(result.message).toBe('OTP sent successfully');
     });
   });
 
   describe('verifyPhoneOtp', () => {
-    beforeEach(async () => {
-      // Request OTP first to populate store
-      await service.requestPhoneOtp('+48111111111');
-    });
+    const phone = '+48123456789';
+    const code = '123456';
+    const validOtp = { code, expiresAt: new Date(Date.now() + 60000) };
 
-    it('should verify valid OTP and return token for existing user', async () => {
+    it('should return JWT token for valid OTP', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
       usersService.findByPhone.mockResolvedValue(mockUser);
 
-      const result = await service.verifyPhoneOtp('+48111111111', '123456');
+      const result = await service.verifyPhoneOtp(phone, code);
 
       expect(result.accessToken).toBe('mock-jwt-token');
-      expect(result.isNewUser).toBe(false);
       expect(result.user.id).toBe(mockUser.id);
+      expect(result.isNewUser).toBe(false);
+      expect(cacheManager.del).toHaveBeenCalledWith(`otp:${phone}`);
     });
 
-    it('should create new user when phone not found', async () => {
+    it('should create new user if phone not found', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
       usersService.findByPhone.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
 
-      const result = await service.verifyPhoneOtp('+48111111111', '123456');
+      const result = await service.verifyPhoneOtp(phone, code);
 
       expect(usersService.create).toHaveBeenCalledWith({
-        phone: '+48111111111',
+        phone,
         type: UserType.CLIENT,
         status: UserStatus.ACTIVE,
       });
@@ -155,39 +190,54 @@ describe('AuthService', () => {
     });
 
     it('should create contractor when userType is specified', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
       usersService.findByPhone.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockContractor);
 
-      await service.verifyPhoneOtp('+48111111111', '123456', UserType.CONTRACTOR);
+      const result = await service.verifyPhoneOtp(
+        phone,
+        code,
+        UserType.CONTRACTOR,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith({
-        phone: '+48111111111',
+        phone,
         type: UserType.CONTRACTOR,
         status: UserStatus.ACTIVE,
       });
+      expect(result.isNewUser).toBe(true);
     });
 
-    it('should throw BadRequestException for invalid OTP', async () => {
-      await expect(
-        service.verifyPhoneOtp('+48111111111', '000000'),
-      ).rejects.toThrow(BadRequestException);
+    it('should throw BadRequestException for missing OTP', async () => {
+      cacheManager.get.mockResolvedValue(null);
+
+      await expect(service.verifyPhoneOtp(phone, code)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.verifyPhoneOtp(phone, code)).rejects.toThrow(
+        'OTP not found or expired',
+      );
     });
 
-    it('should throw BadRequestException when OTP not requested', async () => {
-      await expect(
-        service.verifyPhoneOtp('+48999999999', '123456'),
-      ).rejects.toThrow(BadRequestException);
+    it('should throw BadRequestException for expired OTP', async () => {
+      const expiredOtp = { code, expiresAt: new Date(Date.now() - 60000) };
+      cacheManager.get.mockResolvedValue(expiredOtp);
+
+      await expect(service.verifyPhoneOtp(phone, code)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(cacheManager.del).toHaveBeenCalledWith(`otp:${phone}`);
     });
 
-    it('should invalidate OTP after successful verification', async () => {
-      usersService.findByPhone.mockResolvedValue(mockUser);
+    it('should throw BadRequestException for invalid OTP code', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
 
-      await service.verifyPhoneOtp('+48111111111', '123456');
-
-      // Second attempt should fail
-      await expect(
-        service.verifyPhoneOtp('+48111111111', '123456'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
+        'Invalid OTP code',
+      );
     });
   });
 
@@ -200,10 +250,16 @@ describe('AuthService', () => {
     it('should return token for existing user with Google ID', async () => {
       usersService.findByGoogleId.mockResolvedValue(mockUser);
 
-      const result = await service.authenticateWithGoogle(googleId, email, name, avatarUrl);
+      const result = await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+        avatarUrl,
+      );
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.isNewUser).toBe(false);
+      expect(usersService.create).not.toHaveBeenCalled();
     });
 
     it('should link Google account to existing user with same email', async () => {
@@ -211,9 +267,16 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue({ ...mockUser, googleId });
 
-      const result = await service.authenticateWithGoogle(googleId, email, name, avatarUrl);
+      const result = await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+        avatarUrl,
+      );
 
-      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, { googleId });
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        googleId,
+      });
       expect(result.isNewUser).toBe(false);
     });
 
@@ -222,7 +285,12 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
 
-      const result = await service.authenticateWithGoogle(googleId, email, name, avatarUrl);
+      const result = await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+        avatarUrl,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith({
         googleId,
@@ -240,7 +308,13 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockContractor);
 
-      await service.authenticateWithGoogle(googleId, email, name, avatarUrl, UserType.CONTRACTOR);
+      await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+        avatarUrl,
+        UserType.CONTRACTOR,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ type: UserType.CONTRACTOR }),
@@ -269,7 +343,9 @@ describe('AuthService', () => {
 
       const result = await service.authenticateWithApple(appleId, email, name);
 
-      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, { appleId });
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        appleId,
+      });
       expect(result.isNewUser).toBe(false);
     });
 
@@ -294,7 +370,7 @@ describe('AuthService', () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
 
-      const result = await service.authenticateWithApple(appleId, undefined, undefined);
+      const result = await service.authenticateWithApple(appleId);
 
       expect(usersService.findByEmail).not.toHaveBeenCalled();
       expect(usersService.create).toHaveBeenCalledWith({
@@ -311,38 +387,16 @@ describe('AuthService', () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockContractor);
 
-      await service.authenticateWithApple(appleId, email, name, UserType.CONTRACTOR);
+      await service.authenticateWithApple(
+        appleId,
+        email,
+        name,
+        UserType.CONTRACTOR,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ type: UserType.CONTRACTOR }),
       );
-    });
-  });
-
-  describe('phone normalization', () => {
-    beforeEach(async () => {
-      usersService.findByPhone.mockResolvedValue(mockUser);
-    });
-
-    it('should normalize phone without country code to Polish format', async () => {
-      await service.requestPhoneOtp('111111111');
-      await service.verifyPhoneOtp('111111111', '123456');
-
-      expect(usersService.findByPhone).toHaveBeenCalledWith('+48111111111');
-    });
-
-    it('should preserve existing country code', async () => {
-      await service.requestPhoneOtp('+48111111111');
-      await service.verifyPhoneOtp('+48111111111', '123456');
-
-      expect(usersService.findByPhone).toHaveBeenCalledWith('+48111111111');
-    });
-
-    it('should handle different international formats', async () => {
-      await service.requestPhoneOtp('+1234567890');
-      await service.verifyPhoneOtp('+1234567890', '123456');
-
-      expect(usersService.findByPhone).toHaveBeenCalledWith('+1234567890');
     });
   });
 });

@@ -92,7 +92,9 @@ export class SeedService {
       await this.userRepository.save(contractor.user);
     }
 
-    this.logger.log(`   Created ${1 + seedClients.length + seedContractors.length} users`);
+    this.logger.log(
+      `   Created ${1 + seedClients.length + seedContractors.length} users`,
+    );
   }
 
   private async seedContractorProfiles(): Promise<void> {
@@ -132,7 +134,9 @@ export class SeedService {
     this.logger.log('');
     this.logger.log('📊 Seed Summary:');
     this.logger.log('================');
-    this.logger.log(`👤 Users: ${1 + seedClients.length + seedContractors.length}`);
+    this.logger.log(
+      `👤 Users: ${1 + seedClients.length + seedContractors.length}`,
+    );
     this.logger.log(`   - Admin: 1`);
     this.logger.log(`   - Clients: ${seedClients.length}`);
     this.logger.log(`   - Contractors: ${seedContractors.length}`);

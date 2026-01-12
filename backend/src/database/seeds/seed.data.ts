@@ -3,7 +3,10 @@
  * Test users, contractors, and sample tasks
  */
 import { UserType, UserStatus } from '../../users/entities/user.entity';
-import { KycStatus, TaskCategory } from '../../contractor/entities/contractor-profile.entity';
+import {
+  KycStatus,
+  TaskCategory,
+} from '../../contractor/entities/contractor-profile.entity';
 import { TaskStatus } from '../../tasks/entities/task.entity';
 
 // Warsaw area coordinates for realistic test data
@@ -57,7 +60,11 @@ export const seedContractors = [
     },
     profile: {
       bio: 'Profesjonalny kurier z 5-letnim doświadczeniem. Szybko i bezpiecznie dostarczam paczki w całej Warszawie.',
-      categories: [TaskCategory.PACZKI, TaskCategory.ZAKUPY, TaskCategory.KOLEJKI],
+      categories: [
+        TaskCategory.PACZKI,
+        TaskCategory.ZAKUPY,
+        TaskCategory.KOLEJKI,
+      ],
       serviceRadiusKm: 15,
       kycStatus: KycStatus.VERIFIED,
       kycIdVerified: true,
@@ -138,7 +145,11 @@ export const seedContractors = [
     },
     profile: {
       bio: 'Nowy na platformie, ale chętny do pracy! Pomogę z zakupami, paczkami i czekaniem w kolejkach.',
-      categories: [TaskCategory.PACZKI, TaskCategory.ZAKUPY, TaskCategory.KOLEJKI],
+      categories: [
+        TaskCategory.PACZKI,
+        TaskCategory.ZAKUPY,
+        TaskCategory.KOLEJKI,
+      ],
       serviceRadiusKm: 8,
       kycStatus: KycStatus.PENDING, // Not verified yet
       kycIdVerified: true,
@@ -164,7 +175,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.PACZKI,
     title: 'Odbierz paczkę z paczkomatu',
-    description: 'Paczka jest w paczkomacie przy ul. Marszałkowskiej 100. Kod odbioru: 123456. Proszę dostarczyć pod wskazany adres.',
+    description:
+      'Paczka jest w paczkomacie przy ul. Marszałkowskiej 100. Kod odbioru: 123456. Proszę dostarczyć pod wskazany adres.',
     locationLat: 52.2297,
     locationLng: 21.0122,
     address: 'ul. Marszałkowska 100, 00-001 Warszawa',
@@ -178,9 +190,10 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.ZAKUPY,
     title: 'Zakupy spożywcze z Biedronki',
-    description: 'Lista zakupów: mleko 2l, chleb, masło, ser żółty, jajka (10 szt), jabłka 1kg. Biedronka przy ul. Puławskiej.',
-    locationLat: 52.2050,
-    locationLng: 21.0300,
+    description:
+      'Lista zakupów: mleko 2l, chleb, masło, ser żółty, jajka (10 szt), jabłka 1kg. Biedronka przy ul. Puławskiej.',
+    locationLat: 52.205,
+    locationLng: 21.03,
     address: 'ul. Puławska 45, 02-508 Warszawa',
     budgetAmount: 60,
     status: TaskStatus.CREATED,
@@ -192,9 +205,10 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.KOLEJKI,
     title: 'Poczekaj w kolejce w urzędzie',
-    description: 'Urząd Skarbowy Warszawa-Mokotów. Trzeba pobrać numerek i poczekać w kolejce do okienka 5. Dokumenty do złożenia przekażę na miejscu.',
+    description:
+      'Urząd Skarbowy Warszawa-Mokotów. Trzeba pobrać numerek i poczekać w kolejce do okienka 5. Dokumenty do złożenia przekażę na miejscu.',
     locationLat: 52.1967,
-    locationLng: 21.0030,
+    locationLng: 21.003,
     address: 'ul. Obrzeżna 5, 02-691 Warszawa',
     budgetAmount: 80,
     status: TaskStatus.CREATED,
@@ -208,9 +222,10 @@ export const seedTasks = [
     contractorId: seedContractors[0].user.id,
     category: TaskCategory.PACZKI,
     title: 'Dostawa dokumentów do kancelarii',
-    description: 'Ważne dokumenty do dostarczenia do kancelarii prawnej. Odbiór z mojego biura.',
-    locationLat: 52.2320,
-    locationLng: 21.0180,
+    description:
+      'Ważne dokumenty do dostarczenia do kancelarii prawnej. Odbiór z mojego biura.',
+    locationLat: 52.232,
+    locationLng: 21.018,
     address: 'ul. Złota 59, 00-120 Warszawa',
     budgetAmount: 55,
     status: TaskStatus.ACCEPTED,
@@ -225,9 +240,10 @@ export const seedTasks = [
     contractorId: seedContractors[1].user.id,
     category: TaskCategory.MONTAZ,
     title: 'Montaż szafy IKEA PAX',
-    description: 'Szafa PAX 200x60x236, 4 drzwi przesuwne. Wszystkie elementy są już rozpakowane. Narzędzia po mojej stronie jeśli potrzeba.',
-    locationLat: 52.2400,
-    locationLng: 21.0450,
+    description:
+      'Szafa PAX 200x60x236, 4 drzwi przesuwne. Wszystkie elementy są już rozpakowane. Narzędzia po mojej stronie jeśli potrzeba.',
+    locationLat: 52.24,
+    locationLng: 21.045,
     address: 'ul. Targowa 72/15, 03-734 Warszawa',
     budgetAmount: 200,
     status: TaskStatus.IN_PROGRESS,
@@ -244,8 +260,8 @@ export const seedTasks = [
     category: TaskCategory.ZAKUPY,
     title: 'Zakupy w aptece',
     description: 'Lista leków na receptę. Receptę przekażę wykonawcy.',
-    locationLat: 52.2150,
-    locationLng: 21.0250,
+    locationLat: 52.215,
+    locationLng: 21.025,
     address: 'ul. Nowy Świat 25, 00-029 Warszawa',
     budgetAmount: 40,
     finalAmount: 40,
@@ -266,8 +282,8 @@ export const seedTasks = [
     category: TaskCategory.SPRZATANIE,
     title: 'Sprzątanie po remoncie',
     description: 'Mieszkanie 50m2, po remoncie. Dużo kurzu i gruzu.',
-    locationLat: 52.2200,
-    locationLng: 21.0100,
+    locationLat: 52.22,
+    locationLng: 21.01,
     address: 'ul. Koszykowa 10/5, 00-564 Warszawa',
     budgetAmount: 250,
     status: TaskStatus.CANCELLED,
@@ -284,8 +300,8 @@ export const seedTasks = [
     category: TaskCategory.SPRZATANIE,
     title: 'Mycie okien',
     description: '8 okien standardowych. Mieszkanie na 3 piętrze.',
-    locationLat: 52.2100,
-    locationLng: 21.0350,
+    locationLat: 52.21,
+    locationLng: 21.035,
     address: 'ul. Mokotowska 15/8, 00-640 Warszawa',
     budgetAmount: 120,
     status: TaskStatus.DISPUTED,

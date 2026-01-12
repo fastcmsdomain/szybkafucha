@@ -209,7 +209,9 @@ export class TasksService {
 
     // Calculate final amounts
     const finalAmount = task.budgetAmount;
-    const commissionAmount = Number((Number(finalAmount) * COMMISSION_RATE).toFixed(2));
+    const commissionAmount = Number(
+      (Number(finalAmount) * COMMISSION_RATE).toFixed(2),
+    );
 
     task.status = TaskStatus.COMPLETED;
     task.completedAt = new Date();
@@ -310,7 +312,11 @@ export class TasksService {
   /**
    * Add tip to a task
    */
-  async addTip(taskId: string, clientId: string, tipAmount: number): Promise<Task> {
+  async addTip(
+    taskId: string,
+    clientId: string,
+    tipAmount: number,
+  ): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.clientId !== clientId) {

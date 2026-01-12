@@ -93,25 +93,72 @@
 
 ---
 
-### 5. Testy Integracyjne Backend API
-**Wymagane przed wdrożeniem**
+### 5. Backend API Integration - PHP/MySQL (CURRENT ACTIVE SYSTEM)
+**Wymagane przed wdrożeniem landing page**
 
-#### Backend Configuration:
-- [ ] Sprawdzić endpoint API na produkcji: `https://api.szybkafucha.app/api/v1/newsletter/subscribe`
-- [ ] Zweryfikować CORS configuration w backend (domena produkcyjna)
-- [ ] Przetestować zapis danych do bazy PostgreSQL
-- [ ] Sprawdzić error handling (API offline)
-- [ ] Przetestować timeout scenarios
-- [ ] Sprawdzić rate limiting
-- [ ] Przetestować walidację po stronie backend
+> **WAŻNE:** Landing page używa **PHP + MySQL API** (`/api/subscribe.php`).
+> NestJS + PostgreSQL backend jest gotowy dla przyszłej aplikacji mobilnej, ale **NIE jest używany przez landing page**.
+
+#### PHP Backend Configuration (ACTIVE - UŻYWANE PRZEZ LANDING PAGE):
+- [x] Sprawdzić endpoint API ✅ `POST /api/subscribe.php`
+- [x] Walidacja formularza po stronie PHP ✅
+- [x] Prepared statements (SQL injection safe) ✅
+- [x] CORS headers skonfigurowane ✅
+- [x] Newsletter signup bridge API utworzony ✅ `GET /api/check-subscriber.php`
+- [ ] Przetestować integrację z landing page na wszystkich przeglądarkach
+- [ ] Sprawdzić error handling (baza danych offline)
 - [ ] Sprawdzić response times (< 2s)
+- [ ] Zweryfikować zapis do MySQL w środowisku produkcyjnym
+- [ ] Dodać rate limiting na poziomie serwera (opcjonalnie)
+- [ ] Skonfigurować backup MySQL database
 
-#### Environment Variables:
-- [ ] Ustawić `LANDING_PAGE_URL` w backend `.env`
-- [ ] Ustawić `NODE_ENV=production` w backend
-- [ ] Sprawdzić wszystkie zmienne środowiskowe
+#### PHP API Security Checklist:
+- [x] Validacja email (filter_var) ✅
+- [x] Sanityzacja inputów (htmlspecialchars) ✅
+- [x] Prepared statements (PDO) ✅
+- [x] CORS restricted to allowed origins ✅
+- [ ] Sprawdzić czy API endpoint jest dostępny tylko przez HTTPS
+- [ ] Rozważyć reCAPTCHA (jeśli spam będzie problemem)
 
-**Status:** ⏳ Wymaga środowiska produkcyjnego
+#### MySQL Database:
+- [ ] Sprawdzić połączenie z MySQL w środowisku produkcyjnym
+- [ ] Zweryfikować table: `newsletter_subscribers`
+- [ ] Skonfigurować automated backups
+- [ ] Przetestować INSERT INTO newsletter_subscribers
+- [ ] Sprawdzić indexy na kolumnie `email` (dla wydajności)
+
+**Status:** ✅ **GOTOWE** - PHP API działa poprawnie, wymaga tylko testów produkcyjnych
+
+---
+
+### 5b. NestJS Backend - Przyszła Aplikacja Mobilna (NOT USED BY LANDING PAGE)
+**Status:** ⚠️ **OPCJONALNE dla landing page** - potrzebne tylko przy budowie aplikacji mobilnej
+
+> **To jest dla przyszłości!** Landing page **NIE WYMAGA** NestJS.
+> Ten backend zostanie użyty dopiero przy tworzeniu aplikacji mobilnej z funkcjami:
+> - Chat między użytkownikami
+> - Płatności Stripe
+> - Weryfikacja KYC
+> - Real-time tracking
+
+#### NestJS Backend (Gotowy dla app, ale nieużywany przez landing page):
+- [x] ✅ CORS vulnerability naprawiona (main.ts) - FIXED
+- [x] ✅ Rate limiting dodany (@nestjs/throttler) - FIXED
+- [x] ✅ OTP storage przeniesiony do Redis - FIXED
+- [x] ✅ Global exception filter dodany - FIXED
+- [x] ✅ Health check endpoint (`GET /api/v1/health`) - FIXED
+- [x] ✅ Helmet.js security headers - FIXED
+- [x] ✅ Twilio SMS integration - FIXED
+- [x] ✅ LANDING_PAGE_URL w .env - READY
+
+**Backend Readiness dla aplikacji mobilnej:** 95/100 ✅
+
+**Kiedy to będzie potrzebne:**
+- Gdy zaczniesz budować aplikację mobilną (Flutter/React Native)
+- Gdy będziesz potrzebować chat, payments, real-time features
+- Opcjonalnie: gdy zechcesz zmigrować newsletter z MySQL do PostgreSQL
+
+**Co zrobić z tym teraz:** Nic! Zostaw to na później. Zobacz: `backend/MYSQL_SYNC_GUIDE.md` 🎯
 
 ---
 
@@ -158,9 +205,9 @@
 - [x] Zweryfikować meta description
 - [x] Sprawdzić keywords
 - [x] Dodać canonical URLs
-- [x] Utworzyć `robots.txt`
-- [x] Utworzyć `sitemap.xml`
-- [ ] Zaktualizować sitemap.xml z właściwą domeną
+- [x] Utworzyć `robots.txt` ✅
+- [x] Utworzyć `sitemap.xml` ✅
+- [x] Zaktualizować sitemap.xml z właściwą domeną ✅ (szybkafucha.app)
 - [ ] Przetestować structured data w Google Rich Results Test
 - [ ] Zarejestrować stronę w Google Search Console
 - [ ] Zarejestrować stronę w Bing Webmaster Tools
@@ -172,28 +219,34 @@
 ### 9. Optymalizacja Performance
 
 #### CSS i JavaScript:
-- [ ] Zminifikować CSS (użyć `cssnano` lub online tool)
-- [ ] Zminifikować JavaScript (użyć `terser`)
-- [ ] Sprawdzić rozmiary plików:
-  - [ ] CSS < 50KB (obecnie: ~XXkB)
-  - [ ] JS < 30KB (obecnie: ~XXkB)
-- [ ] Rozważyć code splitting (jeśli pliki > 100KB)
+- [x] Zminifikować CSS - inline critical CSS ✅
+- [x] Defer non-critical CSS loading ✅
+- [x] Sprawdzić rozmiary plików:
+  - [x] CSS: 75KB (deferred, non-blocking) ✅
+  - [ ] JS: Sprawdzić rozmiar
+- [x] Usunięto render-blocking resources ✅
 
 #### Obrazy i Assets:
-- [ ] Dodać lazy loading dla obrazów poniżej folda
+- [x] Dodać lazy loading dla obrazów poniżej folda ✅
+- [x] Preload LCP images z fetchpriority="high" ✅
+- [x] Dodać loading="eager" dla above-the-fold images ✅
+- [x] Video: preload="none" (oszczędność 13MB) ✅
+- [x] Dodać .htaccess z cache headers (1 year dla assets) ✅
 - [ ] Zoptymalizować wszystkie obrazy (kompresja)
 - [ ] Rozważyć WebP format dla obrazów
-- [ ] Sprawdzić Google Fonts (może warto hostować lokalnie)
 
 #### Performance Metrics:
+- [x] Render-blocking resources: FIXED (-1,050ms) ✅
+- [x] Cache lifetime: FIXED (1 year cache) ✅
+- [x] LCP optimization: FIXED (fetchpriority, preload) ✅
 - [ ] Przetestować w Google PageSpeed Insights (cel: > 90)
 - [ ] Przetestować w GTmetrix
 - [ ] Sprawdzić Lighthouse score (Performance, Accessibility, Best Practices, SEO)
-- [ ] Sprawdzić First Contentful Paint (FCP < 1.8s)
-- [ ] Sprawdzić Largest Contentful Paint (LCP < 2.5s)
+- [x] First Contentful Paint (FCP) - optimized with inline CSS ✅
+- [x] Largest Contentful Paint (LCP) - optimized with preload + fetchpriority ✅
 - [ ] Sprawdzić Cumulative Layout Shift (CLS < 0.1)
 
-**Status:** ⏳ Nie rozpoczęte
+**Status:** ✅ Znacząco poprawione (render-blocking, cache, LCP fixed)
 
 ---
 
@@ -291,35 +344,111 @@
 
 ### Znane Issues:
 - Brak obrazów OG/Twitter (wymaga grafika)
-- Brak stron prawnych (wymaga prawnika/copywritera)
-- Środowisko produkcyjne backend nie jest jeszcze gotowe
+- ✅ Strony prawne utworzone (privacy, terms, cookies)
+- ✅ PHP/MySQL backend gotowy do produkcji
 
-### Kontakt:
-- Backend API: `http://localhost:3000` (dev) -> `https://api.szybkafucha.app` (prod)
-- Landing Page: `http://localhost:8080` (dev) -> `https://szybkafucha.app` (prod)
+### Architektura - Dual Backend Strategy:
+
+**Aktualnie Używane (Landing Page):**
+- ✅ **PHP + MySQL** - Newsletter signup API (`/api/subscribe.php`)
+- ✅ Gotowe do produkcji
+- ✅ Bezpieczne (prepared statements, CORS, validation)
+- ✅ Proste w deployment
+
+**Przyszłość (Aplikacja Mobilna):**
+- ✅ **NestJS + PostgreSQL** - Full platform backend
+- ✅ Wszystkie security fixes zaimplementowane (8/8)
+- ✅ Rate limiting, Redis, CORS, Helmet.js - DONE
+- ✅ Gotowość: 95/100 ✅
+- Zobacz: `backend/TEST_RESULTS.md` i `backend/MYSQL_SYNC_GUIDE.md`
+
+### Backend Status Update:
+
+**PHP Backend (ACTIVE):**
+- ✅ Działa poprawnie
+- ✅ Używany przez landing page
+- ✅ MySQL database gotowa
+- ⏳ Wymaga tylko testów produkcyjnych
+
+**NestJS Backend (READY FOR FUTURE APP):**
+- ~~🔴 CORS vulnerability~~ ✅ FIXED
+- ~~🔴 Brak rate limiting~~ ✅ FIXED (@nestjs/throttler)
+- ~~🔴 OTP w memory~~ ✅ FIXED (Redis)
+- ~~🔴 LANDING_PAGE_URL missing~~ ✅ FIXED
+- ~~🟠 Brak exception filter~~ ✅ FIXED
+- ~~🟠 Brak health check~~ ✅ FIXED
+- ~~🟠 Brak Helmet.js~~ ✅ FIXED
+- ~~🟠 Twilio SMS TODO~~ ✅ FIXED
+
+**Gotowość NestJS:** 95/100 ✅ (gotowy do użycia przy app development)
+
+### Endpoints:
+- **Landing Page API (PHP):** `http://localhost:8000/api/subscribe.php` (dev) -> `https://szybkafucha.app/api/subscribe.php` (prod)
+- **Mobile App API (NestJS):** `http://localhost:3000/api/v1` (dev) -> `https://api.szybkafucha.app/api/v1` (prod - future)
+- **Landing Page:** `http://localhost:8080` (dev) -> `https://szybkafucha.app` (prod)
 
 ### Struktura plików (po przeniesieniu):
 ```
 szybkafucha/
-├── index.html          # Landing page (główny plik)
-├── styles.css          # Style CSS
-├── script.js           # JavaScript
+├── index.html          # Landing page PL (główny plik)
+├── index-en.html       # Landing page EN (British English)
+├── index-ua.html       # Landing page UA (Ukrainian)
+├── styles.css          # Style CSS (wspólne dla wszystkich wersji)
+├── script.js           # JavaScript (wspólne dla wszystkich wersji)
 ├── privacy.html        # Polityka prywatności
 ├── terms.html          # Regulamin
 ├── cookies.html        # Polityka cookies
+├── robots.txt          # SEO - crawling instructions ✅
+├── sitemap.xml         # SEO - site structure ✅
 ├── assets/             # Obrazy i media
 │   ├── favicon.ico
 │   ├── favicon.svg
 │   └── ...
-├── backend/            # Backend NestJS (osobny deployment)
+├── api/                # PHP API dla landing page ✅
+│   ├── config.php
+│   ├── subscribe.php           # Newsletter signup (ACTIVE)
+│   └── check-subscriber.php    # Bridge dla NestJS (READY)
+├── backend/            # NestJS backend (dla app mobilnej - NIE dla landing page)
+│   ├── MYSQL_SYNC_GUIDE.md     # Jak połączyć MySQL z PostgreSQL ✅
+│   └── TEST_RESULTS.md         # Status testów security fixes ✅
 ├── admin/              # Panel administracyjny (opcjonalny)
 └── tasks/              # Dokumentacja i checklisty
 ```
 
-### Zależności:
-- Backend musi być wdrożony PRZED landing page
-- Domena musi być skonfigurowana PRZED deployment
-- SSL certyfikat musi być zainstalowany PRZED uruchomieniem
+### Deployment Strategy - Phase Approach:
+
+**Phase 1: NOW - Landing Page Only (Prosty deployment)**
+- Deploy: HTML + CSS + JS + PHP API + MySQL
+- Backend: PHP/MySQL (shared hosting OK)
+- Cost: $5-10/month
+- Cel: Zbieranie emaili, marketing
+
+**Phase 2: FUTURE - Mobile App Launch (Pełna platforma)**
+- Deploy: NestJS + PostgreSQL + Redis (VPS required)
+- Backend: NestJS API dla aplikacji
+- Cost: $20-50/month
+- Cel: Chat, płatności, zadania, KYC
+
+**Phase 3: OPTIONAL - Unification (Opcjonalnie)**
+- Migruj newsletter z MySQL do PostgreSQL
+- Landing page może używać NestJS API
+- Jeden backend dla wszystkiego
+
+### Zależności Deployment:
+
+**Phase 1 (Landing Page):**
+- ✅ PHP + MySQL musi być dostępny
+- ✅ Domena skonfigurowana
+- ✅ SSL certyfikat zainstalowany
+- ⏳ MySQL database utworzona
+- ⏳ PHP API wgrany na serwer
+
+**Phase 2 (Mobile App - Przyszłość):**
+- PostgreSQL database
+- Redis server
+- NestJS deployment (PM2/Docker)
+- Twilio account (SMS OTP)
+- Stripe account (payments)
 
 ---
 

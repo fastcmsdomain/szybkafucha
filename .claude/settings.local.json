@@ -6,7 +6,22 @@
       "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
       "Bash(npm run build:*)",
       "Bash(/opt/homebrew/bin/npm run build)",
-      "Bash(source ~/.zshrc)"
+      "Bash(source ~/.zshrc)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(lsof:*)",
+      "Bash(docker ps:*)",
+      "Bash(npm run typeorm:*)",
+      "Bash(npx typeorm migration:create:*)",
+      "Bash(docker exec:*)",
+      "Bash(npm run migration:run:*)",
+      "Bash(npm run migration:show:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(git add:*)"
     ]
   }
 }
