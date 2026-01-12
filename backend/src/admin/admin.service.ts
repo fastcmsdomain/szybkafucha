@@ -98,7 +98,7 @@ export class AdminService {
       .groupBy('task.status')
       .getRawMany<{ status: TaskStatus; count: string }>();
 
-    const byStatus: Record<TaskStatus, number> = {};
+    const byStatus: Partial<Record<TaskStatus, number>> = {};
     for (const { status, count } of tasksByStatus) {
       byStatus[status] = parseInt(count, 10);
     }
