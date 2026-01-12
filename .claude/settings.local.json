@@ -23,7 +23,8 @@
       "Bash(npm run test:e2e:*)",
       "Bash(git add:*)",
       "Bash(/opt/homebrew/bin/npm test -- --testPathPattern=\"auth.service.spec.ts\" --passWithNoTests)",
-      "Bash(source ~/.nvm/nvm.sh)"
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(curl:*)"
     ]
   }
 }

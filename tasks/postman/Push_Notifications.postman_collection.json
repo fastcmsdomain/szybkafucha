@@ -1,0 +1,158 @@
+{
+  "info": {
+    "_postman_id": "push-notifications-test",
+    "name": "Szybka Fucha - Push Notifications",
+    "description": "Test collection for push notification endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Login (Get Auth Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('authToken', jsonData.access_token);",
+              "    console.log('Token saved!');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+48123456789\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/phone/request-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "phone", "request-otp"]
+        },
+        "description": "Request OTP for phone authentication. In mock mode, use code 123456 to verify."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Verify OTP (Get JWT)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('authToken', jsonData.access_token);",
+              "    console.log('Auth token saved: ' + jsonData.access_token.substring(0, 20) + '...');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+48123456789\",\n  \"code\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/phone/verify",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "phone", "verify"]
+        },
+        "description": "Verify OTP and get JWT token. In mock mode, use code 123456."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Register FCM Token",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fcmToken\": \"test-fcm-token-from-firebase-sdk-12345\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/users/me/fcm-token",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "me", "fcm-token"]
+        },
+        "description": "Register or update FCM token for push notifications. The token comes from Firebase SDK on mobile."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Current User (Verify FCM Token)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["users", "me"]
+        },
+        "description": "Get current user profile to verify FCM token was saved."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Verify server is running and NotificationsModule is loaded."
+      },
+      "response": []
+    }
+  ]
+}
