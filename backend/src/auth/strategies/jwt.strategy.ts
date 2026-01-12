@@ -7,11 +7,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
+import { UserStatus, UserType } from '../../users/entities/user.entity';
+import { AuthenticatedUser } from '../types/auth-user.type';
 
 // JWT payload interface
 export interface JwtPayload {
   sub: string; // User ID
-  type: string; // User type (client/contractor)
+  type: UserType; // User type (client/contractor)
   iat?: number;
   exp?: number;
 }
@@ -38,14 +40,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * Validate the JWT payload and return user data
    * This data will be attached to the request object
    */
-  async validate(payload: JwtPayload) {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.usersService.findById(payload.sub);
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    if (user.status === 'banned' || user.status === 'suspended') {
+    if (
+      user.status === UserStatus.BANNED ||
+      user.status === UserStatus.SUSPENDED
+    ) {
       throw new UnauthorizedException('Account is suspended or banned');
     }
 

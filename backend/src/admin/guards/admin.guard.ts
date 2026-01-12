@@ -1,7 +1,7 @@
 /**
  * Admin Guard
  * Restricts access to admin users only
- * 
+ *
  * For MVP, admin users are identified by email ending with @szybkafucha.pl
  * In production, implement proper role-based access control
  */
@@ -11,18 +11,19 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
+import { AuthenticatedUser } from '../../auth/types/auth-user.type';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   // Admin email domains/addresses (can be moved to config)
-  private readonly adminEmails = [
-    'admin@szybkafucha.pl',
-  ];
+  private readonly adminEmails = ['admin@szybkafucha.pl'];
 
   private readonly adminDomain = '@szybkafucha.pl';
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: AuthenticatedUser }>();
     const user = request.user;
 
     if (!user) {

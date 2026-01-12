@@ -17,6 +17,8 @@ import {
 import type { RawBodyRequest } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { Request as ExpressRequest } from 'express';
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('payments')
 export class PaymentsController {
@@ -29,7 +31,7 @@ export class PaymentsController {
    */
   @UseGuards(JwtAuthGuard)
   @Post('connect/onboard')
-  async createConnectAccount(@Request() req: any) {
+  async createConnectAccount(@Request() req: AuthenticatedRequest) {
     return this.paymentsService.createConnectAccount(
       req.user.id,
       req.user.email,
@@ -43,7 +45,7 @@ export class PaymentsController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('connect/status')
-  async getConnectStatus(@Request() req: any) {
+  async getConnectStatus(@Request() req: AuthenticatedRequest) {
     return this.paymentsService.getAccountStatus(req.user.id);
   }
 
@@ -55,7 +57,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @Post('create-intent')
   async createPaymentIntent(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('taskId') taskId: string,
   ) {
     return this.paymentsService.createPaymentIntent(taskId, req.user.id);
@@ -124,7 +126,7 @@ export class PaymentsController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('/earnings')
-  async getEarnings(@Request() req: any) {
+  async getEarnings(@Request() req: AuthenticatedRequest) {
     return this.paymentsService.getContractorEarnings(req.user.id);
   }
 
@@ -136,7 +138,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @Post('/earnings/withdraw')
   async requestWithdrawal(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('amount') amount: number,
   ) {
     return this.paymentsService.requestPayout(req.user.id, amount);
@@ -149,7 +151,7 @@ export class PaymentsController {
    */
   @Post('webhook')
   async handleWebhook(
-    @Req() req: RawBodyRequest<Request>,
+    @Req() req: RawBodyRequest<ExpressRequest>,
     @Headers('stripe-signature') signature: string,
   ) {
     const payload = req.rawBody;

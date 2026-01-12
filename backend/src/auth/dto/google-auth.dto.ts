@@ -1,7 +1,14 @@
 /**
  * Google Auth DTO
  */
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsEnum, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEmail,
+  IsEnum,
+  IsUrl,
+} from 'class-validator';
 import { UserType } from '../../users/entities/user.entity';
 
 export class GoogleAuthDto {

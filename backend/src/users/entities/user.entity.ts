@@ -8,8 +8,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
-  OneToMany,
 } from 'typeorm';
 
 // User type enum
