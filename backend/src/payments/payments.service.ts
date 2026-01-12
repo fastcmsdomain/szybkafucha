@@ -17,6 +17,8 @@ import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/constants/notification-templates';
 
 @Injectable()
 export class PaymentsService {
@@ -34,6 +36,7 @@ export class PaymentsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
 
@@ -354,7 +357,22 @@ export class PaymentsService {
     if (!this.stripe) {
       payment.status = PaymentStatus.CAPTURED;
       payment.stripeTransferId = `tr_mock_${Date.now()}`;
-      return this.paymentRepository.save(payment);
+      const savedPayment = await this.paymentRepository.save(payment);
+
+      // Notify contractor about payment received
+      const task = await this.taskRepository.findOne({ where: { id: taskId } });
+      if (task?.contractorId) {
+        this.notificationsService.sendToUser(
+          task.contractorId,
+          NotificationType.PAYMENT_RECEIVED,
+          {
+            amount: payment.contractorAmount || 0,
+            taskTitle: task.title,
+          },
+        ).catch((err) => this.logger.error(`Failed to send PAYMENT_RECEIVED notification: ${err}`));
+      }
+
+      return savedPayment;
     }
 
     try {
@@ -370,7 +388,22 @@ export class PaymentsService {
         payment.stripeTransferId = paymentIntent.latest_charge as string;
       }
 
-      return this.paymentRepository.save(payment);
+      const savedPayment = await this.paymentRepository.save(payment);
+
+      // Notify contractor about payment received
+      const task = await this.taskRepository.findOne({ where: { id: taskId } });
+      if (task?.contractorId) {
+        this.notificationsService.sendToUser(
+          task.contractorId,
+          NotificationType.PAYMENT_RECEIVED,
+          {
+            amount: payment.contractorAmount || 0,
+            taskTitle: task.title,
+          },
+        ).catch((err) => this.logger.error(`Failed to send PAYMENT_RECEIVED notification: ${err}`));
+      }
+
+      return savedPayment;
     } catch (error) {
       this.logger.error('Failed to capture payment:', error);
       throw new InternalServerErrorException('Failed to capture payment');
@@ -411,7 +444,22 @@ export class PaymentsService {
     if (!this.stripe) {
       payment.status = PaymentStatus.REFUNDED;
       payment.refundReason = reason;
-      return this.paymentRepository.save(payment);
+      const savedPayment = await this.paymentRepository.save(payment);
+
+      // Notify client about refund
+      const task = await this.taskRepository.findOne({ where: { id: taskId } });
+      if (task) {
+        this.notificationsService.sendToUser(
+          task.clientId,
+          NotificationType.PAYMENT_REFUNDED,
+          {
+            amount: payment.amount,
+            taskTitle: task.title,
+          },
+        ).catch((err) => this.logger.error(`Failed to send PAYMENT_REFUNDED notification: ${err}`));
+      }
+
+      return savedPayment;
     }
 
     try {
@@ -431,7 +479,22 @@ export class PaymentsService {
 
       payment.status = PaymentStatus.REFUNDED;
       payment.refundReason = reason;
-      return this.paymentRepository.save(payment);
+      const savedPayment = await this.paymentRepository.save(payment);
+
+      // Notify client about refund
+      const task = await this.taskRepository.findOne({ where: { id: taskId } });
+      if (task) {
+        this.notificationsService.sendToUser(
+          task.clientId,
+          NotificationType.PAYMENT_REFUNDED,
+          {
+            amount: payment.amount,
+            taskTitle: task.title,
+          },
+        ).catch((err) => this.logger.error(`Failed to send PAYMENT_REFUNDED notification: ${err}`));
+      }
+
+      return savedPayment;
     } catch (error) {
       this.logger.error('Failed to refund payment:', error);
       throw new InternalServerErrorException('Failed to process refund');

@@ -234,18 +234,27 @@
   - [x] 10.8 Create KYC status check endpoint
   - [x] 10.9 Write tests for KYC flow
 
-- [ ] **11.0 Push Notifications**
-  - [ ] 11.1 Set up Firebase project
-  - [ ] 11.2 Install Firebase Admin SDK: `npm install firebase-admin`
-  - [ ] 11.3 Create `NotificationsService`
-  - [ ] 11.4 Implement device token registration
-  - [ ] 11.5 Implement notification templates:
-    - `new_task` - contractor receives new task alert
+- [x] **11.0 Push Notifications**
+  - [x] 11.1 Set up Firebase project (placeholder config for dev/mock mode)
+  - [x] 11.2 Install Firebase Admin SDK: `npm install firebase-admin`
+  - [x] 11.3 Create `NotificationsService` with mock mode support
+  - [x] 11.4 Implement device token registration (`PUT /users/me/fcm-token`)
+  - [x] 11.5 Implement notification templates (20+ types):
+    - `new_task_nearby` - contractor receives new task alert
     - `task_accepted` - client notified contractor accepted
+    - `task_started` - client notified contractor started work
     - `task_completed` - client notified to confirm
-    - `payment_received` - contractor received payment
+    - `task_confirmed` - contractor notified client confirmed
+    - `task_cancelled` - both parties notified of cancellation
+    - `task_rated` - user received rating
+    - `tip_received` - contractor received tip
     - `new_message` - chat message received
-  - [ ] 11.6 Write tests for notification sending
+    - `payment_received` - contractor received payment
+    - `payment_refunded` - client received refund
+    - `kyc_document_verified`, `kyc_selfie_verified`, `kyc_bank_verified`, `kyc_complete` - KYC status updates
+  - [x] 11.6 Write tests for notification sending
+  - [x] Integration with TasksService, MessagesService, PaymentsService, KycService
+  - [x] Documentation: `backend/docs/PUSH_NOTIFICATIONS.md`
 
 - [x] **12.0 Admin Dashboard Backend**
   - [x] 12.1 Create `AdminModule` with guards (admin role only)

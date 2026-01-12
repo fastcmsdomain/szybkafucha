@@ -12,6 +12,7 @@ import { KycCheck, KycCheckType, KycCheckStatus, KycCheckResult } from './entiti
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
 import { DocumentType } from './dto/kyc.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /* eslint-disable @typescript-eslint/unbound-method */
 
@@ -100,6 +101,11 @@ describe('KycService', () => {
       }),
     };
 
+    const mockNotificationsService = {
+      sendToUser: jest.fn().mockResolvedValue({ success: true }),
+      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         KycService,
@@ -107,6 +113,7 @@ describe('KycService', () => {
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: getRepositoryToken(ContractorProfile), useValue: mockProfileRepository },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

@@ -58,6 +58,22 @@ export class UsersController {
   }
 
   /**
+   * PUT /users/me/fcm-token
+   * Updates FCM token for push notifications
+   */
+  @UseGuards(JwtAuthGuard)
+  @Put('me/fcm-token')
+  async updateFcmToken(
+    @Request() req: AuthenticatedRequest,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    if (!fcmToken || typeof fcmToken !== 'string') {
+      throw new BadRequestException('FCM token is required');
+    }
+    return this.usersService.updateFcmToken(req.user.id, fcmToken);
+  }
+
+  /**
    * POST /users/me/avatar
    * Uploads avatar image to storage
    * Accepts multipart/form-data with 'file' field

@@ -10,6 +10,7 @@ import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
 import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -90,6 +91,11 @@ describe('TasksService', () => {
       sendToUser: jest.fn().mockReturnValue(true),
     };
 
+    const mockNotificationsService = {
+      sendToUser: jest.fn().mockResolvedValue({ success: true }),
+      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -97,6 +103,7 @@ describe('TasksService', () => {
         { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
         { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
         { provide: RealtimeGateway, useValue: mockRealtimeGateway },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

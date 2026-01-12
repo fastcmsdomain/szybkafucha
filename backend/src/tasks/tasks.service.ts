@@ -19,6 +19,8 @@ import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/constants/notification-templates';
 
 // Platform commission percentage
 const COMMISSION_RATE = 0.17;
@@ -59,6 +61,7 @@ export class TasksService {
     private readonly contractorProfileRepository: Repository<ContractorProfile>,
     @Inject(forwardRef(() => RealtimeGateway))
     private readonly realtimeGateway: RealtimeGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -166,7 +169,21 @@ export class TasksService {
     task.status = TaskStatus.ACCEPTED;
     task.acceptedAt = new Date();
 
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Get contractor profile for name
+    const contractorProfile = await this.contractorProfileRepository.findOne({
+      where: { userId: contractorId },
+      relations: ['user'],
+    });
+
+    // Notify client that task was accepted
+    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
+      taskTitle: task.title,
+      contractorName: contractorProfile?.user?.name || 'Wykonawca',
+    }).catch((err) => this.logger.error(`Failed to send TASK_ACCEPTED notification: ${err}`));
+
+    return savedTask;
   }
 
   /**
@@ -186,7 +203,21 @@ export class TasksService {
     task.status = TaskStatus.IN_PROGRESS;
     task.startedAt = new Date();
 
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Get contractor profile for name
+    const contractorProfile = await this.contractorProfileRepository.findOne({
+      where: { userId: contractorId },
+      relations: ['user'],
+    });
+
+    // Notify client that task was started
+    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_STARTED, {
+      taskTitle: task.title,
+      contractorName: contractorProfile?.user?.name || 'Wykonawca',
+    }).catch((err) => this.logger.error(`Failed to send TASK_STARTED notification: ${err}`));
+
+    return savedTask;
   }
 
   /**
@@ -219,7 +250,14 @@ export class TasksService {
     task.commissionAmount = commissionAmount;
     task.completionPhotos = completionPhotos || null;
 
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Notify client that task was completed
+    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
+      taskTitle: task.title,
+    }).catch((err) => this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`));
+
+    return savedTask;
   }
 
   /**
@@ -234,6 +272,13 @@ export class TasksService {
 
     if (task.status !== TaskStatus.COMPLETED) {
       throw new BadRequestException('Task must be completed first');
+    }
+
+    // Notify contractor that task was confirmed
+    if (task.contractorId) {
+      this.notificationsService.sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
+        taskTitle: task.title,
+      }).catch((err) => this.logger.error(`Failed to send TASK_CONFIRMED notification: ${err}`));
     }
 
     // Task is confirmed - payment will be released
@@ -271,7 +316,20 @@ export class TasksService {
     task.cancelledAt = new Date();
     task.cancellationReason = reason || null;
 
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Notify both parties about cancellation
+    const notifyUserIds = [task.clientId, task.contractorId].filter(Boolean) as string[];
+    for (const notifyUserId of notifyUserIds) {
+      if (notifyUserId !== userId) { // Don't notify the one who cancelled
+        this.notificationsService.sendToUser(notifyUserId, NotificationType.TASK_CANCELLED, {
+          taskTitle: task.title,
+          reason: reason || 'Brak podanego powodu',
+        }).catch((err) => this.logger.error(`Failed to send TASK_CANCELLED notification: ${err}`));
+      }
+    }
+
+    return savedTask;
   }
 
   /**
@@ -306,7 +364,15 @@ export class TasksService {
       comment: dto.comment,
     });
 
-    return this.ratingsRepository.save(rating);
+    const savedRating = await this.ratingsRepository.save(rating);
+
+    // Notify the rated user
+    this.notificationsService.sendToUser(toUserId, NotificationType.TASK_RATED, {
+      taskTitle: task.title,
+      rating: dto.rating,
+    }).catch((err) => this.logger.error(`Failed to send TASK_RATED notification: ${err}`));
+
+    return savedRating;
   }
 
   /**
@@ -328,7 +394,17 @@ export class TasksService {
     }
 
     task.tipAmount = tipAmount;
-    return this.tasksRepository.save(task);
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Notify contractor about tip
+    if (task.contractorId) {
+      this.notificationsService.sendToUser(task.contractorId, NotificationType.TIP_RECEIVED, {
+        taskTitle: task.title,
+        tipAmount,
+      }).catch((err) => this.logger.error(`Failed to send TIP_RECEIVED notification: ${err}`));
+    }
+
+    return savedTask;
   }
 
   /**
@@ -498,7 +574,7 @@ export class TasksService {
       },
     };
 
-    // Send to each contractor via WebSocket
+    // Send to each contractor via WebSocket and Push Notification
     for (const ranked of rankedContractors) {
       const sent = this.realtimeGateway.sendToUser(
         ranked.contractorId,
@@ -509,6 +585,17 @@ export class TasksService {
           distance: ranked.distance,
         },
       );
+
+      // Also send push notification for offline contractors
+      this.notificationsService.sendToUser(
+        ranked.contractorId,
+        NotificationType.NEW_TASK_NEARBY,
+        {
+          category: task.category,
+          budget: task.budgetAmount,
+          distance: ranked.distance,
+        },
+      ).catch((err) => this.logger.error(`Failed to send NEW_TASK_NEARBY push: ${err}`));
 
       if (sent) {
         this.logger.debug(

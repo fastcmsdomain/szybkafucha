@@ -12,6 +12,7 @@ import { TasksController } from './tasks.controller';
 import { UsersModule } from '../users/users.module';
 import { ContractorModule } from '../contractor/contractor.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
     UsersModule,
     ContractorModule,
     forwardRef(() => RealtimeModule),
+    NotificationsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService],

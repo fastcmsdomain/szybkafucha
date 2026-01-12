@@ -10,6 +10,7 @@ import { MessagesService } from './messages.service';
 import { Message } from './entities/message.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('MessagesService', () => {
   let service: MessagesService;
@@ -116,12 +117,18 @@ describe('MessagesService', () => {
       findOne: jest.fn(),
     };
 
+    const mockNotificationsService = {
+      sendToUser: jest.fn().mockResolvedValue({ success: true }),
+      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MessagesService,
         { provide: getRepositoryToken(Message), useValue: mockMessageRepository },
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 
