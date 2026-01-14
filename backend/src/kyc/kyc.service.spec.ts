@@ -22,8 +22,6 @@ import {
 import { DocumentType } from './dto/kyc.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 describe('KycService', () => {
   let service: KycService;
   let kycCheckRepository: jest.Mocked<Repository<KycCheck>>;

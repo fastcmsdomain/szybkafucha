@@ -9,8 +9,6 @@ import { NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User, UserType, UserStatus } from './entities/user.entity';
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 describe('UsersService', () => {
   let service: UsersService;
   let repository: jest.Mocked<Repository<User>>;
@@ -324,7 +322,7 @@ describe('UsersService', () => {
 
   describe('activate', () => {
     it('should activate user', async () => {
-      const pendingUser = { ...mockUser, status: UserStatus.PENDING };
+      const _pendingUser = { ...mockUser, status: UserStatus.PENDING };
       const activeUser = { ...mockUser, status: UserStatus.ACTIVE };
 
       repository.update.mockResolvedValue({

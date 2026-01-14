@@ -13,8 +13,6 @@ import {
 } from './entities/contractor-profile.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 describe('ContractorService', () => {
   let service: ContractorService;
   let repository: jest.Mocked<Repository<ContractorProfile>>;

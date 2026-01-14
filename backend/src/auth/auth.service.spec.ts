@@ -11,8 +11,6 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 
-/* eslint-disable @typescript-eslint/unbound-method */
-
 interface MockCacheManager {
   get: jest.Mock;
   set: jest.Mock;
