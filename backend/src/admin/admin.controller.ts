@@ -62,7 +62,9 @@ export class AdminController {
    * Returns single user details
    */
   @Get('users/:id')
-  async getUser(@Param('id', ParseUUIDPipe) id: string): Promise<UserWithProfile> {
+  async getUser(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserWithProfile> {
     return this.adminService.getUserById(id);
   }
 
@@ -83,7 +85,9 @@ export class AdminController {
    * Get contractor statistics
    */
   @Get('users/:id/contractor-stats')
-  async getContractorStats(@Param('id', ParseUUIDPipe) id: string): Promise<ContractorStats> {
+  async getContractorStats(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ContractorStats> {
     return this.adminService.getContractorStats(id);
   }
 
@@ -127,7 +131,9 @@ export class AdminController {
    * Returns single dispute details
    */
   @Get('disputes/:id')
-  async getDispute(@Param('id', ParseUUIDPipe) id: string): Promise<DisputeDetails> {
+  async getDispute(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DisputeDetails> {
     return this.adminService.getDisputeById(id);
   }
 

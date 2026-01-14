@@ -13,9 +13,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { NewsletterService, type SubscribeResponse } from './newsletter.service';
+import {
+  NewsletterService,
+  type SubscribeResponse,
+} from './newsletter.service';
 import { SubscribeNewsletterDto } from './dto/subscribe-newsletter.dto';
-import { UserType } from './entities/newsletter-subscriber.entity';
 import { AdminGuard } from '../admin/guards/admin.guard';
 
 @Controller('newsletter')
@@ -30,7 +32,9 @@ export class NewsletterController {
   @Post('subscribe')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  async subscribe(@Body() dto: SubscribeNewsletterDto): Promise<SubscribeResponse> {
+  async subscribe(
+    @Body() dto: SubscribeNewsletterDto,
+  ): Promise<SubscribeResponse> {
     return this.newsletterService.subscribe(dto);
   }
 

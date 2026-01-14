@@ -15,6 +15,7 @@ import { ContractorService } from './contractor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('contractor')
 @UseGuards(JwtAuthGuard)
@@ -26,7 +27,7 @@ export class ContractorController {
    * Get current contractor's profile
    */
   @Get('profile')
-  async getProfile(@Request() req: any) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     // Create profile if doesn't exist
     let profile = await this.contractorService.findByUserId(req.user.id);
     if (!profile) {
@@ -41,13 +42,17 @@ export class ContractorController {
    */
   @Put('profile')
   async updateProfile(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateContractorProfileDto,
   ) {
     // Create profile if doesn't exist
-    await this.contractorService.findByUserId(req.user.id) ||
+    const existingProfile = await this.contractorService.findByUserId(
+      req.user.id,
+    );
+    if (!existingProfile) {
       await this.contractorService.create(req.user.id);
-    
+    }
+
     return this.contractorService.update(req.user.id, dto);
   }
 
@@ -57,7 +62,7 @@ export class ContractorController {
    */
   @Put('availability')
   async setAvailability(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('isOnline') isOnline: boolean,
   ) {
     return this.contractorService.setAvailability(req.user.id, isOnline);
@@ -68,7 +73,10 @@ export class ContractorController {
    * Update GPS coordinates
    */
   @Put('location')
-  async updateLocation(@Request() req: any, @Body() dto: UpdateLocationDto) {
+  async updateLocation(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateLocationDto,
+  ) {
     return this.contractorService.updateLocation(req.user.id, dto);
   }
 
@@ -78,7 +86,7 @@ export class ContractorController {
    */
   @Post('kyc/id')
   async submitKycId(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('documentUrl') documentUrl: string,
   ) {
     return this.contractorService.submitKycId(req.user.id, documentUrl);
@@ -90,7 +98,7 @@ export class ContractorController {
    */
   @Post('kyc/selfie')
   async submitKycSelfie(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('selfieUrl') selfieUrl: string,
   ) {
     return this.contractorService.submitKycSelfie(req.user.id, selfieUrl);
@@ -102,10 +110,14 @@ export class ContractorController {
    */
   @Post('kyc/bank')
   async submitKycBank(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body('iban') iban: string,
     @Body('accountHolder') accountHolder: string,
   ) {
-    return this.contractorService.submitKycBank(req.user.id, iban, accountHolder);
+    return this.contractorService.submitKycBank(
+      req.user.id,
+      iban,
+      accountHolder,
+    );
   }
 }

@@ -12,11 +12,25 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { DefaultApi, Configuration, Region } from '@onfido/api';
+import {
+  DefaultApi,
+  Configuration,
+  Region,
+  DocumentTypes,
+  FileTransfer,
+} from '@onfido/api';
 import * as IBAN from 'iban';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
-import { KycCheck, KycCheckType, KycCheckStatus, KycCheckResult } from './entities/kyc-check.entity';
+import {
+  KycCheck,
+  KycCheckType,
+  KycCheckStatus,
+  KycCheckResult,
+} from './entities/kyc-check.entity';
 import {
   UploadIdDocumentDto,
   UploadSelfieDto,
@@ -55,7 +69,10 @@ export class KycService {
       this.onfido = new DefaultApi(config);
     }
 
-    this.webhookSecret = this.configService.get<string>('ONFIDO_WEBHOOK_SECRET', '');
+    this.webhookSecret = this.configService.get<string>(
+      'ONFIDO_WEBHOOK_SECRET',
+      '',
+    );
   }
 
   /**
@@ -63,14 +80,16 @@ export class KycService {
    */
   private async getOrCreateApplicant(userId: string): Promise<string> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     // Check if we already have an applicant ID stored
     const existingCheck = await this.getKycChecksForUser(userId);
-    const applicantId = existingCheck.find(c => c.onfidoApplicantId)?.onfidoApplicantId;
+    const applicantId = existingCheck.find(
+      (c) => c.onfidoApplicantId,
+    )?.onfidoApplicantId;
 
     if (applicantId) {
       return applicantId;
@@ -92,7 +111,9 @@ export class KycService {
       return applicant.data.id;
     } catch (error) {
       this.logger.error('Failed to create Onfido applicant:', error);
-      throw new InternalServerErrorException('Failed to initialize verification');
+      throw new InternalServerErrorException(
+        'Failed to initialize verification',
+      );
     }
   }
 
@@ -123,9 +144,12 @@ export class KycService {
       kycCheck.onfidoCheckId = `mock_check_doc_${Date.now()}`;
       kycCheck.onfidoDocumentId = `mock_doc_${Date.now()}`;
       kycCheck.status = KycCheckStatus.IN_PROGRESS;
-      
+
       // Simulate async verification (would be webhook in production)
-      setTimeout(() => this.mockVerificationComplete(kycCheck.id, 'document'), 5000);
+      setTimeout(
+        () => this.mockVerificationComplete(kycCheck.id, 'document'),
+        5000,
+      );
 
       await this.saveKycCheck(kycCheck);
 
@@ -136,13 +160,20 @@ export class KycService {
     }
 
     try {
+      const documentType = dto.documentType as DocumentTypes;
+      const documentFile = new FileTransfer(
+        Buffer.from(dto.documentFront, 'base64'),
+        'document_front.jpg',
+      );
+
       // Upload document to Onfido
-      // Note: In production, use FileTransfer for proper file handling
       const document = await this.onfido.uploadDocument(
-        dto.documentType as any, // Cast to DocumentTypes
+        documentType,
         applicantId,
-        // For simplicity, using base64 directly - in production use proper file upload
-        Buffer.from(dto.documentFront, 'base64') as any,
+        documentFile,
+        undefined,
+        undefined,
+        dto.issuingCountry,
       );
 
       kycCheck.onfidoDocumentId = document.data.id;
@@ -162,13 +193,15 @@ export class KycService {
         checkId: kycCheck.id,
         status: 'processing',
       };
-    } catch (error: any) {
-      this.logger.error('Failed to upload document:', error);
-      
-      if (error.response?.data?.error) {
-        throw new BadRequestException(`Document verification failed: ${error.response.data.error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = this.getOnfidoErrorMessage(error);
+      if (errorMessage) {
+        throw new BadRequestException(
+          `Document verification failed: ${errorMessage}`,
+        );
       }
-      
+
+      this.logger.error('Failed to upload document', error as Error);
       throw new InternalServerErrorException('Failed to process document');
     }
   }
@@ -204,9 +237,12 @@ export class KycService {
     if (!this.onfido) {
       kycCheck.onfidoCheckId = `mock_check_selfie_${Date.now()}`;
       kycCheck.status = KycCheckStatus.IN_PROGRESS;
-      
+
       // Simulate async verification
-      setTimeout(() => this.mockVerificationComplete(kycCheck.id, 'selfie'), 5000);
+      setTimeout(
+        () => this.mockVerificationComplete(kycCheck.id, 'selfie'),
+        5000,
+      );
 
       await this.saveKycCheck(kycCheck);
 
@@ -217,11 +253,13 @@ export class KycService {
     }
 
     try {
-      // Upload live photo to Onfido
-      await this.onfido.uploadLivePhoto(
-        applicantId,
-        Buffer.from(dto.selfieImage, 'base64') as any,
+      const selfieFile = new FileTransfer(
+        Buffer.from(dto.selfieImage, 'base64'),
+        'selfie.jpg',
       );
+
+      // Upload live photo to Onfido
+      await this.onfido.uploadLivePhoto(applicantId, selfieFile);
 
       // Create facial similarity check
       const check = await this.onfido.createCheck({
@@ -238,13 +276,15 @@ export class KycService {
         checkId: kycCheck.id,
         status: 'processing',
       };
-    } catch (error: any) {
-      this.logger.error('Failed to upload selfie:', error);
-      
-      if (error.response?.data?.error) {
-        throw new BadRequestException(`Selfie verification failed: ${error.response.data.error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = this.getOnfidoErrorMessage(error);
+      if (errorMessage) {
+        throw new BadRequestException(
+          `Selfie verification failed: ${errorMessage}`,
+        );
       }
-      
+
+      this.logger.error('Failed to upload selfie', error as Error);
       throw new InternalServerErrorException('Failed to process selfie');
     }
   }
@@ -273,7 +313,9 @@ export class KycService {
 
     // For Poland, validate it starts with PL
     if (countryCode !== 'PL') {
-      throw new BadRequestException('Only Polish bank accounts (IBAN starting with PL) are supported');
+      throw new BadRequestException(
+        'Only Polish bank accounts (IBAN starting with PL) are supported',
+      );
     }
 
     // Create KYC check record
@@ -319,7 +361,7 @@ export class KycService {
       idVerified: profile.kycIdVerified,
       selfieVerified: profile.kycSelfieVerified,
       bankVerified: profile.kycBankVerified,
-      checks: checks.map(c => ({
+      checks: checks.map((c) => ({
         id: c.id,
         type: c.type,
         status: c.status,
@@ -333,15 +375,21 @@ export class KycService {
   /**
    * Handle Onfido webhook
    */
-  async handleWebhook(payload: OnfidoWebhookPayload, signature: string): Promise<void> {
+  async handleWebhook(
+    payload: OnfidoWebhookPayload,
+    signature: string,
+  ): Promise<void> {
     // In production, verify webhook signature
     // const isValid = this.verifyWebhookSignature(payload, signature);
     // if (!isValid) throw new BadRequestException('Invalid webhook signature');
+    void signature;
 
     this.logger.log(`Onfido webhook received: ${payload.payload.action}`);
 
     if (payload.payload.resource_type !== 'check') {
-      this.logger.log(`Ignoring webhook for resource type: ${payload.payload.resource_type}`);
+      this.logger.log(
+        `Ignoring webhook for resource type: ${payload.payload.resource_type}`,
+      );
       return;
     }
 
@@ -351,7 +399,7 @@ export class KycService {
 
     // Find our KYC check record
     const kycCheck = await this.findKycCheckByOnfidoId(checkId);
-    
+
     if (!kycCheck) {
       this.logger.warn(`KYC check not found for Onfido check ID: ${checkId}`);
       return;
@@ -396,17 +444,41 @@ export class KycService {
       return { token: sdkToken.data.token };
     } catch (error) {
       this.logger.error('Failed to generate SDK token:', error);
-      throw new InternalServerErrorException('Failed to generate verification token');
+      throw new InternalServerErrorException(
+        'Failed to generate verification token',
+      );
     }
   }
 
   // Helper methods
 
-  private async getContractorProfile(userId: string): Promise<ContractorProfile> {
+  private getOnfidoErrorMessage(error: unknown): string | null {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof (error as { response?: unknown }).response === 'object'
+    ) {
+      const response = (
+        error as {
+          response?: { data?: { error?: { message?: string } } };
+        }
+      ).response;
+      return response?.data?.error?.message ?? null;
+    }
+
+    return null;
+  }
+
+  private async getContractorProfile(
+    userId: string,
+  ): Promise<ContractorProfile> {
     const profile = await this.profileRepository.findOne({ where: { userId } });
-    
+
     if (!profile) {
-      throw new NotFoundException('Contractor profile not found. Please complete contractor registration first.');
+      throw new NotFoundException(
+        'Contractor profile not found. Please complete contractor registration first.',
+      );
     }
 
     return profile;
@@ -425,7 +497,9 @@ export class KycService {
     return saved;
   }
 
-  private async findKycCheckByOnfidoId(onfidoCheckId: string): Promise<KycCheck | null> {
+  private async findKycCheckByOnfidoId(
+    onfidoCheckId: string,
+  ): Promise<KycCheck | null> {
     return this.kycCheckRepository.findOne({
       where: { onfidoCheckId },
     });
@@ -441,13 +515,19 @@ export class KycService {
     }
 
     await this.profileRepository.save(profile);
-    this.logger.log(`${kycCheck.type} verification complete for user ${kycCheck.userId}`);
+    this.logger.log(
+      `${kycCheck.type} verification complete for user ${kycCheck.userId}`,
+    );
   }
 
   private async updateOverallKycStatus(userId: string): Promise<void> {
     const profile = await this.getContractorProfile(userId);
 
-    if (profile.kycIdVerified && profile.kycSelfieVerified && profile.kycBankVerified) {
+    if (
+      profile.kycIdVerified &&
+      profile.kycSelfieVerified &&
+      profile.kycBankVerified
+    ) {
       profile.kycStatus = KycStatus.VERIFIED;
       await this.profileRepository.save(profile);
       this.logger.log(`User ${userId} fully KYC verified`);
@@ -460,7 +540,10 @@ export class KycService {
     return `${iban.substring(0, 4)}****${iban.substring(iban.length - 4)}`;
   }
 
-  private async mockVerificationComplete(checkId: string, type: string): Promise<void> {
+  private mockVerificationComplete(
+    checkId: string,
+    type: 'document' | 'selfie',
+  ): void {
     // Simulate webhook callback for mock mode
     this.logger.log(`Mock ${type} verification complete for check ${checkId}`);
     // In real implementation, this would be triggered by Onfido webhook

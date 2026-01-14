@@ -2,7 +2,14 @@
  * Rate Task DTO
  * Data for rating a completed task
  */
-import { IsInt, IsString, IsOptional, Min, Max, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsOptional,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
 export class RateTaskDto {
   @IsInt()

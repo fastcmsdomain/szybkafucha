@@ -2,10 +2,17 @@
  * Contractor Service
  * Business logic for contractor operations
  */
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ContractorProfile, KycStatus } from './entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from './entities/contractor-profile.entity';
 import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 
@@ -81,7 +88,10 @@ export class ContractorService {
   /**
    * Toggle contractor availability
    */
-  async setAvailability(userId: string, isOnline: boolean): Promise<ContractorProfile> {
+  async setAvailability(
+    userId: string,
+    isOnline: boolean,
+  ): Promise<ContractorProfile> {
     const profile = await this.findByUserIdOrFail(userId);
 
     // Cannot go online if not verified
@@ -115,13 +125,17 @@ export class ContractorService {
    * Submit ID document for KYC verification
    * In production, integrate with Onfido API
    */
-  async submitKycId(userId: string, documentUrl: string): Promise<ContractorProfile> {
+  async submitKycId(
+    userId: string,
+    _documentUrl: string,
+  ): Promise<ContractorProfile> {
     const profile = await this.findByUserIdOrFail(userId);
+    void _documentUrl;
 
     // TODO: Send to Onfido for verification
     // For MVP, mark as verified immediately (development only)
     profile.kycIdVerified = true;
-    await this.updateKycStatus(profile);
+    this.updateKycStatus(profile);
 
     return this.contractorRepository.save(profile);
   }
@@ -129,13 +143,17 @@ export class ContractorService {
   /**
    * Submit selfie for KYC verification
    */
-  async submitKycSelfie(userId: string, selfieUrl: string): Promise<ContractorProfile> {
+  async submitKycSelfie(
+    userId: string,
+    _selfieUrl: string,
+  ): Promise<ContractorProfile> {
     const profile = await this.findByUserIdOrFail(userId);
+    void _selfieUrl;
 
     // TODO: Send to Onfido for face match
     // For MVP, mark as verified immediately (development only)
     profile.kycSelfieVerified = true;
-    await this.updateKycStatus(profile);
+    this.updateKycStatus(profile);
 
     return this.contractorRepository.save(profile);
   }
@@ -146,9 +164,10 @@ export class ContractorService {
   async submitKycBank(
     userId: string,
     iban: string,
-    accountHolder: string,
+    _accountHolder: string,
   ): Promise<ContractorProfile> {
     const profile = await this.findByUserIdOrFail(userId);
+    void _accountHolder;
 
     // Validate IBAN format (basic validation)
     if (!this.validateIban(iban)) {
@@ -157,7 +176,7 @@ export class ContractorService {
 
     // TODO: Create Stripe Connect account
     profile.kycBankVerified = true;
-    await this.updateKycStatus(profile);
+    this.updateKycStatus(profile);
 
     return this.contractorRepository.save(profile);
   }
@@ -172,7 +191,8 @@ export class ContractorService {
     const profile = await this.findByUserIdOrFail(userId);
 
     // Calculate new average
-    const totalRatings = profile.ratingCount * Number(profile.ratingAvg) + newRating;
+    const totalRatings =
+      profile.ratingCount * Number(profile.ratingAvg) + newRating;
     profile.ratingCount += 1;
     profile.ratingAvg = Number((totalRatings / profile.ratingCount).toFixed(2));
 
@@ -191,7 +211,7 @@ export class ContractorService {
   /**
    * Update overall KYC status based on individual verifications
    */
-  private async updateKycStatus(profile: ContractorProfile): Promise<void> {
+  private updateKycStatus(profile: ContractorProfile): void {
     if (
       profile.kycIdVerified &&
       profile.kycSelfieVerified &&

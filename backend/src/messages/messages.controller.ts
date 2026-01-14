@@ -18,6 +18,7 @@ import {
 import { MessagesService, MessageResponse } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('tasks/:taskId/messages')
 @UseGuards(JwtAuthGuard)
@@ -31,11 +32,16 @@ export class MessagesController {
   @Get()
   async getMessages(
     @Param('taskId', ParseUUIDPipe) taskId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
     @Query('before') before?: string,
   ): Promise<MessageResponse[]> {
-    return this.messagesService.getTaskMessages(taskId, req.user.id, limit, before);
+    return this.messagesService.getTaskMessages(
+      taskId,
+      req.user.id,
+      limit,
+      before,
+    );
   }
 
   /**
@@ -45,7 +51,7 @@ export class MessagesController {
   @Post()
   async sendMessage(
     @Param('taskId', ParseUUIDPipe) taskId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() dto: CreateMessageDto,
   ): Promise<MessageResponse> {
     return this.messagesService.sendMessage(taskId, req.user.id, dto);
@@ -58,7 +64,7 @@ export class MessagesController {
   @Post('read')
   async markAsRead(
     @Param('taskId', ParseUUIDPipe) taskId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ): Promise<{ updated: number }> {
     return this.messagesService.markAsRead(taskId, req.user.id);
   }
@@ -70,9 +76,12 @@ export class MessagesController {
   @Get('unread-count')
   async getUnreadCount(
     @Param('taskId', ParseUUIDPipe) taskId: string,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ): Promise<{ count: number }> {
-    const count = await this.messagesService.getUnreadCount(taskId, req.user.id);
+    const count = await this.messagesService.getUnreadCount(
+      taskId,
+      req.user.id,
+    );
     return { count };
   }
 }
@@ -90,7 +99,9 @@ export class UnreadMessagesController {
    * Get unread message counts for all user's active tasks
    */
   @Get('unread')
-  async getAllUnreadCounts(@Request() req: any): Promise<{ taskId: string; count: number }[]> {
+  async getAllUnreadCounts(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ taskId: string; count: number }[]> {
     return this.messagesService.getAllUnreadCounts(req.user.id);
   }
 }

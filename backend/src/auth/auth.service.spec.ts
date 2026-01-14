@@ -10,11 +10,19 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 
+/* eslint-disable @typescript-eslint/unbound-method */
+
+interface MockCacheManager {
+  get: jest.Mock;
+  set: jest.Mock;
+  del: jest.Mock;
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
-  let cacheManager: jest.Mocked<any>;
+  let cacheManager: MockCacheManager;
 
   const mockUser: User = {
     id: 'user-123',
@@ -66,9 +74,9 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get(UsersService);
-    jwtService = module.get(JwtService);
-    cacheManager = module.get(CACHE_MANAGER);
+    usersService = module.get<UsersService>(UsersService);
+    jwtService = module.get<JwtService>(JwtService);
+    cacheManager = module.get<MockCacheManager>(CACHE_MANAGER);
   });
 
   describe('generateToken', () => {
@@ -103,10 +111,13 @@ describe('AuthService', () => {
       const result = await service.requestPhoneOtp(phone);
 
       expect(cacheManager.set).toHaveBeenCalled();
-      const setCall = cacheManager.set.mock.calls[0];
-      expect(setCall[0]).toBe(`otp:${phone}`);
-      expect(setCall[1]).toHaveProperty('code');
-      expect(setCall[1].code).toHaveLength(6);
+      const [cacheKey, otpData] = cacheManager.set.mock.calls[0] as [
+        string,
+        { code: string; expiresAt: Date },
+      ];
+      expect(cacheKey).toBe(`otp:${phone}`);
+      expect(otpData).toHaveProperty('code');
+      expect(otpData.code).toHaveLength(6);
       expect(result.message).toBe('OTP sent successfully');
       expect(result.expiresIn).toBe(300); // 5 minutes
     });
@@ -117,8 +128,11 @@ describe('AuthService', () => {
       await service.requestPhoneOtp(phone);
 
       expect(cacheManager.set).toHaveBeenCalled();
-      const setCall = cacheManager.set.mock.calls[0];
-      expect(setCall[0]).toBe('otp:+48123456789');
+      const [cacheKey] = cacheManager.set.mock.calls[0] as [
+        string,
+        { code: string; expiresAt: Date },
+      ];
+      expect(cacheKey).toBe('otp:+48123456789');
     });
   });
 
@@ -144,7 +158,11 @@ describe('AuthService', () => {
       usersService.findByPhone.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
 
-      const result = await service.verifyPhoneOtp(phone, code, UserType.CONTRACTOR);
+      const result = await service.verifyPhoneOtp(
+        phone,
+        code,
+        UserType.CONTRACTOR,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith({
         phone,
@@ -196,7 +214,11 @@ describe('AuthService', () => {
       const googleUser = { ...mockUser, googleId };
       usersService.findByGoogleId.mockResolvedValue(googleUser);
 
-      const result = await service.authenticateWithGoogle(googleId, email, name);
+      const result = await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+      );
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.isNewUser).toBe(false);
@@ -208,16 +230,27 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue({ ...mockUser, googleId });
 
-      const result = await service.authenticateWithGoogle(googleId, email, name);
+      const result = await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+      );
 
-      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, { googleId });
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        googleId,
+      });
       expect(result.isNewUser).toBe(false);
     });
 
     it('should create new user if no existing account found', async () => {
       usersService.findByGoogleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue({ ...mockUser, googleId, email, name });
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        googleId,
+        email,
+        name,
+      });
 
       const result = await service.authenticateWithGoogle(
         googleId,
@@ -261,16 +294,28 @@ describe('AuthService', () => {
 
       const result = await service.authenticateWithApple(appleId, email, name);
 
-      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, { appleId });
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        appleId,
+      });
       expect(result.isNewUser).toBe(false);
     });
 
     it('should create new user if no existing account found', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue({ ...mockUser, appleId, email, name });
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        appleId,
+        email,
+        name,
+      });
 
-      const result = await service.authenticateWithApple(appleId, email, name, UserType.CLIENT);
+      const result = await service.authenticateWithApple(
+        appleId,
+        email,
+        name,
+        UserType.CLIENT,
+      );
 
       expect(usersService.create).toHaveBeenCalledWith({
         appleId,

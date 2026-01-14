@@ -2,7 +2,13 @@
  * KYC DTOs
  * Validation and types for KYC operations
  */
-import { IsString, IsNotEmpty, IsOptional, IsEnum, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  Matches,
+} from 'class-validator';
 
 // Document types supported by Onfido
 export enum DocumentType {

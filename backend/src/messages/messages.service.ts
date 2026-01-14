@@ -69,9 +69,7 @@ export class MessagesService {
       }
     }
 
-    queryBuilder
-      .orderBy('message.createdAt', 'DESC')
-      .take(limit);
+    queryBuilder.orderBy('message.createdAt', 'DESC').take(limit);
 
     const messages = await queryBuilder.getMany();
 
@@ -128,7 +126,10 @@ export class MessagesService {
   /**
    * Mark messages as read
    */
-  async markAsRead(taskId: string, userId: string): Promise<{ updated: number }> {
+  async markAsRead(
+    taskId: string,
+    userId: string,
+  ): Promise<{ updated: number }> {
     // Verify user is authorized for this task
     await this.verifyTaskAccess(taskId, userId);
 
@@ -142,7 +143,9 @@ export class MessagesService {
       .andWhere('readAt IS NULL')
       .execute();
 
-    this.logger.debug(`Marked ${result.affected} messages as read in task ${taskId}`);
+    this.logger.debug(
+      `Marked ${result.affected} messages as read in task ${taskId}`,
+    );
 
     return { updated: result.affected || 0 };
   }
@@ -165,12 +168,16 @@ export class MessagesService {
   /**
    * Get all unread counts for a user's active tasks
    */
-  async getAllUnreadCounts(userId: string): Promise<{ taskId: string; count: number }[]> {
+  async getAllUnreadCounts(
+    userId: string,
+  ): Promise<{ taskId: string; count: number }[]> {
     // Get tasks where user is client or contractor
     const tasks = await this.taskRepository
       .createQueryBuilder('task')
       .select('task.id')
-      .where('task.clientId = :userId OR task.contractorId = :userId', { userId })
+      .where('task.clientId = :userId OR task.contractorId = :userId', {
+        userId,
+      })
       .andWhere('task.status NOT IN (:...completedStatuses)', {
         completedStatuses: ['completed', 'cancelled'],
       })
@@ -197,7 +204,10 @@ export class MessagesService {
   /**
    * Verify user has access to task chat
    */
-  private async verifyTaskAccess(taskId: string, userId: string): Promise<Task> {
+  private async verifyTaskAccess(
+    taskId: string,
+    userId: string,
+  ): Promise<Task> {
     const task = await this.taskRepository.findOne({
       where: { id: taskId },
     });
@@ -207,7 +217,9 @@ export class MessagesService {
     }
 
     if (task.clientId !== userId && task.contractorId !== userId) {
-      throw new ForbiddenException('You are not authorized to access this chat');
+      throw new ForbiddenException(
+        'You are not authorized to access this chat',
+      );
     }
 
     return task;

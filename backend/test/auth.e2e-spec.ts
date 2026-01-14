@@ -9,9 +9,28 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
+interface MockCacheManager {
+  get: (key: string) => Promise<unknown>;
+  set: (key: string, value: unknown, ttl?: number) => Promise<void>;
+  del: (key: string) => Promise<void>;
+}
+
+interface AuthResponse {
+  message?: string;
+  expiresIn?: number;
+  accessToken?: string;
+  user?: {
+    id?: string;
+    type?: string;
+    email?: string;
+    phone?: string;
+    name?: string;
+  };
+}
+
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
-  let cacheManager: any;
+  let cacheManager: MockCacheManager;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -19,10 +38,12 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
-    cacheManager = moduleFixture.get(CACHE_MANAGER);
+    cacheManager = moduleFixture.get<MockCacheManager>(CACHE_MANAGER);
   });
 
   afterAll(async () => {
@@ -36,8 +57,9 @@ describe('AuthController (e2e)', () => {
         .send({ phone: '+48123456789' })
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('OTP sent successfully');
-          expect(res.body.expiresIn).toBe(300);
+          const body = res.body as AuthResponse;
+          expect(body.message).toBe('OTP sent successfully');
+          expect(body.expiresIn).toBe(300);
         });
     });
 
@@ -47,7 +69,8 @@ describe('AuthController (e2e)', () => {
         .send({ phone: '987654321' })
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('OTP sent successfully');
+          const body = res.body as AuthResponse;
+          expect(body.message).toBe('OTP sent successfully');
         });
     });
 
@@ -81,9 +104,10 @@ describe('AuthController (e2e)', () => {
         .send({ phone: testPhone, code: '123456' })
         .expect(200)
         .expect((res) => {
-          expect(res.body.accessToken).toBeDefined();
-          expect(res.body.user).toBeDefined();
-          expect(res.body.user.phone).toBe(testPhone);
+          const body = res.body as AuthResponse;
+          expect(body.accessToken).toBeDefined();
+          expect(body.user).toBeDefined();
+          expect(body.user?.phone).toBe(testPhone);
         });
     });
 
@@ -100,7 +124,8 @@ describe('AuthController (e2e)', () => {
         .send({ phone: testPhone, code: '000000' })
         .expect(400)
         .expect((res) => {
-          expect(res.body.message).toContain('Invalid OTP');
+          const body = res.body as { message?: string };
+          expect(body.message).toContain('Invalid OTP');
         });
     });
 
@@ -116,7 +141,8 @@ describe('AuthController (e2e)', () => {
         .send({ phone: testPhone, code: '123456' })
         .expect(400)
         .expect((res) => {
-          expect(res.body.message).toContain('expired');
+          const body = res.body as { message?: string };
+          expect(body.message).toContain('expired');
         });
     });
 
@@ -139,9 +165,10 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.accessToken).toBeDefined();
-          expect(res.body.user).toBeDefined();
-          expect(res.body.user.email).toBe('testgoogle@example.com');
+          const body = res.body as AuthResponse;
+          expect(body.accessToken).toBeDefined();
+          expect(body.user).toBeDefined();
+          expect(body.user?.email).toBe('testgoogle@example.com');
         });
     });
 
@@ -170,7 +197,8 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.user.type).toBe('contractor');
+          const body = res.body as AuthResponse;
+          expect(body.user?.type).toBe('contractor');
         });
     });
   });
@@ -186,8 +214,9 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.accessToken).toBeDefined();
-          expect(res.body.user).toBeDefined();
+          const body = res.body as AuthResponse;
+          expect(body.accessToken).toBeDefined();
+          expect(body.user).toBeDefined();
         });
     });
 
@@ -199,7 +228,8 @@ describe('AuthController (e2e)', () => {
         })
         .expect(200)
         .expect((res) => {
-          expect(res.body.accessToken).toBeDefined();
+          const body = res.body as AuthResponse;
+          expect(body.accessToken).toBeDefined();
         });
     });
 
@@ -223,7 +253,8 @@ describe('AuthController (e2e)', () => {
           email: 'logout@example.com',
           name: 'Logout Test',
         });
-      authToken = response.body.accessToken;
+      const responseBody = response.body as AuthResponse;
+      authToken = responseBody.accessToken || '';
     });
 
     it('should return success for authenticated user', () => {
@@ -232,14 +263,13 @@ describe('AuthController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body.message).toBe('Logged out successfully');
+          const body = res.body as AuthResponse;
+          expect(body.message).toBe('Logged out successfully');
         });
     });
 
     it('should reject request without authentication', () => {
-      return request(app.getHttpServer())
-        .post('/auth/logout')
-        .expect(401);
+      return request(app.getHttpServer()).post('/auth/logout').expect(401);
     });
 
     it('should reject request with invalid token', () => {
@@ -261,7 +291,8 @@ describe('AuthController (e2e)', () => {
           email: 'protected@example.com',
           name: 'Protected Test',
         });
-      authToken = response.body.accessToken;
+      const responseBody = response.body as AuthResponse;
+      authToken = responseBody.accessToken || '';
     });
 
     it('should allow access to protected route with valid token', () => {
@@ -272,9 +303,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should deny access to protected route without token', () => {
-      return request(app.getHttpServer())
-        .get('/users/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/users/me').expect(401);
     });
 
     it('should deny access with malformed Authorization header', () => {

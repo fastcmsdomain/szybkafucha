@@ -2,17 +2,11 @@
  * Users Controller
  * REST endpoints for user operations
  */
-import {
-  Controller,
-  Get,
-  Put,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 
 @Controller('users')
 export class UsersController {
@@ -24,7 +18,7 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getProfile(@Request() req: any) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     return this.usersService.findByIdOrFail(req.user.id);
   }
 
@@ -34,7 +28,10 @@ export class UsersController {
    */
   @UseGuards(JwtAuthGuard)
   @Put('me')
-  async updateProfile(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
+  async updateProfile(
+    @Request() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update(req.user.id, updateUserDto);
   }
 }
