@@ -89,23 +89,35 @@ const Users: React.FC = () => {
     setLoading(true);
     setError(null);
     
+    const apiUrl = getApiEndpoint();
+    console.log('[Users] Fetching subscribers from:', apiUrl);
+    
     try {
-      const response = await fetch(getApiEndpoint());
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      console.log('[Users] Response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data: ApiResponse = await response.json();
+      console.log('[Users] API Response:', { success: data.success, userCount: data.data?.length, stats: data.stats });
       
       if (data.success) {
         setSubscribers(data.data);
         setStats(data.stats);
+        console.log('[Users] Successfully loaded', data.data.length, 'subscribers');
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
-      console.error('Error fetching subscribers:', err);
+      console.error('[Users] Error fetching subscribers:', err);
       setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas pobierania danych');
     } finally {
       setLoading(false);
