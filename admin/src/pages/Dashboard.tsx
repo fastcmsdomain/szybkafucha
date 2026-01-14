@@ -51,7 +51,15 @@ const SERVICE_LABELS: Record<string, string> = {
 
 // API endpoint configuration
 const getApiEndpoint = (): string => {
-  // Always use production API (PHP not available locally)
+  // Use relative path when deployed to szybkafucha.app/admin
+  // Falls back to absolute URL for local development
+  const isProduction = window.location.hostname === 'szybkafucha.app' || 
+                       window.location.hostname === 'www.szybkafucha.app';
+  
+  if (isProduction) {
+    return '/api/subscribers.php';
+  }
+  // For local development, use absolute URL
   return 'https://szybkafucha.app/api/subscribers.php';
 };
 
@@ -67,23 +75,35 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     
+    const apiUrl = getApiEndpoint();
+    console.log('[Dashboard] Fetching subscribers from:', apiUrl);
+    
     try {
-      const response = await fetch(getApiEndpoint());
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      console.log('[Dashboard] Response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data: ApiResponse = await response.json();
+      console.log('[Dashboard] API Response:', { success: data.success, userCount: data.data?.length, stats: data.stats });
       
       if (data.success) {
         setSubscribers(data.data);
         setStats(data.stats);
+        console.log('[Dashboard] Successfully loaded', data.data.length, 'subscribers');
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
-      console.error('Error fetching subscribers:', err);
+      console.error('[Dashboard] Error fetching subscribers:', err);
       setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas pobierania danych');
     } finally {
       setLoading(false);
