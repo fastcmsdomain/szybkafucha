@@ -71,7 +71,7 @@
 
 - [x] **1.0 Project Setup**
   - [x] 1.1 Create backend project with NestJS CLI: `nest new backend`
-  - [ ] 1.2 Create Flutter project: `flutter create mobile --org pl.szybkafucha` (BLOCKED: Flutter SDK not installed)
+  - [x] 1.2 Create Flutter project: `flutter create mobile --org pl.szybkafucha`
   - [x] 1.3 Create React admin project: `npx create-react-app admin --template typescript`
   - [x] 1.4 Set up PostgreSQL database (local Docker or cloud) - docker-compose.yml created
   - [x] 1.5 Set up Redis instance (local Docker or cloud) - docker-compose.yml created
