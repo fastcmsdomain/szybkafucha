@@ -18,6 +18,7 @@ import {
   Region,
   DocumentTypes,
   FileTransfer,
+  CountryCodes,
 } from '@onfido/api';
 import * as IBAN from 'iban';
 import {
@@ -173,7 +174,7 @@ export class KycService {
         documentFile,
         undefined,
         undefined,
-        dto.issuingCountry,
+        dto.issuingCountry as CountryCodes | undefined,
       );
 
       kycCheck.onfidoDocumentId = document.data.id;

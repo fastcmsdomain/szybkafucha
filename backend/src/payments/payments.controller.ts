@@ -13,6 +13,7 @@ import {
   Headers,
   Req,
   ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
@@ -32,6 +33,9 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @Post('connect/onboard')
   async createConnectAccount(@Request() req: AuthenticatedRequest) {
+    if (!req.user.email) {
+      throw new BadRequestException('Email is required for Stripe Connect onboarding');
+    }
     return this.paymentsService.createConnectAccount(
       req.user.id,
       req.user.email,
