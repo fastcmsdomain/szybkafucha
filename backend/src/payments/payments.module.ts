@@ -11,11 +11,13 @@ import { Payment } from './entities/payment.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment, Task, ContractorProfile, User]),
     ConfigModule,
+    NotificationsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService],

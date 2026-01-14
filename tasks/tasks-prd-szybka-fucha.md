@@ -1,8 +1,8 @@
 # Tasks: Szybka Fucha MVP Implementation
 
-> **Source PRD:** `prd-szybka-fucha.md`  
-> **Target:** AI Agent / Junior Developer  
-> **Timeline:** 8 weeks  
+> **Source PRD:** `prd-szybka-fucha.md`
+> **Target:** AI Agent / Junior Developer
+> **Timeline:** 8 weeks
 
 ---
 
@@ -102,7 +102,7 @@
   - [x] 3.8 Implement `POST /auth/apple` - validates Apple token, creates/returns user
   - [x] 3.9 Implement `POST /auth/logout` - simple logout (client clears token)
   - [x] 3.10 Create `JwtAuthGuard` for protecting routes
-  - [x] 3.11 Write unit tests for auth service (16 tests)
+  - [x] 3.11 Write unit tests for auth service (20 tests)
   - [x] 3.12 Write e2e tests for auth endpoints (20 tests)
 
 ---
@@ -113,13 +113,13 @@
   - [x] 4.1 Create `UsersModule` with controller and service
   - [x] 4.2 Implement `GET /users/me` - returns current user profile
   - [x] 4.3 Implement `PUT /users/me` - updates user profile (name, avatar)
-  - [ ] 4.4 Implement `POST /users/me/avatar` - uploads avatar to S3/CloudStorage
+  - [x] 4.4 Implement `POST /users/me/avatar` - uploads avatar to S3/CloudStorage
   - [x] 4.5 Create `ContractorProfileService` for contractor-specific operations
   - [x] 4.6 Implement `GET /contractor/profile` - returns contractor profile
   - [x] 4.7 Implement `PUT /contractor/profile` - updates bio, categories, radius
   - [x] 4.8 Implement `PUT /contractor/availability` - toggles online/offline
   - [x] 4.9 Implement `PUT /contractor/location` - updates GPS coordinates
-  - [ ] 4.10 Write tests for user endpoints
+  - [x] 4.10 Write tests for user endpoints
 
 - [x] **5.0 Task Management Module**
   - [x] 5.1 Create `TasksModule` with controller and service
@@ -152,7 +152,7 @@
   - [x] 5.10 Implement `POST /tasks/:id/rate` - submits rating and review
     - Validate rating 1-5
     - Update contractor rating_avg
-  - [ ] 5.11 Write comprehensive tests for task state machine
+  - [x] 5.11 Write comprehensive tests for task state machine
 
 - [x] **6.0 Contractor Matching Algorithm**
   - [x] 6.1 Create `MatchingService` for finding suitable contractors (in TasksService)
@@ -160,12 +160,12 @@
     - Query contractors within task's radius
     - Filter by online status
     - Filter by matching categories
-  - [ ] 6.3 Implement scoring algorithm
+  - [x] 6.3 Implement scoring algorithm
     - Score = (rating * 0.4) + (completions * 0.3) + (proximity * 0.3)
-  - [ ] 6.4 Implement notification queue for contractors
+  - [x] 6.4 Implement notification queue for contractors
     - Send push notification to top 5 contractors
     - 45-second timeout before notifying next batch
-  - [ ] 6.5 Write tests for matching algorithm
+  - [x] 6.5 Write tests for matching algorithm
 
 - [x] **7.0 Payments Module (Stripe Connect)**
   - [x] 7.1 Install Stripe: `npm install stripe`
@@ -187,7 +187,7 @@
   - [x] 7.9 Implement webhook handler for Stripe events
   - [x] 7.10 Implement `GET /earnings` - contractor earnings summary
   - [x] 7.11 Implement `POST /earnings/withdraw` - trigger payout
-  - [ ] 7.12 Write tests for payment flows
+  - [x] 7.12 Write tests for payment flows
 
 - [x] **8.0 Real-time Module (WebSockets)**
   - [x] 8.1 Install Socket.io: `npm install @nestjs/websockets @nestjs/platform-socket.io socket.io`
@@ -199,7 +199,7 @@
   - [x] 8.5 Implement `task:status` event - broadcasts status changes
   - [x] 8.6 Implement `message:new` event - real-time chat
   - [ ] 8.7 Implement reconnection handling with message queue (deferred to production)
-  - [ ] 8.8 Write tests for WebSocket events
+  - [x] 8.8 Write tests for WebSocket events
 
 - [x] **9.0 Chat Module**
   - [x] 9.1 Create `MessagesModule` with controller and service
@@ -209,7 +209,7 @@
     - Emit via WebSocket (integrated with RealtimeModule)
     - Push notification deferred to 11.0
   - [x] 9.4 Implement read receipts (update read_at on fetch)
-  - [ ] 9.5 Write tests for chat functionality
+  - [x] 9.5 Write tests for chat functionality
 
 ---
 
@@ -232,20 +232,29 @@
     - Update kyc_status based on results
     - Send notification to contractor
   - [x] 10.8 Create KYC status check endpoint
-  - [ ] 10.9 Write tests for KYC flow
+  - [x] 10.9 Write tests for KYC flow
 
-- [ ] **11.0 Push Notifications**
-  - [ ] 11.1 Set up Firebase project
-  - [ ] 11.2 Install Firebase Admin SDK: `npm install firebase-admin`
-  - [ ] 11.3 Create `NotificationsService`
-  - [ ] 11.4 Implement device token registration
-  - [ ] 11.5 Implement notification templates:
-    - `new_task` - contractor receives new task alert
+- [x] **11.0 Push Notifications**
+  - [x] 11.1 Set up Firebase project (placeholder config for dev/mock mode)
+  - [x] 11.2 Install Firebase Admin SDK: `npm install firebase-admin`
+  - [x] 11.3 Create `NotificationsService` with mock mode support
+  - [x] 11.4 Implement device token registration (`PUT /users/me/fcm-token`)
+  - [x] 11.5 Implement notification templates (20+ types):
+    - `new_task_nearby` - contractor receives new task alert
     - `task_accepted` - client notified contractor accepted
+    - `task_started` - client notified contractor started work
     - `task_completed` - client notified to confirm
-    - `payment_received` - contractor received payment
+    - `task_confirmed` - contractor notified client confirmed
+    - `task_cancelled` - both parties notified of cancellation
+    - `task_rated` - user received rating
+    - `tip_received` - contractor received tip
     - `new_message` - chat message received
-  - [ ] 11.6 Write tests for notification sending
+    - `payment_received` - contractor received payment
+    - `payment_refunded` - client received refund
+    - `kyc_document_verified`, `kyc_selfie_verified`, `kyc_bank_verified`, `kyc_complete` - KYC status updates
+  - [x] 11.6 Write tests for notification sending
+  - [x] Integration with TasksService, MessagesService, PaymentsService, KycService
+  - [x] Documentation: `backend/docs/PUSH_NOTIFICATIONS.md`
 
 - [x] **12.0 Admin Dashboard Backend**
   - [x] 12.1 Create `AdminModule` with guards (admin role only)
@@ -259,7 +268,7 @@
   - [x] 12.5 Implement `GET /admin/disputes` - list disputed tasks
   - [x] 12.6 Implement `PUT /admin/disputes/:id/resolve` - resolve dispute
     - Options: refund, pay_contractor, split
-  - [ ] 12.7 Write tests for admin endpoints
+  - [x] 12.7 Write tests for admin endpoints
 
 ---
 

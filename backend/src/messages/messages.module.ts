@@ -12,9 +12,13 @@ import { MessagesService } from './messages.service';
 import { Message } from './entities/message.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { User } from '../users/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Message, Task, User])],
+  imports: [
+    TypeOrmModule.forFeature([Message, Task, User]),
+    NotificationsModule,
+  ],
   controllers: [MessagesController, UnreadMessagesController],
   providers: [MessagesService],
   exports: [MessagesService],
