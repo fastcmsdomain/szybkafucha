@@ -14,6 +14,8 @@ import { Message } from './entities/message.entity';
 import { Task } from '../tasks/entities/task.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/constants/notification-templates';
 
 // DTO for message response
 export interface MessageResponse {
@@ -38,6 +40,7 @@ export class MessagesService {
     private readonly taskRepository: Repository<Task>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -110,6 +113,32 @@ export class MessagesService {
     });
 
     this.logger.debug(`Message sent in task ${taskId} by ${senderId}`);
+
+    // Get the task to find the recipient
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (task) {
+      // Determine the recipient (the other party in the chat)
+      const recipientId =
+        task.clientId === senderId ? task.contractorId : task.clientId;
+      if (recipientId) {
+        // Send push notification to recipient
+        const messagePreview =
+          dto.content.length > 50
+            ? dto.content.substring(0, 50) + '...'
+            : dto.content;
+
+        this.notificationsService
+          .sendToUser(recipientId, NotificationType.NEW_MESSAGE, {
+            senderName: sender?.name || 'Użytkownik',
+            messagePreview,
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send NEW_MESSAGE notification: ${err}`,
+            ),
+          );
+      }
+    }
 
     return {
       id: message.id,

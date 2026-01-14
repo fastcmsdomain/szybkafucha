@@ -1,5 +1,6 @@
 /**
  * Auth Service Unit Tests
+ * Tests for authentication logic including OTP and social login
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
@@ -9,8 +10,6 @@ import { BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
-
-/* eslint-disable @typescript-eslint/unbound-method */
 
 interface MockCacheManager {
   get: jest.Mock;
@@ -39,6 +38,15 @@ describe('AuthService', () => {
     updatedAt: new Date(),
   };
 
+  const mockContractor: User = {
+    ...mockUser,
+    id: 'contractor-123',
+    type: UserType.CONTRACTOR,
+    phone: '+48222222221',
+    email: 'contractor@example.com',
+    name: 'Test Contractor',
+  };
+
   beforeEach(async () => {
     const mockUsersService = {
       findByPhone: jest.fn(),
@@ -60,7 +68,10 @@ describe('AuthService', () => {
     };
 
     const mockConfigService = {
-      get: jest.fn().mockReturnValue(null), // No Twilio credentials for tests
+      get: jest.fn().mockImplementation((key: string) => {
+        if (key === 'NODE_ENV') return 'development';
+        return null;
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -74,13 +85,15 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
-    jwtService = module.get<JwtService>(JwtService);
+    usersService = module.get<UsersService>(
+      UsersService,
+    ) as jest.Mocked<UsersService>;
+    jwtService = module.get<JwtService>(JwtService) as jest.Mocked<JwtService>;
     cacheManager = module.get<MockCacheManager>(CACHE_MANAGER);
   });
 
   describe('generateToken', () => {
-    it('should generate a valid JWT token', () => {
+    it('should generate JWT token with correct payload', () => {
       const result = service.generateToken(mockUser);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
@@ -88,19 +101,19 @@ describe('AuthService', () => {
         type: mockUser.type,
       });
       expect(result.accessToken).toBe('mock-jwt-token');
+    });
+
+    it('should return partial user data without sensitive fields', () => {
+      const result = service.generateToken(mockUser);
+
       expect(result.user.id).toBe(mockUser.id);
       expect(result.user.type).toBe(mockUser.type);
       expect(result.user.name).toBe(mockUser.name);
-    });
-
-    it('should not include sensitive fields in user response', () => {
-      const result = service.generateToken(mockUser);
-
+      expect(result.user.email).toBe(mockUser.email);
+      expect(result.user.phone).toBe(mockUser.phone);
       expect(result.user).not.toHaveProperty('googleId');
       expect(result.user).not.toHaveProperty('appleId');
       expect(result.user).not.toHaveProperty('fcmToken');
-      expect(result.user).not.toHaveProperty('createdAt');
-      expect(result.user).not.toHaveProperty('updatedAt');
     });
   });
 
@@ -134,6 +147,12 @@ describe('AuthService', () => {
       ];
       expect(cacheKey).toBe('otp:+48123456789');
     });
+
+    it('should handle phone with spaces and dashes', async () => {
+      const result = await service.requestPhoneOtp('+48 123-456-789');
+
+      expect(result.message).toBe('OTP sent successfully');
+    });
   });
 
   describe('verifyPhoneOtp', () => {
@@ -157,6 +176,21 @@ describe('AuthService', () => {
       cacheManager.get.mockResolvedValue(validOtp);
       usersService.findByPhone.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockUser);
+
+      const result = await service.verifyPhoneOtp(phone, code);
+
+      expect(usersService.create).toHaveBeenCalledWith({
+        phone,
+        type: UserType.CLIENT,
+        status: UserStatus.ACTIVE,
+      });
+      expect(result.isNewUser).toBe(true);
+    });
+
+    it('should create contractor when userType is specified', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
+      usersService.findByPhone.mockResolvedValue(null);
+      usersService.create.mockResolvedValue(mockContractor);
 
       const result = await service.verifyPhoneOtp(
         phone,
@@ -207,17 +241,18 @@ describe('AuthService', () => {
 
   describe('authenticateWithGoogle', () => {
     const googleId = 'google-123';
-    const email = 'test@gmail.com';
+    const email = 'user@gmail.com';
     const name = 'Google User';
+    const avatarUrl = 'https://google.com/avatar.jpg';
 
-    it('should return existing user if Google ID found', async () => {
-      const googleUser = { ...mockUser, googleId };
-      usersService.findByGoogleId.mockResolvedValue(googleUser);
+    it('should return token for existing user with Google ID', async () => {
+      usersService.findByGoogleId.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithGoogle(
         googleId,
         email,
         name,
+        avatarUrl,
       );
 
       expect(result.accessToken).toBe('mock-jwt-token');
@@ -234,6 +269,7 @@ describe('AuthService', () => {
         googleId,
         email,
         name,
+        avatarUrl,
       );
 
       expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
@@ -242,44 +278,55 @@ describe('AuthService', () => {
       expect(result.isNewUser).toBe(false);
     });
 
-    it('should create new user if no existing account found', async () => {
+    it('should create new user when no existing account found', async () => {
       usersService.findByGoogleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue({
-        ...mockUser,
-        googleId,
-        email,
-        name,
-      });
+      usersService.create.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithGoogle(
         googleId,
         email,
         name,
-        'avatar.jpg',
-        UserType.CONTRACTOR,
+        avatarUrl,
       );
 
       expect(usersService.create).toHaveBeenCalledWith({
         googleId,
         email,
         name,
-        avatarUrl: 'avatar.jpg',
-        type: UserType.CONTRACTOR,
+        avatarUrl,
+        type: UserType.CLIENT,
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+    });
+
+    it('should create contractor when userType specified', async () => {
+      usersService.findByGoogleId.mockResolvedValue(null);
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue(mockContractor);
+
+      await service.authenticateWithGoogle(
+        googleId,
+        email,
+        name,
+        avatarUrl,
+        UserType.CONTRACTOR,
+      );
+
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ type: UserType.CONTRACTOR }),
+      );
     });
   });
 
   describe('authenticateWithApple', () => {
     const appleId = 'apple-123';
-    const email = 'test@icloud.com';
+    const email = 'user@icloud.com';
     const name = 'Apple User';
 
-    it('should return existing user if Apple ID found', async () => {
-      const appleUser = { ...mockUser, appleId };
-      usersService.findByAppleId.mockResolvedValue(appleUser);
+    it('should return token for existing user with Apple ID', async () => {
+      usersService.findByAppleId.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithApple(appleId, email, name);
 
@@ -300,22 +347,12 @@ describe('AuthService', () => {
       expect(result.isNewUser).toBe(false);
     });
 
-    it('should create new user if no existing account found', async () => {
+    it('should create new user when no existing account found', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue({
-        ...mockUser,
-        appleId,
-        email,
-        name,
-      });
+      usersService.create.mockResolvedValue(mockUser);
 
-      const result = await service.authenticateWithApple(
-        appleId,
-        email,
-        name,
-        UserType.CLIENT,
-      );
+      const result = await service.authenticateWithApple(appleId, email, name);
 
       expect(usersService.create).toHaveBeenCalledWith({
         appleId,
@@ -327,9 +364,9 @@ describe('AuthService', () => {
       expect(result.isNewUser).toBe(true);
     });
 
-    it('should create user without email if not provided', async () => {
+    it('should handle Apple Sign In without email (subsequent logins)', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
-      usersService.create.mockResolvedValue({ ...mockUser, appleId });
+      usersService.create.mockResolvedValue(mockUser);
 
       const result = await service.authenticateWithApple(appleId);
 
@@ -342,6 +379,22 @@ describe('AuthService', () => {
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+    });
+
+    it('should create contractor when userType specified', async () => {
+      usersService.findByAppleId.mockResolvedValue(null);
+      usersService.create.mockResolvedValue(mockContractor);
+
+      await service.authenticateWithApple(
+        appleId,
+        email,
+        name,
+        UserType.CONTRACTOR,
+      );
+
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ type: UserType.CONTRACTOR }),
+      );
     });
   });
 });

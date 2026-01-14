@@ -24,6 +24,7 @@ import { MessagesModule } from './messages/messages.module';
 import { KycModule } from './kyc/kyc.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { HealthModule } from './health/health.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -102,6 +103,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     KycModule,
     NewsletterModule,
     HealthModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

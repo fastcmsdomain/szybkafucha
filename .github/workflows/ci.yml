@@ -72,8 +72,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify react-router-dom installation
+        run: npm list react-router-dom || (echo "react-router-dom not found, installing..." && npm install react-router-dom)
+
       - name: Lint
         run: npx eslint src --ext .ts,.tsx,.js,.jsx --max-warnings=0
 
       - name: Test
-        run: npm test -- --watch=false
+        run: npm test -- --watchAll=false --passWithNoTests

@@ -18,6 +18,7 @@ import {
   Region,
   DocumentTypes,
   FileTransfer,
+  CountryCodes,
 } from '@onfido/api';
 import * as IBAN from 'iban';
 import {
@@ -39,6 +40,8 @@ import {
   OnfidoWebhookPayload,
   DocumentType,
 } from './dto/kyc.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/constants/notification-templates';
 
 @Injectable()
 export class KycService {
@@ -54,6 +57,7 @@ export class KycService {
     @InjectRepository(KycCheck)
     private readonly kycCheckRepository: Repository<KycCheck>,
     private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
   ) {
     const apiToken = this.configService.get<string>('ONFIDO_API_TOKEN');
     const region = this.configService.get<string>('ONFIDO_REGION', 'EU');
@@ -173,7 +177,7 @@ export class KycService {
         documentFile,
         undefined,
         undefined,
-        dto.issuingCountry,
+        dto.issuingCountry as CountryCodes | undefined,
       );
 
       kycCheck.onfidoDocumentId = document.data.id;
@@ -338,6 +342,15 @@ export class KycService {
     // Update contractor profile
     profile.kycBankVerified = true;
     await this.profileRepository.save(profile);
+
+    // Send notification
+    this.notificationsService
+      .sendToUser(userId, NotificationType.KYC_BANK_VERIFIED, {})
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send KYC_BANK_VERIFIED notification: ${err}`,
+        ),
+      );
 
     // Update overall KYC status
     await this.updateOverallKycStatus(userId);
@@ -510,8 +523,24 @@ export class KycService {
 
     if (kycCheck.type === KycCheckType.DOCUMENT) {
       profile.kycIdVerified = true;
+      // Send notification
+      this.notificationsService
+        .sendToUser(kycCheck.userId, NotificationType.KYC_DOCUMENT_VERIFIED, {})
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send KYC_DOCUMENT_VERIFIED notification: ${err}`,
+          ),
+        );
     } else if (kycCheck.type === KycCheckType.FACIAL_SIMILARITY) {
       profile.kycSelfieVerified = true;
+      // Send notification
+      this.notificationsService
+        .sendToUser(kycCheck.userId, NotificationType.KYC_SELFIE_VERIFIED, {})
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send KYC_SELFIE_VERIFIED notification: ${err}`,
+          ),
+        );
     }
 
     await this.profileRepository.save(profile);
@@ -531,6 +560,13 @@ export class KycService {
       profile.kycStatus = KycStatus.VERIFIED;
       await this.profileRepository.save(profile);
       this.logger.log(`User ${userId} fully KYC verified`);
+
+      // Send KYC complete notification
+      this.notificationsService
+        .sendToUser(userId, NotificationType.KYC_COMPLETE, {})
+        .catch((err) =>
+          this.logger.error(`Failed to send KYC_COMPLETE notification: ${err}`),
+        );
     }
   }
 

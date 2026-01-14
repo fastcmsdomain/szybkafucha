@@ -20,6 +20,7 @@ import twilio from 'twilio';
 const OTP_CONFIG = {
   LENGTH: 6,
   EXPIRES_IN_MINUTES: 5,
+  DEV_CODE: '123456', // Fixed code for development/testing
 };
 
 @Injectable()
@@ -80,8 +81,9 @@ export class AuthService {
     // Normalize phone number
     const normalizedPhone = this.normalizePhone(phone);
 
-    // Generate 6-digit OTP
-    const code = this.generateOtp();
+    // Use fixed code in development, random in production
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
+    const code = isDev ? OTP_CONFIG.DEV_CODE : this.generateOtp();
     const expiresAt = new Date(
       Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
     );
@@ -94,7 +96,7 @@ export class AuthService {
     );
 
     // Send SMS (in production) or log (in development)
-    if (process.env.NODE_ENV === 'production') {
+    if (!isDev) {
       await this.sendOtpSms(normalizedPhone, code);
     } else {
       this.logger.debug(`[DEV] OTP for ${normalizedPhone}: ${code}`);
@@ -124,9 +126,7 @@ export class AuthService {
     }>(`otp:${normalizedPhone}`);
 
     if (!storedOtp) {
-      throw new BadRequestException(
-        'OTP not found or expired. Please request a new one.',
-      );
+      throw new BadRequestException('OTP not found or expired');
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
@@ -135,7 +135,7 @@ export class AuthService {
     }
 
     if (storedOtp.code !== code) {
-      throw new BadRequestException('Invalid OTP code.');
+      throw new BadRequestException('Invalid OTP code');
     }
 
     // OTP is valid, remove from Redis (one-time use)

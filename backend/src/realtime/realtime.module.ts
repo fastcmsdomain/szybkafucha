@@ -25,6 +25,6 @@ import { User } from '../users/entities/user.entity';
     }),
   ],
   providers: [RealtimeGateway, RealtimeService],
-  exports: [RealtimeService],
+  exports: [RealtimeService, RealtimeGateway],
 })
 export class RealtimeModule {}

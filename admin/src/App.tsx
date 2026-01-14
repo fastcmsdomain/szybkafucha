@@ -16,9 +16,11 @@ import Tasks from './pages/Tasks';
 import Disputes from './pages/Disputes';
 import Login from './pages/Login';
 
+import { authConfig } from './config/auth.config';
+
 // Simple auth check (in production, use proper auth context)
 const isAuthenticated = (): boolean => {
-  return localStorage.getItem('adminToken') !== null;
+  return localStorage.getItem(authConfig.tokenKey) !== null;
 };
 
 // Protected route wrapper

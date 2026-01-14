@@ -3,6 +3,10 @@
     "allow": [
       "Bash(test:*)",
       "Bash(ls:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(npm run build:*)",
+      "Bash(/opt/homebrew/bin/npm run build)",
+      "Bash(source ~/.zshrc)",
       "Bash(cat:*)",
       "Bash(grep:*)",
       "Bash(npm install:*)",
@@ -16,7 +20,11 @@
       "Bash(npm run migration:run:*)",
       "Bash(npm run migration:show:*)",
       "Bash(npm test:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(git add:*)",
+      "Bash(/opt/homebrew/bin/npm test -- --testPathPattern=\"auth.service.spec.ts\" --passWithNoTests)",
+      "Bash(source ~/.nvm/nvm.sh)",
+      "Bash(curl:*)"
     ]
   }
 }
