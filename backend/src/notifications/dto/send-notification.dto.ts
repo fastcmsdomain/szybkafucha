@@ -1,7 +1,7 @@
 /**
  * DTOs for Notification Service
  */
-import { IsString, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsOptional, IsEnum, IsObject } from 'class-validator';
 import { NotificationType } from '../constants/notification-templates';
 
 export class SendNotificationDto {

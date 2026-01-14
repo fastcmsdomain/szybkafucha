@@ -276,7 +276,7 @@ export class NotificationsService {
 
       const response = await admin.messaging().sendEachForMulticast(message);
 
-      const results: NotificationResult[] = response.responses.map((r, i) => ({
+      const results: NotificationResult[] = response.responses.map((r) => ({
         success: r.success,
         messageId: r.messageId,
         error: r.error?.message,
