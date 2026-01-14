@@ -26,8 +26,14 @@ export class FileStorageService {
 
   constructor(private readonly configService: ConfigService) {
     // Default to local uploads directory
-    this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads/avatars');
-    this.baseUrl = this.configService.get<string>('UPLOAD_BASE_URL', '/uploads/avatars');
+    this.uploadDir = this.configService.get<string>(
+      'UPLOAD_DIR',
+      './uploads/avatars',
+    );
+    this.baseUrl = this.configService.get<string>(
+      'UPLOAD_BASE_URL',
+      '/uploads/avatars',
+    );
 
     // Ensure upload directory exists
     this.ensureUploadDir();
@@ -56,7 +62,9 @@ export class FileStorageService {
     // Get file extension from mimetype
     const extension = this.getExtensionFromMimetype(file.mimetype);
     if (!extension) {
-      throw new BadRequestException('Invalid file type. Allowed: JPEG, PNG, WebP');
+      throw new BadRequestException(
+        'Invalid file type. Allowed: JPEG, PNG, WebP',
+      );
     }
 
     // Generate unique filename

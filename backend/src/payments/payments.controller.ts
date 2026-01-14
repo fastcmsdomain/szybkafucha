@@ -34,9 +34,14 @@ export class PaymentsController {
   @Post('connect/onboard')
   async createConnectAccount(@Request() req: AuthenticatedRequest) {
     if (!req.user.email) {
-      throw new BadRequestException('Email is required for Stripe Connect onboarding');
+      throw new BadRequestException(
+        'Email is required for Stripe Connect onboarding',
+      );
     }
-    return this.paymentsService.createConnectAccount(req.user.id, req.user.email);
+    return this.paymentsService.createConnectAccount(
+      req.user.id,
+      req.user.email,
+    );
   }
 
   /**

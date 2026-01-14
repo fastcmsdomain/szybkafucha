@@ -15,7 +15,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -79,7 +82,10 @@ export class TasksService {
 
     // Notify available contractors asynchronously (don't block response)
     this.notifyAvailableContractors(savedTask).catch((error) => {
-      this.logger.error(`Failed to notify contractors for task ${savedTask.id}`, error);
+      this.logger.error(
+        `Failed to notify contractors for task ${savedTask.id}`,
+        error,
+      );
     });
 
     return savedTask;
@@ -178,10 +184,14 @@ export class TasksService {
     });
 
     // Notify client that task was accepted
-    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
-      taskTitle: task.title,
-      contractorName: contractorProfile?.user?.name || 'Wykonawca',
-    }).catch((err) => this.logger.error(`Failed to send TASK_ACCEPTED notification: ${err}`));
+    this.notificationsService
+      .sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
+        taskTitle: task.title,
+        contractorName: contractorProfile?.user?.name || 'Wykonawca',
+      })
+      .catch((err) =>
+        this.logger.error(`Failed to send TASK_ACCEPTED notification: ${err}`),
+      );
 
     return savedTask;
   }
@@ -212,10 +222,14 @@ export class TasksService {
     });
 
     // Notify client that task was started
-    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_STARTED, {
-      taskTitle: task.title,
-      contractorName: contractorProfile?.user?.name || 'Wykonawca',
-    }).catch((err) => this.logger.error(`Failed to send TASK_STARTED notification: ${err}`));
+    this.notificationsService
+      .sendToUser(task.clientId, NotificationType.TASK_STARTED, {
+        taskTitle: task.title,
+        contractorName: contractorProfile?.user?.name || 'Wykonawca',
+      })
+      .catch((err) =>
+        this.logger.error(`Failed to send TASK_STARTED notification: ${err}`),
+      );
 
     return savedTask;
   }
@@ -253,9 +267,13 @@ export class TasksService {
     const savedTask = await this.tasksRepository.save(task);
 
     // Notify client that task was completed
-    this.notificationsService.sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
-      taskTitle: task.title,
-    }).catch((err) => this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`));
+    this.notificationsService
+      .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
+        taskTitle: task.title,
+      })
+      .catch((err) =>
+        this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`),
+      );
 
     return savedTask;
   }
@@ -276,9 +294,15 @@ export class TasksService {
 
     // Notify contractor that task was confirmed
     if (task.contractorId) {
-      this.notificationsService.sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
-        taskTitle: task.title,
-      }).catch((err) => this.logger.error(`Failed to send TASK_CONFIRMED notification: ${err}`));
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_CONFIRMED notification: ${err}`,
+          ),
+        );
     }
 
     // Task is confirmed - payment will be released
@@ -319,13 +343,22 @@ export class TasksService {
     const savedTask = await this.tasksRepository.save(task);
 
     // Notify both parties about cancellation
-    const notifyUserIds = [task.clientId, task.contractorId].filter(Boolean) as string[];
+    const notifyUserIds = [task.clientId, task.contractorId].filter(
+      Boolean,
+    ) as string[];
     for (const notifyUserId of notifyUserIds) {
-      if (notifyUserId !== userId) { // Don't notify the one who cancelled
-        this.notificationsService.sendToUser(notifyUserId, NotificationType.TASK_CANCELLED, {
-          taskTitle: task.title,
-          reason: reason || 'Brak podanego powodu',
-        }).catch((err) => this.logger.error(`Failed to send TASK_CANCELLED notification: ${err}`));
+      if (notifyUserId !== userId) {
+        // Don't notify the one who cancelled
+        this.notificationsService
+          .sendToUser(notifyUserId, NotificationType.TASK_CANCELLED, {
+            taskTitle: task.title,
+            reason: reason || 'Brak podanego powodu',
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send TASK_CANCELLED notification: ${err}`,
+            ),
+          );
       }
     }
 
@@ -367,10 +400,14 @@ export class TasksService {
     const savedRating = await this.ratingsRepository.save(rating);
 
     // Notify the rated user
-    this.notificationsService.sendToUser(toUserId, NotificationType.TASK_RATED, {
-      taskTitle: task.title,
-      rating: dto.rating,
-    }).catch((err) => this.logger.error(`Failed to send TASK_RATED notification: ${err}`));
+    this.notificationsService
+      .sendToUser(toUserId, NotificationType.TASK_RATED, {
+        taskTitle: task.title,
+        rating: dto.rating,
+      })
+      .catch((err) =>
+        this.logger.error(`Failed to send TASK_RATED notification: ${err}`),
+      );
 
     return savedRating;
   }
@@ -398,10 +435,14 @@ export class TasksService {
 
     // Notify contractor about tip
     if (task.contractorId) {
-      this.notificationsService.sendToUser(task.contractorId, NotificationType.TIP_RECEIVED, {
-        taskTitle: task.title,
-        tipAmount,
-      }).catch((err) => this.logger.error(`Failed to send TIP_RECEIVED notification: ${err}`));
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TIP_RECEIVED, {
+          taskTitle: task.title,
+          tipAmount,
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send TIP_RECEIVED notification: ${err}`),
+        );
     }
 
     return savedTask;
@@ -587,15 +628,15 @@ export class TasksService {
       );
 
       // Also send push notification for offline contractors
-      this.notificationsService.sendToUser(
-        ranked.contractorId,
-        NotificationType.NEW_TASK_NEARBY,
-        {
+      this.notificationsService
+        .sendToUser(ranked.contractorId, NotificationType.NEW_TASK_NEARBY, {
           category: task.category,
           budget: task.budgetAmount,
           distance: ranked.distance,
-        },
-      ).catch((err) => this.logger.error(`Failed to send NEW_TASK_NEARBY push: ${err}`));
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send NEW_TASK_NEARBY push: ${err}`),
+        );
 
       if (sent) {
         this.logger.debug(

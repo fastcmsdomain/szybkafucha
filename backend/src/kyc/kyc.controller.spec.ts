@@ -118,12 +118,21 @@ describe('KycController', () => {
     };
 
     it('should accept valid selfie upload', async () => {
-      const expectedResponse = { checkId: 'selfie-check-123', status: 'processing' };
+      const expectedResponse = {
+        checkId: 'selfie-check-123',
+        status: 'processing',
+      };
       kycService.uploadSelfie.mockResolvedValue(expectedResponse);
 
-      const result = await controller.uploadSelfie(mockRequest as any, selfieDto);
+      const result = await controller.uploadSelfie(
+        mockRequest as any,
+        selfieDto,
+      );
 
-      expect(kycService.uploadSelfie).toHaveBeenCalledWith('user-123', selfieDto);
+      expect(kycService.uploadSelfie).toHaveBeenCalledWith(
+        'user-123',
+        selfieDto,
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -139,9 +148,15 @@ describe('KycController', () => {
       const expectedResponse = { verified: true, maskedIban: 'PL61****2874' };
       kycService.verifyBankAccount.mockResolvedValue(expectedResponse);
 
-      const result = await controller.verifyBankAccount(mockRequest as any, bankDto);
+      const result = await controller.verifyBankAccount(
+        mockRequest as any,
+        bankDto,
+      );
 
-      expect(kycService.verifyBankAccount).toHaveBeenCalledWith('user-123', bankDto);
+      expect(kycService.verifyBankAccount).toHaveBeenCalledWith(
+        'user-123',
+        bankDto,
+      );
       expect(result.verified).toBe(true);
     });
 
@@ -151,7 +166,10 @@ describe('KycController', () => {
         maskedIban: 'PL61****2874',
       });
 
-      const result = await controller.verifyBankAccount(mockRequest as any, bankDto);
+      const result = await controller.verifyBankAccount(
+        mockRequest as any,
+        bankDto,
+      );
 
       expect(result.maskedIban).toBe('PL61****2874');
     });

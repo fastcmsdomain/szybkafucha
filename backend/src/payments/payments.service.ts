@@ -362,14 +362,16 @@ export class PaymentsService {
       // Notify contractor about payment received
       const task = await this.taskRepository.findOne({ where: { id: taskId } });
       if (task?.contractorId) {
-        this.notificationsService.sendToUser(
-          task.contractorId,
-          NotificationType.PAYMENT_RECEIVED,
-          {
+        this.notificationsService
+          .sendToUser(task.contractorId, NotificationType.PAYMENT_RECEIVED, {
             amount: payment.contractorAmount || 0,
             taskTitle: task.title,
-          },
-        ).catch((err) => this.logger.error(`Failed to send PAYMENT_RECEIVED notification: ${err}`));
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send PAYMENT_RECEIVED notification: ${err}`,
+            ),
+          );
       }
 
       return savedPayment;
@@ -393,14 +395,16 @@ export class PaymentsService {
       // Notify contractor about payment received
       const task = await this.taskRepository.findOne({ where: { id: taskId } });
       if (task?.contractorId) {
-        this.notificationsService.sendToUser(
-          task.contractorId,
-          NotificationType.PAYMENT_RECEIVED,
-          {
+        this.notificationsService
+          .sendToUser(task.contractorId, NotificationType.PAYMENT_RECEIVED, {
             amount: payment.contractorAmount || 0,
             taskTitle: task.title,
-          },
-        ).catch((err) => this.logger.error(`Failed to send PAYMENT_RECEIVED notification: ${err}`));
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send PAYMENT_RECEIVED notification: ${err}`,
+            ),
+          );
       }
 
       return savedPayment;
@@ -449,14 +453,16 @@ export class PaymentsService {
       // Notify client about refund
       const task = await this.taskRepository.findOne({ where: { id: taskId } });
       if (task) {
-        this.notificationsService.sendToUser(
-          task.clientId,
-          NotificationType.PAYMENT_REFUNDED,
-          {
+        this.notificationsService
+          .sendToUser(task.clientId, NotificationType.PAYMENT_REFUNDED, {
             amount: payment.amount,
             taskTitle: task.title,
-          },
-        ).catch((err) => this.logger.error(`Failed to send PAYMENT_REFUNDED notification: ${err}`));
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send PAYMENT_REFUNDED notification: ${err}`,
+            ),
+          );
       }
 
       return savedPayment;
@@ -484,14 +490,16 @@ export class PaymentsService {
       // Notify client about refund
       const task = await this.taskRepository.findOne({ where: { id: taskId } });
       if (task) {
-        this.notificationsService.sendToUser(
-          task.clientId,
-          NotificationType.PAYMENT_REFUNDED,
-          {
+        this.notificationsService
+          .sendToUser(task.clientId, NotificationType.PAYMENT_REFUNDED, {
             amount: payment.amount,
             taskTitle: task.title,
-          },
-        ).catch((err) => this.logger.error(`Failed to send PAYMENT_REFUNDED notification: ${err}`));
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send PAYMENT_REFUNDED notification: ${err}`,
+            ),
+          );
       }
 
       return savedPayment;

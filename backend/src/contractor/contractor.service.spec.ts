@@ -66,7 +66,10 @@ describe('ContractorService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContractorService,
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockRepository,
+        },
       ],
     }).compile();
 
@@ -160,7 +163,9 @@ describe('ContractorService', () => {
       repository.findOne.mockResolvedValue({ ...mockProfile });
       repository.save.mockResolvedValue(updatedProfile);
 
-      const result = await service.update('user-123', { categories: newCategories });
+      const result = await service.update('user-123', {
+        categories: newCategories,
+      });
 
       expect(result.categories).toEqual(newCategories);
     });
@@ -178,9 +183,9 @@ describe('ContractorService', () => {
     it('should throw NotFoundException when profile not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', { bio: 'Test' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('nonexistent', { bio: 'Test' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -211,7 +216,10 @@ describe('ContractorService', () => {
     });
 
     it('should throw BadRequestException when going online without KYC', async () => {
-      repository.findOne.mockResolvedValue({ ...mockProfile, kycStatus: KycStatus.PENDING });
+      repository.findOne.mockResolvedValue({
+        ...mockProfile,
+        kycStatus: KycStatus.PENDING,
+      });
 
       await expect(service.setAvailability('user-123', true)).rejects.toThrow(
         BadRequestException,
@@ -227,7 +235,7 @@ describe('ContractorService', () => {
       const location = { lat: 52.2297, lng: 21.0122 };
       repository.findOne.mockResolvedValue({ ...mockProfile });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.updateLocation('user-123', location);
@@ -250,7 +258,7 @@ describe('ContractorService', () => {
     it('should mark ID as verified', async () => {
       repository.findOne.mockResolvedValue({ ...mockProfile });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.submitKycId('user-123', 'document-url');
@@ -263,7 +271,7 @@ describe('ContractorService', () => {
     it('should mark selfie as verified', async () => {
       repository.findOne.mockResolvedValue({ ...mockProfile });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.submitKycSelfie('user-123', 'selfie-url');
@@ -276,7 +284,7 @@ describe('ContractorService', () => {
     it('should mark bank as verified for valid IBAN', async () => {
       repository.findOne.mockResolvedValue({ ...mockProfile });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.submitKycBank(
@@ -308,7 +316,7 @@ describe('ContractorService', () => {
       };
       repository.findOne.mockResolvedValue(partiallyVerified);
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.submitKycBank(
@@ -331,7 +339,7 @@ describe('ContractorService', () => {
       };
       repository.findOne.mockResolvedValue(profileWithRatings);
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       // Adding a 5-star rating to (4 * 4.0 = 16) gives (16 + 5) / 5 = 4.2
@@ -342,9 +350,13 @@ describe('ContractorService', () => {
     });
 
     it('should handle first rating', async () => {
-      repository.findOne.mockResolvedValue({ ...mockProfile, ratingAvg: 0, ratingCount: 0 });
+      repository.findOne.mockResolvedValue({
+        ...mockProfile,
+        ratingAvg: 0,
+        ratingCount: 0,
+      });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.updateRating('user-123', 5);
@@ -356,9 +368,12 @@ describe('ContractorService', () => {
 
   describe('incrementCompletedTasks', () => {
     it('should increment completed tasks count', async () => {
-      repository.findOne.mockResolvedValue({ ...mockProfile, completedTasksCount: 5 });
+      repository.findOne.mockResolvedValue({
+        ...mockProfile,
+        completedTasksCount: 5,
+      });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.incrementCompletedTasks('user-123');
@@ -367,9 +382,12 @@ describe('ContractorService', () => {
     });
 
     it('should handle first completed task', async () => {
-      repository.findOne.mockResolvedValue({ ...mockProfile, completedTasksCount: 0 });
+      repository.findOne.mockResolvedValue({
+        ...mockProfile,
+        completedTasksCount: 0,
+      });
       repository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       const result = await service.incrementCompletedTasks('user-123');

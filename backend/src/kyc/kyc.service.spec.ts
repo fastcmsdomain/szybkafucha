@@ -8,9 +8,17 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { KycService } from './kyc.service';
-import { KycCheck, KycCheckType, KycCheckStatus, KycCheckResult } from './entities/kyc-check.entity';
+import {
+  KycCheck,
+  KycCheckType,
+  KycCheckStatus,
+  KycCheckResult,
+} from './entities/kyc-check.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { DocumentType } from './dto/kyc.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -93,25 +101,35 @@ describe('KycService', () => {
     };
 
     const mockConfigService = {
-      get: jest.fn().mockImplementation((key: string, defaultValue?: string) => {
-        if (key === 'ONFIDO_API_TOKEN') return 'placeholder_token';
-        if (key === 'ONFIDO_REGION') return defaultValue || 'EU';
-        if (key === 'ONFIDO_WEBHOOK_SECRET') return defaultValue || '';
-        return defaultValue;
-      }),
+      get: jest
+        .fn()
+        .mockImplementation((key: string, defaultValue?: string) => {
+          if (key === 'ONFIDO_API_TOKEN') return 'placeholder_token';
+          if (key === 'ONFIDO_REGION') return defaultValue || 'EU';
+          if (key === 'ONFIDO_WEBHOOK_SECRET') return defaultValue || '';
+          return defaultValue;
+        }),
     };
 
     const mockNotificationsService = {
       sendToUser: jest.fn().mockResolvedValue({ success: true }),
-      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+      sendToUsers: jest
+        .fn()
+        .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         KycService,
-        { provide: getRepositoryToken(KycCheck), useValue: mockKycCheckRepository },
+        {
+          provide: getRepositoryToken(KycCheck),
+          useValue: mockKycCheckRepository,
+        },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockProfileRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockProfileRepository,
+        },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
       ],
@@ -226,7 +244,7 @@ describe('KycService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       kycCheckRepository.find.mockResolvedValue([mockKycCheck]); // Has existing applicant ID
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve({ ...check, id: 'new-check-id' } as KycCheck)
+        Promise.resolve({ ...check, id: 'new-check-id' } as KycCheck),
       );
 
       await service.uploadIdDocument('user-123', uploadDto);
@@ -246,16 +264,20 @@ describe('KycService', () => {
       const profileWithoutId = { ...mockProfile, kycIdVerified: false };
       profileRepository.findOne.mockResolvedValue(profileWithoutId);
 
-      await expect(
-        service.uploadSelfie('user-123', selfieDto),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.uploadSelfie('user-123', selfieDto),
-      ).rejects.toThrow('ID verification must be completed first');
+      await expect(service.uploadSelfie('user-123', selfieDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.uploadSelfie('user-123', selfieDto)).rejects.toThrow(
+        'ID verification must be completed first',
+      );
     });
 
     it('should upload selfie when ID is verified', async () => {
-      const profileWithId = { ...mockProfile, kycIdVerified: true, kycSelfieVerified: false };
+      const profileWithId = {
+        ...mockProfile,
+        kycIdVerified: true,
+        kycSelfieVerified: false,
+      };
       profileRepository.findOne.mockResolvedValue(profileWithId);
       userRepository.findOne.mockResolvedValue(mockUser);
       kycCheckRepository.find.mockResolvedValue([mockKycCheck]);
@@ -278,12 +300,12 @@ describe('KycService', () => {
       };
       profileRepository.findOne.mockResolvedValue(verifiedProfile);
 
-      await expect(
-        service.uploadSelfie('user-123', selfieDto),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.uploadSelfie('user-123', selfieDto),
-      ).rejects.toThrow('Selfie already verified');
+      await expect(service.uploadSelfie('user-123', selfieDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.uploadSelfie('user-123', selfieDto)).rejects.toThrow(
+        'Selfie already verified',
+      );
     });
   });
 
@@ -297,10 +319,10 @@ describe('KycService', () => {
     it('should verify valid Polish IBAN', async () => {
       profileRepository.findOne.mockResolvedValue(mockProfile);
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck)
+        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck),
       );
 
       const result = await service.verifyBankAccount('user-123', validBankDto);
@@ -361,10 +383,10 @@ describe('KycService', () => {
       const freshProfile = { ...mockProfile, kycBankVerified: false };
       profileRepository.findOne.mockResolvedValue(freshProfile);
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck)
+        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck),
       );
 
       await service.verifyBankAccount('user-123', validBankDto);
@@ -378,10 +400,10 @@ describe('KycService', () => {
       const freshProfile = { ...mockProfile, kycBankVerified: false };
       profileRepository.findOne.mockResolvedValue(freshProfile);
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck)
+        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck),
       );
 
       const result = await service.verifyBankAccount('user-123', validBankDto);
@@ -406,14 +428,17 @@ describe('KycService', () => {
     };
 
     it('should update check status on webhook receipt', async () => {
-      const pendingCheck = { ...mockKycCheck, status: KycCheckStatus.IN_PROGRESS };
+      const pendingCheck = {
+        ...mockKycCheck,
+        status: KycCheckStatus.IN_PROGRESS,
+      };
       kycCheckRepository.findOne.mockResolvedValue(pendingCheck);
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve(check as KycCheck)
+        Promise.resolve(check as KycCheck),
       );
       profileRepository.findOne.mockResolvedValue(mockProfile);
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       await service.handleWebhook(completeWebhookPayload, 'mock-signature');
@@ -468,14 +493,17 @@ describe('KycService', () => {
         },
       };
 
-      const pendingCheck = { ...mockKycCheck, status: KycCheckStatus.IN_PROGRESS };
+      const pendingCheck = {
+        ...mockKycCheck,
+        status: KycCheckStatus.IN_PROGRESS,
+      };
       kycCheckRepository.findOne.mockResolvedValue(pendingCheck);
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve(check as KycCheck)
+        Promise.resolve(check as KycCheck),
       );
       profileRepository.findOne.mockResolvedValue(mockProfile);
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
 
       await service.handleWebhook(considerPayload, 'mock-signature');
@@ -528,10 +556,10 @@ describe('KycService', () => {
       profileRepository.findOne.mockResolvedValueOnce(fullyVerifiedForCheck);
 
       profileRepository.save.mockImplementation((profile) =>
-        Promise.resolve(profile as ContractorProfile)
+        Promise.resolve(profile as ContractorProfile),
       );
       kycCheckRepository.save.mockImplementation((check) =>
-        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck)
+        Promise.resolve({ ...check, id: 'bank-check-id' } as KycCheck),
       );
 
       const validBankDto = {

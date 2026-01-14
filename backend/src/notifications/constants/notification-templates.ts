@@ -42,7 +42,10 @@ export interface NotificationTemplate {
  * Notification templates with placeholders
  * Placeholders use {variableName} format and will be replaced with actual data
  */
-export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
+export const NOTIFICATION_TEMPLATES: Record<
+  NotificationType,
+  NotificationTemplate
+> = {
   // Task events
   [NotificationType.NEW_TASK_NEARBY]: {
     title: 'Nowe zlecenie w pobliżu!',

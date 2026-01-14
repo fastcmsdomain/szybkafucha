@@ -55,7 +55,9 @@ describe('UsersService', () => {
 
       const result = await service.findById('user-123');
 
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 'user-123' } });
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: 'user-123' },
+      });
       expect(result).toEqual(mockUser);
     });
 
@@ -217,7 +219,11 @@ describe('UsersService', () => {
       const updateData = { name: 'Updated Name' };
       const updatedUser = { ...mockUser, name: 'Updated Name' };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(updatedUser);
 
       const result = await service.update('user-123', updateData);
@@ -228,9 +234,16 @@ describe('UsersService', () => {
 
     it('should update avatar URL', async () => {
       const updateData = { avatarUrl: 'https://example.com/avatar.jpg' };
-      const updatedUser = { ...mockUser, avatarUrl: 'https://example.com/avatar.jpg' };
+      const updatedUser = {
+        ...mockUser,
+        avatarUrl: 'https://example.com/avatar.jpg',
+      };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(updatedUser);
 
       const result = await service.update('user-123', updateData);
@@ -239,12 +252,16 @@ describe('UsersService', () => {
     });
 
     it('should throw NotFoundException when updating non-existent user', async () => {
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', { name: 'Test' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('nonexistent', { name: 'Test' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -252,10 +269,17 @@ describe('UsersService', () => {
     it('should update user status', async () => {
       const suspendedUser = { ...mockUser, status: UserStatus.SUSPENDED };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(suspendedUser);
 
-      const result = await service.updateStatus('user-123', UserStatus.SUSPENDED);
+      const result = await service.updateStatus(
+        'user-123',
+        UserStatus.SUSPENDED,
+      );
 
       expect(repository.update).toHaveBeenCalledWith('user-123', {
         status: UserStatus.SUSPENDED,
@@ -266,7 +290,11 @@ describe('UsersService', () => {
     it('should ban user', async () => {
       const bannedUser = { ...mockUser, status: UserStatus.BANNED };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(bannedUser);
 
       const result = await service.updateStatus('user-123', UserStatus.BANNED);
@@ -280,7 +308,11 @@ describe('UsersService', () => {
       const fcmToken = 'new-fcm-token-12345';
       const userWithToken = { ...mockUser, fcmToken };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(userWithToken);
 
       const result = await service.updateFcmToken('user-123', fcmToken);
@@ -295,7 +327,11 @@ describe('UsersService', () => {
       const pendingUser = { ...mockUser, status: UserStatus.PENDING };
       const activeUser = { ...mockUser, status: UserStatus.ACTIVE };
 
-      repository.update.mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      repository.update.mockResolvedValue({
+        affected: 1,
+        raw: [],
+        generatedMaps: [],
+      });
       repository.findOne.mockResolvedValue(activeUser);
 
       const result = await service.activate('user-123');

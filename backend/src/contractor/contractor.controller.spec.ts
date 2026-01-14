@@ -54,7 +54,11 @@ describe('ContractorController', () => {
   };
 
   const mockRequest = {
-    user: { id: 'user-123', type: 'contractor', email: 'contractor@example.com' },
+    user: {
+      id: 'user-123',
+      type: 'contractor',
+      email: 'contractor@example.com',
+    },
   };
 
   beforeEach(async () => {
@@ -76,7 +80,9 @@ describe('ContractorController', () => {
     }).compile();
 
     controller = module.get<ContractorController>(ContractorController);
-    service = module.get<ContractorService>(ContractorService) as jest.Mocked<ContractorService>;
+    service = module.get<ContractorService>(
+      ContractorService,
+    ) as jest.Mocked<ContractorService>;
   });
 
   describe('GET /contractor/profile', () => {
@@ -109,7 +115,10 @@ describe('ContractorController', () => {
       service.findByUserId.mockResolvedValue(mockProfile);
       service.update.mockResolvedValue(updatedProfile);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(service.update).toHaveBeenCalledWith('user-123', updateDto);
       expect(result.bio).toBe('Updated bio');
@@ -117,12 +126,18 @@ describe('ContractorController', () => {
 
     it('should update profile categories', async () => {
       const updateDto = { categories: ['montaz', 'sprzatanie'] };
-      const updatedProfile = { ...mockProfile, categories: ['montaz', 'sprzatanie'] };
+      const updatedProfile = {
+        ...mockProfile,
+        categories: ['montaz', 'sprzatanie'],
+      };
 
       service.findByUserId.mockResolvedValue(mockProfile);
       service.update.mockResolvedValue(updatedProfile);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(result.categories).toEqual(['montaz', 'sprzatanie']);
     });
@@ -134,7 +149,10 @@ describe('ContractorController', () => {
       service.findByUserId.mockResolvedValue(mockProfile);
       service.update.mockResolvedValue(updatedProfile);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(result.serviceRadiusKm).toBe(25);
     });
@@ -155,7 +173,11 @@ describe('ContractorController', () => {
 
   describe('PUT /contractor/availability', () => {
     it('should set contractor online', async () => {
-      const verifiedProfile = { ...mockProfile, kycStatus: KycStatus.VERIFIED, isOnline: true };
+      const verifiedProfile = {
+        ...mockProfile,
+        kycStatus: KycStatus.VERIFIED,
+        isOnline: true,
+      };
       service.setAvailability.mockResolvedValue(verifiedProfile);
 
       const result = await controller.setAvailability(mockRequest as any, true);
@@ -168,14 +190,19 @@ describe('ContractorController', () => {
       const offlineProfile = { ...mockProfile, isOnline: false };
       service.setAvailability.mockResolvedValue(offlineProfile);
 
-      const result = await controller.setAvailability(mockRequest as any, false);
+      const result = await controller.setAvailability(
+        mockRequest as any,
+        false,
+      );
 
       expect(result.isOnline).toBe(false);
     });
 
     it('should throw BadRequestException when going online without KYC', async () => {
       service.setAvailability.mockRejectedValue(
-        new BadRequestException('Complete KYC verification before going online'),
+        new BadRequestException(
+          'Complete KYC verification before going online',
+        ),
       );
 
       await expect(
@@ -196,9 +223,15 @@ describe('ContractorController', () => {
 
       service.updateLocation.mockResolvedValue(updatedProfile);
 
-      const result = await controller.updateLocation(mockRequest as any, locationDto);
+      const result = await controller.updateLocation(
+        mockRequest as any,
+        locationDto,
+      );
 
-      expect(service.updateLocation).toHaveBeenCalledWith('user-123', locationDto);
+      expect(service.updateLocation).toHaveBeenCalledWith(
+        'user-123',
+        locationDto,
+      );
       expect(result.lastLocationLat).toBe(52.2297);
       expect(result.lastLocationLng).toBe(21.0122);
     });
@@ -224,7 +257,10 @@ describe('ContractorController', () => {
         'document-url',
       );
 
-      expect(service.submitKycId).toHaveBeenCalledWith('user-123', 'document-url');
+      expect(service.submitKycId).toHaveBeenCalledWith(
+        'user-123',
+        'document-url',
+      );
       expect(result.kycIdVerified).toBe(true);
     });
   });
@@ -239,7 +275,10 @@ describe('ContractorController', () => {
         'selfie-url',
       );
 
-      expect(service.submitKycSelfie).toHaveBeenCalledWith('user-123', 'selfie-url');
+      expect(service.submitKycSelfie).toHaveBeenCalledWith(
+        'user-123',
+        'selfie-url',
+      );
       expect(result.kycSelfieVerified).toBe(true);
     });
   });

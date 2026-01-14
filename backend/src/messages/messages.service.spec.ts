@@ -119,13 +119,18 @@ describe('MessagesService', () => {
 
     const mockNotificationsService = {
       sendToUser: jest.fn().mockResolvedValue({ success: true }),
-      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+      sendToUsers: jest
+        .fn()
+        .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MessagesService,
-        { provide: getRepositoryToken(Message), useValue: mockMessageRepository },
+        {
+          provide: getRepositoryToken(Message),
+          useValue: mockMessageRepository,
+        },
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: NotificationsService, useValue: mockNotificationsService },
@@ -158,7 +163,10 @@ describe('MessagesService', () => {
         createMockQueryBuilder([mockMessage]) as any,
       );
 
-      const result = await service.getTaskMessages('task-123', 'contractor-123');
+      const result = await service.getTaskMessages(
+        'task-123',
+        'contractor-123',
+      );
 
       expect(result.length).toBe(1);
     });
@@ -188,7 +196,10 @@ describe('MessagesService', () => {
       const result = await service.getTaskMessages('task-123', 'client-123');
 
       expect(result[0]).toHaveProperty('senderName', 'Jan Kowalski');
-      expect(result[0]).toHaveProperty('senderAvatar', 'https://example.com/client.jpg');
+      expect(result[0]).toHaveProperty(
+        'senderAvatar',
+        'https://example.com/client.jpg',
+      );
     });
 
     it('should apply pagination with before parameter', async () => {
@@ -201,7 +212,12 @@ describe('MessagesService', () => {
       const qb = createMockQueryBuilder([]);
       messageRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      await service.getTaskMessages('task-123', 'client-123', 50, 'before-message');
+      await service.getTaskMessages(
+        'task-123',
+        'client-123',
+        50,
+        'before-message',
+      );
 
       expect(qb.andWhere).toHaveBeenCalledWith(
         'message.createdAt < :createdAt',
@@ -323,11 +339,7 @@ describe('MessagesService', () => {
 
   describe('getAllUnreadCounts', () => {
     it('should return unread counts for all active tasks', async () => {
-      const tasks = [
-        { id: 'task-1' },
-        { id: 'task-2' },
-        { id: 'task-3' },
-      ];
+      const tasks = [{ id: 'task-1' }, { id: 'task-2' }, { id: 'task-3' }];
 
       const taskQb = {
         select: jest.fn().mockReturnThis(),
@@ -387,7 +399,9 @@ describe('MessagesService', () => {
   describe('task access verification', () => {
     it('should allow client to access their task', async () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
-      messageRepository.createQueryBuilder.mockReturnValue(createMockQueryBuilder([]) as any);
+      messageRepository.createQueryBuilder.mockReturnValue(
+        createMockQueryBuilder([]) as any,
+      );
 
       await expect(
         service.getTaskMessages('task-123', 'client-123'),
@@ -396,7 +410,9 @@ describe('MessagesService', () => {
 
     it('should allow contractor to access assigned task', async () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
-      messageRepository.createQueryBuilder.mockReturnValue(createMockQueryBuilder([]) as any);
+      messageRepository.createQueryBuilder.mockReturnValue(
+        createMockQueryBuilder([]) as any,
+      );
 
       await expect(
         service.getTaskMessages('task-123', 'contractor-123'),

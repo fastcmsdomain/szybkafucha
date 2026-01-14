@@ -29,7 +29,7 @@ describe('RealtimeGateway', () => {
       join: jest.fn(),
       leave: jest.fn(),
       ...overrides,
-    } as unknown as jest.Mocked<Socket>);
+    }) as unknown as jest.Mocked<Socket>;
 
   beforeEach(async () => {
     const mockRealtimeService = {
@@ -155,7 +155,10 @@ describe('RealtimeGateway', () => {
         },
       });
 
-      jwtService.verify.mockReturnValue({ sub: 'user-123', type: 'contractor' });
+      jwtService.verify.mockReturnValue({
+        sub: 'user-123',
+        type: 'contractor',
+      });
 
       await gateway.handleConnection(socket);
 
@@ -207,7 +210,9 @@ describe('RealtimeGateway', () => {
 
       gateway.handleDisconnect(socket);
 
-      expect(realtimeService.removeConnection).toHaveBeenCalledWith('socket-123');
+      expect(realtimeService.removeConnection).toHaveBeenCalledWith(
+        'socket-123',
+      );
       expect(mockServer.emit).toHaveBeenCalledWith(ServerEvent.USER_OFFLINE, {
         userId: 'user-123',
         userType: 'contractor',
@@ -275,11 +280,16 @@ describe('RealtimeGateway', () => {
 
       realtimeService.isUserAuthorizedForTask.mockResolvedValue(true);
 
-      const result = await gateway.handleTaskJoin(socket, { taskId: 'task-123' });
+      const result = await gateway.handleTaskJoin(socket, {
+        taskId: 'task-123',
+      });
 
       expect(result.success).toBe(true);
       expect(socket.join).toHaveBeenCalledWith('task:task-123');
-      expect(realtimeService.joinTaskRoom).toHaveBeenCalledWith('socket-123', 'task-123');
+      expect(realtimeService.joinTaskRoom).toHaveBeenCalledWith(
+        'socket-123',
+        'task-123',
+      );
     });
 
     it('should reject unauthorized task join', async () => {
@@ -288,7 +298,9 @@ describe('RealtimeGateway', () => {
 
       realtimeService.isUserAuthorizedForTask.mockResolvedValue(false);
 
-      const result = await gateway.handleTaskJoin(socket, { taskId: 'task-123' });
+      const result = await gateway.handleTaskJoin(socket, {
+        taskId: 'task-123',
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Not authorized for this task');
@@ -305,7 +317,10 @@ describe('RealtimeGateway', () => {
 
       expect(result.success).toBe(true);
       expect(socket.leave).toHaveBeenCalledWith('task:task-123');
-      expect(realtimeService.leaveTaskRoom).toHaveBeenCalledWith('socket-123', 'task-123');
+      expect(realtimeService.leaveTaskRoom).toHaveBeenCalledWith(
+        'socket-123',
+        'task-123',
+      );
     });
   });
 
@@ -373,10 +388,15 @@ describe('RealtimeGateway', () => {
       const socket = mockSocket();
       socket.data.userId = 'user-123';
 
-      const result = await gateway.handleMessageRead(socket, { taskId: 'task-123' });
+      const result = await gateway.handleMessageRead(socket, {
+        taskId: 'task-123',
+      });
 
       expect(result.success).toBe(true);
-      expect(realtimeService.markMessagesRead).toHaveBeenCalledWith('task-123', 'user-123');
+      expect(realtimeService.markMessagesRead).toHaveBeenCalledWith(
+        'task-123',
+        'user-123',
+      );
       expect(mockServer.to).toHaveBeenCalledWith('task:task-123');
       expect(mockServer.emit).toHaveBeenCalledWith(
         ServerEvent.MESSAGE_READ,
@@ -391,7 +411,11 @@ describe('RealtimeGateway', () => {
 
   describe('broadcastTaskStatus', () => {
     it('should broadcast task status to room', () => {
-      gateway.broadcastTaskStatus('task-123', TaskStatus.IN_PROGRESS, 'contractor-123');
+      gateway.broadcastTaskStatus(
+        'task-123',
+        TaskStatus.IN_PROGRESS,
+        'contractor-123',
+      );
 
       expect(mockServer.to).toHaveBeenCalledWith('task:task-123');
       expect(mockServer.emit).toHaveBeenCalledWith(
@@ -410,17 +434,23 @@ describe('RealtimeGateway', () => {
     it('should send event to specific user', () => {
       realtimeService.getSocketForUser.mockReturnValue('socket-456');
 
-      const result = gateway.sendToUser('user-123', 'custom:event', { data: 'test' });
+      const result = gateway.sendToUser('user-123', 'custom:event', {
+        data: 'test',
+      });
 
       expect(result).toBe(true);
       expect(mockServer.to).toHaveBeenCalledWith('socket-456');
-      expect(mockServer.emit).toHaveBeenCalledWith('custom:event', { data: 'test' });
+      expect(mockServer.emit).toHaveBeenCalledWith('custom:event', {
+        data: 'test',
+      });
     });
 
     it('should return false when user not connected', () => {
       realtimeService.getSocketForUser.mockReturnValue(undefined);
 
-      const result = gateway.sendToUser('offline-user', 'custom:event', { data: 'test' });
+      const result = gateway.sendToUser('offline-user', 'custom:event', {
+        data: 'test',
+      });
 
       expect(result).toBe(false);
     });
@@ -429,9 +459,9 @@ describe('RealtimeGateway', () => {
   describe('getStats', () => {
     it('should return connection statistics', () => {
       realtimeService.getActiveConnectionsCount.mockReturnValue(10);
-      (mockServer.sockets.adapter.rooms as Map<string, Set<string>>).set('room1', new Set());
-      (mockServer.sockets.adapter.rooms as Map<string, Set<string>>).set('room2', new Set());
-      (mockServer.sockets.adapter.rooms as Map<string, Set<string>>).set('room3', new Set());
+      mockServer.sockets.adapter.rooms.set('room1', new Set());
+      mockServer.sockets.adapter.rooms.set('room2', new Set());
+      mockServer.sockets.adapter.rooms.set('room3', new Set());
 
       const stats = gateway.getStats();
 
@@ -478,7 +508,10 @@ describe('RealtimeService', () => {
         RealtimeService,
         { provide: 'TaskRepository', useValue: taskRepository },
         { provide: 'MessageRepository', useValue: messageRepository },
-        { provide: 'ContractorProfileRepository', useValue: contractorProfileRepository },
+        {
+          provide: 'ContractorProfileRepository',
+          useValue: contractorProfileRepository,
+        },
         { provide: 'UserRepository', useValue: userRepository },
       ],
     })
@@ -613,7 +646,10 @@ describe('RealtimeService', () => {
         contractorId: 'contractor-123',
       });
 
-      const isAuthorized = await service.isUserAuthorizedForTask('client-123', 'task-123');
+      const isAuthorized = await service.isUserAuthorizedForTask(
+        'client-123',
+        'task-123',
+      );
 
       expect(isAuthorized).toBe(true);
     });
@@ -624,7 +660,10 @@ describe('RealtimeService', () => {
         contractorId: 'contractor-123',
       });
 
-      const isAuthorized = await service.isUserAuthorizedForTask('contractor-123', 'task-123');
+      const isAuthorized = await service.isUserAuthorizedForTask(
+        'contractor-123',
+        'task-123',
+      );
 
       expect(isAuthorized).toBe(true);
     });
@@ -635,7 +674,10 @@ describe('RealtimeService', () => {
         contractorId: 'contractor-123',
       });
 
-      const isAuthorized = await service.isUserAuthorizedForTask('random-user', 'task-123');
+      const isAuthorized = await service.isUserAuthorizedForTask(
+        'random-user',
+        'task-123',
+      );
 
       expect(isAuthorized).toBe(false);
     });
@@ -643,7 +685,10 @@ describe('RealtimeService', () => {
     it('should return false for non-existent task', async () => {
       taskRepository.findOne.mockResolvedValue(null);
 
-      const isAuthorized = await service.isUserAuthorizedForTask('user-123', 'nonexistent');
+      const isAuthorized = await service.isUserAuthorizedForTask(
+        'user-123',
+        'nonexistent',
+      );
 
       expect(isAuthorized).toBe(false);
     });

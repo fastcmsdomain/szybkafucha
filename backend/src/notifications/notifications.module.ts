@@ -9,10 +9,7 @@ import { NotificationsService } from './notifications.service';
 import { User } from '../users/entities/user.entity';
 
 @Module({
-  imports: [
-    ConfigModule,
-    TypeOrmModule.forFeature([User]),
-  ],
+  imports: [ConfigModule, TypeOrmModule.forFeature([User])],
   providers: [NotificationsService],
   exports: [NotificationsService],
 })

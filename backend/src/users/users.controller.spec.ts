@@ -53,7 +53,9 @@ describe('UsersController', () => {
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    usersService = module.get<UsersService>(UsersService) as jest.Mocked<UsersService>;
+    usersService = module.get<UsersService>(
+      UsersService,
+    ) as jest.Mocked<UsersService>;
     fileStorageService = module.get<FileStorageService>(
       FileStorageService,
     ) as jest.Mocked<FileStorageService>;
@@ -86,7 +88,10 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, name: 'New Name' };
       usersService.update.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(usersService.update).toHaveBeenCalledWith('user-123', updateDto);
       expect(result.name).toBe('New Name');
@@ -97,7 +102,10 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, avatarUrl: updateDto.avatarUrl };
       usersService.update.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(result.avatarUrl).toBe('https://example.com/new-avatar.jpg');
     });
@@ -107,7 +115,10 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, fcmToken: 'new-fcm-token' };
       usersService.update.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
       expect(result.fcmToken).toBe('new-fcm-token');
     });
@@ -117,9 +128,14 @@ describe('UsersController', () => {
       const updatedUser = { ...mockUser, name: 'Only Name' };
       usersService.update.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateProfile(mockRequest as any, updateDto);
+      const result = await controller.updateProfile(
+        mockRequest as any,
+        updateDto,
+      );
 
-      expect(usersService.update).toHaveBeenCalledWith('user-123', { name: 'Only Name' });
+      expect(usersService.update).toHaveBeenCalledWith('user-123', {
+        name: 'Only Name',
+      });
       expect(result.avatarUrl).toBeNull(); // unchanged
     });
   });
@@ -140,10 +156,18 @@ describe('UsersController', () => {
       fileStorageService.uploadAvatar.mockResolvedValue(avatarUrl);
       usersService.update.mockResolvedValue({ ...mockUser, avatarUrl });
 
-      const result = await controller.uploadAvatar(mockRequest as any, mockFile);
+      const result = await controller.uploadAvatar(
+        mockRequest as any,
+        mockFile,
+      );
 
-      expect(fileStorageService.uploadAvatar).toHaveBeenCalledWith(mockFile, 'user-123');
-      expect(usersService.update).toHaveBeenCalledWith('user-123', { avatarUrl });
+      expect(fileStorageService.uploadAvatar).toHaveBeenCalledWith(
+        mockFile,
+        'user-123',
+      );
+      expect(usersService.update).toHaveBeenCalledWith('user-123', {
+        avatarUrl,
+      });
       expect(result.avatarUrl).toBe(avatarUrl);
       expect(result.message).toBe('Avatar uploaded successfully');
     });
@@ -155,16 +179,23 @@ describe('UsersController', () => {
 
       usersService.findByIdOrFail.mockResolvedValue(userWithAvatar);
       fileStorageService.uploadAvatar.mockResolvedValue(newAvatarUrl);
-      usersService.update.mockResolvedValue({ ...mockUser, avatarUrl: newAvatarUrl });
+      usersService.update.mockResolvedValue({
+        ...mockUser,
+        avatarUrl: newAvatarUrl,
+      });
 
       await controller.uploadAvatar(mockRequest as any, mockFile);
 
-      expect(fileStorageService.deleteAvatar).toHaveBeenCalledWith(oldAvatarUrl);
+      expect(fileStorageService.deleteAvatar).toHaveBeenCalledWith(
+        oldAvatarUrl,
+      );
     });
 
     it('should not delete avatar if user has none', async () => {
       usersService.findByIdOrFail.mockResolvedValue(mockUser); // avatarUrl is null
-      fileStorageService.uploadAvatar.mockResolvedValue('/uploads/avatars/new.jpg');
+      fileStorageService.uploadAvatar.mockResolvedValue(
+        '/uploads/avatars/new.jpg',
+      );
       usersService.update.mockResolvedValue(mockUser);
 
       await controller.uploadAvatar(mockRequest as any, mockFile);
@@ -195,7 +226,9 @@ describe('UsersController', () => {
     it('should accept PNG files', async () => {
       const pngFile = { ...mockFile, mimetype: 'image/png' };
       usersService.findByIdOrFail.mockResolvedValue(mockUser);
-      fileStorageService.uploadAvatar.mockResolvedValue('/uploads/avatars/avatar.png');
+      fileStorageService.uploadAvatar.mockResolvedValue(
+        '/uploads/avatars/avatar.png',
+      );
       usersService.update.mockResolvedValue(mockUser);
 
       const result = await controller.uploadAvatar(mockRequest as any, pngFile);
@@ -206,10 +239,15 @@ describe('UsersController', () => {
     it('should accept WebP files', async () => {
       const webpFile = { ...mockFile, mimetype: 'image/webp' };
       usersService.findByIdOrFail.mockResolvedValue(mockUser);
-      fileStorageService.uploadAvatar.mockResolvedValue('/uploads/avatars/avatar.webp');
+      fileStorageService.uploadAvatar.mockResolvedValue(
+        '/uploads/avatars/avatar.webp',
+      );
       usersService.update.mockResolvedValue(mockUser);
 
-      const result = await controller.uploadAvatar(mockRequest as any, webpFile);
+      const result = await controller.uploadAvatar(
+        mockRequest as any,
+        webpFile,
+      );
 
       expect(result.avatarUrl).toBe('/uploads/avatars/avatar.webp');
     });

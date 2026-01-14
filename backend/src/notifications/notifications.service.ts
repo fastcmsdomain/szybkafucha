@@ -50,7 +50,9 @@ export class NotificationsService {
   private initializeFirebase(): void {
     try {
       const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
-      const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
+      const clientEmail = this.configService.get<string>(
+        'FIREBASE_CLIENT_EMAIL',
+      );
       const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
 
       if (!projectId || !clientEmail || !privateKey) {
@@ -88,7 +90,9 @@ export class NotificationsService {
     }
 
     if (!user.fcmToken) {
-      this.logger.debug(`User ${userId} has no FCM token - skipping notification`);
+      this.logger.debug(
+        `User ${userId} has no FCM token - skipping notification`,
+      );
       return { success: false, error: 'No FCM token' };
     }
 
@@ -114,9 +118,9 @@ export class NotificationsService {
     if (this.mockMode) {
       this.logger.log(
         `[MOCK] Push notification: ${type}\n` +
-        `  Token: ${fcmToken.substring(0, 20)}...\n` +
-        `  Title: ${title}\n` +
-        `  Body: ${body}`,
+          `  Token: ${fcmToken.substring(0, 20)}...\n` +
+          `  Title: ${title}\n` +
+          `  Body: ${body}`,
       );
       return { success: true, messageId: `mock-${Date.now()}` };
     }
@@ -214,9 +218,9 @@ export class NotificationsService {
     if (this.mockMode) {
       this.logger.log(
         `[MOCK] Batch push notification: ${type}\n` +
-        `  Recipients: ${fcmTokens.length} tokens\n` +
-        `  Title: ${title}\n` +
-        `  Body: ${body}`,
+          `  Recipients: ${fcmTokens.length} tokens\n` +
+          `  Title: ${title}\n` +
+          `  Body: ${body}`,
       );
       return {
         successCount: fcmTokens.length,

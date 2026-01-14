@@ -8,7 +8,10 @@ import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
 import { Rating } from '../tasks/entities/rating.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
@@ -98,14 +101,18 @@ describe('AdminService', () => {
     ratingCount: 50,
     completedTasksCount: 75,
     isOnline: true,
-    lastLocationLat: 52.2300,
-    lastLocationLng: 21.0130,
+    lastLocationLat: 52.23,
+    lastLocationLng: 21.013,
     lastLocationAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
-  const createMockQueryBuilder = (getRawOneResult?: any, getManyResult?: any[], getCountResult = 0) => ({
+  const createMockQueryBuilder = (
+    getRawOneResult?: any,
+    getManyResult?: any[],
+    getCountResult = 0,
+  ) => ({
     select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
     innerJoin: jest.fn().mockReturnThis(),
@@ -160,16 +167,24 @@ describe('AdminService', () => {
       providers: [
         AdminService,
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockContractorProfileRepository,
+        },
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
         { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
-        { provide: getRepositoryToken(Payment), useValue: mockPaymentRepository },
+        {
+          provide: getRepositoryToken(Payment),
+          useValue: mockPaymentRepository,
+        },
       ],
     }).compile();
 
     service = module.get<AdminService>(AdminService);
     userRepository = module.get(getRepositoryToken(User));
-    contractorProfileRepository = module.get(getRepositoryToken(ContractorProfile));
+    contractorProfileRepository = module.get(
+      getRepositoryToken(ContractorProfile),
+    );
     taskRepository = module.get(getRepositoryToken(Task));
     ratingRepository = module.get(getRepositoryToken(Rating));
     paymentRepository = module.get(getRepositoryToken(Payment));
@@ -196,14 +211,11 @@ describe('AdminService', () => {
 
       // Mock task status breakdown
       taskRepository.createQueryBuilder.mockReturnValue(
-        createMockQueryBuilder(
-          { avgMinutes: '45' },
-          [
-            { status: 'created', count: '100' },
-            { status: 'in_progress', count: '50' },
-            { status: 'completed', count: '300' },
-          ],
-        ) as any,
+        createMockQueryBuilder({ avgMinutes: '45' }, [
+          { status: 'created', count: '100' },
+          { status: 'in_progress', count: '50' },
+          { status: 'completed', count: '300' },
+        ]) as any,
       );
 
       // Mock payment queries for revenue
@@ -268,7 +280,9 @@ describe('AdminService', () => {
 
       await service.getUsers({ type: UserType.CONTRACTOR });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('user.type = :type', { type: UserType.CONTRACTOR });
+      expect(qb.andWhere).toHaveBeenCalledWith('user.type = :type', {
+        type: UserType.CONTRACTOR,
+      });
     });
 
     it('should filter by status', async () => {
@@ -277,7 +291,9 @@ describe('AdminService', () => {
 
       await service.getUsers({ status: UserStatus.SUSPENDED });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('user.status = :status', { status: UserStatus.SUSPENDED });
+      expect(qb.andWhere).toHaveBeenCalledWith('user.status = :status', {
+        status: UserStatus.SUSPENDED,
+      });
     });
 
     it('should search by name, email, or phone', async () => {
@@ -314,7 +330,9 @@ describe('AdminService', () => {
 
     it('should include contractor profile for contractors', async () => {
       userRepository.findOne.mockResolvedValue(mockContractor);
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
 
       const result = await service.getUserById('contractor-123');
 
@@ -337,9 +355,14 @@ describe('AdminService', () => {
         ...mockUser,
         status: UserStatus.ACTIVE,
       });
-      userRepository.save.mockImplementation((user) => Promise.resolve(user as User));
+      userRepository.save.mockImplementation((user) =>
+        Promise.resolve(user as User),
+      );
 
-      const result = await service.updateUserStatus('user-123', UserStatus.SUSPENDED);
+      const result = await service.updateUserStatus(
+        'user-123',
+        UserStatus.SUSPENDED,
+      );
 
       expect(result.status).toBe(UserStatus.SUSPENDED);
     });
@@ -379,9 +402,14 @@ describe('AdminService', () => {
         ...mockUser,
         status: UserStatus.PENDING,
       });
-      userRepository.save.mockImplementation((user) => Promise.resolve(user as User));
+      userRepository.save.mockImplementation((user) =>
+        Promise.resolve(user as User),
+      );
 
-      const result = await service.updateUserStatus('user-123', UserStatus.ACTIVE);
+      const result = await service.updateUserStatus(
+        'user-123',
+        UserStatus.ACTIVE,
+      );
 
       expect(result.status).toBe(UserStatus.ACTIVE);
     });
@@ -391,9 +419,14 @@ describe('AdminService', () => {
         ...mockUser,
         status: UserStatus.SUSPENDED,
       });
-      userRepository.save.mockImplementation((user) => Promise.resolve(user as User));
+      userRepository.save.mockImplementation((user) =>
+        Promise.resolve(user as User),
+      );
 
-      const result = await service.updateUserStatus('user-123', UserStatus.ACTIVE);
+      const result = await service.updateUserStatus(
+        'user-123',
+        UserStatus.ACTIVE,
+      );
 
       expect(result.status).toBe(UserStatus.ACTIVE);
     });
@@ -463,8 +496,12 @@ describe('AdminService', () => {
     beforeEach(() => {
       taskRepository.findOne.mockResolvedValue(mockTask);
       paymentRepository.findOne.mockResolvedValue(mockPayment);
-      taskRepository.save.mockImplementation((task) => Promise.resolve(task as Task));
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      taskRepository.save.mockImplementation((task) =>
+        Promise.resolve(task as Task),
+      );
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
     });
 
     it('should resolve dispute with refund', async () => {
@@ -535,10 +572,16 @@ describe('AdminService', () => {
       const qb = createMockQueryBuilder(undefined, [mockTask], 1);
       taskRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      const result = await service.getTasks({ status: TaskStatus.IN_PROGRESS, page: 1, limit: 20 });
+      const result = await service.getTasks({
+        status: TaskStatus.IN_PROGRESS,
+        page: 1,
+        limit: 20,
+      });
 
       expect(result.data.length).toBe(1);
-      expect(qb.andWhere).toHaveBeenCalledWith('task.status = :status', { status: TaskStatus.IN_PROGRESS });
+      expect(qb.andWhere).toHaveBeenCalledWith('task.status = :status', {
+        status: TaskStatus.IN_PROGRESS,
+      });
     });
 
     it('should filter by category', async () => {
@@ -547,7 +590,9 @@ describe('AdminService', () => {
 
       await service.getTasks({ category: 'sprzatanie' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('task.category = :category', { category: 'sprzatanie' });
+      expect(qb.andWhere).toHaveBeenCalledWith('task.category = :category', {
+        category: 'sprzatanie',
+      });
     });
 
     it('should filter by clientId', async () => {
@@ -556,7 +601,9 @@ describe('AdminService', () => {
 
       await service.getTasks({ clientId: 'client-123' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('task.clientId = :clientId', { clientId: 'client-123' });
+      expect(qb.andWhere).toHaveBeenCalledWith('task.clientId = :clientId', {
+        clientId: 'client-123',
+      });
     });
 
     it('should filter by contractorId', async () => {
@@ -565,13 +612,18 @@ describe('AdminService', () => {
 
       await service.getTasks({ contractorId: 'contractor-123' });
 
-      expect(qb.andWhere).toHaveBeenCalledWith('task.contractorId = :contractorId', { contractorId: 'contractor-123' });
+      expect(qb.andWhere).toHaveBeenCalledWith(
+        'task.contractorId = :contractorId',
+        { contractorId: 'contractor-123' },
+      );
     });
   });
 
   describe('getContractorStats', () => {
     it('should return contractor statistics', async () => {
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
       taskRepository.count.mockResolvedValue(50);
       taskRepository.find.mockResolvedValue([mockTask]);
 
@@ -591,7 +643,9 @@ describe('AdminService', () => {
     });
 
     it('should handle contractor with no completed tasks', async () => {
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
       taskRepository.count.mockResolvedValue(0);
       taskRepository.find.mockResolvedValue([]);
 

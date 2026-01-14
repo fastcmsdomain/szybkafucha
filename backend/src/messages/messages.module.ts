@@ -15,7 +15,10 @@ import { User } from '../users/entities/user.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Message, Task, User]), NotificationsModule],
+  imports: [
+    TypeOrmModule.forFeature([Message, Task, User]),
+    NotificationsModule,
+  ],
   controllers: [MessagesController, UnreadMessagesController],
   providers: [MessagesService],
   exports: [MessagesService],

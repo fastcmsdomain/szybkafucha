@@ -152,7 +152,10 @@ describe('NotificationsService', () => {
 
   describe('sendToUsers', () => {
     it('should send to multiple users', async () => {
-      userRepository.find.mockResolvedValue([mockUser, { ...mockUser, id: 'user-456' }]);
+      userRepository.find.mockResolvedValue([
+        mockUser,
+        { ...mockUser, id: 'user-456' },
+      ]);
 
       const result = await service.sendToUsers(
         ['user-123', 'user-456'],
@@ -276,7 +279,8 @@ describe('Notification Templates', () => {
     });
 
     it('should have PAYMENT_RECEIVED template with placeholders', () => {
-      const template = NOTIFICATION_TEMPLATES[NotificationType.PAYMENT_RECEIVED];
+      const template =
+        NOTIFICATION_TEMPLATES[NotificationType.PAYMENT_RECEIVED];
 
       expect(template.body).toContain('{amount}');
       expect(template.body).toContain('{taskTitle}');

@@ -344,11 +344,13 @@ export class KycService {
     await this.profileRepository.save(profile);
 
     // Send notification
-    this.notificationsService.sendToUser(
-      userId,
-      NotificationType.KYC_BANK_VERIFIED,
-      {},
-    ).catch((err) => this.logger.error(`Failed to send KYC_BANK_VERIFIED notification: ${err}`));
+    this.notificationsService
+      .sendToUser(userId, NotificationType.KYC_BANK_VERIFIED, {})
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send KYC_BANK_VERIFIED notification: ${err}`,
+        ),
+      );
 
     // Update overall KYC status
     await this.updateOverallKycStatus(userId);
@@ -522,19 +524,23 @@ export class KycService {
     if (kycCheck.type === KycCheckType.DOCUMENT) {
       profile.kycIdVerified = true;
       // Send notification
-      this.notificationsService.sendToUser(
-        kycCheck.userId,
-        NotificationType.KYC_DOCUMENT_VERIFIED,
-        {},
-      ).catch((err) => this.logger.error(`Failed to send KYC_DOCUMENT_VERIFIED notification: ${err}`));
+      this.notificationsService
+        .sendToUser(kycCheck.userId, NotificationType.KYC_DOCUMENT_VERIFIED, {})
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send KYC_DOCUMENT_VERIFIED notification: ${err}`,
+          ),
+        );
     } else if (kycCheck.type === KycCheckType.FACIAL_SIMILARITY) {
       profile.kycSelfieVerified = true;
       // Send notification
-      this.notificationsService.sendToUser(
-        kycCheck.userId,
-        NotificationType.KYC_SELFIE_VERIFIED,
-        {},
-      ).catch((err) => this.logger.error(`Failed to send KYC_SELFIE_VERIFIED notification: ${err}`));
+      this.notificationsService
+        .sendToUser(kycCheck.userId, NotificationType.KYC_SELFIE_VERIFIED, {})
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send KYC_SELFIE_VERIFIED notification: ${err}`,
+          ),
+        );
     }
 
     await this.profileRepository.save(profile);
@@ -556,11 +562,11 @@ export class KycService {
       this.logger.log(`User ${userId} fully KYC verified`);
 
       // Send KYC complete notification
-      this.notificationsService.sendToUser(
-        userId,
-        NotificationType.KYC_COMPLETE,
-        {},
-      ).catch((err) => this.logger.error(`Failed to send KYC_COMPLETE notification: ${err}`));
+      this.notificationsService
+        .sendToUser(userId, NotificationType.KYC_COMPLETE, {})
+        .catch((err) =>
+          this.logger.error(`Failed to send KYC_COMPLETE notification: ${err}`),
+        );
     }
   }
 

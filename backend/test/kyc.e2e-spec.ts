@@ -10,7 +10,10 @@ import { AppModule } from '../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserType, UserStatus } from '../src/users/entities/user.entity';
-import { ContractorProfile, KycStatus } from '../src/contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../src/contractor/entities/contractor-profile.entity';
 import { KycCheck } from '../src/kyc/entities/kyc-check.entity';
 import { DocumentType } from '../src/kyc/dto/kyc.dto';
 
@@ -58,7 +61,9 @@ describe('KYC Flow (e2e)', () => {
     await app.init();
 
     userRepository = moduleFixture.get(getRepositoryToken(User));
-    profileRepository = moduleFixture.get(getRepositoryToken(ContractorProfile));
+    profileRepository = moduleFixture.get(
+      getRepositoryToken(ContractorProfile),
+    );
     kycCheckRepository = moduleFixture.get(getRepositoryToken(KycCheck));
 
     // Create test contractor user via Google auth
@@ -181,7 +186,9 @@ describe('KYC Flow (e2e)', () => {
         })
         .expect(400)
         .expect((res) => {
-          expect(res.body.message).toContain('ID verification must be completed first');
+          expect(res.body.message).toContain(
+            'ID verification must be completed first',
+          );
         });
     });
 

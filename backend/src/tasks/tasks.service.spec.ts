@@ -8,7 +8,10 @@ import { Repository } from 'typeorm';
 import { TasksService, RankedContractor } from './tasks.service';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -61,8 +64,8 @@ describe('TasksService', () => {
     ratingCount: 50,
     completedTasksCount: 75,
     isOnline: true,
-    lastLocationLat: 52.2300,
-    lastLocationLng: 21.0130,
+    lastLocationLat: 52.23,
+    lastLocationLng: 21.013,
     lastLocationAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -93,7 +96,9 @@ describe('TasksService', () => {
 
     const mockNotificationsService = {
       sendToUser: jest.fn().mockResolvedValue({ success: true }),
-      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+      sendToUsers: jest
+        .fn()
+        .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,7 +106,10 @@ describe('TasksService', () => {
         TasksService,
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
         { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockContractorProfileRepository,
+        },
         { provide: RealtimeGateway, useValue: mockRealtimeGateway },
         { provide: NotificationsService, useValue: mockNotificationsService },
       ],
@@ -110,13 +118,20 @@ describe('TasksService', () => {
     service = module.get<TasksService>(TasksService);
     taskRepository = module.get(getRepositoryToken(Task));
     ratingRepository = module.get(getRepositoryToken(Rating));
-    contractorProfileRepository = module.get(getRepositoryToken(ContractorProfile));
+    contractorProfileRepository = module.get(
+      getRepositoryToken(ContractorProfile),
+    );
     realtimeGateway = module.get(RealtimeGateway);
   });
 
   describe('calculateDistance', () => {
     it('should return 0 for same coordinates', () => {
-      const distance = service.calculateDistance(52.2297, 21.0122, 52.2297, 21.0122);
+      const distance = service.calculateDistance(
+        52.2297,
+        21.0122,
+        52.2297,
+        21.0122,
+      );
       expect(distance).toBe(0);
     });
 
@@ -126,9 +141,14 @@ describe('TasksService', () => {
       const warsawLng = 21.0122;
       // Krakow coordinates
       const krakowLat = 50.0647;
-      const krakowLng = 19.9450;
+      const krakowLng = 19.945;
 
-      const distance = service.calculateDistance(warsawLat, warsawLng, krakowLat, krakowLng);
+      const distance = service.calculateDistance(
+        warsawLat,
+        warsawLng,
+        krakowLat,
+        krakowLng,
+      );
 
       // Distance should be approximately 252km (allow 10% margin)
       expect(distance).toBeGreaterThan(240);
@@ -138,7 +158,7 @@ describe('TasksService', () => {
     it('should handle coordinates across the equator', () => {
       // New York
       const nyLat = 40.7128;
-      const nyLng = -74.0060;
+      const nyLng = -74.006;
       // Buenos Aires
       const baLat = -34.6037;
       const baLng = -58.3816;
@@ -154,7 +174,7 @@ describe('TasksService', () => {
       const lat1 = 52.2297;
       const lng1 = 21.0122;
       const lat2 = 50.0647;
-      const lng2 = 19.9450;
+      const lng2 = 19.945;
 
       const distance1 = service.calculateDistance(lat1, lng1, lat2, lng2);
       const distance2 = service.calculateDistance(lat2, lng2, lat1, lng1);
@@ -233,22 +253,22 @@ describe('TasksService', () => {
           userId: 'contractor-1',
           ratingAvg: 3.0,
           completedTasksCount: 20,
-          lastLocationLat: 52.2400,
-          lastLocationLng: 21.0200,
+          lastLocationLat: 52.24,
+          lastLocationLng: 21.02,
         }),
         createMockContractorProfile({
           userId: 'contractor-2',
           ratingAvg: 5.0,
           completedTasksCount: 100,
-          lastLocationLat: 52.2300,
-          lastLocationLng: 21.0130,
+          lastLocationLat: 52.23,
+          lastLocationLng: 21.013,
         }),
         createMockContractorProfile({
           userId: 'contractor-3',
           ratingAvg: 4.0,
           completedTasksCount: 50,
-          lastLocationLat: 52.2350,
-          lastLocationLng: 21.0150,
+          lastLocationLat: 52.235,
+          lastLocationLng: 21.015,
         }),
       ];
 
@@ -264,8 +284,14 @@ describe('TasksService', () => {
 
     it('should filter out offline contractors', async () => {
       const contractors = [
-        createMockContractorProfile({ userId: 'online-contractor', isOnline: true }),
-        createMockContractorProfile({ userId: 'offline-contractor', isOnline: false }),
+        createMockContractorProfile({
+          userId: 'online-contractor',
+          isOnline: true,
+        }),
+        createMockContractorProfile({
+          userId: 'offline-contractor',
+          isOnline: false,
+        }),
       ];
 
       contractorProfileRepository.find.mockResolvedValue(
@@ -302,13 +328,13 @@ describe('TasksService', () => {
       const contractors = [
         createMockContractorProfile({
           userId: 'nearby-contractor',
-          lastLocationLat: 52.2300, // ~0.5km from task
-          lastLocationLng: 21.0130,
+          lastLocationLat: 52.23, // ~0.5km from task
+          lastLocationLng: 21.013,
         }),
         createMockContractorProfile({
           userId: 'far-contractor',
-          lastLocationLat: 52.5000, // ~30km from task
-          lastLocationLng: 21.0000,
+          lastLocationLat: 52.5, // ~30km from task
+          lastLocationLng: 21.0,
         }),
       ];
 
@@ -332,8 +358,8 @@ describe('TasksService', () => {
       const contractors = [
         createMockContractorProfile({
           userId: 'with-location',
-          lastLocationLat: 52.2300,
-          lastLocationLng: 21.0130,
+          lastLocationLat: 52.23,
+          lastLocationLng: 21.013,
         }),
         createMockContractorProfile({
           userId: 'no-location',
@@ -355,8 +381,8 @@ describe('TasksService', () => {
         createMockContractorProfile({
           userId: `contractor-${i}`,
           ratingAvg: 4.0 + i * 0.1,
-          lastLocationLat: 52.2300,
-          lastLocationLng: 21.0130,
+          lastLocationLat: 52.23,
+          lastLocationLng: 21.013,
         }),
       );
 
@@ -371,8 +397,8 @@ describe('TasksService', () => {
       const contractors = [
         createMockContractorProfile({
           userId: 'contractor-1',
-          lastLocationLat: 52.2300,
-          lastLocationLng: 21.0130,
+          lastLocationLat: 52.23,
+          lastLocationLng: 21.013,
         }),
       ];
 
@@ -446,8 +472,13 @@ describe('TasksService', () => {
 
     it('should filter out tasks beyond radius', async () => {
       const tasks = [
-        { ...mockTask, id: 'nearby-task', locationLat: 52.2300, locationLng: 21.0130 },
-        { ...mockTask, id: 'far-task', locationLat: 52.5000, locationLng: 21.0000 },
+        {
+          ...mockTask,
+          id: 'nearby-task',
+          locationLat: 52.23,
+          locationLng: 21.013,
+        },
+        { ...mockTask, id: 'far-task', locationLat: 52.5, locationLng: 21.0 },
       ];
 
       taskRepository.find.mockResolvedValue(tasks);

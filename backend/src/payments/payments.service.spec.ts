@@ -14,7 +14,10 @@ import {
 import { PaymentsService } from './payments.service';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
-import { ContractorProfile, KycStatus } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -81,8 +84,8 @@ describe('PaymentsService', () => {
     ratingCount: 50,
     completedTasksCount: 75,
     isOnline: true,
-    lastLocationLat: 52.2300,
-    lastLocationLng: 21.0130,
+    lastLocationLat: 52.23,
+    lastLocationLng: 21.013,
     lastLocationAt: new Date(),
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -128,15 +131,23 @@ describe('PaymentsService', () => {
 
     const mockNotificationsService = {
       sendToUser: jest.fn().mockResolvedValue({ success: true }),
-      sendToUsers: jest.fn().mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
+      sendToUsers: jest
+        .fn()
+        .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
-        { provide: getRepositoryToken(Payment), useValue: mockPaymentRepository },
+        {
+          provide: getRepositoryToken(Payment),
+          useValue: mockPaymentRepository,
+        },
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockContractorProfileRepository,
+        },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
@@ -146,7 +157,9 @@ describe('PaymentsService', () => {
     service = module.get<PaymentsService>(PaymentsService);
     paymentRepository = module.get(getRepositoryToken(Payment));
     taskRepository = module.get(getRepositoryToken(Task));
-    contractorProfileRepository = module.get(getRepositoryToken(ContractorProfile));
+    contractorProfileRepository = module.get(
+      getRepositoryToken(ContractorProfile),
+    );
     userRepository = module.get(getRepositoryToken(User));
   });
 
@@ -158,16 +171,24 @@ describe('PaymentsService', () => {
       });
       contractorProfileRepository.update.mockResolvedValue(undefined as any);
 
-      const result = await service.createConnectAccount('contractor-123', 'contractor@test.pl');
+      const result = await service.createConnectAccount(
+        'contractor-123',
+        'contractor@test.pl',
+      );
 
       expect(result.accountId).toContain('acct_mock_');
       expect(result.onboardingUrl).toContain('mock-stripe-onboarding');
     });
 
     it('should return existing onboarding link if account already exists', async () => {
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
 
-      const result = await service.createConnectAccount('contractor-123', 'contractor@test.pl');
+      const result = await service.createConnectAccount(
+        'contractor-123',
+        'contractor@test.pl',
+      );
 
       expect(result.accountId).toBe('acct_mock_123');
       expect(contractorProfileRepository.update).not.toHaveBeenCalled();
@@ -196,7 +217,9 @@ describe('PaymentsService', () => {
     });
 
     it('should return full status in mock mode', async () => {
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
 
       const result = await service.getAccountStatus('contractor-123');
 
@@ -215,7 +238,10 @@ describe('PaymentsService', () => {
       paymentRepository.create.mockReturnValue(mockPayment);
       paymentRepository.save.mockResolvedValue(mockPayment);
 
-      const result = await service.createPaymentIntent('task-123', 'client-123');
+      const result = await service.createPaymentIntent(
+        'task-123',
+        'client-123',
+      );
 
       expect(result.clientSecret).toContain('mock_secret_');
       expect(result.paymentId).toBe(mockPayment.id);
@@ -264,8 +290,13 @@ describe('PaymentsService', () => {
         budgetAmount: 200,
       });
       paymentRepository.findOne.mockResolvedValue(null);
-      paymentRepository.create.mockImplementation((data) => ({ ...mockPayment, ...data }));
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      paymentRepository.create.mockImplementation((data) => ({
+        ...mockPayment,
+        ...data,
+      }));
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
 
       await service.createPaymentIntent('task-123', 'client-123');
 
@@ -285,7 +316,9 @@ describe('PaymentsService', () => {
         ...mockPayment,
         status: PaymentStatus.PENDING,
       });
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
 
       const result = await service.confirmPaymentHold('payment-123');
 
@@ -318,7 +351,9 @@ describe('PaymentsService', () => {
         ...mockPayment,
         status: PaymentStatus.HELD,
       });
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
 
       const result = await service.capturePayment('task-123');
 
@@ -341,9 +376,14 @@ describe('PaymentsService', () => {
         ...mockPayment,
         status: PaymentStatus.HELD,
       });
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
 
-      const result = await service.refundPayment('task-123', 'Customer requested');
+      const result = await service.refundPayment(
+        'task-123',
+        'Customer requested',
+      );
 
       expect(result.status).toBe(PaymentStatus.REFUNDED);
       expect(result.refundReason).toBe('Customer requested');
@@ -354,9 +394,14 @@ describe('PaymentsService', () => {
         ...mockPayment,
         status: PaymentStatus.CAPTURED,
       });
-      paymentRepository.save.mockImplementation((payment) => Promise.resolve(payment as Payment));
+      paymentRepository.save.mockImplementation((payment) =>
+        Promise.resolve(payment as Payment),
+      );
 
-      const result = await service.refundPayment('task-123', 'Dispute resolved');
+      const result = await service.refundPayment(
+        'task-123',
+        'Dispute resolved',
+      );
 
       expect(result.status).toBe(PaymentStatus.REFUNDED);
     });
@@ -364,9 +409,9 @@ describe('PaymentsService', () => {
     it('should throw NotFoundException when no payment exists', async () => {
       paymentRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.refundPayment('task-123', 'reason'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.refundPayment('task-123', 'reason')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when payment already refunded', async () => {
@@ -375,9 +420,9 @@ describe('PaymentsService', () => {
         status: PaymentStatus.REFUNDED,
       });
 
-      await expect(
-        service.refundPayment('task-123', 'reason'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.refundPayment('task-123', 'reason')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException for pending payment', async () => {
@@ -386,9 +431,9 @@ describe('PaymentsService', () => {
         status: PaymentStatus.PENDING,
       });
 
-      await expect(
-        service.refundPayment('task-123', 'reason'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.refundPayment('task-123', 'reason')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -401,11 +446,22 @@ describe('PaymentsService', () => {
         andWhere: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([
-          { ...mockPayment, contractorAmount: 83, status: PaymentStatus.CAPTURED },
-          { ...mockPayment, id: 'payment-2', contractorAmount: 166, status: PaymentStatus.CAPTURED },
+          {
+            ...mockPayment,
+            contractorAmount: 83,
+            status: PaymentStatus.CAPTURED,
+          },
+          {
+            ...mockPayment,
+            id: 'payment-2',
+            contractorAmount: 166,
+            status: PaymentStatus.CAPTURED,
+          },
         ]),
       };
-      paymentRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      paymentRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.getContractorEarnings('contractor-123');
 
@@ -419,7 +475,9 @@ describe('PaymentsService', () => {
 
   describe('requestPayout', () => {
     it('should create payout request in mock mode', async () => {
-      contractorProfileRepository.findOne.mockResolvedValue(mockContractorProfile);
+      contractorProfileRepository.findOne.mockResolvedValue(
+        mockContractorProfile,
+      );
 
       const result = await service.requestPayout('contractor-123', 100);
 
@@ -433,9 +491,9 @@ describe('PaymentsService', () => {
         stripeAccountId: null,
       });
 
-      await expect(service.requestPayout('contractor-123', 100)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.requestPayout('contractor-123', 100),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -493,14 +551,21 @@ describe('PaymentsService', () => {
 
       // Step 2: Confirm payment hold
       paymentRepository.findOne.mockResolvedValueOnce(createdPayment);
-      paymentRepository.save.mockImplementation((p) => Promise.resolve({ ...p, status: PaymentStatus.HELD } as Payment));
+      paymentRepository.save.mockImplementation((p) =>
+        Promise.resolve({ ...p, status: PaymentStatus.HELD } as Payment),
+      );
 
       const heldPayment = await service.confirmPaymentHold('payment-123');
       expect(heldPayment.status).toBe(PaymentStatus.HELD);
 
       // Step 3: Capture payment
-      paymentRepository.findOne.mockResolvedValueOnce({ ...createdPayment, status: PaymentStatus.HELD });
-      paymentRepository.save.mockImplementation((p) => Promise.resolve({ ...p, status: PaymentStatus.CAPTURED } as Payment));
+      paymentRepository.findOne.mockResolvedValueOnce({
+        ...createdPayment,
+        status: PaymentStatus.HELD,
+      });
+      paymentRepository.save.mockImplementation((p) =>
+        Promise.resolve({ ...p, status: PaymentStatus.CAPTURED } as Payment),
+      );
 
       const capturedPayment = await service.capturePayment('task-123');
       expect(capturedPayment.status).toBe(PaymentStatus.CAPTURED);

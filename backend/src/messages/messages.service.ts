@@ -118,21 +118,25 @@ export class MessagesService {
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
     if (task) {
       // Determine the recipient (the other party in the chat)
-      const recipientId = task.clientId === senderId ? task.contractorId : task.clientId;
+      const recipientId =
+        task.clientId === senderId ? task.contractorId : task.clientId;
       if (recipientId) {
         // Send push notification to recipient
-        const messagePreview = dto.content.length > 50
-          ? dto.content.substring(0, 50) + '...'
-          : dto.content;
+        const messagePreview =
+          dto.content.length > 50
+            ? dto.content.substring(0, 50) + '...'
+            : dto.content;
 
-        this.notificationsService.sendToUser(
-          recipientId,
-          NotificationType.NEW_MESSAGE,
-          {
+        this.notificationsService
+          .sendToUser(recipientId, NotificationType.NEW_MESSAGE, {
             senderName: sender?.name || 'Użytkownik',
             messagePreview,
-          },
-        ).catch((err) => this.logger.error(`Failed to send NEW_MESSAGE notification: ${err}`));
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send NEW_MESSAGE notification: ${err}`,
+            ),
+          );
       }
     }
 

@@ -119,7 +119,10 @@ export class UsersController {
     }
 
     // Upload new avatar
-    const avatarUrl = await this.fileStorageService.uploadAvatar(file, req.user.id);
+    const avatarUrl = await this.fileStorageService.uploadAvatar(
+      file,
+      req.user.id,
+    );
 
     // Update user profile with new avatar URL
     await this.usersService.update(req.user.id, { avatarUrl });
