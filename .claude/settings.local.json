@@ -24,7 +24,9 @@
       "Bash(git add:*)",
       "Bash(/opt/homebrew/bin/npm test -- --testPathPattern=\"auth.service.spec.ts\" --passWithNoTests)",
       "Bash(source ~/.nvm/nvm.sh)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter test:*)"
     ]
   }
 }

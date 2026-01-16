@@ -65,13 +65,57 @@
 
 ---
 
+## ⚠️ IMPORTANT: iOS Development Blocker
+
+**Issue:** CocoaPods installation failed due to outdated Ruby version (2.6.10 installed, requires 3.0+)
+
+**Impact:**
+- Cannot build Flutter app for iOS (iPhone/iPad)
+- Flutter plugins with native iOS code will not work
+- App Store submission blocked until resolved
+
+**Current workarounds available:**
+- ✅ Web (Chrome) - fully functional
+- ✅ macOS desktop - fully functional
+- ❌ iOS Simulator/Device - blocked
+- ⚠️ Android - requires Android SDK installation
+
+**Resolution required before Phase 6 (App Store Preparation):**
+
+- [ ] **0.1 Upgrade Ruby for iOS development** ⚡ PRIORITY
+  - Option A (Recommended): Install via Homebrew
+    ```bash
+    brew install ruby
+    echo 'export PATH="/usr/local/opt/ruby/bin:$PATH"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  - Option B: Use rbenv for version management
+    ```bash
+    brew install rbenv ruby-build
+    rbenv install 3.3.0
+    rbenv global 3.3.0
+    ```
+  - After Ruby upgrade, install CocoaPods:
+    ```bash
+    gem install cocoapods
+    pod setup
+    ```
+  - Verify with `flutter doctor` - should show ✓ for CocoaPods
+
+**Why this matters:**
+1. iOS is ~50% of the Polish mobile market
+2. App Store review process takes 1-2 weeks
+3. Must be resolved before task 20.6 (Submit to Apple App Store)
+
+---
+
 ## Tasks
 
 ### Phase 1: Foundation (Week 1-2)
 
 - [x] **1.0 Project Setup**
   - [x] 1.1 Create backend project with NestJS CLI: `nest new backend`
-  - [x] 1.2 Create Flutter project: `flutter create mobile --org pl.szybkafucha`
+  - [x] 1.2 Create Flutter project: `flutter create mobile --org pl.szybkafucha` - Flutter SDK installed (v3.38.7)
   - [x] 1.3 Create React admin project: `npx create-react-app admin --template typescript`
   - [x] 1.4 Set up PostgreSQL database (local Docker or cloud) - docker-compose.yml created
   - [x] 1.5 Set up Redis instance (local Docker or cloud) - docker-compose.yml created
@@ -275,21 +319,64 @@
 ### Phase 4: Mobile App (Parallel with Phase 2-3)
 
 - [ ] **13.0 Flutter Project Setup**
+
+  **Required pubspec.yaml dependencies:**
+  ```yaml
+  dependencies:
+    flutter_riverpod: ^2.5.1
+    go_router: ^14.2.0
+    dio: ^5.4.0
+    flutter_secure_storage: ^9.0.0
+    google_fonts: ^6.2.0
+    cached_network_image: ^3.3.0
+    shimmer: ^3.0.0
+    flutter_svg: ^2.0.9
+    intl: ^0.19.0
+  ```
+
   - [ ] 13.1 Configure app with proper bundle IDs (iOS/Android)
-  - [ ] 13.2 Set up design system in `core/theme/`
-    - Colors matching PRD (Primary: #E94560, Secondary: #16213E)
-    - Typography with Plus Jakarta Sans
-    - Common spacing and border radius values
+  - [x] 13.2 Set up Material 3 design system in `lib/core/theme/` (based on szybkafucha.app)
+    - Create `app_colors.dart` with full color palette:
+      - Primary: #E94560 (coral red), #D13A54 (dark), #FF6B7A (light)
+      - Secondary: #1A1A2E (navy), #16213E (light navy)
+      - Accent: #0F3460 (deep blue)
+      - Semantic: success #10B981, warning #F59E0B, error #EF4444
+      - Neutrals: gray50 #F9FAFB through gray900 #111827 (Tailwind scale)
+    - Create `app_typography.dart`:
+      - Body font: Plus Jakarta Sans (via google_fonts)
+      - Heading font: Nunito (weight 800)
+      - Sizes: 12, 14, 16, 18, 20, 24, 30, 36, 48px
+    - Create `app_spacing.dart`:
+      - Scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96px
+    - Create `app_radius.dart`:
+      - sm: 6, md: 8, lg: 12, xl: 16, 2xl: 24, full: 9999
+    - Create `app_shadows.dart`:
+      - 5 elevation levels (sm, md, lg, xl, 2xl)
+    - Create `app_theme.dart`:
+      - Light theme with Material 3 (`useMaterial3: true`)
+      - Configure `ColorScheme.fromSeed(seedColor: Color(0xFFE94560))`
+      - (Dark theme deferred post-MVP)
+  - [x] 13.2.1 Create reusable component library in `lib/core/widgets/`
+    - `sf_button.dart` - Primary, ghost, gradient variants
+    - `sf_card.dart` - With optional rainbow border animation
+    - `sf_input.dart` - Text input with validation states
+    - `sf_avatar.dart` - User avatars with online indicator
+    - `sf_rating_stars.dart` - 1-5 star display
+    - `sf_status_badge.dart` - Task status badges
+    - `sf_bottom_nav.dart` - Bottom navigation bar
   - [ ] 13.3 Set up API client with Dio
     - Base URL configuration
     - JWT interceptor for auth headers
     - Error handling interceptor
-  - [ ] 13.4 Set up state management (Riverpod or Bloc)
+  - [ ] 13.4 Set up state management with Riverpod 2.x
+    - Add flutter_riverpod, riverpod_annotation, riverpod_generator
+    - Create `lib/core/providers/` directory structure
+    - Set up code generation for type-safe providers
   - [ ] 13.5 Set up navigation (go_router)
   - [ ] 13.6 Set up secure storage for tokens
   - [ ] 13.7 Set up localization (Polish)
 
-- [ ] **14.0 Auth Screens (Mobile)**
+- [ ] **14.0 Auth Screens (Mobile and Tablet)**
   - [ ] 14.1 Create Welcome screen with social login buttons
   - [ ] 14.2 Implement Google Sign-In flow
   - [ ] 14.3 Implement Apple Sign-In flow
@@ -298,13 +385,13 @@
   - [ ] 14.6 Implement auth state persistence
   - [ ] 14.7 Create logout functionality
 
-- [ ] **15.0 Client Screens (Mobile)**
+- [ ] **15.0 Client Screens (Mobile and Tablet)**
   - [ ] 15.1 Create Category Selection screen (6 categories grid)
   - [ ] 15.2 Create Task Details screen
     - Description input
     - Location picker (GPS + manual)
-    - Budget slider with suggested price
-    - Schedule picker (now vs future)
+    - Budget slider with suggested price 
+    - Schedule picker with callendar (now vs future)
   - [ ] 15.3 Create Contractor Selection screen
     - List with avatar, name, rating, price, ETA
     - Tap to view profile
@@ -325,7 +412,7 @@
   - [ ] 15.7 Create Task History screen (list of past tasks)
   - [ ] 15.8 Create Client Profile screen
 
-- [ ] **16.0 Contractor Screens (Mobile)**
+- [ ] **16.0 Contractor Screens (Mobile and Tablet)**
   - [ ] 16.1 Create Contractor Registration screen
     - Photo upload
     - Category multi-select
@@ -358,7 +445,7 @@
     - Transaction history
     - Withdraw button
 
-- [ ] **17.0 Real-time Features (Mobile)**
+- [ ] **17.0 Real-time Features (Mobile and Tablet)**
   - [ ] 17.1 Integrate Socket.io client
   - [ ] 17.2 Implement location broadcasting (contractor)
     - Get GPS every 15 seconds
