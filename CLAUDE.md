@@ -513,3 +513,235 @@ After completing any significant task:
 1. Generate a summary document 
 2. Include changed files, key decisions, and next steps
 3. Save to docs/task-summaries-name/ with timestamp
+
+## Skill: Task Completion Documentation
+
+**When to use**: Every time a task, feature, or significant code change is completed.
+
+**Purpose**: Ensure all completed work is properly documented with code examples, testing evidence, and clear explanations for future reference and team collaboration.
+
+### Required Documentation Components
+
+Every task completion documentation must include:
+
+#### 1. Documentation and Code Examples
+
+**What to include:**
+- **Overview**: Brief description of what was implemented or changed
+- **Code Examples**: 
+  - Show key code snippets with file paths and line numbers
+  - Include before/after comparisons when refactoring
+  - Demonstrate usage examples for new functions/classes/endpoints
+  - Show configuration changes if applicable
+- **File Changes**: List all modified, created, or deleted files
+- **Architecture Decisions**: Explain why certain approaches were chosen
+- **Dependencies**: Note any new packages, libraries, or external services added
+
+**Example Structure:**
+```markdown
+## Task: [Task Name]
+
+### Overview
+[Brief description of what was accomplished]
+
+### Files Changed
+- `backend/src/feature/feature.service.ts` - Added new method
+- `backend/src/feature/dto/create-feature.dto.ts` - New DTO created
+- `backend/src/feature/feature.controller.ts` - New endpoint added
+
+### Code Examples
+
+#### New Service Method
+```typescript
+// backend/src/feature/feature.service.ts
+async createFeature(dto: CreateFeatureDto): Promise<Feature> {
+  // Implementation details
+}
+```
+
+#### New Endpoint
+```typescript
+// backend/src/feature/feature.controller.ts
+@Post()
+@UseGuards(JwtAuthGuard)
+async create(@Body() dto: CreateFeatureDto) {
+  return this.featureService.createFeature(dto);
+}
+```
+
+### Usage Example
+[Show how to use the new feature/endpoint]
+```
+
+#### 2. Testing
+
+**What to include:**
+- **Test Coverage**: List all test files created or updated
+- **Test Cases**: Document what scenarios are covered
+- **Test Results**: Include test execution results (pass/fail counts, coverage percentages)
+- **Manual Testing**: Document any manual testing steps performed
+- **Edge Cases**: Note any edge cases tested or identified
+
+**Example Structure:**
+```markdown
+### Testing
+
+#### Unit Tests
+- `backend/src/feature/feature.service.spec.ts` - Service method tests
+  - ✅ Test case: Successfully creates feature with valid data
+  - ✅ Test case: Throws error with invalid input
+  - ✅ Test case: Handles database errors gracefully
+
+#### E2E Tests
+- `backend/test/feature.e2e-spec.ts` - Endpoint integration tests
+  - ✅ POST /api/v1/feature - Creates feature successfully
+  - ✅ POST /api/v1/feature - Returns 400 for invalid data
+  - ✅ POST /api/v1/feature - Returns 401 without authentication
+
+#### Test Results
+```
+Test Suites: 2 passed, 2 total
+Tests:       15 passed, 15 total
+Coverage:    92% (feature.service.ts)
+```
+
+#### Manual Testing
+1. Tested endpoint via Postman with valid JWT token
+2. Verified error handling with invalid payloads
+3. Confirmed database records are created correctly
+```
+
+#### 3. Clear Explanations
+
+**What to include:**
+- **Problem Statement**: What problem does this solve?
+- **Solution Approach**: How was the problem solved?
+- **Implementation Details**: Step-by-step explanation of the implementation
+- **Trade-offs**: Any compromises or considerations made
+- **Future Improvements**: Known limitations or planned enhancements
+- **Related Documentation**: Links to relevant PRD sections, API docs, or other resources
+
+**Example Structure:**
+```markdown
+### Explanation
+
+#### Problem Statement
+[What issue or requirement this addresses]
+
+#### Solution Approach
+[High-level approach taken to solve the problem]
+
+#### Implementation Details
+1. [Step 1 explanation]
+2. [Step 2 explanation]
+3. [Step 3 explanation]
+
+#### Trade-offs
+- [Any compromises made and why]
+
+#### Future Improvements
+- [Known limitations or planned enhancements]
+
+#### Related Documentation
+- PRD Section: [Link or reference]
+- API Documentation: [Link if applicable]
+```
+
+### Documentation Template
+
+Use this template for consistent documentation:
+
+```markdown
+# Task Completion: [Task Name]
+
+**Date**: [YYYY-MM-DD]
+**Developer**: [Name or identifier]
+**Related Issue/Task**: [Link or reference]
+
+## Overview
+[Brief description of what was accomplished]
+
+## Files Changed
+- [List all modified/created/deleted files]
+
+## Code Examples
+
+### [Component/Feature Name]
+[Code examples with explanations]
+
+## Testing
+
+### Test Coverage
+[Test files and coverage]
+
+### Test Results
+[Execution results]
+
+### Manual Testing
+[Manual testing steps and results]
+
+## Explanation
+
+### Problem Statement
+[What this solves]
+
+### Solution Approach
+[How it was solved]
+
+### Implementation Details
+[Step-by-step explanation]
+
+### Trade-offs
+[Any compromises]
+
+### Future Improvements
+[Known limitations or enhancements]
+
+## Next Steps
+[What should be done next, if anything]
+```
+
+### Documentation Location
+
+Save documentation in:
+- **Path**: `docs/task-summaries/[task-name]-[YYYY-MM-DD].md`
+- **Format**: Markdown (.md)
+- **Naming**: Use kebab-case, include date
+
+**Example**: `docs/task-summaries/contractor-matching-2024-01-15.md`
+
+### Quality Checklist
+
+Before considering documentation complete, verify:
+
+- [ ] Overview clearly explains what was done
+- [ ] All changed files are listed
+- [ ] Code examples are included with file paths
+- [ ] Code examples show actual implementation (not pseudocode)
+- [ ] Test files are documented
+- [ ] Test results are included
+- [ ] Manual testing steps are documented
+- [ ] Problem statement is clear
+- [ ] Solution approach is explained
+- [ ] Implementation details are step-by-step
+- [ ] Trade-offs are acknowledged
+- [ ] Future improvements are noted
+- [ ] Documentation is saved in correct location
+- [ ] Documentation follows the template structure
+
+### Integration with Development Workflow
+
+1. **During Development**: Take notes on decisions and approaches
+2. **After Implementation**: Write code examples and test results
+3. **Before Commit**: Complete documentation using the template
+4. **After Review**: Update documentation based on feedback if needed
+
+### Benefits
+
+Following this skill ensures:
+- **Knowledge Preservation**: Future developers understand what was done and why
+- **Onboarding**: New team members can quickly understand the codebase
+- **Debugging**: Clear documentation helps identify issues faster
+- **Refactoring**: Understanding original decisions aids safe refactoring
+- **Testing**: Test documentation ensures coverage is maintained
+- **Compliance**: Meets project requirements for documentation standards
