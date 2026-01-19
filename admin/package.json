@@ -2,6 +2,7 @@
   "name": "admin",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/admin",
   "dependencies": {
     "@ark-ui/react": "^5.30.0",
     "@chakra-ui/react": "^3.30.0",

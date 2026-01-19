@@ -159,8 +159,12 @@ define('DB_USER', 'uzytkownik');          // Użytkownik bazy
 define('DB_PASS', 'haslo');               // Hasło do bazy
 
 // Dozwolone domeny (CORS)
+// Panel admin jest na tej samej domenie, więc CORS nie jest wymagany
+// Ale API nadal obsługuje CORS dla innych źródeł
 define('ALLOWED_ORIGIN', 'https://szybkafucha.app');
 `
+
+**Uwaga:** Panel administracyjny używa teraz względnych ścieżek do API (`/api/subscribers.php`), więc działa na tej samej domenie bez problemów z CORS.
 
 ### Krok 5: Sprawdź uprawnienia plików
 
@@ -192,20 +196,28 @@ chmod 644 admin/static/js/*
 
 ### Apache (.htaccess)
 
-Jeśli używasz Apache, stwórz plik `admin/.htaccess`:
+Plik `.htaccess` jest już zawarty w `admin/public/.htaccess` i zostanie automatycznie skopiowany do `admin/build/.htaccess` podczas budowania.
+
+Jeśli potrzebujesz ręcznie utworzyć plik `admin/.htaccess` na serwerze, użyj tego samego co w `admin/public/.htaccess`:
 
 `apache
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /admin/
-  RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-l
   RewriteRule . /admin/index.html [L]
 </IfModule>
 
-# Kompresja
+# Security headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Compression
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/css application/javascript application/json
 </IfModule>

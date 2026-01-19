@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Flex, Text, Input, Button } from '@chakra-ui/react';
+import { authConfig } from '../config/auth.config';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -18,9 +19,9 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setError('');
 
-    // Mock login
-    if (email === 'admin@szybkafucha.pl' && password === 'admin123') {
-      localStorage.setItem('adminToken', 'mock-admin-token');
+    // Validate credentials
+    if (email === authConfig.adminEmail && password === authConfig.adminPassword) {
+      localStorage.setItem(authConfig.tokenKey, authConfig.tokenValue);
       navigate('/');
     } else {
       setError('Nieprawidłowy email lub hasło');
@@ -100,10 +101,12 @@ const Login: React.FC = () => {
           </Button>
         </form>
 
-        {/* Dev hint */}
-        <Text fontSize="xs" color="gray.400" textAlign="center" mt={6}>
-          Dev: admin@szybkafucha.pl / admin123
-        </Text>
+        {/* Dev hint - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <Text fontSize="xs" color="gray.400" textAlign="center" mt={6}>
+            Dev: {authConfig.adminEmail}
+          </Text>
+        )}
       </Box>
     </Flex>
   );
