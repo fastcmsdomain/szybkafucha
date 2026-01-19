@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # UI & Design
   cupertino_icons: ^1.0.8
@@ -32,10 +34,19 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.2.2
 
+  # Authentication
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.4
+  crypto: ^3.0.3
+
   # Utilities
-  intl: ^0.19.0
+  intl: ^0.20.2
   equatable: ^2.0.5
   json_annotation: ^4.8.1
+
+  # Media
+  image_picker: ^1.0.7
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

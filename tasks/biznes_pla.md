@@ -1,230 +1,247 @@
-1. WIZJA I CEL PROJEKTU (dlaczego to robisz)
+# 1. WIZJA I CEL PROJEKTU (dlaczego to robisz)
 
-Jak chcesz, żeby ludzie opisywali SzybkąFuchę jednym zdaniem za 2–3 lata?
+## Jak chcesz, żeby ludzie opisywali SzybkąFuchę jednym zdaniem za 2–3 lata?
+
 Szybka Fucha pomogła mi znaleźć ludzi, którzy mogli wykonać zadania, których ja nie chciałem lub nie mogłem zrobić ze względu na brak czasu.
 
-Czy to ma być:
+## Czy to ma być:
 
-🚀 duży startup do skalowania, tak
+- 🚀 duży startup do skalowania, tak
+- 💰 stabilny biznes dający cashflow, tak
+- 🤝 projekt społeczno-lokalny z misją? tak
 
-💰 stabilny biznes dający cashflow,tak
+## Co musi się wydarzyć, żebyś uznał, że projekt odniósł sukces?
 
-🤝 projekt społeczno-lokalny z misją?tak
+Gdzie stworzę kulturę, żebym sprzedał moje aplikacje? która będzie bezpieczna, niezawodny. W sensie takim, że gdy potrzebujesz pomocy przy jakichś banalnych rzeczach, jak koszenie trawy, albo składanie mebli z IKEA, idziesz do SzybkaFucha, żeby znaleźć pomocnika.
 
-Co musi się wydarzyć, żebyś uznał, że projekt odniósł sukces?
-Gdzie stworzę kulturę, żebym sprzedał moje aplikacje?która będzie bezpieczna, niezawodny. W sensie takim, że gdy potrzebujesz pomocy przy jakichś banalnych rzeczach, jak koszenie trawy, albo składanie mebli z IKEA, idziesz do SzybkaFucha, żeby znaleźć pomocnika.
+## Co byłoby dla Ciebie porażką, po której powiedziałbyś „zamykam to"?
 
-Co byłoby dla Ciebie porażką, po której powiedziałbyś „zamykam to”? Gdyby ludzie zaczęli to wykorzystywać i oszukiwać innych ludzi. To byłaby dla mnie granica, po której uznałbym, że projekt stracił swój sens i należy go zamknąć.
+Gdyby ludzie zaczęli to wykorzystywać i oszukiwać innych ludzi. To byłaby dla mnie granica, po której uznałbym, że projekt stracił swój sens i należy go zamknąć.
 
-Czy budujesz to z myślą o sprzedaży (exit) czy o długoterminowym prowadzeniu? Czy budujesz to z myślą o sprzedaży (exit) czy o długoterminowym prowadzeniu?
+## Czy budujesz to z myślą o sprzedaży (exit) czy o długoterminowym prowadzeniu?
 
-Jaką konkretną frustrację z życia ten projekt rozwiązuje (Twoją lub bliskich)?Myślę, że to rozwiązuje problem pomocy komuś, kto jej potrzebuje (czy to osobie starszej, czy komuś innemu). Te błahe, codzienne sprawy są najważniejsze.Poznałem ten problem osób, które po prostu potrzebują zwyczajnej pomocy w sprawach codziennych.
+Czy budujesz to z myślą o sprzedaży (exit) czy o długoterminowym prowadzeniu?
 
-2. PROBLEM RYNKOWY (czy to naprawdę boli)
+## Jaką konkretną frustrację z życia ten projekt rozwiązuje (Twoją lub bliskich)?
 
-Jaki konkretny problem użytkownik ma w momencie, gdy potrzebuje SzybkiejFuchy? W momencie, gdy użytkownik potrzebuje SzybkiejFuchy, konkretny problem zależy od jego roli:
-• Zleceniodawca: Jego głównym problemem jest brak czasu lub sil lub zdrowia na samodzielne wykonanie zadania, które musi zostać zrobione. Szuka więc kogoś, kto przejmie ten obowiązek i go odciąży.
-• Zleceniobiorca: W jego przypadku problemem jest brak pracy lub niewystarczające dochody oraz chęć szybkiego zarobienia dodatkowych pieniędzy.
+Myślę, że to rozwiązuje problem pomocy komuś, kto jej potrzebuje (czy to osobie starszej, czy komuś innemu). Te błahe, codzienne sprawy są najważniejsze. Poznałem ten problem osób, które po prostu potrzebują zwyczajnej pomocy w sprawach codziennych.
 
-Co robi DZISIAJ, gdy ma ten problem? Zleceniodawca, co robi, gdy teraz ma problem? Po prostu tego nie robi, albo szuka pomocy u kolegów, u rodziny, albo po prostu z frustracją robi to sam.
+---
 
-Dlaczego obecne rozwiązania są złe lub niewystarczające? Obecne rozwiązania są niewystarczające, ponieważ opierają się głównie na pomocy rodziny lub przyjaciół. W praktyce bliscy często nie dysponują odpowiednią ilością czasu lub wykazują się niską skutecznością w realizacji powierzonych zadań, co zmusza zleceniodawców do ciągłego proszenia o wsparcie. Z kolei osoby starsze, ze względu na brak sił oraz pogarszający się stan zdrowia, często całkowicie rezygnują z podejmowania jakichkolwiek działań, zostając ze swoimi potrzebami bez realnej pomocy.
+# 2. PROBLEM RYNKOWY (czy to naprawdę boli)
 
+## Jaki konkretny problem użytkownik ma w momencie, gdy potrzebuje SzybkiejFuchy?
 
-W jakich sytuacjach czas jest ważniejszy niż cena? W dzisiejszych czasach czas jest coraz częściej postrzegany jako wartość nadrzędna wobec pieniędzy. Ludzie są obecnie tak zabiegani, że priorytetem staje się oszczędzanie każdej wolnej chwili, a nie tylko samo zarabianie.
+W momencie, gdy użytkownik potrzebuje SzybkiejFuchy, konkretny problem zależy od jego roli:
+
+- **Zleceniodawca:** Jego głównym problemem jest brak czasu lub sil lub zdrowia na samodzielne wykonanie zadania, które musi zostać zrobione. Szuka więc kogoś, kto przejmie ten obowiązek i go odciąży.
+- **Zleceniobiorca:** W jego przypadku problemem jest brak pracy lub niewystarczające dochody oraz chęć szybkiego zarobienia dodatkowych pieniędzy.
+
+## Co robi DZISIAJ, gdy ma ten problem?
+
+Zleceniodawca, co robi, gdy teraz ma problem? Po prostu tego nie robi, albo szuka pomocy u kolegów, u rodziny, albo po prostu z frustracją robi to sam.
+
+## Dlaczego obecne rozwiązania są złe lub niewystarczające?
+
+Obecne rozwiązania są niewystarczające, ponieważ opierają się głównie na pomocy rodziny lub przyjaciół. W praktyce bliscy często nie dysponują odpowiednią ilością czasu lub wykazują się niską skutecznością w realizacji powierzonych zadań, co zmusza zleceniodawców do ciągłego proszenia o wsparcie. Z kolei osoby starsze, ze względu na brak sił oraz pogarszający się stan zdrowia, często całkowicie rezygnują z podejmowania jakichkolwiek działań, zostając ze swoimi potrzebami bez realnej pomocy.
+
+## W jakich sytuacjach czas jest ważniejszy niż cena?
+
+W dzisiejszych czasach czas jest coraz częściej postrzegany jako wartość nadrzędna wobec pieniędzy. Ludzie są obecnie tak zabiegani, że priorytetem staje się oszczędzanie każdej wolnej chwili, a nie tylko samo zarabianie.
 
 Czas staje się ważniejszy od ceny szczególnie w sytuacjach dotyczących uciążliwych lub czasochłonnych obowiązków domowych, takich jak:
-• Prace w ogrodzie: sprzątanie posesji czy regularne koszenie trawy.
-• Montaż i logistyka: samodzielne składanie mebli, które może zająć wiele godzin.
-• Opieka nad zwierzętami: codzienne wyprowadzanie psa w trakcie napiętego grafiku pracy.
 
-W takich przypadkach zapłacenie za usługę jest traktowane nie jako wydatek, ale jako inwestycja w odzyskanie czasu na odpoczynek, rozwijanie pasji lub budowanie relacji z bliskimi. W dobie wszechobecnego pośpiechu możliwość „dokupienia” sobie godziny wolnego bywa bezcenna.
+- **Prace w ogrodzie:** sprzątanie posesji czy regularne koszenie trawy.
+- **Montaż i logistyka:** samodzielne składanie mebli, które może zająć wiele godzin.
+- **Opieka nad zwierzętami:** codzienne wyprowadzanie psa w trakcie napiętego grafiku pracy.
 
-Które zlecenia są:
+W takich przypadkach zapłacenie za usługę jest traktowane nie jako wydatek, ale jako inwestycja w odzyskanie czasu na odpoczynek, rozwijanie pasji lub budowanie relacji z bliskimi. W dobie wszechobecnego pośpiechu możliwość „dokupienia" sobie godziny wolnego bywa bezcenna.
 
-pilne,
+## Które zlecenia są:
 
-powtarzalne,
+- pilne,
+- powtarzalne,
+- emocjonalne (stres, bezradność)?
 
-emocjonalne (stres, bezradność)?
+## Kto cierpi bardziej: zleceniodawca czy osoba wykonująca usługę?
 
-Kto cierpi bardziej: zleceniodawca czy osoba wykonująca usługę? To ciekawa perspektywa. Rzeczywiście, patrząc przez pryzmat oszczędności czasu i komfortu psychicznego, to zleceniodawca znajduje się w trudniejszej sytuacji przed zleceniem zadania. Musi on poświęcać swój cenny czas na czynności, których nie lubi lub nie potrafi wykonać, co generuje frustrację.
+To ciekawa perspektywa. Rzeczywiście, patrząc przez pryzmat oszczędności czasu i komfortu psychicznego, to zleceniodawca znajduje się w trudniejszej sytuacji przed zleceniem zadania. Musi on poświęcać swój cenny czas na czynności, których nie lubi lub nie potrafi wykonać, co generuje frustrację.
 
-Szybka Fucha faktycznie rozwiązuje ten problem, pozwalając zleceniodawcy “kupić wolność” od nielubianych obowiązków. Z kolei wykonawca, mimo wysiłku fizycznego czy umysłowego, otrzymuje konkretną gratyfikację finansową, co daje mu satysfakcję z zarobku i dobrze wykonanej pracy. W takim układzie usługa staje się rozwiązaniem “win-win”, gdzie obie strony kończą proces bardziej zadowolone, niż go zaczynały.
+Szybka Fucha faktycznie rozwiązuje ten problem, pozwalając zleceniodawcy "kupić wolność" od nielubianych obowiązków. Z kolei wykonawca, mimo wysiłku fizycznego czy umysłowego, otrzymuje konkretną gratyfikację finansową, co daje mu satysfakcję z zarobku i dobrze wykonanej pracy. W takim układzie usługa staje się rozwiązaniem "win-win", gdzie obie strony kończą proces bardziej zadowolone, niż go zaczynały.
 
-Jak często przeciętny użytkownik realnie potrzebuje takiej pomocy w miesiącu? Myślę, że raz, może dwa razy w ciągu tygodnia, więc średnio będzie to około 6-8 razy w miesiącu.
+## Jak często przeciętny użytkownik realnie potrzebuje takiej pomocy w miesiącu?
 
-3. GRUPA DOCELOWA (dla kogo NAJPIERW)
+Myślę, że raz, może dwa razy w ciągu tygodnia, więc średnio będzie to około 6-8 razy w miesiącu.
 
-Kto jest Twoim idealnym pierwszym użytkownikiem?Wracając do dawców, będą to:
+---
+
+# 3. GRUPA DOCELOWA (dla kogo NAJPIERW)
+
+## Kto jest Twoim idealnym pierwszym użytkownikiem?
+
+Wracając do dawców, będą to:
+
 1. Osoby starsze
 2. Osoby na stanowiskach kierowniczych
 3. Osoby biznesowe, które prowadzą własne firmy i nie mają czasu
 
-Kto zapłaci bez marudzenia, bo „to mu ratuje dzień”? Biznesmeni, właściciele firm, osoby starsze oraz wszyscy ci, którzy potrzebują pomocy i dysponują odpowiednimi środkami, zapłacą bez marudzenia, bo „to im ratuje dzień”.
+## Kto zapłaci bez marudzenia, bo „to mu ratuje dzień"?
 
-Kto najczęściej ma:
+Biznesmeni, właściciele firm, osoby starsze oraz wszyscy ci, którzy potrzebują pomocy i dysponują odpowiednimi środkami, zapłacą bez marudzenia, bo „to im ratuje dzień".
 
-pieniądze,
+## Kto najczęściej ma:
 
-brak czasu,
+- pieniądze,
+- brak czasu,
+- brak kontaktów?
 
-brak kontaktów?
+## Czy zaczynasz od:
 
-Czy zaczynasz od:
+- dużych miast, tak
+- dzielnic, tak
+- osiedli? tak
 
-dużych miast, tak
+## Która grupa da Ci najmniej problemów operacyjnych na start?
 
-dzielnic,  tak
+## Kto najczęściej poleci aplikację dalej?
 
-osiedli?  tak
+## Czy seniorzy są:
 
-Która grupa da Ci najmniej problemów operacyjnych na start?
+- klientem końcowym,
+- czy klientem są ich dzieci?
 
-Kto najczęściej poleci aplikację dalej?
+---
 
-Czy seniorzy są:
+# 4. PROPOZYCJA WARTOŚCI (dlaczego właśnie TY)
 
-klientem końcowym,
+## Co jest numerem 1, co wyróżnia SzybkąFuchę?
 
-czy klientem są ich dzieci?
+## Co jest nie do skopiowania w 6 miesięcy?
 
-4. PROPOZYCJA WARTOŚCI (dlaczego właśnie TY)
+## Dlaczego użytkownik ma Ci zaufać, a nie iść na OLX?
 
-Co jest numerem 1, co wyróżnia SzybkąFuchę?
+## Co jest większą wartością:
 
-Co jest nie do skopiowania w 6 miesięcy?
+- szybkość,
+- bezpieczeństwo,
+- wygoda,
+- kontrola?
 
-Dlaczego użytkownik ma Ci zaufać, a nie iść na OLX?
+## Jakie emocje ma czuć użytkownik po zakończeniu zlecenia?
 
-Co jest większą wartością:
+## Co sprawi, że pierwsze zlecenie nie będzie ostatnim?
 
-szybkość,
+---
 
-bezpieczeństwo,
+# 5. MODEL BIZNESOWY (jak zarabiasz)
 
-wygoda,
+## Kto realnie płaci prowizję — klient czy wykonawca?
 
-kontrola?
+## Czy prowizja 17% to:
 
-Jakie emocje ma czuć użytkownik po zakończeniu zlecenia?
+- maksimum,
+- minimum,
+- kompromis?
 
-Co sprawi, że pierwsze zlecenie nie będzie ostatnim?
+## Jakie zlecenia są najbardziej rentowne?
 
-5. MODEL BIZNESOWY (jak zarabiasz)
+## Czy opłaca się mieć minimalną cenę zlecenia?
 
-Kto realnie płaci prowizję — klient czy wykonawca?
+## Czy w przyszłości widzisz:
 
-Czy prowizja 17% to:
+- abonament,
+- konta premium,
+- pakiety usług?
 
-maksimum,
+## Kiedy biznes zaczyna się sam finansować?
 
-minimum,
+## Jakie koszty będą rosły razem z sukcesem?
 
-kompromis?
+---
 
-Jakie zlecenia są najbardziej rentowne?
+# 6. PODAŻ – WYKONAWCY (bez nich nie ma platformy)
 
-Czy opłaca się mieć minimalną cenę zlecenia?
+## Dlaczego ktoś miałby chcieć być wykonawcą w SzybkaFucha?
 
-Czy w przyszłości widzisz:
+## Co jest dla nich ważniejsze:
 
-abonament,
+- szybkie zlecenia,
+- przewidywalność,
+- bezpieczeństwo płatności?
 
-konta premium,
+## Co sprawi, że dobrzy wykonawcy zostaną, a nie odejdą?
 
-pakiety usług?
+## Jak zapobiegasz „januszowaniu" jakości?
 
-Kiedy biznes zaczyna się sam finansować?
+## Jakie zlecenia są najchętniej brane, a jakich nikt nie chce?
 
-Jakie koszty będą rosły razem z sukcesem?
+## Czy wykonawcy mają być:
 
-6. PODAŻ – WYKONAWCY (bez nich nie ma platformy)
+- studenci,
+- dorywczo pracujący,
+- pół-profesjonaliści?
 
-Dlaczego ktoś miałby chcieć być wykonawcą w SzybkaFucha?
+---
 
-Co jest dla nich ważniejsze:
+# 7. SKALA I ROZWÓJ (co dalej)
 
-szybkie zlecenia,
+## Co robisz, gdy:
 
-przewidywalność,
+- jest za dużo zleceń,
+- jest za mało wykonawców?
 
-bezpieczeństwo płatności?
+## Jakie miasto lub region jest najlepszy na start?
 
-Co sprawi, że dobrzy wykonawcy zostaną, a nie odejdą?
+## Kiedy i po czym poznasz, że czas skalować dalej?
 
-Jak zapobiegasz „januszowaniu” jakości?
+## Co jest największym wąskim gardłem przy wzroście?
 
-Jakie zlecenia są najchętniej brane, a jakich nikt nie chce?
+## Co może „zabić" ten projekt, jeśli urośnie za szybko?
 
-Czy wykonawcy mają być:
+---
 
-studenci,
+# 8. RYZYKA I PRAWO (lepiej teraz niż później)
 
-dorywczo pracujący,
+## Jakie są największe ryzyka prawne?
 
-pół-profesjonaliści?
+## Co jeśli:
 
-7. SKALA I ROZWÓJ (co dalej)
+- wykonawca coś zniszczy,
+- klient kłamie,
+- dojdzie do konfliktu?
 
-Co robisz, gdy:
+## Jak chronisz zaufanie do platformy?
 
-jest za dużo zleceń,
+## Co się stanie, gdy pojawi się duży gracz z kasą?
 
-jest za mało wykonawców?
+## Jakie decyzje dziś mogą być trudne do odkręcenia za rok?
 
-Jakie miasto lub region jest najlepszy na start?
+---
 
-Kiedy i po czym poznasz, że czas skalować dalej?
+# 9. METRYKI SUKCESU (bez tego to hobby)
 
-Co jest największym wąskim gardłem przy wzroście?
+## Jakie 3 liczby będziesz sprawdzał co tydzień?
 
-Co może „zabić” ten projekt, jeśli urośnie za szybko?
+## Po czym poznasz, że produkt działa, a nie tylko „fajnie wygląda"?
 
-8. RYZYKA I PRAWO (lepiej teraz niż później)
+## Jaki wynik po 3 miesiącach uznasz za dobry, a jaki za alarmowy?
 
-Jakie są największe ryzyka prawne?
+## Co jest ważniejsze na start:
 
-Co jeśli:
+- liczba użytkowników,
+- liczba zleceń,
+- powtarzalność?
 
-wykonawca coś zniszczy,
+## Jak z tym pracować dalej?
 
-klient kłamie,
+---
 
-dojdzie do konfliktu?
+# 👉 Następny krok (polecam):
 
-Jak chronisz zaufanie do platformy?
+**Ty odpowiadasz pisemnie na 10–15 pytań, które czujesz najmocniej**
 
-Co się stanie, gdy pojawi się duży gracz z kasą?
+**Ja na tej podstawie:**
 
-Jakie decyzje dziś mogą być trudne do odkręcenia za rok?
-
-9. METRYKI SUKCESU (bez tego to hobby)
-
-Jakie 3 liczby będziesz sprawdzał co tydzień?
-
-Po czym poznasz, że produkt działa, a nie tylko „fajnie wygląda”?
-
-Jaki wynik po 3 miesiącach uznasz za dobry, a jaki za alarmowy?
-
-Co jest ważniejsze na start:
-
-liczba użytkowników,
-
-liczba zleceń,
-
-powtarzalność?
-
-Jak z tym pracować dalej?
-
-👉 Następny krok (polecam):
-
-Ty odpowiadasz pisemnie na 10–15 pytań, które czujesz najmocniej
-
-Ja na tej podstawie:
-
-ułożę Ci pełny biznesplan (lean + klasyczny)
-
-albo pitch deck pod inwestora
-
-albo plan MVP + walidację rynkową
+- ułożę Ci pełny biznesplan (lean + klasyczny)
+- albo pitch deck pod inwestora
+- albo plan MVP + walidację rynkową

@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'core/l10n/l10n.dart';
+import 'core/router/router.dart';
 import 'core/theme/theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Set preferred orientations
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Set system UI overlay style
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+
   runApp(
     const ProviderScope(
       child: SzybkaFuchaApp(),
@@ -10,120 +33,29 @@ void main() {
   );
 }
 
-class SzybkaFuchaApp extends StatelessWidget {
+class SzybkaFuchaApp extends ConsumerWidget {
   const SzybkaFuchaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Szybka Fucha',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
+      title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const WelcomeScreen(),
-    );
-  }
-}
-
-/// Temporary welcome screen to showcase design system
-class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.paddingMD),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: AppSpacing.space12),
-
-              // Logo placeholder
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: AppRadius.radiusMD,
-                    ),
-                    child: Icon(
-                      Icons.bolt_rounded,
-                      color: AppColors.white,
-                      size: 32,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapMD),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Szybka',
-                          style: AppTypography.h3,
-                        ),
-                        TextSpan(
-                          text: 'Fucha',
-                          style: AppTypography.h3.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: AppSpacing.space16),
-
-              // Headline
-              Text(
-                'Pomoc jest bliżej niż myślisz',
-                style: AppTypography.h2,
-                textAlign: TextAlign.center,
-              ),
-
-              SizedBox(height: AppSpacing.space4),
-
-              Text(
-                'Znajdź pomocnika do drobnych zadań w kilka minut',
-                style: AppTypography.bodyLarge.copyWith(
-                  color: AppColors.gray600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              Spacer(),
-
-              // Buttons preview
-              ElevatedButton(
-                onPressed: () {},
-                child: Text('Szukam pomocy'),
-              ),
-
-              SizedBox(height: AppSpacing.gapMD),
-
-              OutlinedButton(
-                onPressed: () {},
-                child: Text('Chcę pomagać i zarabiać'),
-              ),
-
-              SizedBox(height: AppSpacing.space8),
-
-              // Footer
-              Text(
-                'Dołączając, akceptujesz Regulamin i Politykę Prywatności',
-                style: AppTypography.caption,
-                textAlign: TextAlign.center,
-              ),
-
-              SizedBox(height: AppSpacing.space4),
-            ],
-          ),
-        ),
-      ),
+      routerConfig: router,
+      // Locale settings for Polish
+      locale: const Locale('pl', 'PL'),
+      supportedLocales: const [
+        Locale('pl', 'PL'),
+        Locale('en', 'US'), // Fallback
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }
