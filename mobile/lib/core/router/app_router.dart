@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth.dart';
+import '../../features/chat/screens/screens.dart' as chat;
 import '../../features/client/client.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
@@ -260,7 +261,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'contractorTaskChat',
         builder: (context, state) {
           final taskId = state.pathParameters['taskId']!;
-          return PlaceholderScreen(title: 'Chat $taskId');
+          final extra = state.extra as Map<String, dynamic>?;
+          return chat.ChatScreen(
+            taskId: taskId,
+            taskTitle: extra?['taskTitle'] ?? 'Czat',
+            otherUserName: extra?['otherUserName'] ?? 'Unknown',
+            otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
+            currentUserId: extra?['currentUserId'] ?? 'user_id',
+            currentUserName: extra?['currentUserName'] ?? 'User',
+          );
         },
       ),
       GoRoute(

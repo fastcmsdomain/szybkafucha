@@ -29,6 +29,7 @@ dependencies:
 
   # Networking
   dio: ^5.4.0
+  socket_io_client: ^2.0.2
 
   # Local Storage
   flutter_secure_storage: ^9.0.0
@@ -43,6 +44,7 @@ dependencies:
   intl: ^0.20.2
   equatable: ^2.0.5
   json_annotation: ^4.8.1
+  async: ^2.11.0
 
   # Media
   image_picker: ^1.0.7
