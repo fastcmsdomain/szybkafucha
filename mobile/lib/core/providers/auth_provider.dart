@@ -284,11 +284,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       final response = await api.post<Map<String, dynamic>>(
         '/auth/refresh',
-        data: {'refresh_token': refreshToken},
+        // Backend may use camelCase for request body
+        data: {'refreshToken': refreshToken},
       );
 
-      final newToken = response['access_token'] as String;
-      final newRefreshToken = response['refresh_token'] as String?;
+      // Backend returns camelCase: accessToken, not access_token
+      final newToken = response['accessToken'] as String;
+      final newRefreshToken = response['refreshToken'] as String?;
 
       await _storage.saveToken(newToken);
       if (newRefreshToken != null) {
@@ -348,8 +350,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         data: {'email': email, 'password': password},
       );
 
-      final token = response['access_token'] as String;
-      final refreshToken = response['refresh_token'] as String?;
+      // Backend returns camelCase: accessToken, not access_token
+      final token = response['accessToken'] as String;
+      final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
 
@@ -394,11 +397,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       final response = await api.post<Map<String, dynamic>>(
         '/auth/phone/verify',
-        data: {'phone': phone, 'otp': otp},
+        // Backend expects 'code' field, not 'otp'
+        data: {'phone': phone, 'code': otp},
       );
 
-      final token = response['access_token'] as String;
-      final refreshToken = response['refresh_token'] as String?;
+      // Backend returns camelCase: accessToken, not access_token
+      final token = response['accessToken'] as String;
+      // refresh_token is optional and may not be returned by backend
+      final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
 

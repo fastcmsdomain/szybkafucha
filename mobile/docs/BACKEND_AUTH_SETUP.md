@@ -108,7 +108,7 @@ The backend will be available at `http://localhost:3000/api/v1`
 ### Step 4: Seed Test Data (Optional)
 
 ```bash
-npm run seed
+npm run seednpm run seed
 ```
 
 This creates test users, tasks, and contractors for development.

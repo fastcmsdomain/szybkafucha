@@ -59,7 +59,8 @@
       "Bash(export PATH=\"/usr/local/share/flutter/bin:/usr/local/opt/ruby/bin:/usr/local/lib/ruby/gems/4.0.0/bin:/usr/local/share/android-commandlinetools/platform-tools:$PATH\")",
       "Bash(/usr/bin/grep:*)",
       "Bash(export PATH=\"/usr/local/share/flutter/bin:$PATH\")",
-      "Bash(flutter pub get:*)"
+      "Bash(flutter pub get:*)",
+      "Bash(find:*)"
     ]
   }
 }
