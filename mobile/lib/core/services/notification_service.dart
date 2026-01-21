@@ -50,33 +50,49 @@ class NotificationService {
   Future<void> initialize() async {
     print('NotificationService: Initializing...');
 
-    // 1. Request permissions (iOS only, Android auto-grants)
-    await _requestPermissions();
+    try {
+      // 1. Request permissions (iOS only, Android auto-grants)
+      await _requestPermissions();
 
-    // 2. Create Android notification channel
-    if (Platform.isAndroid) {
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(_channel);
+      // 2. Create Android notification channel
+      if (Platform.isAndroid) {
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(_channel);
+      }
+
+      // 3. Initialize local notifications plugin
+      await _initializeLocalNotifications();
+
+      // 4. Get FCM token and register with backend
+      await _getAndRegisterToken();
+
+      // 5. Set up foreground notification handler
+      _setupForegroundHandler();
+
+      // 6. Set up notification tap handler
+      _setupNotificationTapHandler();
+
+      // 7. Listen for token refresh
+      _listenForTokenRefresh();
+
+      print('✅ NotificationService: Initialization complete');
+    } catch (e, stackTrace) {
+      print('⚠️ NotificationService: Initialization error (continuing in degraded mode)');
+      print('Error: $e');
+      print('Stack trace: $stackTrace');
+
+      // Continue in degraded mode - local notifications will still work
+      // FCM token registration will fail but app won't crash
+      try {
+        await _initializeLocalNotifications();
+        _setupNotificationTapHandler();
+        print('✅ NotificationService: Local notifications initialized (FCM disabled)');
+      } catch (e2) {
+        print('❌ NotificationService: Local notifications also failed: $e2');
+      }
     }
-
-    // 3. Initialize local notifications plugin
-    await _initializeLocalNotifications();
-
-    // 4. Get FCM token and register with backend
-    await _getAndRegisterToken();
-
-    // 5. Set up foreground notification handler
-    _setupForegroundHandler();
-
-    // 6. Set up notification tap handler
-    _setupNotificationTapHandler();
-
-    // 7. Listen for token refresh
-    _listenForTokenRefresh();
-
-    print('NotificationService: Initialization complete');
   }
 
   /// Request notification permissions (iOS)

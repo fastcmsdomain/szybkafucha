@@ -15,13 +15,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  print('✅ Firebase initialized');
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('✅ Firebase initialized');
 
-  // Set up background message handler (must be top-level function)
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Set up background message handler (must be top-level function)
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    print('⚠️ Firebase initialization failed: $e');
+    print('⚠️ App will run without push notifications');
+    print('⚠️ Ensure Firebase credentials are configured in firebase_options.dart');
+  }
 
   // Set preferred orientations
   SystemChrome.setPreferredOrientations([
