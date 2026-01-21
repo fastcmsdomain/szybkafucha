@@ -77,14 +77,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.phoneLogin,
         name: 'phoneLogin',
-        builder: (context, state) => const PhoneLoginScreen(),
+        builder: (context, state) {
+          final userType = state.extra as String? ?? 'client';
+          return PhoneLoginScreen(userType: userType);
+        },
       ),
       GoRoute(
         path: Routes.phoneOtp,
         name: 'phoneOtp',
         builder: (context, state) {
-          final phoneNumber = state.extra as String? ?? '';
-          return OtpScreen(phoneNumber: phoneNumber);
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final phoneNumber = extra['phone'] as String? ?? '';
+          final userType = extra['userType'] as String? ?? 'client';
+          return OtpScreen(
+            phoneNumber: phoneNumber,
+            userType: userType,
+          );
         },
       ),
       GoRoute(

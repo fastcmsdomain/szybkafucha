@@ -71,6 +71,7 @@ Mock Mode (Current):
 4. Select number capabilities: SMS (must have SMS capability)
 5. Purchase number (cost: ~$1/month)
 6. Example: +48123456789
+7. go to https://console.twilio.com/us1/account/trust-hub/overview and but the phonenumber forr £2.91
 
 **Step 3: Get API Credentials**
 1. Log into Twilio Console
@@ -543,7 +544,7 @@ User Registration Flow:
 10. User can now post tasks and chat
 ```
 
-#### Setup Steps - iOS
+#### Setup Steps - iOS DONE Complated
 
 **Part A: Google Cloud Console Setup**
 1. Visit https://console.cloud.google.com/

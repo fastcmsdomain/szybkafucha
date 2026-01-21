@@ -2,7 +2,7 @@
 abstract class ApiConfig {
   /// Enable dev mode to bypass backend and use mock data
   /// Set to true to test UI without running backend server
-  static const bool devModeEnabled = true;
+  static const bool devModeEnabled = false;
 
   /// Base URL for development
   static const String devBaseUrl = 'http://localhost:3000/api/v1';

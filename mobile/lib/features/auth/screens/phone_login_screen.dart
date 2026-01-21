@@ -6,11 +6,18 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../widgets/user_type_selector.dart';
 
 /// Phone login screen
 /// User enters their phone number to receive OTP
 class PhoneLoginScreen extends ConsumerStatefulWidget {
-  const PhoneLoginScreen({super.key});
+  /// User type passed from WelcomeScreen ('client' or 'contractor')
+  final String userType;
+
+  const PhoneLoginScreen({
+    super.key,
+    this.userType = 'client',
+  });
 
   @override
   ConsumerState<PhoneLoginScreen> createState() => _PhoneLoginScreenState();
@@ -20,6 +27,13 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  late String _selectedUserType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUserType = widget.userType;
+  }
 
   @override
   void dispose() {
@@ -50,6 +64,17 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: AppSpacing.space4),
+
+                // Role selection
+                UserTypeSelector(
+                  initialType: _selectedUserType,
+                  onTypeSelected: (type) {
+                    setState(() => _selectedUserType = type);
+                  },
+                  compact: true,
+                ),
+
+                SizedBox(height: AppSpacing.space8),
 
                 // Instructions
                 Text(
@@ -207,10 +232,13 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
-        // Navigate to OTP screen with phone number
+        // Navigate to OTP screen with phone number and user type
         context.push(
           Routes.phoneOtp,
-          extra: phone,
+          extra: {
+            'phone': phone,
+            'userType': _selectedUserType,
+          },
         );
       }
     } catch (e) {

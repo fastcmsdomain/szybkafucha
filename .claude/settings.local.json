@@ -60,7 +60,8 @@
       "Bash(/usr/bin/grep:*)",
       "Bash(export PATH=\"/usr/local/share/flutter/bin:$PATH\")",
       "Bash(flutter pub get:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(timeout 120 flutter build:*)"
     ]
   }
 }

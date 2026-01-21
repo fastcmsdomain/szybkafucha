@@ -13,10 +13,12 @@ import '../../../core/theme/theme.dart';
 /// User enters the 6-digit code sent to their phone
 class OtpScreen extends ConsumerStatefulWidget {
   final String phoneNumber;
+  final String userType;
 
   const OtpScreen({
     super.key,
     required this.phoneNumber,
+    this.userType = 'client',
   });
 
   @override
@@ -36,10 +38,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   bool _isLoading = false;
   int _resendCountdown = 60;
   Timer? _timer;
+  late String _selectedUserType;
 
   @override
   void initState() {
     super.initState();
+    _selectedUserType = widget.userType;
     _startResendTimer();
   }
 
@@ -253,6 +257,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       await ref.read(authProvider.notifier).verifyPhoneOtp(
             phone: widget.phoneNumber,
             otp: otp,
+            userType: _selectedUserType,
           );
 
       // Navigation is handled by auth state change in router

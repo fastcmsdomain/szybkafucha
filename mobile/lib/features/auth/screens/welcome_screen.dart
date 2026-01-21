@@ -9,6 +9,7 @@ import '../../../core/router/routes.dart';
 import '../../../core/services/services.dart';
 import '../../../core/theme/theme.dart';
 import '../widgets/social_login_button.dart';
+import '../widgets/user_type_selector.dart';
 
 /// Welcome screen - first screen users see
 /// Provides options for login (Google, Apple, Phone) or signup
@@ -22,6 +23,7 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _isLoading = false;
   String? _loadingProvider; // 'google', 'apple', or null
+  String _selectedUserType = 'client'; // User role selection (client or contractor)
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +74,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                 SizedBox(height: AppSpacing.space8),
 
+                // Role selection (client or contractor)
+                UserTypeSelector(
+                  initialType: _selectedUserType,
+                  onTypeSelected: (type) {
+                    setState(() => _selectedUserType = type);
+                  },
+                  compact: true,
+                ),
+
+                SizedBox(height: AppSpacing.space8),
+
                 // Google login button
                 SocialLoginButton(
                   type: SocialLoginType.google,
@@ -118,7 +131,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   onPressed: _isLoading
                       ? null
                       : () {
-                          context.push(Routes.phoneLogin);
+                          context.push(
+                            Routes.phoneLogin,
+                            extra: _selectedUserType,
+                          );
                         },
                 ),
 
@@ -207,6 +223,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             email: result.email!,
             name: result.displayName,
             avatarUrl: result.photoUrl,
+            userType: _selectedUserType,
           );
 
       // Router will automatically redirect to appropriate home screen
@@ -256,6 +273,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             appleId: result.userIdentifier!,
             email: result.email,
             name: result.fullName,
+            userType: _selectedUserType,
           );
 
       // Router will automatically redirect to appropriate home screen

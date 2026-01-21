@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "pl.szybkafucha.mobile"
-        minSdk = 23  // Android 6.0+ for flutter_secure_storage
+        minSdk = flutter.minSdkVersion  // Android 6.0+ for flutter_secure_storage
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

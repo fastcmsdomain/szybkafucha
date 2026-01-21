@@ -390,6 +390,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> verifyPhoneOtp({
     required String phone,
     required String otp,
+    String userType = 'client',
   }) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
@@ -398,7 +399,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await api.post<Map<String, dynamic>>(
         '/auth/phone/verify',
         // Backend expects 'code' field, not 'otp'
-        data: {'phone': phone, 'code': otp},
+        data: {'phone': phone, 'code': otp, 'userType': userType},
       );
 
       // Backend returns camelCase: accessToken, not access_token
@@ -432,6 +433,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     String? name,
     String? avatarUrl,
+    String userType = 'client',
   }) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
@@ -444,6 +446,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'email': email,
           if (name != null) 'name': name,
           if (avatarUrl != null) 'avatarUrl': avatarUrl,
+          'userType': userType,
         },
       );
 
@@ -473,6 +476,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String appleId,
     String? email,
     String? name,
+    String userType = 'client',
   }) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
@@ -484,6 +488,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'appleId': appleId,
           if (email != null) 'email': email,
           if (name != null) 'name': name,
+          'userType': userType,
         },
       );
 
