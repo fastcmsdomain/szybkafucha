@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,10 +7,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/l10n.dart';
 import 'core/router/router.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/theme.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  print('✅ Firebase initialized');
+
+  // Set up background message handler (must be top-level function)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Set preferred orientations
   SystemChrome.setPreferredOrientations([
