@@ -82,6 +82,16 @@ class SecureStorageService {
     return await _storage.read(key: StorageKeys.userType);
   }
 
+  /// Delete user ID
+  Future<void> deleteUserId() async {
+    await _storage.delete(key: StorageKeys.userId);
+  }
+
+  /// Delete user type
+  Future<void> deleteUserType() async {
+    await _storage.delete(key: StorageKeys.userType);
+  }
+
   // ============ User Data (cached) ============
 
   /// Save cached user data (JSON string)

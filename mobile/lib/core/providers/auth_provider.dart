@@ -317,6 +317,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.deleteToken();
     await _storage.deleteRefreshToken();
     await _storage.deleteUserData();
+    await _storage.deleteUserId();
+    await _storage.deleteUserType();
     _ref.read(apiClientProvider).clearAuthToken();
   }
 
@@ -387,6 +389,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Login with phone OTP
+  /// If user exists but selected different role, backend will auto-switch role
   Future<void> verifyPhoneOtp({
     required String phone,
     required String otp,
@@ -428,6 +431,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Login with Google
   /// Sends user info to backend for authentication
+  /// If user exists but selected different role, backend will auto-switch role
   Future<void> loginWithGoogle({
     required String googleId,
     required String email,
@@ -472,6 +476,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Login with Apple
   /// Sends user info to backend for authentication
+  /// If user exists but selected different role, backend will auto-switch role
   Future<void> loginWithApple({
     required String appleId,
     String? email,
@@ -535,6 +540,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       state = state.copyWith(user: user);
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Switch user type (client to contractor or vice versa)
+  Future<void> switchUserType(String newUserType) async {
+    if (!state.isAuthenticated) {
+      throw Exception('User not authenticated');
+    }
+
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      final response = await api.patch<Map<String, dynamic>>(
+        '/users/me/type',
+        data: {'type': newUserType},
+      );
+
+      final user = User.fromJson(response);
+      await _storage.saveUserData(jsonEncode(user.toJson()));
+      await _storage.saveUserType(newUserType);
+
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        error: e.toString(),
+      );
       rethrow;
     }
   }

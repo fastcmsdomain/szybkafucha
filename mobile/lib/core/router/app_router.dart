@@ -8,6 +8,7 @@ import '../../features/client/client.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
 import '../../features/profile/profile.dart';
+import '../../features/settings/screens/settings_screen.dart';
 import '../providers/auth_provider.dart';
 import 'routes.dart';
 
@@ -294,8 +295,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settings,
         name: 'settings',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Settings'),
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: Routes.notifications,
