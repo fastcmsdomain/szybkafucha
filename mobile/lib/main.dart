@@ -14,7 +14,7 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Initialize Firebase (if enabled in development)
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -23,7 +23,12 @@ void main() async {
 
     // Set up background message handler (must be top-level function)
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } on UnsupportedError catch (e) {
+    // Firebase disabled in development mode
+    print('ℹ️  Firebase is disabled for development');
+    print('ℹ️  To enable: Complete Phase 1 setup in FIREBASE_SETUP_GUIDE.md');
   } catch (e) {
+    // Firebase initialization error
     print('⚠️ Firebase initialization failed: $e');
     print('⚠️ App will run without push notifications');
     print('⚠️ Ensure Firebase credentials are configured in firebase_options.dart');
