@@ -365,11 +365,12 @@ Then press `y` to accept each license.
     - `lib/features/auth/screens/welcome_screen.dart` - Scrollable layout with branding, social buttons, phone login
     - `lib/features/auth/widgets/social_login_button.dart` - Reusable Google/Apple/Phone button widget
   - [x] 14.2 Implement Google Sign-In flow
-    - `lib/core/services/google_sign_in_service.dart` - Google OAuth with silent/interactive sign-in
+    - `lib/core/services/google_sign_in_service.dart` - Google OAuth
     - Uses `google_sign_in: ^6.2.1` package
-    - Attempts silent sign-in first, then interactive
+    - Always shows account picker (no silent sign-in) for role selection flexibility
     - Returns idToken for backend authentication
     - Integrated into welcome_screen.dart with loading state
+    - Sign-out on app logout to clear cached session
   - [x] 14.3 Implement Apple Sign-In flow
     - `lib/core/services/apple_sign_in_service.dart` - Apple OAuth with nonce security
     - Uses `sign_in_with_apple: ^6.1.4` and `crypto: ^3.0.3` packages
@@ -391,6 +392,14 @@ Then press `y` to accept each license.
     - `lib/features/profile/screens/profile_screen.dart` - Profile with logout/delete account
     - Logout dialog with confirmation
     - Server notification + local data clearing
+    - Google Sign-In session cleared on logout
+  - [x] 14.8 Implement role switching (Klient ↔ Wykonawca) ✅ COMPLETE
+    - `lib/features/settings/screens/settings_screen.dart` - Settings with role switch option
+    - `backend/src/users/users.controller.ts` - PATCH /users/me/type endpoint
+    - User stays logged in, role updated via API
+    - Backend updates user type and returns updated user
+    - Navigation to appropriate home screen after switch
+    - Confirmation dialog with role description
   - Documentation:
     - `mobile/docs/AUTH_IMPLEMENTATION.md` - Auth screens guide
     - `mobile/docs/AUTH_PERSISTENCE_SUMMARY.md` - Persistence & logout guide

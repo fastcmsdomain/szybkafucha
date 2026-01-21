@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/theme/app_colors.dart';
@@ -151,15 +150,22 @@ class SettingsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Zmienisz się z ${user.isContractor ? 'Wykonawcy' : 'Klienta'} na $newRoleLabel.',
+              'Przełączysz się z ${user.isContractor ? 'Wykonawcy' : 'Klienta'} na $newRoleLabel.',
               style: AppTypography.bodyMedium,
             ),
             SizedBox(height: AppSpacing.space3),
             if (newRole == 'contractor')
               Text(
-                'Przełączenie na Wykonawcę wymaga weryfikacji KYC.',
+                'Jako Wykonawca możesz przyjmować zlecenia i zarabiać.',
                 style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.warning,
+                  color: AppColors.gray600,
+                ),
+              ),
+            if (newRole == 'client')
+              Text(
+                'Jako Klient możesz zlecać zadania wykonawcom.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray600,
                 ),
               ),
           ],
@@ -181,7 +187,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  /// Perform the actual role switch
+  /// Perform the actual role switch (stays logged in, switches role)
   Future<void> _performRoleSwitch(
     BuildContext context,
     WidgetRef ref,
@@ -191,8 +197,8 @@ class SettingsScreen extends ConsumerWidget {
       final authNotifier = ref.read(authProvider.notifier);
       await authNotifier.switchUserType(newRole);
 
-      // Show success message
       if (context.mounted) {
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -204,7 +210,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         );
 
-        // Navigate to appropriate home after role switch
+        // Navigate to appropriate home screen
         if (newRole == 'contractor') {
           context.go(Routes.contractorHome);
         } else {

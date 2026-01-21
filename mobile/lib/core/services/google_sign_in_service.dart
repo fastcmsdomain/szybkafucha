@@ -21,13 +21,12 @@ class GoogleSignInService {
 
   /// Sign in with Google
   /// Returns the ID token for backend authentication
+  /// Always shows account picker so user can choose role with different account if needed
   Future<GoogleSignInResult> signIn() async {
     try {
-      // Attempt to sign in silently first (for returning users)
-      GoogleSignInAccount? account = await _googleSignIn.signInSilently();
-
-      // If silent sign-in failed, show the sign-in dialog
-      account ??= await _googleSignIn.signIn();
+      // Always show the sign-in dialog - don't use signInSilently
+      // This ensures user can choose a different account or role each time
+      final account = await _googleSignIn.signIn();
 
       if (account == null) {
         // User cancelled the sign-in

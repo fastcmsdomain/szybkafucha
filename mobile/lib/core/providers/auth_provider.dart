@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_config.dart';
+import '../services/google_sign_in_service.dart';
 import '../storage/secure_storage.dart';
 import 'api_provider.dart';
 import 'storage_provider.dart';
@@ -47,9 +48,13 @@ class User {
       email: json['email'] as String?,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
-      userType: json['user_type'] as String? ?? 'client',
-      avatarUrl: json['avatar_url'] as String?,
-      isVerified: json['is_verified'] as bool? ?? false,
+      // Backend returns 'type', but some endpoints may return 'user_type'
+      userType: (json['type'] ?? json['user_type']) as String? ?? 'client',
+      // Backend returns 'avatarUrl' (camelCase)
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
+      // Backend returns 'status', check if active
+      isVerified: json['is_verified'] as bool? ??
+                  (json['status'] == 'active'),
     );
   }
 
@@ -188,6 +193,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Initialize auth state from stored credentials
+  /// If user has valid stored session, auto-login
   Future<void> _initializeAuth() async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -197,7 +203,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = await _storage.getRefreshToken();
 
       if (token == null) {
-        // No stored credentials
+        // No stored credentials - user must login
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return;
       }
@@ -545,6 +551,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Switch user type (client to contractor or vice versa)
+  /// User stays logged in, only the role changes
   Future<void> switchUserType(String newUserType) async {
     if (!state.isAuthenticated) {
       throw Exception('User not authenticated');
@@ -569,8 +576,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         clearError: true,
       );
     } catch (e) {
+      // Restore authenticated state on error
       state = state.copyWith(
-        status: AuthStatus.error,
+        status: AuthStatus.authenticated,
         error: e.toString(),
       );
       rethrow;
@@ -627,6 +635,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await api.post<void>('/auth/logout', data: {});
     } catch (_) {
       // Ignore errors, proceed with local logout
+    }
+
+    // Sign out from Google to clear cached account
+    // This ensures user can choose a different role on next login
+    try {
+      final googleService = _ref.read(googleSignInServiceProvider);
+      await googleService.signOut();
+    } catch (_) {
+      // Ignore errors
     }
 
     // Clear all local auth data

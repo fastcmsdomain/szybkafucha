@@ -6,6 +6,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Post,
   Body,
   UseGuards,
@@ -63,7 +64,7 @@ export class UsersController {
    * Updates user type (client to contractor or vice versa)
    */
   @UseGuards(JwtAuthGuard)
-  @Put('me/type')
+  @Patch('me/type')
   async updateUserType(
     @Request() req: AuthenticatedRequest,
     @Body() updateUserTypeDto: UpdateUserTypeDto,

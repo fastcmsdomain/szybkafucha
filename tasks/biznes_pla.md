@@ -102,14 +102,17 @@ Biznesmeni, właściciele firm, osoby starsze oraz wszyscy ci, którzy potrzebuj
 - osiedli? tak
 
 ## Która grupa da Ci najmniej problemów operacyjnych na start?
+Myślę, że ludzie starsi i biznesmeni, którzy chcą mieć zaciągę roboty na szybciej.
 
 ## Kto najczęściej poleci aplikację dalej?
+Myślę, że ludzie starsi polecą tę aktywację najszybciej, a także osoby, którym wykonawcy zrobili dobrą robotę.
 
 ## Czy seniorzy są:
 
-- klientem końcowym,
+- klientem końcowym, 
 - czy klientem są ich dzieci?
 
+Oba przypadki są klientami. Wszyscy ci, którzy chcą używać, mieć spokojną głowę.Po prostu ci przyjechać samodzielnie roboty, a w którym nie mają czasu.
 ---
 
 # 4. PROPOZYCJA WARTOŚCI (dlaczego właśnie TY)
