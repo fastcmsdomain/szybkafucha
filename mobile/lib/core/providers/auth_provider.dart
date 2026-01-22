@@ -6,6 +6,7 @@ import '../api/api_config.dart';
 import '../services/google_sign_in_service.dart';
 import '../storage/secure_storage.dart';
 import 'api_provider.dart';
+import 'notification_provider.dart';
 import 'storage_provider.dart';
 
 /// Authentication state
@@ -629,6 +630,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Logout user
   Future<void> logout() async {
+    // Clear FCM token from backend before logout
+    try {
+      final notificationService = _ref.read(notificationServiceProvider);
+      await notificationService.clearToken();
+    } catch (_) {
+      // Ignore errors, proceed with logout
+    }
+
     // Optionally notify server about logout
     try {
       final api = _ref.read(apiClientProvider);
@@ -648,6 +657,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Clear all local auth data
     await _clearAuthData();
+
+    // Reset notification initialized state
+    _ref.read(notificationInitializedProvider.notifier).state = false;
 
     // Reset state
     state = const AuthState(status: AuthStatus.unauthenticated);

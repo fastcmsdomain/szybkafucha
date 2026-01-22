@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../models/task_category.dart';
 import '../widgets/category_card.dart';
@@ -761,11 +762,49 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Create task via API
-      await Future.delayed(const Duration(seconds: 1));
+      // Get location data
+      final address = _useCurrentLocation
+          ? 'Warszawa, Polska' // Default for now - TODO: Get real location
+          : _addressController.text;
+
+      // Default coordinates for Warsaw center (TODO: Get real GPS)
+      const defaultLat = 52.2297;
+      const defaultLng = 21.0122;
+
+      // Build scheduled datetime if not immediate
+      DateTime? scheduledAt;
+      if (!_isNow) {
+        scheduledAt = DateTime(
+          _scheduledDate.year,
+          _scheduledDate.month,
+          _scheduledDate.day,
+          _scheduledTime.hour,
+          _scheduledTime.minute,
+        );
+      }
+
+      // Create title from first 50 chars of description
+      final description = _descriptionController.text;
+      final title = description.length > 50
+          ? description.substring(0, 50)
+          : description;
+
+      // Create task via API
+      final dto = CreateTaskDto(
+        category: _selectedCategory!,
+        title: title,
+        description: description,
+        locationLat: defaultLat,
+        locationLng: defaultLng,
+        address: address,
+        budgetAmount: _budget,
+        scheduledAt: scheduledAt,
+      );
+
+      final task = await ref.read(clientTasksProvider.notifier).createTask(dto);
 
       if (mounted) {
-        // Show success and navigate to contractor selection
+        // Show success
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Zlecenie utworzone! Szukamy pomocnika...'),
@@ -773,8 +812,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ),
         );
 
-        // TODO: Navigate to contractor selection or task tracking
-        context.pop();
+        // Navigate to task tracking
+        context.go('/client/task/${task.id}/tracking');
       }
     } catch (e) {
       if (mounted) {

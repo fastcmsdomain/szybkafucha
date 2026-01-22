@@ -1,11 +1,13 @@
 /// Chat Provider
-/// Real-time chat with offline message queuing and local storage
+/// Real-time chat with offline message queuing and API integration
 
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/api/api_client.dart';
 import '../../../core/config/websocket_config.dart';
-import '../../../core/services/websocket_service.dart';
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
+import '../../../core/services/websocket_service.dart';
 import '../models/message.dart';
 
 /// Chat state for a specific task
@@ -92,12 +94,14 @@ class ChatState {
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(
     this._webSocketService,
+    this._apiClient,
     String taskId,
   ) : super(ChatState(taskId: taskId)) {
     _initializeChat();
   }
 
   final WebSocketService _webSocketService;
+  final ApiClient _apiClient;
   StreamSubscription<ChatMessageEvent>? _messageSubscription;
 
   /// Initialize chat for a task
@@ -200,23 +204,32 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _webSocketService.markMessagesRead(state.taskId);
   }
 
-  /// Load initial messages (from API in production)
+  /// Load initial messages from API
   Future<void> loadInitialMessages() async {
     state = state.copyWith(isLoading: true);
     try {
-      // In production, fetch from API here
-      // For now, load mock data
-      final mockMessages = Message.mockConversation(state.taskId);
+      // Fetch messages from backend API
+      final response = await _apiClient.get<List<dynamic>>(
+        '/tasks/${state.taskId}/messages',
+      );
+
+      final messages = response.map((json) {
+        return Message.fromJson(json as Map<String, dynamic>);
+      }).toList();
+
       state = state.copyWith(
-        messages: mockMessages,
+        messages: messages,
         isLoading: false,
         lastFetched: DateTime.now(),
         error: null,
       );
     } catch (e) {
+      // If API fails, start with empty messages (chat still works via WebSocket)
       state = state.copyWith(
+        messages: [],
         isLoading: false,
-        error: 'Błąd podczas wczytywania wiadomości: $e',
+        lastFetched: DateTime.now(),
+        error: null, // Don't show error - chat can still work
       );
     }
   }
@@ -239,7 +252,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
 final chatProvider = StateNotifierProvider.family<ChatNotifier, ChatState, String>(
   (ref, taskId) {
     final webSocketService = ref.watch(webSocketServiceProvider);
-    return ChatNotifier(webSocketService, taskId);
+    final apiClient = ref.watch(apiClientProvider);
+    return ChatNotifier(webSocketService, apiClient, taskId);
   },
 );
 

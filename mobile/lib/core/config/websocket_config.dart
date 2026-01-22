@@ -48,8 +48,8 @@ abstract class WebSocketConfig {
   static const String markRead = 'message:read';
 
   /// Dev mode mock implementation toggle
-  /// Set to true to simulate WebSocket without backend
-  static const bool devModeEnabled = true;
+  /// Set to false to use real WebSocket connection with backend
+  static const bool devModeEnabled = false;
 
   /// Mock data configuration for dev mode
   static const Map<String, dynamic> devModeConfig = {

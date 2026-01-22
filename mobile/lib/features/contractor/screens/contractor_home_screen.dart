@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -23,7 +24,15 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   bool _isOnline = false;
   bool _isLoading = false;
   final _earnings = EarningsSummary.mock();
-  final _nearbyTasks = ContractorTask.mockNearbyTasks();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load available tasks on screen open
+    Future.microtask(() {
+      ref.read(availableTasksProvider.notifier).loadTasks();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,10 +99,15 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     );
   }
 
-  bool get _hasActiveTask => false; // TODO: Get from state
+  bool get _hasActiveTask {
+    final activeTaskState = ref.watch(activeTaskProvider);
+    return activeTaskState.task != null;
+  }
 
   Widget _buildActiveTaskSection() {
-    final activeTask = ContractorTask.mockActiveTask();
+    final activeTaskState = ref.watch(activeTaskProvider);
+    final activeTask = activeTaskState.task;
+    if (activeTask == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,6 +254,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Widget _buildNearbyTasksSection() {
+    final tasksState = ref.watch(availableTasksProvider);
+    final nearbyTasks = tasksState.tasks;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -264,10 +281,14 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         SizedBox(height: AppSpacing.gapMD),
         if (!_isOnline)
           _buildOfflineMessage()
-        else if (_nearbyTasks.isEmpty)
+        else if (tasksState.isLoading)
+          _buildLoadingState()
+        else if (tasksState.error != null)
+          _buildErrorState(tasksState.error!)
+        else if (nearbyTasks.isEmpty)
           _buildNoTasksMessage()
         else
-          ..._nearbyTasks.take(3).map((task) => Padding(
+          ...nearbyTasks.take(3).map((task) => Padding(
                 padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
                 child: NearbyTaskCard(
                   task: task,
@@ -276,6 +297,63 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                 ),
               )),
       ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingLG),
+      decoration: BoxDecoration(
+        color: AppColors.gray100,
+        borderRadius: AppRadius.radiusLG,
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingLG),
+      decoration: BoxDecoration(
+        color: AppColors.gray100,
+        borderRadius: AppRadius.radiusLG,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.error,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            'Wystąpił błąd',
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            error,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          ElevatedButton.icon(
+            onPressed: () => ref.read(availableTasksProvider.notifier).refresh(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Spróbuj ponownie'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -348,9 +426,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Future<void> _refreshData() async {
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    // TODO: Refresh earnings and nearby tasks
+    await ref.read(availableTasksProvider.notifier).refresh();
   }
 
   Future<void> _toggleAvailability(bool value) async {
@@ -384,13 +460,30 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Future<void> _acceptTask(ContractorTask task) async {
-    // TODO: Accept task via API
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Zaakceptowano zlecenie: ${task.category.name}'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zaakceptowano zlecenie: ${task.category.name}'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Navigate to active task screen
+        context.push(Routes.contractorTask(task.id));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

@@ -71,23 +71,64 @@ class Message extends Equatable {
     'status': status.name,
   };
 
-  /// Create from JSON (local storage retrieval)
+  /// Create from JSON (local storage retrieval or API response)
+  /// Handles both camelCase (backend) and local storage formats
   factory Message.fromJson(Map<String, dynamic> json) {
+    // Handle sender info - may be nested object from backend or flat fields
+    final sender = json['sender'] as Map<String, dynamic>?;
+    final senderName = sender?['fullName'] as String? ??
+                       sender?['full_name'] as String? ??
+                       sender?['name'] as String? ??
+                       json['senderName'] as String? ??
+                       json['sender_name'] as String? ??
+                       'Użytkownik';
+    final senderAvatarUrl = sender?['avatarUrl'] as String? ??
+                            sender?['avatar_url'] as String? ??
+                            json['senderAvatarUrl'] as String? ??
+                            json['sender_avatar_url'] as String?;
+    final senderId = sender?['id'] as String? ??
+                     json['senderId'] as String? ??
+                     json['sender_id'] as String? ??
+                     '';
+
     return Message(
       id: json['id'] as String,
-      taskId: json['taskId'] as String,
-      senderId: json['senderId'] as String,
-      senderName: json['senderName'] as String,
-      senderAvatarUrl: json['senderAvatarUrl'] as String?,
-      content: json['content'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      taskId: json['taskId'] as String? ?? json['task_id'] as String? ?? '',
+      senderId: senderId,
+      senderName: senderName,
+      senderAvatarUrl: senderAvatarUrl,
+      content: json['content'] as String? ?? json['text'] as String? ?? '',
+      createdAt: DateTime.parse(
+        json['createdAt'] as String? ??
+        json['created_at'] as String? ??
+        DateTime.now().toIso8601String()
+      ),
       readAt: json['readAt'] != null
           ? DateTime.parse(json['readAt'] as String)
-          : null,
-      status: MessageStatus.values.byName(
-        json['status'] as String? ?? 'sent',
-      ),
+          : (json['read_at'] != null
+              ? DateTime.parse(json['read_at'] as String)
+              : null),
+      status: _mapStatus(json['status'] as String?),
     );
+  }
+
+  /// Map backend status string to MessageStatus enum
+  static MessageStatus _mapStatus(String? status) {
+    if (status == null) return MessageStatus.sent;
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return MessageStatus.pending;
+      case 'sent':
+        return MessageStatus.sent;
+      case 'delivered':
+        return MessageStatus.delivered;
+      case 'read':
+        return MessageStatus.read;
+      case 'failed':
+        return MessageStatus.failed;
+      default:
+        return MessageStatus.sent;
+    }
   }
 
   /// Mock message for development

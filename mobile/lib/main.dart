@@ -9,6 +9,7 @@ import 'core/l10n/l10n.dart';
 import 'core/router/router.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/theme.dart';
+import 'core/widgets/notification_initializer.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -64,22 +65,24 @@ class SzybkaFuchaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
-    return MaterialApp.router(
-      title: AppStrings.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: router,
-      // Locale settings for Polish
-      locale: const Locale('pl', 'PL'),
-      supportedLocales: const [
-        Locale('pl', 'PL'),
-        Locale('en', 'US'), // Fallback
-      ],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+    return NotificationInitializer(
+      child: MaterialApp.router(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        routerConfig: router,
+        // Locale settings for Polish
+        locale: const Locale('pl', 'PL'),
+        supportedLocales: const [
+          Locale('pl', 'PL'),
+          Locale('en', 'US'), // Fallback
+        ],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+      ),
     );
   }
 }

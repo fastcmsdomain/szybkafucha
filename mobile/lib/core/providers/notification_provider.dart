@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/notification_service.dart';
 import '../api/api_config.dart';
 import '../router/router.dart';
+import '../storage/secure_storage.dart';
 import 'storage_provider.dart';
 
 /// Creates a Dio instance with auth token interceptor

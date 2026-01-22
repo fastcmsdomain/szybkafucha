@@ -564,11 +564,24 @@ Then press `y` to accept each license.
     - [x] Sender info and message timestamps
     - [x] Connection status indicator
     - [x] Error handling and recovery
-  - [x] 17.5 Push notification foundation ⏳ FUTURE
-    - [ ] Firebase Cloud Messaging setup
-    - [ ] Foreground notification handling
-    - [ ] Background notification handling
-    - [ ] Deep linking to relevant screens
+  - [x] 17.5 Push notification foundation ✅ DONE
+    - [x] Firebase Cloud Messaging setup (firebase_messaging package)
+    - [x] FCM token registration with backend
+    - [x] NotificationInitializer widget wrapping app
+    - [x] Token refresh handling
+    - [x] Auth logout clears FCM token
+    - [ ] Foreground notification handling (deferred to production)
+    - [ ] Background notification handling (deferred to production)
+    - [ ] Deep linking to relevant screens (deferred to production)
+  - [x] 17.6 Task API Integration ✅ DONE
+    - [x] `lib/core/providers/task_provider.dart` - Task state management
+    - [x] Client: Task creation → POST /tasks API
+    - [x] Client: Task list → GET /tasks API (real data, no mock)
+    - [x] Contractor: Available tasks → GET /tasks API (real data, no mock)
+    - [x] Contractor: Task acceptance → PUT /tasks/:id/accept API
+    - [x] WebSocket devModeEnabled = false (uses real backend)
+    - [x] Chat: Messages from GET /tasks/:id/messages API
+    - [x] Full Task model with backend field mapping (camelCase support)
 
   **Files Created:**
   - `lib/core/config/websocket_config.dart` - WebSocket configuration and event names

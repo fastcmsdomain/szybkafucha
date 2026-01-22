@@ -3,12 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../models/task.dart';
-import '../models/task_category.dart';
 
 /// Task history screen showing past tasks
+/// Uses real API data via clientTasksProvider
 class TaskHistoryScreen extends ConsumerStatefulWidget {
   const TaskHistoryScreen({super.key});
 
@@ -19,15 +20,15 @@ class TaskHistoryScreen extends ConsumerStatefulWidget {
 class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<Task> _activeTasks = [];
-  List<Task> _completedTasks = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadTasks();
+    // Load tasks on screen open
+    Future.microtask(() {
+      ref.read(clientTasksProvider.notifier).loadTasks();
+    });
   }
 
   @override
@@ -36,101 +37,16 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     super.dispose();
   }
 
-  Future<void> _loadTasks() async {
-    setState(() => _isLoading = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (mounted) {
-      setState(() {
-        _activeTasks = _getMockActiveTasks();
-        _completedTasks = _getMockCompletedTasks();
-        _isLoading = false;
-      });
-    }
-  }
-
-  List<Task> _getMockActiveTasks() {
-    return [
-      Task(
-        id: 'active_1',
-        category: TaskCategory.paczki,
-        description: 'Odbiór paczki z paczkomatu i dostawa pod drzwi',
-        address: 'ul. Marszałkowska 1, Warszawa',
-        budget: 45,
-        isImmediate: true,
-        status: TaskStatus.inProgress,
-        clientId: 'user_1',
-        contractorId: 'contractor_1',
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        acceptedAt: DateTime.now().subtract(const Duration(minutes: 45)),
-      ),
-    ];
-  }
-
-  List<Task> _getMockCompletedTasks() {
-    return [
-      Task(
-        id: 'completed_1',
-        category: TaskCategory.zakupy,
-        description: 'Zakupy spożywcze z Biedronki',
-        address: 'ul. Złota 44, Warszawa',
-        budget: 60,
-        isImmediate: true,
-        status: TaskStatus.completed,
-        clientId: 'user_1',
-        contractorId: 'contractor_2',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        acceptedAt: DateTime.now().subtract(const Duration(days: 2)),
-        completedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Task(
-        id: 'completed_2',
-        category: TaskCategory.montaz,
-        description: 'Montaż półek IKEA',
-        address: 'ul. Puławska 12, Warszawa',
-        budget: 150,
-        isImmediate: false,
-        scheduledAt: DateTime.now().subtract(const Duration(days: 5)),
-        status: TaskStatus.completed,
-        clientId: 'user_1',
-        contractorId: 'contractor_3',
-        createdAt: DateTime.now().subtract(const Duration(days: 6)),
-        acceptedAt: DateTime.now().subtract(const Duration(days: 5)),
-        completedAt: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      Task(
-        id: 'completed_3',
-        category: TaskCategory.paczki,
-        description: 'Nadanie paczki Poczta Polska',
-        address: 'ul. Nowy Świat 21, Warszawa',
-        budget: 35,
-        isImmediate: true,
-        status: TaskStatus.completed,
-        clientId: 'user_1',
-        contractorId: 'contractor_1',
-        createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        acceptedAt: DateTime.now().subtract(const Duration(days: 10)),
-        completedAt: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-      Task(
-        id: 'cancelled_1',
-        category: TaskCategory.sprzatanie,
-        description: 'Sprzątanie mieszkania 50m2',
-        address: 'ul. Wołoska 3, Warszawa',
-        budget: 200,
-        isImmediate: false,
-        scheduledAt: DateTime.now().subtract(const Duration(days: 15)),
-        status: TaskStatus.cancelled,
-        clientId: 'user_1',
-        createdAt: DateTime.now().subtract(const Duration(days: 16)),
-      ),
-    ];
+  Future<void> _refreshTasks() async {
+    await ref.read(clientTasksProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    final tasksState = ref.watch(clientTasksProvider);
+    final activeTasks = tasksState.activeTasks;
+    final completedTasks = tasksState.completedTasks;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -149,7 +65,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('Aktywne'),
-                  if (_activeTasks.isNotEmpty) ...[
+                  if (activeTasks.isNotEmpty) ...[
                     SizedBox(width: AppSpacing.gapSM),
                     Container(
                       padding: EdgeInsets.symmetric(
@@ -161,7 +77,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                         borderRadius: AppRadius.radiusFull,
                       ),
                       child: Text(
-                        '${_activeTasks.length}',
+                        '${activeTasks.length}',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.white,
                           fontWeight: FontWeight.w600,
@@ -176,15 +92,61 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           ],
         ),
       ),
-      body: _isLoading
+      body: tasksState.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildTaskList(_activeTasks, isActive: true),
-                _buildTaskList(_completedTasks, isActive: false),
-              ],
+          : tasksState.error != null
+              ? _buildErrorState(tasksState.error!)
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTaskList(activeTasks, isActive: true),
+                    _buildTaskList(completedTasks, isActive: false),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.error,
             ),
+            SizedBox(height: AppSpacing.space4),
+            Text(
+              'Wystąpił błąd',
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.gray600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            Text(
+              error,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppSpacing.space6),
+            ElevatedButton.icon(
+              onPressed: _refreshTasks,
+              icon: Icon(Icons.refresh),
+              label: Text('Spróbuj ponownie'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -194,7 +156,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadTasks,
+      onRefresh: _refreshTasks,
       child: ListView.separated(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         itemCount: tasks.length,

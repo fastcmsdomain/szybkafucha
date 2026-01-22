@@ -72,35 +72,59 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
+    // Map backend status string to TaskStatus enum
+    final statusStr = json['status'] as String? ?? 'created';
+    final status = _mapBackendStatus(statusStr);
+
     return Task(
       id: json['id'] as String,
       category: TaskCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.paczki,
       ),
-      description: json['description'] as String,
+      // Backend may send title or description
+      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      // Backend uses camelCase
       address: json['address'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
-      budget: json['budget'] as int,
-      scheduledAt: json['scheduled_at'] != null
-          ? DateTime.parse(json['scheduled_at'] as String)
-          : null,
-      isImmediate: json['is_immediate'] as bool? ?? true,
-      status: TaskStatus.values.firstWhere(
-        (s) => s.name == json['status'],
-        orElse: () => TaskStatus.posted,
-      ),
-      clientId: json['client_id'] as String,
-      contractorId: json['contractor_id'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      acceptedAt: json['accepted_at'] != null
-          ? DateTime.parse(json['accepted_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
+      latitude: (json['locationLat'] as num?)?.toDouble() ?? (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['locationLng'] as num?)?.toDouble() ?? (json['longitude'] as num?)?.toDouble(),
+      // Backend sends budgetAmount as decimal
+      budget: (json['budgetAmount'] as num?)?.toInt() ?? (json['budget'] as num?)?.toInt() ?? 0,
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : (json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null),
+      isImmediate: json['scheduledAt'] == null && json['scheduled_at'] == null,
+      status: status,
+      clientId: json['clientId'] as String? ?? json['client_id'] as String? ?? '',
+      contractorId: json['contractorId'] as String? ?? json['contractor_id'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String? ?? json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      acceptedAt: json['acceptedAt'] != null
+          ? DateTime.parse(json['acceptedAt'] as String)
+          : (json['accepted_at'] != null ? DateTime.parse(json['accepted_at'] as String) : null),
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : (json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null),
     );
+  }
+
+  /// Map backend status string to TaskStatus enum
+  static TaskStatus _mapBackendStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return TaskStatus.posted;
+      case 'accepted':
+        return TaskStatus.accepted;
+      case 'in_progress':
+        return TaskStatus.inProgress;
+      case 'completed':
+        return TaskStatus.completed;
+      case 'cancelled':
+        return TaskStatus.cancelled;
+      case 'disputed':
+        return TaskStatus.disputed;
+      default:
+        return TaskStatus.posted;
+    }
   }
 
   Map<String, dynamic> toJson() => {

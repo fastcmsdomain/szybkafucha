@@ -71,7 +71,7 @@ To enable push notifications, you must complete Phase 1:
 4. SHA-1 Fingerprint: (get via: ./gradlew signingReport)
 5. Click "Register App"
 6. Download google-services.json
-7. Place file: android/app/google-services.json
+7. Place file: android/app/google-services.json //Uploaded
 ```
 
 ### Step 4: Update firebase_options.dart

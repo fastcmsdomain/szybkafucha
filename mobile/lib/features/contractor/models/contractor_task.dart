@@ -43,38 +43,96 @@ class ContractorTask {
   });
 
   factory ContractorTask.fromJson(Map<String, dynamic> json) {
+    // Map backend status to contractor task status
+    final statusStr = json['status'] as String? ?? 'created';
+    final status = _mapBackendStatus(statusStr);
+
+    // Handle client data - may be nested object or flat fields
+    final client = json['client'] as Map<String, dynamic>?;
+    final clientName = client?['fullName'] as String? ??
+                       client?['full_name'] as String? ??
+                       json['clientName'] as String? ??
+                       json['client_name'] as String? ??
+                       'Klient';
+    final clientRating = (client?['rating'] as num?)?.toDouble() ??
+                         (json['clientRating'] as num?)?.toDouble() ??
+                         (json['client_rating'] as num?)?.toDouble() ??
+                         0.0;
+    final clientAvatarUrl = client?['avatarUrl'] as String? ??
+                            client?['avatar_url'] as String? ??
+                            json['clientAvatarUrl'] as String? ??
+                            json['client_avatar_url'] as String?;
+
     return ContractorTask(
       id: json['id'] as String,
       category: TaskCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.sprzatanie,
       ),
-      description: json['description'] as String,
-      clientName: json['client_name'] as String,
-      clientAvatarUrl: json['client_avatar_url'] as String?,
-      clientRating: (json['client_rating'] as num?)?.toDouble() ?? 0.0,
-      address: json['address'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      distanceKm: (json['distance_km'] as num).toDouble(),
-      estimatedMinutes: json['estimated_minutes'] as int,
-      price: json['price'] as int,
-      status: ContractorTaskStatus.values.firstWhere(
-        (s) => s.name == json['status'],
-        orElse: () => ContractorTaskStatus.available,
+      // Backend may send title or description
+      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      clientName: clientName,
+      clientAvatarUrl: clientAvatarUrl,
+      clientRating: clientRating,
+      // Backend uses camelCase
+      address: json['address'] as String? ?? '',
+      latitude: (json['locationLat'] as num?)?.toDouble() ??
+                (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['locationLng'] as num?)?.toDouble() ??
+                 (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      // Distance may not be provided by backend - default to 0
+      distanceKm: (json['distanceKm'] as num?)?.toDouble() ??
+                  (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      // Estimated minutes - default to 15
+      estimatedMinutes: json['estimatedMinutes'] as int? ??
+                        json['estimated_minutes'] as int? ?? 15,
+      // Budget from backend
+      price: (json['budgetAmount'] as num?)?.toInt() ??
+             (json['price'] as num?)?.toInt() ??
+             (json['budget'] as num?)?.toInt() ?? 0,
+      status: status,
+      createdAt: DateTime.parse(
+        json['createdAt'] as String? ??
+        json['created_at'] as String? ??
+        DateTime.now().toIso8601String()
       ),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      acceptedAt: json['accepted_at'] != null
-          ? DateTime.parse(json['accepted_at'] as String)
-          : null,
-      startedAt: json['started_at'] != null
-          ? DateTime.parse(json['started_at'] as String)
-          : null,
-      completedAt: json['completed_at'] != null
-          ? DateTime.parse(json['completed_at'] as String)
-          : null,
-      isUrgent: json['is_urgent'] as bool? ?? false,
+      acceptedAt: json['acceptedAt'] != null
+          ? DateTime.parse(json['acceptedAt'] as String)
+          : (json['accepted_at'] != null
+              ? DateTime.parse(json['accepted_at'] as String)
+              : null),
+      startedAt: json['startedAt'] != null
+          ? DateTime.parse(json['startedAt'] as String)
+          : (json['started_at'] != null
+              ? DateTime.parse(json['started_at'] as String)
+              : null),
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : (json['completed_at'] != null
+              ? DateTime.parse(json['completed_at'] as String)
+              : null),
+      isUrgent: json['isUrgent'] as bool? ??
+                json['is_urgent'] as bool? ??
+                json['scheduledAt'] == null, // Immediate = urgent
     );
+  }
+
+  /// Map backend status string to ContractorTaskStatus enum
+  static ContractorTaskStatus _mapBackendStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return ContractorTaskStatus.available;
+      case 'accepted':
+        return ContractorTaskStatus.accepted;
+      case 'in_progress':
+        return ContractorTaskStatus.inProgress;
+      case 'completed':
+        return ContractorTaskStatus.completed;
+      case 'cancelled':
+        return ContractorTaskStatus.cancelled;
+      default:
+        return ContractorTaskStatus.available;
+    }
   }
 
   String get formattedDistance {
