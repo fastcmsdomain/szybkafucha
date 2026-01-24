@@ -1,7 +1,8 @@
 1. Po akceptacji zlecenia przez wykonawcę. Zledzeniodawca powinien też mieć dane wykonawcy tj.imie, zjecie, opinie. DONE
+
 1.1 ale zleceniodawca nie widzi uakualnienia na Ekranie Szukam Pracownika, kolo sie kreci i nie ma LIve update.
 
-mam error na ekranie 'aktywne zlecenia'zleceniobiorcy gdy chce wrocic do strny glwnej:
+1.2 Zleceniodawca powinien tez widziec swoje nowe zlecenia na ekranie startowym w sekcji 'Aktywne zlecenia'
 
 
 Pasek dolny z guzikami zawsze powinien byc na dole na kazdym ekranie, tak zeby urzytkownik zawsze mogl nawigowac w aplikacji

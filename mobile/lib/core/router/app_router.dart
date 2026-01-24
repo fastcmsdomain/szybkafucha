@@ -128,73 +128,72 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'clientProfile',
             builder: (context, state) => const ProfileScreen(),
           ),
+          // Task routes inside shell - bottom nav always visible
+          GoRoute(
+            path: Routes.clientCreateTask,
+            name: 'clientCreateTask',
+            builder: (context, state) {
+              final category = state.extra as TaskCategory?;
+              return CreateTaskScreen(initialCategory: category);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientSelectContractor,
+            name: 'clientSelectContractor',
+            builder: (context, state) {
+              final data = state.extra as ContractorSelectionData?;
+              return ContractorSelectionScreen(taskData: data);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientPayment,
+            name: 'clientPayment',
+            builder: (context, state) {
+              final data = state.extra as PaymentData?;
+              return PaymentScreen(paymentData: data);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskDetails,
+            name: 'clientTaskDetails',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Task $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskTracking,
+            name: 'clientTaskTracking',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return TaskTrackingScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskChat,
+            name: 'clientTaskChat',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Chat $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskRating,
+            name: 'clientTaskRating',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Rate $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskCompletion,
+            name: 'clientTaskCompletion',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return TaskCompletionScreen(taskId: taskId);
+            },
+          ),
         ],
-      ),
-
-      // Client task routes (outside shell - no bottom nav)
-      GoRoute(
-        path: Routes.clientCreateTask,
-        name: 'clientCreateTask',
-        builder: (context, state) {
-          final category = state.extra as TaskCategory?;
-          return CreateTaskScreen(initialCategory: category);
-        },
-      ),
-      GoRoute(
-        path: Routes.clientSelectContractor,
-        name: 'clientSelectContractor',
-        builder: (context, state) {
-          final data = state.extra as ContractorSelectionData?;
-          return ContractorSelectionScreen(taskData: data);
-        },
-      ),
-      GoRoute(
-        path: Routes.clientPayment,
-        name: 'clientPayment',
-        builder: (context, state) {
-          final data = state.extra as PaymentData?;
-          return PaymentScreen(paymentData: data);
-        },
-      ),
-      GoRoute(
-        path: Routes.clientTaskDetails,
-        name: 'clientTaskDetails',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return PlaceholderScreen(title: 'Task $taskId');
-        },
-      ),
-      GoRoute(
-        path: Routes.clientTaskTracking,
-        name: 'clientTaskTracking',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return TaskTrackingScreen(taskId: taskId);
-        },
-      ),
-      GoRoute(
-        path: Routes.clientTaskChat,
-        name: 'clientTaskChat',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return PlaceholderScreen(title: 'Chat $taskId');
-        },
-      ),
-      GoRoute(
-        path: Routes.clientTaskRating,
-        name: 'clientTaskRating',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return PlaceholderScreen(title: 'Rate $taskId');
-        },
-      ),
-      GoRoute(
-        path: Routes.clientTaskCompletion,
-        name: 'clientTaskCompletion',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return TaskCompletionScreen(taskId: taskId);
-        },
       ),
 
       // Contractor routes with shell for bottom navigation
@@ -224,10 +223,74 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'contractorProfile',
             builder: (context, state) => const ProfileScreen(),
           ),
+          // Task routes inside shell - bottom nav always visible
+          GoRoute(
+            path: Routes.contractorTaskAlert,
+            name: 'contractorTaskAlert',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final task = state.extra as ContractorTask?;
+              return contractor.TaskAlertScreen(taskId: taskId, task: task);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskDetails,
+            name: 'contractorTaskDetails',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return contractor.ActiveTaskScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskNavigation,
+            name: 'contractorTaskNavigation',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Navigation $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskChat,
+            name: 'contractorTaskChat',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              return chat.ChatScreen(
+                taskId: taskId,
+                taskTitle: extra?['taskTitle'] ?? 'Czat',
+                otherUserName: extra?['otherUserName'] ?? 'Unknown',
+                otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
+                currentUserId: extra?['currentUserId'] ?? 'user_id',
+                currentUserName: extra?['currentUserName'] ?? 'User',
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskComplete,
+            name: 'contractorTaskComplete',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final task = state.extra as ContractorTask?;
+              return contractor.TaskCompletionScreen(taskId: taskId, task: task);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskReview,
+            name: 'contractorTaskReview',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              return contractor.ReviewClientScreen(
+                taskId: taskId,
+                clientName: extra?['clientName'] as String?,
+                earnings: extra?['earnings'] as int?,
+              );
+            },
+          ),
         ],
       ),
 
-      // Contractor registration and KYC (outside shell)
+      // Contractor registration and KYC (outside shell - one-time screens)
       GoRoute(
         path: Routes.contractorRegistration,
         name: 'contractorRegistration',
@@ -237,71 +300,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.contractorKyc,
         name: 'contractorKyc',
         builder: (context, state) => const contractor.KycVerificationScreen(),
-      ),
-
-      // Contractor task routes (outside shell - no bottom nav)
-      GoRoute(
-        path: Routes.contractorTaskAlert,
-        name: 'contractorTaskAlert',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          final task = state.extra as ContractorTask?;
-          return contractor.TaskAlertScreen(taskId: taskId, task: task);
-        },
-      ),
-      GoRoute(
-        path: Routes.contractorTaskDetails,
-        name: 'contractorTaskDetails',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return contractor.ActiveTaskScreen(taskId: taskId);
-        },
-      ),
-      GoRoute(
-        path: Routes.contractorTaskNavigation,
-        name: 'contractorTaskNavigation',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          return PlaceholderScreen(title: 'Navigation $taskId');
-        },
-      ),
-      GoRoute(
-        path: Routes.contractorTaskChat,
-        name: 'contractorTaskChat',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          final extra = state.extra as Map<String, dynamic>?;
-          return chat.ChatScreen(
-            taskId: taskId,
-            taskTitle: extra?['taskTitle'] ?? 'Czat',
-            otherUserName: extra?['otherUserName'] ?? 'Unknown',
-            otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
-            currentUserId: extra?['currentUserId'] ?? 'user_id',
-            currentUserName: extra?['currentUserName'] ?? 'User',
-          );
-        },
-      ),
-      GoRoute(
-        path: Routes.contractorTaskComplete,
-        name: 'contractorTaskComplete',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          final task = state.extra as ContractorTask?;
-          return contractor.TaskCompletionScreen(taskId: taskId, task: task);
-        },
-      ),
-      GoRoute(
-        path: Routes.contractorTaskReview,
-        name: 'contractorTaskReview',
-        builder: (context, state) {
-          final taskId = state.pathParameters['taskId']!;
-          final extra = state.extra as Map<String, dynamic>?;
-          return contractor.ReviewClientScreen(
-            taskId: taskId,
-            clientName: extra?['clientName'] as String?,
-            earnings: extra?['earnings'] as int?,
-          );
-        },
       ),
 
       // Common routes

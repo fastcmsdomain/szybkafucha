@@ -193,6 +193,7 @@ class Task {
     DateTime? createdAt,
     DateTime? acceptedAt,
     DateTime? completedAt,
+    bool clearContractor = false,
   }) {
     return Task(
       id: id ?? this.id,
@@ -206,8 +207,8 @@ class Task {
       isImmediate: isImmediate ?? this.isImmediate,
       status: status ?? this.status,
       clientId: clientId ?? this.clientId,
-      contractorId: contractorId ?? this.contractorId,
-      contractor: contractor ?? this.contractor,
+      contractorId: clearContractor ? null : (contractorId ?? this.contractorId),
+      contractor: clearContractor ? null : (contractor ?? this.contractor),
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,

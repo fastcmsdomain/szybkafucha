@@ -47,6 +47,15 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
     super.dispose();
   }
 
+  /// Navigate back safely - use go() if nothing to pop
+  void _navigateBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.contractorHome);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(_task.category);
@@ -671,20 +680,20 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
   void _showExitConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Wyjść bez zapisywania?'),
         content: const Text(
           'Zlecenie nie zostanie oznaczone jako zakończone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Anuluj'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              context.pop();
+              Navigator.pop(dialogContext);
+              _navigateBack(context);
             },
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,

@@ -106,9 +106,15 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     // Map status string to TaskStatus enum
     final newStatus = _mapStatus(event.status);
 
-    // Create contractor from event if provided
+    // Check if contractor released the task (status back to posted)
+    final contractorReleased = newStatus == TaskStatus.posted;
+
+    // Handle contractor assignment based on new status
     Contractor? contractor = currentTask.contractor;
-    if (event.contractor != null) {
+    String? contractorId = currentTask.contractorId;
+
+    if (!contractorReleased && event.contractor != null) {
+      // Create contractor from event if provided
       contractor = Contractor(
         id: event.contractor!.id,
         name: event.contractor!.name,
@@ -118,13 +124,15 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
         isVerified: true,
         isOnline: true,
       );
+      contractorId = event.contractor!.id;
     }
 
     // Update the task
     final updatedTask = currentTask.copyWith(
       status: newStatus,
-      contractor: contractor,
-      contractorId: event.contractor?.id ?? currentTask.contractorId,
+      contractor: contractorReleased ? null : contractor,
+      contractorId: contractorReleased ? null : contractorId,
+      clearContractor: contractorReleased,
     );
 
     // Update state
@@ -136,6 +144,9 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
   /// Map backend status string to TaskStatus enum
   TaskStatus _mapStatus(String status) {
     switch (status.toLowerCase()) {
+      case 'posted':
+      case 'created':
+        return TaskStatus.posted;
       case 'accepted':
         return TaskStatus.accepted;
       case 'in_progress':
@@ -407,8 +418,38 @@ class ActiveTaskState {
 /// Notifier for contractor's active task
 class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
   final ApiClient _api;
+  final Ref _ref;
 
-  ActiveTaskNotifier(this._api) : super(const ActiveTaskState());
+  ActiveTaskNotifier(this._api, this._ref) : super(const ActiveTaskState()) {
+    _setupWebSocketListener();
+  }
+
+  /// Set up WebSocket listener for task status updates (e.g., client cancels)
+  void _setupWebSocketListener() {
+    _ref.listen<AsyncValue<TaskStatusEvent>>(
+      taskStatusUpdatesProvider,
+      (previous, next) {
+        next.whenData((event) => _handleTaskStatusUpdate(event));
+      },
+    );
+  }
+
+  /// Handle incoming task status update from WebSocket
+  void _handleTaskStatusUpdate(TaskStatusEvent event) {
+    // Only handle if this is our active task
+    if (state.task == null || state.task!.id != event.taskId) return;
+
+    final status = event.status.toLowerCase();
+
+    // If task was cancelled by client, clear it from contractor's active tasks
+    if (status == 'cancelled') {
+      clearTask();
+    }
+    // If task was returned to posted (shouldn't happen to active task, but handle it)
+    else if (status == 'posted' || status == 'created') {
+      clearTask();
+    }
+  }
 
   /// Set the active task (after accepting)
   void setTask(ContractorTask task) {
@@ -516,7 +557,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 final activeTaskProvider =
     StateNotifierProvider<ActiveTaskNotifier, ActiveTaskState>((ref) {
   final api = ref.watch(apiClientProvider);
-  return ActiveTaskNotifier(api);
+  return ActiveTaskNotifier(api, ref);
 });
 
 // Extension for ContractorTask to add copyWith

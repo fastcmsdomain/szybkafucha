@@ -458,6 +458,8 @@ export class TasksService {
 
   /**
    * Cancel a task
+   * - When CONTRACTOR cancels: task returns to 'posted' status (available for other contractors)
+   * - When CLIENT cancels: task is truly cancelled
    */
   async cancelTask(
     taskId: string,
@@ -474,42 +476,74 @@ export class TasksService {
       throw new BadRequestException('Cannot cancel completed or already cancelled task');
     }
 
-    // Client can cancel at any stage before completion
-    if (task.clientId === userId) {
-      // Client is cancelling - allowed at any stage before completion
-      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
-    } else if (task.contractorId === userId) {
-      // Contractor can cancel accepted/confirmed/in_progress task
-      this.logger.log(`Contractor ${userId} cancelling task ${taskId} in status ${task.status}`);
-    } else {
+    const isContractorCancelling = task.contractorId === userId;
+    const isClientCancelling = task.clientId === userId;
+
+    if (!isClientCancelling && !isContractorCancelling) {
       throw new ForbiddenException('You cannot cancel this task');
     }
 
-    task.status = TaskStatus.CANCELLED;
-    task.cancelledAt = new Date();
-    task.cancellationReason = reason || null;
+    // Store contractor ID before clearing (for notifications)
+    const previousContractorId = task.contractorId;
 
-    const savedTask = await this.tasksRepository.save(task);
+    if (isContractorCancelling) {
+      // CONTRACTOR is cancelling - return task to 'posted' status so other contractors can accept it
+      this.logger.log(`Contractor ${userId} releasing task ${taskId} - returning to posted status`);
 
-    // Broadcast via WebSocket to both parties
-    this.realtimeGateway.broadcastTaskStatus(
-      taskId,
-      TaskStatus.CANCELLED,
-      userId,
-      task.clientId,
-    );
+      task.status = TaskStatus.CREATED;
+      task.contractorId = null;
+      task.acceptedAt = null;
+      task.confirmedAt = null; // Clear confirmation when contractor releases
+      task.startedAt = null;
+      // Don't set cancelledAt - task is not cancelled, just released
 
-    // Notify both parties about cancellation
-    const notifyUserIds = [task.clientId, task.contractorId].filter(
-      Boolean,
-    ) as string[];
-    for (const notifyUserId of notifyUserIds) {
-      if (notifyUserId !== userId) {
-        // Don't notify the one who cancelled
+      const savedTask = await this.tasksRepository.save(task);
+
+      // Broadcast status change - task is now available again
+      this.realtimeGateway.broadcastTaskStatus(
+        taskId,
+        TaskStatus.CREATED,
+        userId,
+        task.clientId,
+      );
+
+      // Notify client that contractor released the task
+      this.notificationsService
+        .sendToUser(task.clientId, NotificationType.TASK_CANCELLED, {
+          taskTitle: task.title,
+          reason: reason || 'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send task released notification: ${err}`,
+          ),
+        );
+
+      return savedTask;
+    } else {
+      // CLIENT is cancelling - truly cancel the task
+      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
+
+      task.status = TaskStatus.CANCELLED;
+      task.cancelledAt = new Date();
+      task.cancellationReason = reason || null;
+
+      const savedTask = await this.tasksRepository.save(task);
+
+      // Broadcast via WebSocket to both parties
+      this.realtimeGateway.broadcastTaskStatus(
+        taskId,
+        TaskStatus.CANCELLED,
+        userId,
+        task.clientId,
+      );
+
+      // Notify contractor if there was one assigned
+      if (previousContractorId) {
         this.notificationsService
-          .sendToUser(notifyUserId, NotificationType.TASK_CANCELLED, {
+          .sendToUser(previousContractorId, NotificationType.TASK_CANCELLED, {
             taskTitle: task.title,
-            reason: reason || 'Brak podanego powodu',
+            reason: reason || 'Klient anulował zlecenie',
           })
           .catch((err) =>
             this.logger.error(
@@ -517,9 +551,9 @@ export class TasksService {
             ),
           );
       }
-    }
 
-    return savedTask;
+      return savedTask;
+    }
   }
 
   /**

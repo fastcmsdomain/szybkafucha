@@ -31,6 +31,15 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   ContractorTask get _task =>
       widget.task ?? ContractorTask.mockNearbyTasks().first;
 
+  /// Navigate back safely - use go() if nothing to pop
+  void _navigateBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.contractorHome);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(_task.category);
@@ -42,7 +51,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.gray700),
-          onPressed: () => context.pop(),
+          onPressed: () => _navigateBack(context),
         ),
         title: Text(
           'Szczegóły zlecenia',
@@ -431,14 +440,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
 
       if (mounted) {
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zaakceptowano zlecenie!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        // Navigate to active task screen
+        // Navigate to active task screen - success feedback shown there
         context.go(Routes.contractorTask(_task.id));
       }
     } catch (e) {

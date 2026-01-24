@@ -26,6 +26,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   ContractorTaskStatus _currentStatus = ContractorTaskStatus.accepted;
   bool _isUpdating = false;
   bool _hasFetchedTask = false;
+  bool _wasTaskCancelled = false;
 
   @override
   void initState() {
@@ -43,6 +44,59 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
       }
       _hasFetchedTask = true;
     });
+
+    // Listen for task cancellation (e.g., client cancelled the task)
+    Future.microtask(() {
+      ref.listenManual(activeTaskProvider, (previous, next) {
+        // If task was present before but is now null, it was cancelled
+        if (previous?.task != null && next.task == null && !_wasTaskCancelled) {
+          _wasTaskCancelled = true;
+          _showTaskCancelledDialog();
+        }
+      });
+    });
+  }
+
+  /// Show dialog when task is cancelled by client
+  void _showTaskCancelledDialog() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: AppColors.error),
+            SizedBox(width: AppSpacing.gapSM),
+            const Text('Zlecenie anulowane'),
+          ],
+        ),
+        content: const Text(
+          'Klient anulował to zlecenie. Zostaniesz przekierowany do listy dostępnych zleceń.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              // Refresh available tasks and go home
+              ref.read(availableTasksProvider.notifier).refresh();
+              context.go(Routes.contractorHome);
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Navigate back safely - use go() if nothing to pop
+  void _navigateBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.contractorHome);
+    }
   }
 
   @override
@@ -56,7 +110,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () => _navigateBack(context),
           ),
           title: Text('Aktywne zlecenie', style: AppTypography.h4),
           centerTitle: true,
@@ -71,7 +125,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
+            onPressed: () => _navigateBack(context),
           ),
           title: Text('Aktywne zlecenie', style: AppTypography.h4),
           centerTitle: true,
@@ -96,7 +150,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               ],
               SizedBox(height: AppSpacing.gapLG),
               ElevatedButton(
-                onPressed: () => context.pop(),
+                onPressed: () => _navigateBack(context),
                 child: const Text('Wróć'),
               ),
             ],
@@ -111,7 +165,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () => _navigateBack(context),
         ),
         title: Text(
           'Aktywne zlecenie',
@@ -656,7 +710,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                   widget.taskId,
                   'cancel',
                 );
+                // Clear contractor's active task
                 ref.read(activeTaskProvider.notifier).clearTask();
+                // Refresh available tasks so the released task appears in "nearby tasks"
+                ref.read(availableTasksProvider.notifier).refresh();
                 if (mounted) {
                   context.go(Routes.contractorHome);
                 }
