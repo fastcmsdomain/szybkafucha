@@ -211,7 +211,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.contractorTaskList,
             name: 'contractorTaskList',
             builder: (context, state) =>
-                const PlaceholderScreen(title: 'Available Tasks'),
+                const contractor.ContractorTaskListScreen(),
           ),
           GoRoute(
             path: Routes.contractorEarnings,
