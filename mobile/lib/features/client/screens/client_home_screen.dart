@@ -3,18 +3,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../models/task.dart';
 import '../models/task_category.dart';
 
 /// Client home screen - main dashboard for clients
 /// Shows welcome message, quick actions, and active/recent tasks
-class ClientHomeScreen extends ConsumerWidget {
+class ClientHomeScreen extends ConsumerStatefulWidget {
   const ClientHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ClientHomeScreen> createState() => _ClientHomeScreenState();
+}
+
+class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Tasks are auto-loaded by clientTasksProvider when created
+    // Only load if not already loaded or data is stale
+    Future.microtask(() {
+      final state = ref.read(clientTasksProvider);
+      if (state.tasks.isEmpty && !state.isLoading) {
+        ref.read(clientTasksProvider.notifier).loadTasks();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -249,7 +270,9 @@ class ClientHomeScreen extends ConsumerWidget {
   }
 
   Widget _buildActiveTasksSection(BuildContext context) {
-    // Placeholder for active tasks - will be populated from API
+    final tasksState = ref.watch(clientTasksProvider);
+    final activeTasks = tasksState.activeTasks;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -272,42 +295,319 @@ class ClientHomeScreen extends ConsumerWidget {
           ],
         ),
         SizedBox(height: AppSpacing.gapMD),
+        
+        // Loading state
+        if (tasksState.isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingXL),
+              child: CircularProgressIndicator(),
+            ),
+          )
         // Empty state
-        Container(
-          padding: EdgeInsets.all(AppSpacing.paddingXL),
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: AppRadius.radiusMD,
-            border: Border.all(color: AppColors.gray200),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.task_alt_outlined,
-                size: 48,
-                color: AppColors.gray400,
-              ),
-              SizedBox(height: AppSpacing.gapMD),
-              Text(
-                AppStrings.noActiveTasks,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.gray600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppSpacing.gapSM),
-              Text(
-                'Utwórz swoje pierwsze zlecenie, aby znaleźć pomocnika',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.gray500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+        else if (activeTasks.isEmpty)
+          _buildEmptyState()
+        // List of active tasks
+        else
+          ...activeTasks.take(3).map((task) => Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
+                child: _buildTaskCard(context, task),
+              )),
       ],
     );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingXL),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.task_alt_outlined,
+            size: 48,
+            color: AppColors.gray400,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            AppStrings.noActiveTasks,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.gray600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            'Utwórz swoje pierwsze zlecenie, aby znaleźć pomocnika',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(BuildContext context, Task task) {
+    final category = task.categoryData;
+
+    return GestureDetector(
+      onTap: () {
+        if (task.status == TaskStatus.inProgress ||
+            task.status == TaskStatus.accepted ||
+            task.status == TaskStatus.confirmed) {
+          context.push(Routes.clientTaskTrack(task.id));
+        } else {
+          // Navigate to history to see details
+          context.go(Routes.clientHistory);
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.paddingMD),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: AppRadius.radiusLG,
+          border: Border.all(color: AppColors.gray200),
+          boxShadow: AppShadows.sm,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.paddingSM),
+                  decoration: BoxDecoration(
+                    color: category.color.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.radiusMD,
+                  ),
+                  child: Icon(
+                    category.icon,
+                    color: category.color,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        style: AppTypography.labelMedium.copyWith(
+                          color: category.color,
+                        ),
+                      ),
+                      Text(
+                        _formatDate(task.createdAt),
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.gray500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildStatusBadge(task.status),
+              ],
+            ),
+
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Description
+            Text(
+              task.description,
+              style: AppTypography.bodySmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Footer row
+            Row(
+              children: [
+                if (task.address != null) ...[
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 14,
+                    color: AppColors.gray500,
+                  ),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      task.address!,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+                Text(
+                  '${task.budget} PLN',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+
+            // Action buttons for active tasks
+            if (task.status == TaskStatus.inProgress ||
+                task.status == TaskStatus.accepted ||
+                task.status == TaskStatus.confirmed) ...[
+              SizedBox(height: AppSpacing.gapMD),
+              Row(
+                children: [
+                  // Track button
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
+                      child: Text('Więcej'),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapSM),
+                  // Cancel button
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCancelConfirmation(context, task),
+                      icon: Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
+                      label: Text(
+                        'Anuluj',
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(TaskStatus status) {
+    Color color;
+    String text = status.displayName;
+
+    switch (status) {
+      case TaskStatus.posted:
+        color = AppColors.warning;
+      case TaskStatus.accepted:
+        color = AppColors.info;
+      case TaskStatus.confirmed:
+        color = AppColors.success;
+      case TaskStatus.inProgress:
+        color = AppColors.primary;
+      case TaskStatus.completed:
+        color = AppColors.success;
+      case TaskStatus.cancelled:
+        color = AppColors.gray500;
+      case TaskStatus.disputed:
+        color = AppColors.error;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.paddingSM,
+        vertical: AppSpacing.paddingXS,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: AppRadius.radiusSM,
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Dzisiaj, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } else if (difference.inDays == 1) {
+      return 'Wczoraj';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} dni temu';
+    } else {
+      return '${date.day}.${date.month}.${date.year}';
+    }
+  }
+
+  void _showCancelConfirmation(BuildContext context, Task task) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Anuluj zlecenie?'),
+        content: Text(
+          'Czy na pewno chcesz anulować to zlecenie? '
+          '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Nie'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _cancelTask(task);
+            },
+            child: Text(
+              'Tak, anuluj',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cancelTask(Task task) async {
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/tasks/${task.id}/cancel');
+
+      // Refresh tasks list
+      await ref.read(clientTasksProvider.notifier).refresh();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zlecenie zostało anulowane'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd anulowania: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildHowItWorksSection() {

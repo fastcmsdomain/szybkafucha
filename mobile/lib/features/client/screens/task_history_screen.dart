@@ -337,7 +337,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                        child: Text('Śledź'),
+                        child: Text('Więcej'),
                       ),
                     ),
                   if (task.status == TaskStatus.inProgress ||
