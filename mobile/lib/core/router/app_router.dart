@@ -290,6 +290,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           return contractor.TaskCompletionScreen(taskId: taskId, task: task);
         },
       ),
+      GoRoute(
+        path: Routes.contractorTaskReview,
+        name: 'contractorTaskReview',
+        builder: (context, state) {
+          final taskId = state.pathParameters['taskId']!;
+          final extra = state.extra as Map<String, dynamic>?;
+          return contractor.ReviewClientScreen(
+            taskId: taskId,
+            clientName: extra?['clientName'] as String?,
+            earnings: extra?['earnings'] as int?,
+          );
+        },
+      ),
 
       // Common routes
       GoRoute(

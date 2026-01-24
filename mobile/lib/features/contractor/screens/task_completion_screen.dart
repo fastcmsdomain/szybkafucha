@@ -629,8 +629,14 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  // Navigate back to contractor home
-                  context.go(Routes.contractorHome);
+                  // Navigate to review client screen
+                  context.go(
+                    Routes.contractorTaskReviewRoute(widget.taskId),
+                    extra: {
+                      'clientName': _task.clientName,
+                      'earnings': earnings,
+                    },
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -640,7 +646,20 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
                     borderRadius: AppRadius.radiusMD,
                   ),
                 ),
-                child: const Text('Wróć do głównej'),
+                child: const Text('Oceń klienta'),
+              ),
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.go(Routes.contractorHome);
+              },
+              child: Text(
+                'Pomiń ocenę',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray500,
+                ),
               ),
             ),
           ],

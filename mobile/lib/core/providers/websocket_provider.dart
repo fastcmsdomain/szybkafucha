@@ -90,6 +90,27 @@ final taskStatusUpdatesProvider = StreamProvider<TaskStatusEvent>((ref) async* {
   }
 });
 
+/// New task available stream (for contractors)
+final newTaskAvailableProvider = StreamProvider<NewTaskEvent>((ref) async* {
+  final service = ref.watch(webSocketServiceProvider);
+  final controller = StreamController<NewTaskEvent>();
+
+  void onNewTask(dynamic data) {
+    if (data is NewTaskEvent) {
+      controller.add(data);
+    }
+  }
+
+  service.on(WebSocketConfig.taskNewAvailable, onNewTask);
+
+  try {
+    yield* controller.stream;
+  } finally {
+    service.off(WebSocketConfig.taskNewAvailable, onNewTask);
+    controller.close();
+  }
+});
+
 /// User online/offline events stream
 final userPresenceProvider = StreamProvider<UserOnlineEvent>((ref) async* {
   final service = ref.watch(webSocketServiceProvider);
@@ -121,13 +142,5 @@ final userPresenceProvider = StreamProvider<UserOnlineEvent>((ref) async* {
   }
 });
 
-/// Initialize WebSocket connection with JWT token
-final webSocketInitProvider = FutureProvider<void>((ref) async {
-  final service = ref.watch(webSocketServiceProvider);
-
-  // Get JWT token from auth provider (you would implement this based on your auth setup)
-  // For now, using a mock token for demonstration
-  const mockToken = 'mock_jwt_token_for_development';
-
-  await service.connect(mockToken);
-});
+// Note: WebSocket initialization is now handled by WebSocketInitializer widget
+// which automatically connects/disconnects based on auth state

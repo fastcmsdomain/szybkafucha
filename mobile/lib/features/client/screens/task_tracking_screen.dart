@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/api_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/providers/task_provider.dart';
@@ -10,10 +11,11 @@ import '../../../core/services/websocket_service.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
 
-/// Task tracking status (4 basic states mapping to backend)
+/// Task tracking status (5 states including confirmation step)
 enum TrackingStatus {
   searching,
-  accepted,
+  accepted, // Contractor accepted - waiting for client confirmation
+  confirmed, // Client confirmed contractor - work can start
   inProgress,
   completed,
 }
@@ -24,7 +26,9 @@ extension TrackingStatusExtension on TrackingStatus {
       case TrackingStatus.searching:
         return 'Szukamy pomocnika';
       case TrackingStatus.accepted:
-        return 'Pomocnik znaleziony';
+        return 'Pomocnik znaleziony!';
+      case TrackingStatus.confirmed:
+        return 'Wykonawca potwierdzony';
       case TrackingStatus.inProgress:
         return 'Praca w toku';
       case TrackingStatus.completed:
@@ -37,7 +41,9 @@ extension TrackingStatusExtension on TrackingStatus {
       case TrackingStatus.searching:
         return 'Dopasowujemy najlepszego wykonawcę...';
       case TrackingStatus.accepted:
-        return 'Wykonawca przyjął zlecenie';
+        return 'Sprawdź profil i zatwierdź wykonawcę';
+      case TrackingStatus.confirmed:
+        return 'Czekamy na rozpoczęcie pracy';
       case TrackingStatus.inProgress:
         return 'Zadanie jest realizowane';
       case TrackingStatus.completed:
@@ -51,10 +57,12 @@ extension TrackingStatusExtension on TrackingStatus {
         return 0;
       case TrackingStatus.accepted:
         return 1;
-      case TrackingStatus.inProgress:
+      case TrackingStatus.confirmed:
         return 2;
-      case TrackingStatus.completed:
+      case TrackingStatus.inProgress:
         return 3;
+      case TrackingStatus.completed:
+        return 4;
     }
   }
 }
@@ -75,6 +83,16 @@ class TaskTrackingScreen extends ConsumerStatefulWidget {
 class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _status = TrackingStatus.searching;
   Contractor? _contractor;
+
+  // Contractor location for live tracking
+  double? _contractorLat;
+  double? _contractorLng;
+  DateTime? _lastLocationUpdate;
+
+  // Confirmation loading state
+  bool _isConfirming = false;
+  bool _isRejecting = false;
+  bool _isCancelling = false;
 
   @override
   void initState() {
@@ -108,13 +126,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     });
   }
 
-  /// Map TaskStatus to TrackingStatus (4 basic states)
+  /// Map TaskStatus to TrackingStatus (5 states)
   TrackingStatus _mapTaskStatus(TaskStatus status) {
     switch (status) {
       case TaskStatus.posted:
         return TrackingStatus.searching;
       case TaskStatus.accepted:
         return TrackingStatus.accepted;
+      case TaskStatus.confirmed:
+        return TrackingStatus.confirmed;
       case TaskStatus.inProgress:
         return TrackingStatus.inProgress;
       case TaskStatus.completed:
@@ -130,6 +150,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     switch (status.toLowerCase()) {
       case 'accepted':
         return TrackingStatus.accepted;
+      case 'confirmed':
+        return TrackingStatus.confirmed;
       case 'in_progress':
         return TrackingStatus.inProgress;
       case 'completed':
@@ -173,6 +195,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     });
   }
 
+  /// Check if contractor location is recent (within 30 seconds)
+  bool _isLocationRecent() {
+    if (_lastLocationUpdate == null) return false;
+    final diff = DateTime.now().difference(_lastLocationUpdate!);
+    return diff.inSeconds < 30;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Listen for WebSocket task status updates
@@ -182,6 +211,28 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         next.whenData((event) {
           if (event.taskId == widget.taskId) {
             _handleStatusUpdate(event);
+          }
+        });
+      },
+    );
+
+    // Listen for contractor location updates (GPS tracking)
+    ref.listen<AsyncValue<LocationUpdateEvent>>(
+      locationUpdatesProvider,
+      (previous, next) {
+        next.whenData((event) {
+          // Update contractor position on map
+          // Only update if we have a contractor assigned
+          if (_contractor != null &&
+              (_status == TrackingStatus.accepted ||
+                  _status == TrackingStatus.inProgress)) {
+            setState(() {
+              _contractorLat = event.latitude;
+              _contractorLng = event.longitude;
+              _lastLocationUpdate = event.timestamp;
+            });
+            debugPrint(
+                '📍 Contractor location updated: ${event.latitude}, ${event.longitude}');
           }
         });
       },
@@ -295,9 +346,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
           // Contractor marker (if assigned)
           if (_contractor != null && _status != TrackingStatus.searching)
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.25,
-              right: MediaQuery.of(context).size.width * 0.25,
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+              // Use live location if available, otherwise default position
+              top: _contractorLat != null
+                  ? MediaQuery.of(context).size.height * 0.3
+                  : MediaQuery.of(context).size.height * 0.25,
+              right: _contractorLng != null
+                  ? MediaQuery.of(context).size.width * 0.3
+                  : MediaQuery.of(context).size.width * 0.25,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -308,11 +366,29 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       borderRadius: AppRadius.radiusSM,
                       boxShadow: AppShadows.md,
                     ),
-                    child: Text(
-                      _contractor!.name.split(' ').first,
-                      style: AppTypography.caption.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _contractor!.name.split(' ').first,
+                          style: AppTypography.caption.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (_lastLocationUpdate != null) ...[
+                          SizedBox(width: 4),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _isLocationRecent()
+                                  ? AppColors.success
+                                  : AppColors.warning,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   SizedBox(height: 2),
@@ -321,7 +397,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.success,
                       shape: BoxShape.circle,
-                      boxShadow: AppShadows.md,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.success.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                        ...AppShadows.md,
+                      ],
                     ),
                     child: Icon(
                       Icons.directions_walk,
@@ -386,14 +469,23 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       _status != TrackingStatus.searching)
                     _buildContractorCard(),
 
-                  // Action buttons
+                  // Confirm/Reject buttons (when waiting for client confirmation)
+                  if (_status == TrackingStatus.accepted && _contractor != null)
+                    _buildConfirmContractorButtons(),
+
+                  // Action buttons (chat, call)
                   if (_status != TrackingStatus.searching &&
+                      _status != TrackingStatus.accepted &&
                       _status != TrackingStatus.completed)
                     _buildActionButtons(),
 
                   // Complete button (when in progress)
                   if (_status == TrackingStatus.inProgress)
                     _buildCompleteButton(),
+
+                  // Cancel button (for all non-completed tasks)
+                  if (_status != TrackingStatus.completed)
+                    _buildCancelButton(),
                 ],
               ),
             ),
@@ -456,6 +548,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       case TrackingStatus.searching:
         return Icons.search;
       case TrackingStatus.accepted:
+        return Icons.person_search;
+      case TrackingStatus.confirmed:
         return Icons.check_circle;
       case TrackingStatus.inProgress:
         return Icons.handyman;
@@ -465,8 +559,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 4 basic steps matching backend states
-    final steps = ['Szukanie', 'Przyjęte', 'W trakcie', 'Gotowe'];
+    // 5 steps including confirmation
+    final steps = ['Szukanie', 'Znaleziony', 'Potwierdz.', 'W trakcie', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
     return Row(
@@ -549,24 +643,33 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         children: [
           Stack(
             children: [
+              // Show photo if available, otherwise initials
               CircleAvatar(
-                radius: 24,
+                radius: 28,
                 backgroundColor: AppColors.gray200,
-                child: Text(
-                  _contractor!.name[0].toUpperCase(),
-                  style: AppTypography.h4.copyWith(
-                    color: AppColors.gray600,
-                  ),
-                ),
+                backgroundImage: _contractor!.avatarUrl != null
+                    ? NetworkImage(_contractor!.avatarUrl!)
+                    : null,
+                child: _contractor!.avatarUrl == null
+                    ? Text(
+                        _contractor!.name[0].toUpperCase(),
+                        style: AppTypography.h4.copyWith(
+                          color: AppColors.gray600,
+                        ),
+                      )
+                    : null,
               ),
+              // Online indicator
               Positioned(
                 right: 0,
                 bottom: 0,
                 child: Container(
-                  width: 12,
-                  height: 12,
+                  width: 14,
+                  height: 14,
                   decoration: BoxDecoration(
-                    color: AppColors.success,
+                    color: _contractor!.isOnline
+                        ? AppColors.success
+                        : AppColors.gray400,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: AppColors.white,
@@ -584,10 +687,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      _contractor!.name,
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        _contractor!.name,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (_contractor!.isVerified) ...[
@@ -600,13 +706,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     ],
                   ],
                 ),
+                SizedBox(height: 2),
                 Row(
                   children: [
-                    Icon(Icons.star, size: 14, color: AppColors.warning),
-                    SizedBox(width: 2),
+                    Icon(Icons.star, size: 16, color: AppColors.warning),
+                    SizedBox(width: 4),
                     Text(
                       _contractor!.formattedRating,
-                      style: AppTypography.caption.copyWith(
+                      style: AppTypography.labelMedium.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -624,6 +731,161 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildConfirmContractorButtons() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
+      child: Column(
+        children: [
+          // Confirm button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isConfirming || _isRejecting ? null : _confirmContractor,
+              icon: _isConfirming
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white,
+                      ),
+                    )
+                  : Icon(Icons.check_circle),
+              label: Text(_isConfirming ? 'Potwierdzanie...' : 'Zatwierdź wykonawcę'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: AppColors.white,
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.button,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          // Reject button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isConfirming || _isRejecting ? null : _rejectContractor,
+              icon: _isRejecting
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.error,
+                      ),
+                    )
+                  : Icon(Icons.close, color: AppColors.error),
+              label: Text(
+                _isRejecting ? 'Odrzucanie...' : 'Odrzuć i szukaj innego',
+                style: TextStyle(color: AppColors.error),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.error),
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Confirm the contractor - triggers payment and allows work to start
+  Future<void> _confirmContractor() async {
+    setState(() => _isConfirming = true);
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/tasks/${widget.taskId}/confirm-contractor');
+
+      setState(() {
+        _status = TrackingStatus.confirmed;
+        _isConfirming = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Wykonawca zatwierdzony! Praca może się rozpocząć.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isConfirming = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Reject the contractor - task goes back to searching
+  Future<void> _rejectContractor() async {
+    // Show confirmation dialog first
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Odrzucić wykonawcę?'),
+        content: Text(
+          'Zadanie wróci do szukania nowego wykonawcy.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text('Odrzuć'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isRejecting = true);
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/tasks/${widget.taskId}/reject-contractor');
+
+      setState(() {
+        _status = TrackingStatus.searching;
+        _contractor = null;
+        _isRejecting = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Wykonawca odrzucony. Szukamy nowego...'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isRejecting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildActionButtons() {
@@ -694,6 +956,36 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
+  Widget _buildCancelButton() {
+    return Padding(
+      padding: EdgeInsets.only(top: AppSpacing.gapMD),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: _isCancelling ? null : _showCancelDialog,
+          icon: _isCancelling
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.error,
+                  ),
+                )
+              : Icon(Icons.cancel_outlined, color: AppColors.error),
+          label: Text(
+            _isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie',
+            style: TextStyle(color: AppColors.error),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showOptionsMenu() {
     showModalBottomSheet(
       context: context,
@@ -748,13 +1040,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              context.go(Routes.clientHome);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Zlecenie zostało anulowane'),
-                  backgroundColor: AppColors.warning,
-                ),
-              );
+              _cancelTask();
             },
             child: Text(
               'Tak, anuluj',
@@ -764,6 +1050,39 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         ],
       ),
     );
+  }
+
+  /// Cancel the task via backend API
+  Future<void> _cancelTask() async {
+    setState(() => _isCancelling = true);
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/tasks/${widget.taskId}/cancel');
+
+      // Refresh tasks list
+      ref.invalidate(clientTasksProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zlecenie zostało anulowane'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        context.go(Routes.clientHome);
+      }
+    } catch (e) {
+      setState(() => _isCancelling = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd anulowania: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 }
 

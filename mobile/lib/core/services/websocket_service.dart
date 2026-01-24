@@ -170,6 +170,67 @@ class UserOnlineEvent {
   }
 }
 
+/// New task available event (sent to contractors)
+class NewTaskEvent {
+  final String id;
+  final String category;
+  final String title;
+  final double budgetAmount;
+  final String address;
+  final double locationLat;
+  final double locationLng;
+  final DateTime createdAt;
+  final double? score;
+  final double? distance;
+
+  NewTaskEvent({
+    required this.id,
+    required this.category,
+    required this.title,
+    required this.budgetAmount,
+    required this.address,
+    required this.locationLat,
+    required this.locationLng,
+    required this.createdAt,
+    this.score,
+    this.distance,
+  });
+
+  factory NewTaskEvent.fromJson(Map<String, dynamic> json) {
+    // Task data may be nested under 'task' key
+    final taskData = json['task'] as Map<String, dynamic>? ?? json;
+
+    return NewTaskEvent(
+      id: taskData['id'] as String,
+      category: taskData['category'] as String,
+      title: taskData['title'] as String,
+      budgetAmount: (taskData['budgetAmount'] as num).toDouble(),
+      address: taskData['address'] as String,
+      locationLat: (taskData['locationLat'] as num).toDouble(),
+      locationLng: (taskData['locationLng'] as num).toDouble(),
+      createdAt: taskData['createdAt'] is String
+          ? DateTime.parse(taskData['createdAt'] as String)
+          : DateTime.now(),
+      score: json['score'] != null ? (json['score'] as num).toDouble() : null,
+      distance:
+          json['distance'] != null ? (json['distance'] as num).toDouble() : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'category': category,
+        'title': title,
+        'budgetAmount': budgetAmount,
+        'address': address,
+        'locationLat': locationLat,
+        'locationLng': locationLng,
+        'createdAt': createdAt.toIso8601String(),
+        if (score != null) 'score': score,
+        if (distance != null) 'distance': distance,
+      };
+}
+
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
 
@@ -322,6 +383,17 @@ class WebSocketService {
           _notifyListeners(WebSocketConfig.userOffline, event);
         } catch (e) {
           _notifyListeners('error', {'message': 'Failed to parse user offline: $e'});
+        }
+      });
+
+      // New task available for contractors
+      _socket.on(WebSocketConfig.taskNewAvailable, (data) {
+        try {
+          final event = NewTaskEvent.fromJson(data as Map<String, dynamic>);
+          _notifyListeners(WebSocketConfig.taskNewAvailable, event);
+          debugPrint('📢 New task available: ${event.title} (${event.distance?.toStringAsFixed(1)}km)');
+        } catch (e) {
+          _notifyListeners('error', {'message': 'Failed to parse new task: $e'});
         }
       });
     } catch (e) {

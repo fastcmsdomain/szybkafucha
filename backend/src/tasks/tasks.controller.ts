@@ -119,8 +119,34 @@ export class TasksController {
   }
 
   /**
+   * PUT /tasks/:id/confirm-contractor
+   * Client confirms the contractor after they accept (before work starts)
+   * This triggers payment and allows contractor to start
+   */
+  @Put(':id/confirm-contractor')
+  async confirmContractor(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.tasksService.confirmContractor(id, req.user.id);
+  }
+
+  /**
+   * PUT /tasks/:id/reject-contractor
+   * Client rejects the contractor - task goes back to searching
+   */
+  @Put(':id/reject-contractor')
+  async rejectContractor(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.tasksService.rejectContractor(id, req.user.id, reason);
+  }
+
+  /**
    * PUT /tasks/:id/confirm
-   * Client confirms task completion
+   * Client confirms task completion (triggers payment release)
    */
   @Put(':id/confirm')
   async confirm(

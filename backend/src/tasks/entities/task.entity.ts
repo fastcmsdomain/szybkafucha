@@ -16,6 +16,7 @@ import { User } from '../../users/entities/user.entity';
 export enum TaskStatus {
   CREATED = 'created',
   ACCEPTED = 'accepted',
+  CONFIRMED = 'confirmed', // Client confirmed the contractor
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
@@ -91,12 +92,19 @@ export class Task {
   @Column({ type: 'simple-array', nullable: true })
   completionPhotos: string[] | null;
 
+  // Task images (added by client during creation)
+  @Column({ type: 'simple-array', nullable: true })
+  imageUrls: string[] | null;
+
   // Timestamps for task lifecycle
   @Column({ type: 'timestamp', nullable: true })
   scheduledAt: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
   acceptedAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  confirmedAt: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
   startedAt: Date | null;

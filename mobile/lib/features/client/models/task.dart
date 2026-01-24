@@ -5,6 +5,7 @@ import 'contractor.dart';
 enum TaskStatus {
   posted,
   accepted,
+  confirmed, // Client confirmed the contractor
   inProgress,
   completed,
   cancelled,
@@ -19,6 +20,8 @@ extension TaskStatusExtension on TaskStatus {
         return 'Opublikowane';
       case TaskStatus.accepted:
         return 'Zaakceptowane';
+      case TaskStatus.confirmed:
+        return 'Potwierdzone';
       case TaskStatus.inProgress:
         return 'W trakcie';
       case TaskStatus.completed:
@@ -33,6 +36,7 @@ extension TaskStatusExtension on TaskStatus {
   bool get isActive =>
       this == TaskStatus.posted ||
       this == TaskStatus.accepted ||
+      this == TaskStatus.confirmed ||
       this == TaskStatus.inProgress;
 }
 
@@ -121,6 +125,8 @@ class Task {
         return TaskStatus.posted;
       case 'accepted':
         return TaskStatus.accepted;
+      case 'confirmed':
+        return TaskStatus.confirmed;
       case 'in_progress':
         return TaskStatus.inProgress;
       case 'completed':

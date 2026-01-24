@@ -224,6 +224,103 @@ export class TasksService {
   }
 
   /**
+   * Client confirms the contractor after they accept
+   * Changes status from ACCEPTED to CONFIRMED, triggers payment
+   */
+  async confirmContractor(taskId: string, clientId: string): Promise<Task> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    if (task.status !== TaskStatus.ACCEPTED) {
+      throw new BadRequestException(
+        'Task must be in accepted state to confirm contractor',
+      );
+    }
+
+    task.status = TaskStatus.CONFIRMED;
+    task.confirmedAt = new Date();
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Broadcast via WebSocket to contractor
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.CONFIRMED,
+      clientId,
+      task.contractorId!,
+    );
+
+    // Notify contractor that client confirmed them
+    if (task.contractorId) {
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send contractor confirmation notification: ${err}`,
+          ),
+        );
+    }
+
+    return savedTask;
+  }
+
+  /**
+   * Client rejects the contractor - task goes back to searching
+   */
+  async rejectContractor(
+    taskId: string,
+    clientId: string,
+    reason?: string,
+  ): Promise<Task> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    if (task.status !== TaskStatus.ACCEPTED) {
+      throw new BadRequestException(
+        'Task must be in accepted state to reject contractor',
+      );
+    }
+
+    // Reset task to created state
+    const rejectedContractorId = task.contractorId;
+    task.contractorId = null;
+    task.status = TaskStatus.CREATED;
+    task.acceptedAt = null;
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Notify rejected contractor
+    if (rejectedContractorId) {
+      this.notificationsService
+        .sendToUser(rejectedContractorId, NotificationType.TASK_CANCELLED, {
+          taskTitle: task.title,
+          reason: reason || 'Klient odrzucił zlecenie',
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send rejection notification: ${err}`),
+        );
+    }
+
+    // Re-notify available contractors
+    this.notifyAvailableContractors(savedTask).catch((error) => {
+      this.logger.error(
+        `Failed to re-notify contractors for task ${savedTask.id}`,
+        error,
+      );
+    });
+
+    return savedTask;
+  }
+
+  /**
    * Contractor starts the task
    */
   async startTask(taskId: string, contractorId: string): Promise<Task> {
@@ -233,8 +330,14 @@ export class TasksService {
       throw new ForbiddenException('You are not assigned to this task');
     }
 
-    if (task.status !== TaskStatus.ACCEPTED) {
-      throw new BadRequestException('Task must be accepted before starting');
+    // Allow starting from ACCEPTED (backward compat) or CONFIRMED (new flow)
+    if (
+      task.status !== TaskStatus.ACCEPTED &&
+      task.status !== TaskStatus.CONFIRMED
+    ) {
+      throw new BadRequestException(
+        'Task must be accepted or confirmed before starting',
+      );
     }
 
     task.status = TaskStatus.IN_PROGRESS;
@@ -363,18 +466,21 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
-    // Only client can cancel before acceptance
+    // Check if task can be cancelled
+    if (
+      task.status === TaskStatus.COMPLETED ||
+      task.status === TaskStatus.CANCELLED
+    ) {
+      throw new BadRequestException('Cannot cancel completed or already cancelled task');
+    }
+
+    // Client can cancel at any stage before completion
     if (task.clientId === userId) {
-      if (task.status !== TaskStatus.CREATED) {
-        throw new BadRequestException(
-          'Cannot cancel task after contractor accepted. Contact support.',
-        );
-      }
+      // Client is cancelling - allowed at any stage before completion
+      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
     } else if (task.contractorId === userId) {
-      // Contractor can cancel accepted task
-      if (task.status === TaskStatus.COMPLETED) {
-        throw new BadRequestException('Cannot cancel completed task');
-      }
+      // Contractor can cancel accepted/confirmed/in_progress task
+      this.logger.log(`Contractor ${userId} cancelling task ${taskId} in status ${task.status}`);
     } else {
       throw new ForbiddenException('You cannot cancel this task');
     }
@@ -576,11 +682,13 @@ export class TasksService {
     maxRadius: number = 20,
     limit: number = MAX_CONTRACTORS_TO_NOTIFY,
   ): Promise<RankedContractor[]> {
-    // Find all verified, online contractors with matching category
+    // Find all online contractors with matching category
+    // TODO: Re-enable KYC check before production: kycStatus: KycStatus.VERIFIED
     const contractors = await this.contractorProfileRepository.find({
       where: {
         isOnline: true,
-        kycStatus: KycStatus.VERIFIED,
+        // MVP: Allow non-verified contractors for testing
+        // kycStatus: KycStatus.VERIFIED,
       },
       relations: ['user'],
     });

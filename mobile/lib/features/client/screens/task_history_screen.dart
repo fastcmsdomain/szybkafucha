@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -324,15 +325,40 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
               ],
             ),
 
-            // Action button for active tasks
-            if (isActive && task.status == TaskStatus.inProgress) ...[
+            // Action buttons for active tasks
+            if (isActive) ...[
               SizedBox(height: AppSpacing.gapMD),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                  child: Text('Śledź zlecenie'),
-                ),
+              Row(
+                children: [
+                  // Track button (for in progress tasks)
+                  if (task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.accepted ||
+                      task.status == TaskStatus.confirmed)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
+                        child: Text('Śledź'),
+                      ),
+                    ),
+                  if (task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.accepted ||
+                      task.status == TaskStatus.confirmed)
+                    SizedBox(width: AppSpacing.gapSM),
+                  // Cancel button (for all active non-completed tasks)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCancelConfirmation(task),
+                      icon: Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
+                      label: Text(
+                        'Anuluj',
+                        style: TextStyle(color: AppColors.error),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ],
@@ -350,6 +376,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         color = AppColors.warning;
       case TaskStatus.accepted:
         color = AppColors.info;
+      case TaskStatus.confirmed:
+        color = AppColors.success;
       case TaskStatus.inProgress:
         color = AppColors.primary;
       case TaskStatus.completed:
@@ -518,13 +546,37 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
                   SizedBox(height: AppSpacing.space6),
 
-                  // Close button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(AppStrings.close),
-                    ),
+                  // Action buttons row
+                  Row(
+                    children: [
+                      // Cancel button (for active tasks)
+                      if (task.status.isActive) ...[
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _showCancelConfirmation(task);
+                            },
+                            icon: Icon(Icons.cancel_outlined, color: AppColors.error),
+                            label: Text(
+                              'Anuluj',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                      ],
+                      // Close button
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(AppStrings.close),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -533,6 +585,63 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         ),
       ),
     );
+  }
+
+  void _showCancelConfirmation(Task task) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Anuluj zlecenie?'),
+        content: Text(
+          'Czy na pewno chcesz anulować to zlecenie? '
+          '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Nie'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _cancelTask(task);
+            },
+            child: Text(
+              'Tak, anuluj',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cancelTask(Task task) async {
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.put('/tasks/${task.id}/cancel');
+
+      // Refresh tasks list
+      await ref.read(clientTasksProvider.notifier).refresh();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zlecenie zostało anulowane'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd anulowania: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildDetailRow(String label, String value) {

@@ -274,8 +274,6 @@ enum ContractorTaskStatus {
   available,
   offered, // Contractor received notification
   accepted,
-  onTheWay,
-  arrived,
   inProgress,
   completed,
   cancelled,
@@ -290,10 +288,6 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
         return 'Nowe zlecenie';
       case ContractorTaskStatus.accepted:
         return 'Zaakceptowane';
-      case ContractorTaskStatus.onTheWay:
-        return 'W drodze';
-      case ContractorTaskStatus.arrived:
-        return 'Na miejscu';
       case ContractorTaskStatus.inProgress:
         return 'W trakcie';
       case ContractorTaskStatus.completed:
@@ -305,7 +299,5 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
 
   bool get isActive =>
       this == ContractorTaskStatus.accepted ||
-      this == ContractorTaskStatus.onTheWay ||
-      this == ContractorTaskStatus.arrived ||
       this == ContractorTaskStatus.inProgress;
 }

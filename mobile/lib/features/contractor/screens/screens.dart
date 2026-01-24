@@ -3,5 +3,6 @@ export 'contractor_home_screen.dart';
 export 'contractor_registration_screen.dart';
 export 'earnings_screen.dart';
 export 'kyc_verification_screen.dart';
+export 'review_client_screen.dart';
 export 'task_alert_screen.dart';
 export 'task_completion_screen.dart';

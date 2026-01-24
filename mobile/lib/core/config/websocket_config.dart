@@ -36,6 +36,7 @@ abstract class WebSocketConfig {
   static const String messageNew = 'message:new';
   static const String messageRead = 'message:read';
   static const String taskStatus = 'task:status';
+  static const String taskNewAvailable = 'task:new_available';
   static const String userOnline = 'user:online';
   static const String userOffline = 'user:offline';
   static const String error = 'error';

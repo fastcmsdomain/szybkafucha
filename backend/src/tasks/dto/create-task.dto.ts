@@ -12,6 +12,9 @@ import {
   MinLength,
   Min,
   IsDateString,
+  IsArray,
+  ArrayMaxSize,
+  IsUrl,
 } from 'class-validator';
 import { TaskCategory } from '../../contractor/entities/contractor-profile.entity';
 
@@ -48,4 +51,10 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsUrl({}, { each: true })
+  imageUrls?: string[];
 }

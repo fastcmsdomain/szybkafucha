@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/task_provider.dart';
@@ -34,6 +37,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   TimeOfDay _scheduledTime = TimeOfDay.now();
   bool _isLoading = false;
   bool _useCurrentLocation = true;
+
+  // Task images (max 5)
+  final List<XFile> _selectedImages = [];
+  static const int _maxImages = 5;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -85,6 +93,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
                 // Description
                 _buildDescriptionSection(),
+
+                SizedBox(height: AppSpacing.space8),
+
+                // Images (optional)
+                _buildImageSection(),
 
                 SizedBox(height: AppSpacing.space8),
 
@@ -271,6 +284,185 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Zdjęcia (opcjonalnie)',
+              style: AppTypography.labelLarge,
+            ),
+            Text(
+              '${_selectedImages.length}/$_maxImages',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.gapSM),
+        Text(
+          'Dodaj zdjęcia, aby lepiej opisać zlecenie',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.gray500,
+          ),
+        ),
+        SizedBox(height: AppSpacing.gapMD),
+
+        // Image grid
+        SizedBox(
+          height: 100,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              // Add image button
+              if (_selectedImages.length < _maxImages)
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray100,
+                      borderRadius: AppRadius.radiusMD,
+                      border: Border.all(
+                        color: AppColors.gray300,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 32,
+                          color: AppColors.gray500,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Dodaj',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Selected images
+              ..._selectedImages.asMap().entries.map((entry) {
+                final index = entry.key;
+                final image = entry.value;
+                return Container(
+                  width: 100,
+                  height: 100,
+                  margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: AppRadius.radiusMD,
+                        child: Image.file(
+                          File(image.path),
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.gray900.withValues(alpha: 0.7),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 16,
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Pick image from gallery or camera
+  Future<void> _pickImage() async {
+    if (_selectedImages.length >= _maxImages) return;
+
+    // Show bottom sheet with options
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Wybierz z galerii'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Zrób zdjęcie'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nie udało się wybrać zdjęcia'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Remove image at index
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
   }
 
   Widget _buildLocationSection() {

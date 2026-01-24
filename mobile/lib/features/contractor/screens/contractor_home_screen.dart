@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/providers/websocket_provider.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/services/websocket_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/models.dart';
@@ -35,6 +38,17 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for new tasks via WebSocket
+    ref.listen<AsyncValue<NewTaskEvent>>(newTaskAvailableProvider, (previous, next) {
+      next.whenData((newTask) {
+        // Refresh task list
+        ref.read(availableTasksProvider.notifier).refresh();
+
+        // Show alert dialog for new task
+        _showNewTaskAlert(newTask);
+      });
+    });
+
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
@@ -509,5 +523,247 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         );
       }
     }
+  }
+
+  void _showNewTaskAlert(NewTaskEvent task) {
+    // Haptic feedback for attention
+    HapticFeedback.heavyImpact();
+
+    // Get category data - use paczki as fallback if category not found
+    final category = TaskCategory.values.firstWhere(
+      (c) => c.name.toLowerCase() == task.category.toLowerCase(),
+      orElse: () => TaskCategory.paczki,
+    );
+    final categoryData = TaskCategoryData.fromCategory(category);
+
+    // Show bottom sheet alert
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: EdgeInsets.all(AppSpacing.paddingMD),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: AppRadius.radiusXL,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gray900.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header with pulsing indicator
+            Container(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.success.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Text(
+                    'Nowe zlecenie!',
+                    style: AppTypography.h4.copyWith(
+                      color: AppColors.success,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (task.distance != null)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.paddingSM,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.1),
+                        borderRadius: AppRadius.radiusSM,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.directions_walk,
+                            size: 14,
+                            color: AppColors.info,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '${task.distance!.toStringAsFixed(1)} km',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.info,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Task details
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: categoryData.color.withValues(alpha: 0.1),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                        child: Icon(
+                          categoryData.icon,
+                          color: categoryData.color,
+                          size: 32,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              categoryData.name,
+                              style: AppTypography.h4,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              task.address,
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.gray500,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: AppSpacing.gapLG),
+
+                  // Earnings
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(AppSpacing.paddingMD),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                      ),
+                      borderRadius: AppRadius.radiusLG,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Do zarobienia: ',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.white.withValues(alpha: 0.8),
+                          ),
+                        ),
+                        Text(
+                          '${task.budgetAmount.toStringAsFixed(0)} zł',
+                          style: AppTypography.h3.copyWith(
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Actions
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.gray700,
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                        side: BorderSide(color: AppColors.gray300),
+                      ),
+                      child: const Text('Pomiń'),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // Navigate to task alert screen with more details
+                        context.push(Routes.contractorTaskAlertRoute(task.id));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: AppColors.white,
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.visibility, size: 20),
+                          SizedBox(width: AppSpacing.gapSM),
+                          const Text('Zobacz szczegóły'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Safe area padding
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
+      ),
+    );
   }
 }

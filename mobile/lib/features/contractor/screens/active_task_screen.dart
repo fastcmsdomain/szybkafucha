@@ -286,10 +286,9 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
+    // Simplified 3-step flow: Zaakceptowano → W trakcie → Zakończono
     final steps = [
       _StepData('Zaakceptowano', ContractorTaskStatus.accepted),
-      _StepData('W drodze', ContractorTaskStatus.onTheWay),
-      _StepData('Na miejscu', ContractorTaskStatus.arrived),
       _StepData('W trakcie', ContractorTaskStatus.inProgress),
       _StepData('Zakończono', ContractorTaskStatus.completed),
     ];
@@ -308,8 +307,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               Column(
                 children: [
                   Container(
-                    width: 24,
-                    height: 24,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: isCompleted || isCurrent
                           ? AppColors.primary
@@ -317,10 +316,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: isCompleted
-                        ? Icon(Icons.check, size: 14, color: AppColors.white)
+                        ? Icon(Icons.check, size: 18, color: AppColors.white)
                         : isCurrent
                             ? Container(
-                                margin: const EdgeInsets.all(6),
+                                margin: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: AppColors.white,
                                   shape: BoxShape.circle,
@@ -328,10 +327,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                               )
                             : null,
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 6),
                   Text(
                     step.label,
-                    style: AppTypography.caption.copyWith(
+                    style: AppTypography.labelSmall.copyWith(
                       color: isCurrent
                           ? AppColors.primary
                           : isCompleted
@@ -339,7 +338,6 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                               : AppColors.gray400,
                       fontWeight:
                           isCurrent ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 9,
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
@@ -350,8 +348,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               if (!isLast)
                 Expanded(
                   child: Container(
-                    height: 2,
-                    margin: EdgeInsets.only(bottom: 16),
+                    height: 3,
+                    margin: EdgeInsets.only(bottom: 24),
                     color: isCompleted ? AppColors.primary : AppColors.gray200,
                   ),
                 ),
@@ -502,16 +500,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     String buttonText;
     VoidCallback? onPressed;
 
+    // Simplified 2-button flow: "Rozpocznij zadanie" → "Zakończ zlecenie"
     switch (_currentStatus) {
       case ContractorTaskStatus.accepted:
-        buttonText = 'Wyruszyłem';
-        onPressed = () => _updateStatus(ContractorTaskStatus.onTheWay);
-      case ContractorTaskStatus.onTheWay:
-        buttonText = 'Jestem na miejscu';
-        onPressed = () => _updateStatus(ContractorTaskStatus.arrived);
-      case ContractorTaskStatus.arrived:
-        buttonText = 'Rozpoczynam pracę';
-        onPressed = () => _updateStatus(ContractorTaskStatus.inProgress);
+        buttonText = 'Rozpocznij zadanie';
+        onPressed = () => _startTask();
       case ContractorTaskStatus.inProgress:
         buttonText = 'Zakończ zlecenie';
         onPressed = () => _completeTask(task);
@@ -553,25 +546,19 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 
-  Future<void> _updateStatus(ContractorTaskStatus newStatus) async {
+  /// Start the task - transitions from accepted to in_progress
+  Future<void> _startTask() async {
     setState(() => _isUpdating = true);
 
     try {
-      // Backend supports: start, complete, cancel
-      // For MVP: "Wyruszyłem" triggers 'start' (sets status to in_progress)
-      // Other UI statuses (onTheWay, arrived) are just local UI state
-      if (newStatus == ContractorTaskStatus.onTheWay) {
-        // First transition - call backend start
-        await ref.read(activeTaskProvider.notifier).updateStatus(
-          widget.taskId,
-          'start',
-        );
-      }
-      // For arrived and inProgress, just update local UI state
-      // Backend only has: accepted -> in_progress -> completed
+      // Call backend to start task (sets status to in_progress)
+      await ref.read(activeTaskProvider.notifier).updateStatus(
+        widget.taskId,
+        'start',
+      );
 
       setState(() {
-        _currentStatus = newStatus;
+        _currentStatus = ContractorTaskStatus.inProgress;
         _isUpdating = false;
       });
     } catch (e) {
