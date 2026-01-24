@@ -1,15 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
 
-/// Full-screen task alert with countdown timer
+/// Task details screen for contractor to view and accept tasks
 class TaskAlertScreen extends ConsumerStatefulWidget {
   final String taskId;
   final ContractorTask? task;
@@ -24,357 +24,361 @@ class TaskAlertScreen extends ConsumerStatefulWidget {
   ConsumerState<TaskAlertScreen> createState() => _TaskAlertScreenState();
 }
 
-class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen>
-    with SingleTickerProviderStateMixin {
-  static const _countdownSeconds = 45;
-  late int _remainingSeconds;
-  Timer? _timer;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   bool _isAccepting = false;
-  bool _isDeclining = false;
 
   // Get task from widget or use mock
   ContractorTask get _task =>
       widget.task ?? ContractorTask.mockNearbyTasks().first;
 
   @override
-  void initState() {
-    super.initState();
-    _remainingSeconds = _countdownSeconds;
-    _startCountdown();
-
-    // Pulse animation for the price
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    // Vibrate to alert
-    HapticFeedback.heavyImpact();
-  }
-
-  void _startCountdown() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        setState(() => _remainingSeconds--);
-        if (_remainingSeconds == 10) {
-          HapticFeedback.mediumImpact();
-        }
-      } else {
-        _timer?.cancel();
-        _handleTimeout();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(_task.category);
 
     return Scaffold(
-      backgroundColor: AppColors.secondary,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.paddingLG),
-          child: Column(
-            children: [
-              // Header with countdown
-              _buildHeader(),
+      backgroundColor: AppColors.gray50,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.gray700),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Szczegóły zlecenia',
+          style: AppTypography.h4.copyWith(color: AppColors.gray900),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with category and price
+            _buildHeader(categoryData),
 
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+            // Task details
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Description section
+                  _buildSection(
+                    title: 'Opis zlecenia',
+                    child: Text(
+                      _task.description,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.gray700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
+                  // Location section
+                  _buildSection(
+                    title: 'Lokalizacja',
+                    child: Row(
                       children: [
-                        // Category icon
                         Container(
-                          padding: EdgeInsets.all(AppSpacing.paddingLG),
+                          padding: EdgeInsets.all(AppSpacing.paddingSM),
                           decoration: BoxDecoration(
-                            color: categoryData.color.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: AppRadius.radiusMD,
                           ),
                           child: Icon(
-                            categoryData.icon,
-                            color: categoryData.color,
-                            size: 48,
+                            Icons.location_on,
+                            color: AppColors.primary,
+                            size: 20,
                           ),
                         ),
-
-                        SizedBox(height: AppSpacing.space4),
-
-                        // Category name
-                        Text(
-                          categoryData.name.toUpperCase(),
-                          style: AppTypography.labelLarge.copyWith(
-                            color: AppColors.white.withValues(alpha: 0.7),
-                            letterSpacing: 2,
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _task.address,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.gray700,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.directions_walk,
+                                    size: 14,
+                                    color: AppColors.gray500,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '${_task.formattedDistance} • ${_task.formattedEta}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.gray500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
-
-                        SizedBox(height: AppSpacing.space4),
-
-                        // Price with pulse animation
-                        ScaleTransition(
-                          scale: _pulseAnimation,
-                          child: Text(
-                            _task.formattedEarnings,
-                            style: AppTypography.h1.copyWith(
-                              color: AppColors.white,
-                              fontSize: 56,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-
-                        Text(
-                          'do zarobienia',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.white.withValues(alpha: 0.6),
-                          ),
-                        ),
-
-                        SizedBox(height: AppSpacing.space8),
-
-                        // Task details card
-                        _buildTaskDetails(categoryData),
-
-                        SizedBox(height: AppSpacing.space8),
                       ],
                     ),
                   ),
-                ),
-              ),
 
-              // Action buttons
-              _buildActionButtons(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                  SizedBox(height: AppSpacing.space4),
 
-  Widget _buildHeader() {
-    final progress = _remainingSeconds / _countdownSeconds;
-    final isUrgent = _remainingSeconds <= 10;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'NOWE ZLECENIE',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppColors.white.withValues(alpha: 0.8),
-                letterSpacing: 2,
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingMD,
-                vertical: AppSpacing.paddingSM,
-              ),
-              decoration: BoxDecoration(
-                color: isUrgent
-                    ? AppColors.error.withValues(alpha: 0.2)
-                    : AppColors.white.withValues(alpha: 0.1),
-                borderRadius: AppRadius.radiusMD,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.timer,
-                    size: 16,
-                    color: isUrgent ? AppColors.error : AppColors.white,
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                  Text(
-                    '$_remainingSeconds s',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: isUrgent ? AppColors.error : AppColors.white,
-                      fontWeight: FontWeight.w700,
+                  // Client section
+                  _buildSection(
+                    title: 'Zleceniodawca',
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.gray200,
+                          child: Text(
+                            _task.clientName[0].toUpperCase(),
+                            style: AppTypography.h4.copyWith(
+                              color: AppColors.gray600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _task.clientName,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.gray800,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: AppColors.warning,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    _task.clientRating.toStringAsFixed(1),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.gray600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+
+                  if (_task.isUrgent) ...[
+                    SizedBox(height: AppSpacing.space4),
+                    // Urgent badge
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.paddingMD),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.1),
+                        borderRadius: AppRadius.radiusLG,
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.bolt,
+                            color: AppColors.warning,
+                          ),
+                          SizedBox(width: AppSpacing.gapMD),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pilne zlecenie',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                                Text(
+                                  'Zleceniodawca potrzebuje szybkiej pomocy',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
-        SizedBox(height: AppSpacing.gapMD),
-        ClipRRect(
-          borderRadius: AppRadius.radiusSM,
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: AppColors.white.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation(
-              isUrgent ? AppColors.error : AppColors.primary,
-            ),
-            minHeight: 4,
-          ),
-        ),
-      ],
+      ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
-  Widget _buildTaskDetails(TaskCategoryData categoryData) {
+  Widget _buildHeader(TaskCategoryData categoryData) {
     return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingLG),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Category icon
+              Container(
+                padding: EdgeInsets.all(AppSpacing.paddingMD),
+                decoration: BoxDecoration(
+                  color: categoryData.color.withValues(alpha: 0.1),
+                  borderRadius: AppRadius.radiusLG,
+                ),
+                child: Icon(
+                  categoryData.icon,
+                  color: categoryData.color,
+                  size: 32,
+                ),
+              ),
+              SizedBox(width: AppSpacing.gapMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      categoryData.name,
+                      style: AppTypography.h4.copyWith(
+                        color: AppColors.gray900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      _getTimeAgo(_task.createdAt),
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.space4),
+          // Price
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primaryDark,
+                ],
+              ),
+              borderRadius: AppRadius.radiusLG,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Do zarobienia: ',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+                Text(
+                  _task.formattedEarnings,
+                  style: AppTypography.h2.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.1),
+        color: AppColors.white,
         borderRadius: AppRadius.radiusLG,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Description
           Text(
-            _task.description,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.white,
+            title,
+            style: AppTypography.labelMedium.copyWith(
+              color: AppColors.gray500,
             ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
           ),
-
-          SizedBox(height: AppSpacing.space4),
-
-          Divider(color: AppColors.white.withValues(alpha: 0.1)),
-
           SizedBox(height: AppSpacing.gapMD),
-
-          // Location
-          Row(
-            children: [
-              Icon(
-                Icons.location_on,
-                size: 18,
-                color: AppColors.white.withValues(alpha: 0.7),
-              ),
-              SizedBox(width: AppSpacing.gapSM),
-              Expanded(
-                child: Text(
-                  _task.address,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.white.withValues(alpha: 0.7),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: AppSpacing.gapMD),
-
-          // Distance and ETA
-          Row(
-            children: [
-              _buildInfoChip(
-                Icons.directions_walk,
-                _task.formattedDistance,
-              ),
-              SizedBox(width: AppSpacing.gapMD),
-              _buildInfoChip(
-                Icons.access_time,
-                _task.formattedEta,
-              ),
-            ],
-          ),
-
-          SizedBox(height: AppSpacing.space4),
-
-          // Client info
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppColors.white.withValues(alpha: 0.2),
-                child: Text(
-                  _task.clientName[0],
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.white,
-                  ),
-                ),
-              ),
-              SizedBox(width: AppSpacing.gapSM),
-              Expanded(
-                child: Text(
-                  _task.clientName,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.white,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.star,
-                size: 16,
-                color: AppColors.warning,
-              ),
-              SizedBox(width: 4),
-              Text(
-                _task.clientRating.toStringAsFixed(1),
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.white,
-                ),
-              ),
-            ],
-          ),
+          child,
         ],
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text) {
+  Widget _buildBottomBar() {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.paddingSM,
-        vertical: 6,
-      ),
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.1),
-        borderRadius: AppRadius.radiusSM,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: AppColors.white.withValues(alpha: 0.7),
-          ),
-          SizedBox(width: 4),
-          Text(
-            text,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w500,
-            ),
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Column(
-      children: [
-        // Accept button
-        SizedBox(
+      child: SafeArea(
+        child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isAccepting || _isDeclining ? null : _handleAccept,
+            onPressed: _isAccepting ? null : _handleAccept,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               foregroundColor: AppColors.white,
@@ -410,64 +414,59 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen>
                   ),
           ),
         ),
-
-        SizedBox(height: AppSpacing.gapMD),
-
-        // Decline button
-        SizedBox(
-          width: double.infinity,
-          child: TextButton(
-            onPressed: _isAccepting || _isDeclining ? null : _handleDecline,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.white.withValues(alpha: 0.7),
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-            child: _isDeclining
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(
-                        AppColors.white.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  )
-                : const Text('Odrzuć'),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Future<void> _handleAccept() async {
     setState(() => _isAccepting = true);
-    _timer?.cancel();
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final acceptedTask = await ref
+          .read(availableTasksProvider.notifier)
+          .acceptTask(_task.id);
 
-    if (mounted) {
-      HapticFeedback.mediumImpact();
-      context.pop(true); // Return true to indicate acceptance
+      // Set as active task
+      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
+
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zaakceptowano zlecenie!'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Navigate to active task screen
+        context.go(Routes.contractorTask(_task.id));
+      }
+    } catch (e) {
+      setState(() => _isAccepting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
-  Future<void> _handleDecline() async {
-    setState(() => _isDeclining = true);
-    _timer?.cancel();
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (mounted) {
-      context.pop(false); // Return false to indicate decline
-    }
-  }
-
-  void _handleTimeout() {
-    if (mounted) {
-      context.pop(null); // Return null to indicate timeout
+    if (difference.inMinutes < 1) {
+      return 'Przed chwilą';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min temu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} godz. temu';
+    } else {
+      return '${difference.inDays} dni temu';
     }
   }
 }

@@ -4,10 +4,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/client/models/task.dart';
 import '../../features/client/models/task_category.dart';
+import '../../features/client/models/contractor.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../api/api_client.dart';
+import '../services/websocket_service.dart';
 import 'api_provider.dart';
 import 'auth_provider.dart';
+import 'websocket_provider.dart';
 
 /// DTO for creating a new task
 class CreateTaskDto {
@@ -79,7 +82,72 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
   final ApiClient _api;
   final Ref _ref;
 
-  ClientTasksNotifier(this._api, this._ref) : super(const ClientTasksState());
+  ClientTasksNotifier(this._api, this._ref) : super(const ClientTasksState()) {
+    _setupWebSocketListener();
+  }
+
+  /// Set up WebSocket listener for real-time task status updates
+  void _setupWebSocketListener() {
+    _ref.listen<AsyncValue<TaskStatusEvent>>(
+      taskStatusUpdatesProvider,
+      (previous, next) {
+        next.whenData((event) => _handleTaskStatusUpdate(event));
+      },
+    );
+  }
+
+  /// Handle incoming task status update from WebSocket
+  void _handleTaskStatusUpdate(TaskStatusEvent event) {
+    final taskIndex = state.tasks.indexWhere((t) => t.id == event.taskId);
+    if (taskIndex == -1) return; // Task not in our list
+
+    final currentTask = state.tasks[taskIndex];
+
+    // Map status string to TaskStatus enum
+    final newStatus = _mapStatus(event.status);
+
+    // Create contractor from event if provided
+    Contractor? contractor = currentTask.contractor;
+    if (event.contractor != null) {
+      contractor = Contractor(
+        id: event.contractor!.id,
+        name: event.contractor!.name,
+        avatarUrl: event.contractor!.avatarUrl,
+        rating: event.contractor!.rating,
+        completedTasks: event.contractor!.completedTasks,
+        isVerified: true,
+        isOnline: true,
+      );
+    }
+
+    // Update the task
+    final updatedTask = currentTask.copyWith(
+      status: newStatus,
+      contractor: contractor,
+      contractorId: event.contractor?.id ?? currentTask.contractorId,
+    );
+
+    // Update state
+    final updatedTasks = List<Task>.from(state.tasks);
+    updatedTasks[taskIndex] = updatedTask;
+    state = state.copyWith(tasks: updatedTasks);
+  }
+
+  /// Map backend status string to TaskStatus enum
+  TaskStatus _mapStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return TaskStatus.accepted;
+      case 'in_progress':
+        return TaskStatus.inProgress;
+      case 'completed':
+        return TaskStatus.completed;
+      case 'cancelled':
+        return TaskStatus.cancelled;
+      default:
+        return TaskStatus.posted;
+    }
+  }
 
   /// Load all tasks for the current client
   Future<void> loadTasks() async {
@@ -284,63 +352,9 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   }
 
   /// Map backend response to ContractorTask
+  /// Uses ContractorTask.fromJson which handles String/num type coercion
   ContractorTask _mapToContractorTask(Map<String, dynamic> json) {
-    // Backend uses camelCase
-    final category = TaskCategory.values.firstWhere(
-      (c) => c.name == json['category'],
-      orElse: () => TaskCategory.sprzatanie,
-    );
-
-    // Map backend status to contractor status
-    final backendStatus = json['status'] as String? ?? 'created';
-    final status = _mapStatus(backendStatus);
-
-    // Get client info if available
-    final client = json['client'] as Map<String, dynamic>?;
-
-    return ContractorTask(
-      id: json['id'] as String,
-      category: category,
-      description: json['description'] as String? ?? json['title'] as String,
-      clientName: client?['name'] as String? ?? 'Klient',
-      clientAvatarUrl: client?['avatarUrl'] as String?,
-      clientRating: (client?['rating'] as num?)?.toDouble() ?? 4.5,
-      address: json['address'] as String,
-      latitude: (json['locationLat'] as num).toDouble(),
-      longitude: (json['locationLng'] as num).toDouble(),
-      distanceKm: 0.0, // Calculated on client side if needed
-      estimatedMinutes: 15, // Default estimate
-      price: (json['budgetAmount'] as num).toInt(),
-      status: status,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      acceptedAt: json['acceptedAt'] != null
-          ? DateTime.parse(json['acceptedAt'] as String)
-          : null,
-      startedAt: json['startedAt'] != null
-          ? DateTime.parse(json['startedAt'] as String)
-          : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
-          : null,
-      isUrgent: json['scheduledAt'] == null, // Immediate tasks are urgent
-    );
-  }
-
-  ContractorTaskStatus _mapStatus(String backendStatus) {
-    switch (backendStatus) {
-      case 'created':
-        return ContractorTaskStatus.available;
-      case 'accepted':
-        return ContractorTaskStatus.accepted;
-      case 'in_progress':
-        return ContractorTaskStatus.inProgress;
-      case 'completed':
-        return ContractorTaskStatus.completed;
-      case 'cancelled':
-        return ContractorTaskStatus.cancelled;
-      default:
-        return ContractorTaskStatus.available;
-    }
+    return ContractorTask.fromJson(json);
   }
 
   /// Refresh tasks
@@ -401,12 +415,27 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
     state = state.copyWith(task: task);
   }
 
+  /// Fetch task by ID from backend
+  Future<void> fetchTask(String taskId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _api.get<Map<String, dynamic>>(
+        '/tasks/$taskId',
+      );
+      final task = ContractorTask.fromJson(response);
+      state = state.copyWith(task: task, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
   /// Update task status
   Future<void> updateStatus(String taskId, String action) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response = await _api.put<Map<String, dynamic>>(
+      await _api.put<Map<String, dynamic>>(
         '/tasks/$taskId/$action',
       );
 

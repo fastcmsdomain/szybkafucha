@@ -145,6 +145,16 @@ class NotificationService {
   /// Get FCM token and register with backend
   Future<void> _getAndRegisterToken() async {
     try {
+      // On iOS Simulator, APNS is not available - skip FCM registration
+      if (Platform.isIOS) {
+        final apnsToken = await _messaging.getAPNSToken();
+        if (apnsToken == null) {
+          print('⚠️ APNS token not available (iOS Simulator or APNS not configured)');
+          print('   Push notifications will not work, but app continues normally');
+          return;
+        }
+      }
+
       // Get FCM token from Firebase
       final token = await _messaging.getToken();
 
@@ -161,6 +171,14 @@ class NotificationService {
       // Register token with backend
       await _registerTokenWithBackend(token);
     } catch (e) {
+      // Handle specific APNS token error gracefully
+      final errorStr = e.toString();
+      if (errorStr.contains('apns-token-not-set') ||
+          errorStr.contains('APNS token')) {
+        print('⚠️ APNS token not available - running on iOS Simulator?');
+        print('   Push notifications disabled, app continues normally');
+        return;
+      }
       print('❌ Error getting/registering FCM token: $e');
     }
   }

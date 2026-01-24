@@ -639,6 +639,28 @@ Then press `y` to accept each license.
   - ✅ Error scenarios: Connection loss, offline queueing tested
   - ⏳ Backend integration: Ready to connect when backend available
 
+- [x] **17.7 Task Acceptance Real-Time Flow** ✅ COMPLETE
+  - [x] Backend: WebSocket broadcasts przy zmianie statusu (accept, start, complete)
+  - [x] Backend: `broadcastTaskStatusWithContractor()` z danymi wykonawcy
+  - [x] Mobile: `TaskStatusEvent` rozszerzony o `ContractorInfo`
+  - [x] Mobile: `TaskTrackingScreen` używa real-time WebSocket zamiast symulacji
+  - [x] Mobile: `ClientTasksNotifier` nasłuchuje na WebSocket updates
+  - [x] Mobile: 4 podstawowe stany UI (searching → accepted → inProgress → completed)
+  - [x] Mobile: Model `Task` rozszerzony o pole `contractor`
+
+  **Files Modified:**
+  - `backend/src/tasks/tasks.service.ts` - WebSocket broadcasts w acceptTask, startTask, completeTask, cancelTask
+  - `backend/src/realtime/realtime.gateway.ts` - Nowa metoda `broadcastTaskStatusWithContractor()`
+  - `mobile/lib/core/services/websocket_service.dart` - `TaskStatusEvent` + `ContractorInfo`
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` - Real-time WebSocket zamiast symulacji
+  - `mobile/lib/core/providers/task_provider.dart` - WebSocket listener w `ClientTasksNotifier`
+  - `mobile/lib/features/client/models/task.dart` - Pole `contractor` w modelu
+
+  **Flow:**
+  1. Wykonawca klika "Przyjmij" → Backend aktualizuje DB → WebSocket broadcast z danymi wykonawcy
+  2. Zleceniodawca natychmiast widzi: status "Pomocnik znaleziony" + dane wykonawcy
+  3. Push notification wysyłany jako backup (gdy app zamknięta)
+
 ---
 
 ### Phase 5: Admin Dashboard (Week 7)

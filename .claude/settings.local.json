@@ -69,7 +69,12 @@
       "Bash(npm run lint)",
       "Bash(flutter build:*)",
       "Bash(./gradlew signingReport:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(# Kill existing backend process pkill -f \"\"nest start\"\" || true sleep 2 # Restart backend cd /Users/simacbook/Development/projects/szybkafucha/backend && npm run start:dev 2>&1 & sleep 10 # Check if running curl -s http://localhost:3000/api/v1/health)",
+      "Bash(echo:*)",
+      "Bash(networksetup -getwebproxy:*)",
+      "Bash(flutter pub deps:*)"
     ]
   }
 }

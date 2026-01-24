@@ -1,19 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/providers/task_provider.dart';
+import '../../../core/providers/websocket_provider.dart';
+import '../../../core/services/websocket_service.dart';
 import '../models/contractor.dart';
+import '../models/task.dart';
 
-/// Task tracking status
+/// Task tracking status (4 basic states mapping to backend)
 enum TrackingStatus {
   searching,
   accepted,
-  onTheWay,
-  arrived,
   inProgress,
   completed,
 }
@@ -25,10 +25,6 @@ extension TrackingStatusExtension on TrackingStatus {
         return 'Szukamy pomocnika';
       case TrackingStatus.accepted:
         return 'Pomocnik znaleziony';
-      case TrackingStatus.onTheWay:
-        return 'W drodze';
-      case TrackingStatus.arrived:
-        return 'Na miejscu';
       case TrackingStatus.inProgress:
         return 'Praca w toku';
       case TrackingStatus.completed:
@@ -42,10 +38,6 @@ extension TrackingStatusExtension on TrackingStatus {
         return 'Dopasowujemy najlepszego wykonawcę...';
       case TrackingStatus.accepted:
         return 'Wykonawca przyjął zlecenie';
-      case TrackingStatus.onTheWay:
-        return 'Wykonawca jest w drodze do Ciebie';
-      case TrackingStatus.arrived:
-        return 'Wykonawca dotarł na miejsce';
       case TrackingStatus.inProgress:
         return 'Zadanie jest realizowane';
       case TrackingStatus.completed:
@@ -59,14 +51,10 @@ extension TrackingStatusExtension on TrackingStatus {
         return 0;
       case TrackingStatus.accepted:
         return 1;
-      case TrackingStatus.onTheWay:
-        return 1;
-      case TrackingStatus.arrived:
-        return 2;
       case TrackingStatus.inProgress:
-        return 3;
+        return 2;
       case TrackingStatus.completed:
-        return 4;
+        return 3;
     }
   }
 }
@@ -87,53 +75,129 @@ class TaskTrackingScreen extends ConsumerStatefulWidget {
 class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _status = TrackingStatus.searching;
   Contractor? _contractor;
-  int _etaMinutes = 0;
-  Timer? _statusTimer;
 
   @override
   void initState() {
     super.initState();
-    _simulateStatusUpdates();
+    _loadTaskData();
+    _joinTaskRoom();
   }
 
   @override
   void dispose() {
-    _statusTimer?.cancel();
+    _leaveTaskRoom();
     super.dispose();
   }
 
-  void _simulateStatusUpdates() {
-    // Simulate finding a contractor after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _status = TrackingStatus.accepted;
-          _contractor = MockContractors.getForTask().first;
-          _etaMinutes = 12;
-        });
+  /// Load initial task data from provider
+  void _loadTaskData() {
+    final tasksState = ref.read(clientTasksProvider);
+    final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+    if (task != null) {
+      _updateFromTask(task);
+    }
+  }
+
+  /// Update UI from task data
+  void _updateFromTask(Task task) {
+    setState(() {
+      _status = _mapTaskStatus(task.status);
+      if (task.contractor != null) {
+        _contractor = task.contractor;
       }
     });
+  }
 
-    // Simulate on the way after 5 seconds
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        setState(() {
-          _status = TrackingStatus.onTheWay;
-          _etaMinutes = 10;
-        });
-      }
-    });
+  /// Map TaskStatus to TrackingStatus (4 basic states)
+  TrackingStatus _mapTaskStatus(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.posted:
+        return TrackingStatus.searching;
+      case TaskStatus.accepted:
+        return TrackingStatus.accepted;
+      case TaskStatus.inProgress:
+        return TrackingStatus.inProgress;
+      case TaskStatus.completed:
+        return TrackingStatus.completed;
+      case TaskStatus.cancelled:
+      case TaskStatus.disputed:
+        return TrackingStatus.searching;
+    }
+  }
 
-    // Start countdown timer
-    _statusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted && _etaMinutes > 0) {
-        setState(() => _etaMinutes--);
+  /// Map string status from WebSocket to TrackingStatus
+  TrackingStatus _mapStringStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return TrackingStatus.accepted;
+      case 'in_progress':
+        return TrackingStatus.inProgress;
+      case 'completed':
+        return TrackingStatus.completed;
+      default:
+        return TrackingStatus.searching;
+    }
+  }
+
+  /// Join WebSocket task room for real-time updates
+  void _joinTaskRoom() {
+    final wsService = ref.read(webSocketServiceProvider);
+    wsService.joinTask(widget.taskId);
+  }
+
+  /// Leave WebSocket task room
+  void _leaveTaskRoom() {
+    final wsService = ref.read(webSocketServiceProvider);
+    wsService.leaveTask(widget.taskId);
+  }
+
+  /// Handle WebSocket task status update
+  void _handleStatusUpdate(TaskStatusEvent event) {
+    if (event.taskId != widget.taskId) return;
+
+    setState(() {
+      _status = _mapStringStatus(event.status);
+
+      // Update contractor info if provided
+      if (event.contractor != null) {
+        _contractor = Contractor(
+          id: event.contractor!.id,
+          name: event.contractor!.name,
+          avatarUrl: event.contractor!.avatarUrl,
+          rating: event.contractor!.rating,
+          completedTasks: event.contractor!.completedTasks,
+          isVerified: true,
+          isOnline: true,
+        );
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen for WebSocket task status updates
+    ref.listen<AsyncValue<TaskStatusEvent>>(
+      taskStatusUpdatesProvider,
+      (previous, next) {
+        next.whenData((event) {
+          if (event.taskId == widget.taskId) {
+            _handleStatusUpdate(event);
+          }
+        });
+      },
+    );
+
+    // Also listen for task provider updates (fallback)
+    ref.listen<ClientTasksState>(
+      clientTasksProvider,
+      (previous, next) {
+        final task = next.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+        if (task != null) {
+          _updateFromTask(task);
+        }
+      },
+    );
+
     return Scaffold(
       body: Stack(
         children: [
@@ -327,9 +391,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       _status != TrackingStatus.completed)
                     _buildActionButtons(),
 
-                  // Complete button (when arrived or in progress)
-                  if (_status == TrackingStatus.arrived ||
-                      _status == TrackingStatus.inProgress)
+                  // Complete button (when in progress)
+                  if (_status == TrackingStatus.inProgress)
                     _buildCompleteButton(),
                 ],
               ),
@@ -384,35 +447,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ],
           ),
         ),
-        if (_etaMinutes > 0 && _status == TrackingStatus.onTheWay)
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.paddingSM,
-              vertical: AppSpacing.paddingXS,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: AppRadius.radiusMD,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  '$_etaMinutes min',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
       ],
     );
   }
@@ -423,10 +457,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return Icons.search;
       case TrackingStatus.accepted:
         return Icons.check_circle;
-      case TrackingStatus.onTheWay:
-        return Icons.directions_walk;
-      case TrackingStatus.arrived:
-        return Icons.location_on;
       case TrackingStatus.inProgress:
         return Icons.handyman;
       case TrackingStatus.completed:
@@ -435,7 +465,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    final steps = ['Szukanie', 'W drodze', 'Na miejscu', 'Praca', 'Gotowe'];
+    // 4 basic steps matching backend states
+    final steps = ['Szukanie', 'Przyjęte', 'W trakcie', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
     return Row(

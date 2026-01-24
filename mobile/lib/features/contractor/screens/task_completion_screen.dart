@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
@@ -541,16 +543,36 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
   Future<void> _submitCompletion() async {
     setState(() => _isSubmitting = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      // Show success dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => _buildSuccessDialog(),
+    try {
+      // Call API to complete task
+      // Note: Photo upload would require separate implementation (e.g., multipart upload)
+      // For MVP, we just complete the task without photo URLs
+      await ref.read(activeTaskProvider.notifier).completeTask(
+        widget.taskId,
+        photos: null, // Photos would need to be uploaded first and URLs passed here
       );
+
+      // Clear active task from provider
+      ref.read(activeTaskProvider.notifier).clearTask();
+
+      if (mounted) {
+        // Show success dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => _buildSuccessDialog(),
+        );
+      }
+    } catch (e) {
+      setState(() => _isSubmitting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd zakończenia zlecenia: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -608,7 +630,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                   // Navigate back to contractor home
-                  context.go('/contractor');
+                  context.go(Routes.contractorHome);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

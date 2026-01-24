@@ -9,12 +9,14 @@ class NearbyTaskCard extends StatelessWidget {
   final ContractorTask task;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
+  final VoidCallback? onDetails;
 
   const NearbyTaskCard({
     super.key,
     required this.task,
     this.onTap,
     this.onAccept,
+    this.onDetails,
   });
 
   @override
@@ -239,6 +241,23 @@ class NearbyTaskCard extends StatelessWidget {
                   ),
                 ),
 
+                // More info button
+                OutlinedButton(
+                  onPressed: onDetails,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.gray700,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.paddingSM,
+                      vertical: AppSpacing.paddingSM,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    side: BorderSide(color: AppColors.gray300),
+                  ),
+                  child: const Text('Więcej'),
+                ),
+                SizedBox(width: AppSpacing.gapSM),
                 // Accept button
                 ElevatedButton(
                   onPressed: onAccept,

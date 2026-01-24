@@ -1110,6 +1110,152 @@ ws://localhost:3000/realtime
 
 ---
 
+### Task 4.3: Real-Time Task Acceptance Flow (CRITICAL) ✅ IMPLEMENTED
+
+**What it tests**: WebSocket real-time updates when contractor accepts task
+**Current Status**: ✅ IMPLEMENTED
+**Required For**: Core user experience - client must see instant feedback
+
+#### Why This is Critical
+```
+Without Real-Time Updates (Old Behavior):
+1. Client creates task
+2. Contractor accepts task
+3. Client's app shows "Szukamy pomocnika" forever
+4. Client has to manually refresh to see status change
+5. Poor user experience - feels like app is broken
+
+With Real-Time Updates (New Behavior):
+1. Client creates task → Screen shows "Szukamy pomocnika"
+2. Contractor accepts task
+3. WebSocket broadcasts task status to client INSTANTLY
+4. Client's screen updates automatically:
+   - Status: "Pomocnik znaleziony"
+   - Contractor card appears with name, rating, avatar
+5. Smooth, professional user experience
+```
+
+#### Test Flow
+
+**Prerequisites**:
+- Complete Task 1.3 (Firebase setup)
+- Complete Task 2.2 (WebSocket URL configuration)
+- Backend running with WebSocket enabled
+
+**Step-by-Step Test**:
+
+1. **Setup Two Devices/Simulators**
+   ```
+   Device A: Client account (zleceniodawca)
+   Device B: Contractor account (wykonawca)
+   ```
+
+2. **Client Creates Task**
+   ```
+   Device A:
+   - Create new task (e.g., "Pomoc przy zakupach")
+   - App navigates to TaskTrackingScreen
+   - Screen shows: "Szukamy pomocnika..." with searching animation
+   ```
+
+3. **Contractor Accepts Task**
+   ```
+   Device B:
+   - Open contractor home screen
+   - Task appears in nearby tasks list
+   - Tap "Przyjmij" button
+   ```
+
+4. **VERIFY: Client Receives Real-Time Update**
+   ```
+   Device A (within 1-2 seconds):
+   ✅ Status changes from "Szukamy pomocnika" to "Pomocnik znaleziony"
+   ✅ Contractor card appears with:
+      - Name (e.g., "Jan Kowalski")
+      - Rating (e.g., "4.8 ★")
+      - Avatar image (if available)
+   ✅ No manual refresh required
+   ```
+
+5. **Contractor Starts Task**
+   ```
+   Device B:
+   - Tap "Wyruszyłem" or "Rozpocznij" button
+   ```
+
+6. **VERIFY: Client Sees Status Update**
+   ```
+   Device A:
+   ✅ Status changes to "Praca w toku"
+   ✅ Progress indicator updates
+   ```
+
+7. **Contractor Completes Task**
+   ```
+   Device B:
+   - Tap "Zakończ" button
+   - Optionally add completion photos
+   ```
+
+8. **VERIFY: Client Sees Completion**
+   ```
+   Device A:
+   ✅ Status changes to "Zakończone"
+   ✅ Option to rate contractor appears
+   ```
+
+#### Technical Details
+
+**WebSocket Events Tested**:
+```typescript
+// Event: task:status
+{
+  taskId: "uuid",
+  status: "accepted" | "in_progress" | "completed",
+  updatedAt: "ISO8601",
+  updatedBy: "contractor-uuid",
+  contractor: {  // Only for 'accepted' status
+    id: "uuid",
+    name: "Jan Kowalski",
+    avatarUrl: "https://...",
+    rating: 4.8,
+    completedTasks: 42
+  }
+}
+```
+
+**Files Involved**:
+- Backend: `backend/src/tasks/tasks.service.ts` - WebSocket broadcasts
+- Backend: `backend/src/realtime/realtime.gateway.ts` - broadcastTaskStatusWithContractor
+- Mobile: `mobile/lib/core/services/websocket_service.dart` - TaskStatusEvent + ContractorInfo
+- Mobile: `mobile/lib/features/client/screens/task_tracking_screen.dart` - Real-time UI
+- Mobile: `mobile/lib/core/providers/task_provider.dart` - WebSocket listener
+
+**UI States (4 basic states)**:
+```dart
+enum TrackingStatus {
+  searching,    // "Szukamy pomocnika..."
+  accepted,     // "Pomocnik znaleziony"
+  inProgress,   // "Praca w toku"
+  completed,    // "Zakończone"
+}
+```
+
+#### Troubleshooting
+
+**If client doesn't receive updates**:
+1. Check WebSocket connection: `wsService.isConnected` should be `true`
+2. Check if client joined task room: `wsService.joinTask(taskId)` called
+3. Check backend logs for: `Task ${taskId} status broadcast`
+4. Verify Firebase/Push notification as backup
+
+**If contractor info is missing**:
+1. Check backend sends contractor data in broadcast
+2. Verify ContractorProfile exists for contractor user
+3. Check mobile parses `event.contractor` correctly
+
+---
+
 ### Task 4.2: Mobile End-to-End Testing
 
 **Registration Flow**:

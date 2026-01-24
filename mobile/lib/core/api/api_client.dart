@@ -247,12 +247,13 @@ class ApiClient {
     Map<String, List<String>>? validationErrors;
 
     if (data is Map<String, dynamic>) {
-      message = data['message'] as String?;
+      final rawMessage = data['message'];
 
-      // Handle NestJS validation errors
-      if (data['message'] is List) {
-        final messages = (data['message'] as List).cast<String>();
-        message = messages.join(', ');
+      // Handle NestJS validation errors (message can be String or List<String>)
+      if (rawMessage is String) {
+        message = rawMessage;
+      } else if (rawMessage is List) {
+        message = rawMessage.map((e) => e.toString()).join(', ');
       }
 
       // Handle field-level validation errors
@@ -260,7 +261,7 @@ class ApiClient {
         validationErrors = (data['errors'] as Map).map(
           (key, value) => MapEntry(
             key.toString(),
-            (value as List).cast<String>(),
+            (value as List).map((e) => e.toString()).toList(),
           ),
         );
       }

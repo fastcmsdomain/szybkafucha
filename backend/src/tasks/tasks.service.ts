@@ -124,6 +124,18 @@ export class TasksService {
   }
 
   /**
+   * Find all available tasks (MVP - no location filtering)
+   * Used when contractor doesn't provide location
+   */
+  async findAllAvailable(): Promise<Task[]> {
+    return this.tasksRepository.find({
+      where: { status: TaskStatus.CREATED },
+      relations: ['client'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
    * Find available tasks for contractors
    * Filters by category and location (within radius)
    */
@@ -183,7 +195,22 @@ export class TasksService {
       relations: ['user'],
     });
 
-    // Notify client that task was accepted
+    // Broadcast via WebSocket to client with contractor details
+    this.realtimeGateway.broadcastTaskStatusWithContractor(
+      taskId,
+      TaskStatus.ACCEPTED,
+      contractorId,
+      task.clientId,
+      {
+        id: contractorId,
+        name: contractorProfile?.user?.name || 'Wykonawca',
+        avatarUrl: contractorProfile?.user?.avatarUrl || null,
+        rating: contractorProfile?.ratingAvg || 0,
+        completedTasks: contractorProfile?.completedTasksCount || 0,
+      },
+    );
+
+    // Notify client that task was accepted (push notification as backup)
     this.notificationsService
       .sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
         taskTitle: task.title,
@@ -221,7 +248,15 @@ export class TasksService {
       relations: ['user'],
     });
 
-    // Notify client that task was started
+    // Broadcast via WebSocket to client
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.IN_PROGRESS,
+      contractorId,
+      task.clientId,
+    );
+
+    // Notify client that task was started (push notification as backup)
     this.notificationsService
       .sendToUser(task.clientId, NotificationType.TASK_STARTED, {
         taskTitle: task.title,
@@ -266,7 +301,15 @@ export class TasksService {
 
     const savedTask = await this.tasksRepository.save(task);
 
-    // Notify client that task was completed
+    // Broadcast via WebSocket to client
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.COMPLETED,
+      contractorId,
+      task.clientId,
+    );
+
+    // Notify client that task was completed (push notification as backup)
     this.notificationsService
       .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
         taskTitle: task.title,
@@ -341,6 +384,14 @@ export class TasksService {
     task.cancellationReason = reason || null;
 
     const savedTask = await this.tasksRepository.save(task);
+
+    // Broadcast via WebSocket to both parties
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.CANCELLED,
+      userId,
+      task.clientId,
+    );
 
     // Notify both parties about cancellation
     const notifyUserIds = [task.clientId, task.contractorId].filter(

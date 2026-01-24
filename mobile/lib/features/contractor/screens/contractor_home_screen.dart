@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -21,8 +22,6 @@ class ContractorHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
-  bool _isOnline = false;
-  bool _isLoading = false;
   final _earnings = EarningsSummary.mock();
 
   @override
@@ -65,10 +64,16 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Availability toggle
-                    AvailabilityToggle(
-                      isOnline: _isOnline,
-                      isLoading: _isLoading,
-                      onToggle: _toggleAvailability,
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final availabilityState =
+                            ref.watch(contractorAvailabilityProvider);
+                        return AvailabilityToggle(
+                          isOnline: availabilityState.isOnline,
+                          isLoading: availabilityState.isLoading,
+                          onToggle: _toggleAvailability,
+                        );
+                      },
                     ),
 
                     SizedBox(height: AppSpacing.space6),
@@ -279,7 +284,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
           ],
         ),
         SizedBox(height: AppSpacing.gapMD),
-        if (!_isOnline)
+        if (!ref.watch(contractorAvailabilityProvider).isOnline)
           _buildOfflineMessage()
         else if (tasksState.isLoading)
           _buildLoadingState()
@@ -293,6 +298,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                 child: NearbyTaskCard(
                   task: task,
                   onTap: () => _showTaskDetails(task),
+                  onDetails: () => _showTaskDetails(task),
                   onAccept: () => _acceptTask(task),
                 ),
               )),
@@ -430,38 +436,56 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Future<void> _toggleAvailability(bool value) async {
-    setState(() => _isLoading = true);
+    try {
+      await ref
+          .read(contractorAvailabilityProvider.notifier)
+          .toggleAvailability(value);
 
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    setState(() {
-      _isOnline = value;
-      _isLoading = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            value
-                ? 'Jesteś teraz dostępny dla klientów'
-                : 'Nie będziesz otrzymywać nowych zleceń',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              value
+                  ? 'Jesteś teraz dostępny dla klientów'
+                  : 'Nie będziesz otrzymywać nowych zleceń',
+            ),
+            backgroundColor: value ? AppColors.success : AppColors.gray600,
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor: value ? AppColors.success : AppColors.gray600,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
+    } catch (_) {
+      // Get error from provider state
+      final errorMessage =
+          ref.read(contractorAvailabilityProvider).error ??
+              'Nie udało się zmienić statusu dostępności';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
   void _showTaskDetails(ContractorTask task) {
-    // TODO: Show task details bottom sheet or navigate
+    context.push(
+      Routes.contractorTaskAlertRoute(task.id),
+      extra: task,
+    );
   }
 
   Future<void> _acceptTask(ContractorTask task) async {
     try {
-      await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
+      final acceptedTask = await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
+
+      // Set as active task in provider
+      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

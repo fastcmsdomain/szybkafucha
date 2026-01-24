@@ -49,14 +49,15 @@ class ContractorTask {
 
     // Handle client data - may be nested object or flat fields
     final client = json['client'] as Map<String, dynamic>?;
-    final clientName = client?['fullName'] as String? ??
+    final clientName = client?['name'] as String? ??
+                       client?['fullName'] as String? ??
                        client?['full_name'] as String? ??
                        json['clientName'] as String? ??
                        json['client_name'] as String? ??
                        'Klient';
-    final clientRating = (client?['rating'] as num?)?.toDouble() ??
-                         (json['clientRating'] as num?)?.toDouble() ??
-                         (json['client_rating'] as num?)?.toDouble() ??
+    final clientRating = _parseDouble(client?['rating']) ??
+                         _parseDouble(json['clientRating']) ??
+                         _parseDouble(json['client_rating']) ??
                          0.0;
     final clientAvatarUrl = client?['avatarUrl'] as String? ??
                             client?['avatar_url'] as String? ??
@@ -74,22 +75,22 @@ class ContractorTask {
       clientName: clientName,
       clientAvatarUrl: clientAvatarUrl,
       clientRating: clientRating,
-      // Backend uses camelCase
+      // Backend uses camelCase - may return String or num
       address: json['address'] as String? ?? '',
-      latitude: (json['locationLat'] as num?)?.toDouble() ??
-                (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['locationLng'] as num?)?.toDouble() ??
-                 (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      latitude: _parseDouble(json['locationLat']) ??
+                _parseDouble(json['latitude']) ?? 0.0,
+      longitude: _parseDouble(json['locationLng']) ??
+                 _parseDouble(json['longitude']) ?? 0.0,
       // Distance may not be provided by backend - default to 0
-      distanceKm: (json['distanceKm'] as num?)?.toDouble() ??
-                  (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      distanceKm: _parseDouble(json['distanceKm']) ??
+                  _parseDouble(json['distance_km']) ?? 0.0,
       // Estimated minutes - default to 15
-      estimatedMinutes: json['estimatedMinutes'] as int? ??
-                        json['estimated_minutes'] as int? ?? 15,
-      // Budget from backend
-      price: (json['budgetAmount'] as num?)?.toInt() ??
-             (json['price'] as num?)?.toInt() ??
-             (json['budget'] as num?)?.toInt() ?? 0,
+      estimatedMinutes: _parseInt(json['estimatedMinutes']) ??
+                        _parseInt(json['estimated_minutes']) ?? 15,
+      // Budget from backend - may be String like "50.00"
+      price: _parseInt(json['budgetAmount']) ??
+             _parseInt(json['price']) ??
+             _parseInt(json['budget']) ?? 0,
       status: status,
       createdAt: DateTime.parse(
         json['createdAt'] as String? ??
@@ -115,6 +116,23 @@ class ContractorTask {
                 json['is_urgent'] as bool? ??
                 json['scheduledAt'] == null, // Immediate = urgent
     );
+  }
+
+  /// Parse dynamic value to double (handles both String and num)
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  /// Parse dynamic value to int (handles both String and num)
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return double.tryParse(value)?.toInt();
+    return null;
   }
 
   /// Map backend status string to ContractorTaskStatus enum

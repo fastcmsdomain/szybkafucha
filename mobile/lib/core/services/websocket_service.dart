@@ -85,17 +85,54 @@ class ChatMessageEvent {
   };
 }
 
+/// Contractor info received with task status updates
+class ContractorInfo {
+  final String id;
+  final String name;
+  final String? avatarUrl;
+  final double rating;
+  final int completedTasks;
+
+  ContractorInfo({
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+    required this.rating,
+    required this.completedTasks,
+  });
+
+  factory ContractorInfo.fromJson(Map<String, dynamic> json) {
+    return ContractorInfo(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      completedTasks: json['completedTasks'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'avatarUrl': avatarUrl,
+    'rating': rating,
+    'completedTasks': completedTasks,
+  };
+}
+
 class TaskStatusEvent {
   final String taskId;
   final String status;
   final DateTime updatedAt;
   final String updatedBy;
+  final ContractorInfo? contractor;
 
   TaskStatusEvent({
     required this.taskId,
     required this.status,
     required this.updatedAt,
     required this.updatedBy,
+    this.contractor,
   });
 
   factory TaskStatusEvent.fromJson(Map<String, dynamic> json) {
@@ -104,6 +141,9 @@ class TaskStatusEvent {
       status: json['status'] as String,
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       updatedBy: json['updatedBy'] as String,
+      contractor: json['contractor'] != null
+          ? ContractorInfo.fromJson(json['contractor'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -112,6 +152,7 @@ class TaskStatusEvent {
     'status': status,
     'updatedAt': updatedAt.toIso8601String(),
     'updatedBy': updatedBy,
+    if (contractor != null) 'contractor': contractor!.toJson(),
   };
 }
 

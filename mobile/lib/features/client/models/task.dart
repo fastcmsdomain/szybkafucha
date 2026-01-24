@@ -1,4 +1,5 @@
 import 'task_category.dart';
+import 'contractor.dart';
 
 /// Task status enum matching backend
 enum TaskStatus {
@@ -49,6 +50,7 @@ class Task {
   final TaskStatus status;
   final String clientId;
   final String? contractorId;
+  final Contractor? contractor;
   final DateTime createdAt;
   final DateTime? acceptedAt;
   final DateTime? completedAt;
@@ -66,6 +68,7 @@ class Task {
     this.status = TaskStatus.posted,
     required this.clientId,
     this.contractorId,
+    this.contractor,
     required this.createdAt,
     this.acceptedAt,
     this.completedAt,
@@ -86,10 +89,11 @@ class Task {
       description: json['description'] as String? ?? json['title'] as String? ?? '',
       // Backend uses camelCase
       address: json['address'] as String?,
-      latitude: (json['locationLat'] as num?)?.toDouble() ?? (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['locationLng'] as num?)?.toDouble() ?? (json['longitude'] as num?)?.toDouble(),
-      // Backend sends budgetAmount as decimal
-      budget: (json['budgetAmount'] as num?)?.toInt() ?? (json['budget'] as num?)?.toInt() ?? 0,
+      // Backend may return decimal fields as Strings (e.g., "52.2297000")
+      latitude: _parseDouble(json['locationLat']) ?? _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['locationLng']) ?? _parseDouble(json['longitude']),
+      // Backend sends budgetAmount as decimal String (e.g., "50.00")
+      budget: _parseInt(json['budgetAmount']) ?? _parseInt(json['budget']) ?? 0,
       scheduledAt: json['scheduledAt'] != null
           ? DateTime.parse(json['scheduledAt'] as String)
           : (json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null),
@@ -97,6 +101,9 @@ class Task {
       status: status,
       clientId: json['clientId'] as String? ?? json['client_id'] as String? ?? '',
       contractorId: json['contractorId'] as String? ?? json['contractor_id'] as String?,
+      contractor: json['contractor'] != null
+          ? Contractor.fromJson(json['contractor'] as Map<String, dynamic>)
+          : null,
       createdAt: DateTime.parse(json['createdAt'] as String? ?? json['created_at'] as String? ?? DateTime.now().toIso8601String()),
       acceptedAt: json['acceptedAt'] != null
           ? DateTime.parse(json['acceptedAt'] as String)
@@ -127,6 +134,23 @@ class Task {
     }
   }
 
+  /// Parse dynamic value to double (handles both String and num)
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  /// Parse dynamic value to int (handles both String and num)
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return double.tryParse(value)?.toInt();
+    return null;
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'category': category.name,
@@ -140,6 +164,7 @@ class Task {
         'status': status.name,
         'client_id': clientId,
         'contractor_id': contractorId,
+        if (contractor != null) 'contractor': contractor!.toJson(),
         'created_at': createdAt.toIso8601String(),
         'accepted_at': acceptedAt?.toIso8601String(),
         'completed_at': completedAt?.toIso8601String(),
@@ -158,6 +183,7 @@ class Task {
     TaskStatus? status,
     String? clientId,
     String? contractorId,
+    Contractor? contractor,
     DateTime? createdAt,
     DateTime? acceptedAt,
     DateTime? completedAt,
@@ -175,6 +201,7 @@ class Task {
       status: status ?? this.status,
       clientId: clientId ?? this.clientId,
       contractorId: contractorId ?? this.contractorId,
+      contractor: contractor ?? this.contractor,
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,

@@ -56,9 +56,10 @@ export class TasksController {
       return this.tasksService.findByClient(req.user.id);
     }
 
-    // For contractors, require location
+    // For MVP: If no location provided, return all available tasks (no geo filter)
+    // In production: require location for contractors
     if (!lat || !lng) {
-      return [];
+      return this.tasksService.findAllAvailable();
     }
 
     const categoryList = categories ? categories.split(',') : [];

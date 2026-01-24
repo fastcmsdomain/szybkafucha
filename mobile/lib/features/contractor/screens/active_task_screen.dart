@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -24,19 +25,87 @@ class ActiveTaskScreen extends ConsumerStatefulWidget {
 class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   ContractorTaskStatus _currentStatus = ContractorTaskStatus.accepted;
   bool _isUpdating = false;
-
-  // Mock task - in production this would come from a provider
-  late ContractorTask _task;
+  bool _hasFetchedTask = false;
 
   @override
   void initState() {
     super.initState();
-    _task = ContractorTask.mockActiveTask();
+    // Fetch task if not already in provider
+    Future.microtask(() {
+      final currentTask = ref.read(activeTaskProvider).task;
+      if (currentTask == null || currentTask.id != widget.taskId) {
+        ref.read(activeTaskProvider.notifier).fetchTask(widget.taskId);
+      } else {
+        // Sync local status with task status
+        setState(() {
+          _currentStatus = currentTask.status;
+        });
+      }
+      _hasFetchedTask = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final categoryData = TaskCategoryData.fromCategory(_task.category);
+    final taskState = ref.watch(activeTaskProvider);
+    final task = taskState.task;
+
+    // Show loading while fetching
+    if (taskState.isLoading || (!_hasFetchedTask && task == null)) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Aktywne zlecenie', style: AppTypography.h4),
+          centerTitle: true,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Show error if task not found
+    if (task == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Aktywne zlecenie', style: AppTypography.h4),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              SizedBox(height: AppSpacing.gapMD),
+              Text(
+                'Nie znaleziono zlecenia',
+                style: AppTypography.bodyLarge,
+              ),
+              if (taskState.error != null) ...[
+                SizedBox(height: AppSpacing.gapSM),
+                Text(
+                  taskState.error!,
+                  style: AppTypography.caption.copyWith(color: AppColors.gray500),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              SizedBox(height: AppSpacing.gapLG),
+              ElevatedButton(
+                onPressed: () => context.pop(),
+                child: const Text('Wróć'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final categoryData = TaskCategoryData.fromCategory(task.category);
 
     return Scaffold(
       appBar: AppBar(
@@ -61,7 +130,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           // Map placeholder
           Expanded(
             flex: 2,
-            child: _buildMapSection(),
+            child: _buildMapSection(task),
           ),
 
           // Task details and actions
@@ -107,17 +176,17 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                     SizedBox(height: AppSpacing.space6),
 
                     // Task info card
-                    _buildTaskInfoCard(categoryData),
+                    _buildTaskInfoCard(task, categoryData),
 
                     SizedBox(height: AppSpacing.space4),
 
                     // Client info
-                    _buildClientCard(),
+                    _buildClientCard(task),
 
                     SizedBox(height: AppSpacing.space4),
 
                     // Action button
-                    _buildActionButton(),
+                    _buildActionButton(task),
                   ],
                 ),
               ),
@@ -128,7 +197,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 
-  Widget _buildMapSection() {
+  Widget _buildMapSection(ContractorTask task) {
     return Stack(
       children: [
         // Map placeholder
@@ -152,7 +221,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                 ),
                 SizedBox(height: AppSpacing.gapSM),
                 Text(
-                  _task.address,
+                  task.address,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.gray500,
                   ),
@@ -168,7 +237,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           bottom: AppSpacing.paddingMD,
           right: AppSpacing.paddingMD,
           child: FloatingActionButton.extended(
-            onPressed: _openNavigation,
+            onPressed: () => _openNavigation(task),
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.white,
             icon: const Icon(Icons.navigation),
@@ -205,7 +274,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                 ),
                 SizedBox(width: AppSpacing.gapSM),
                 Text(
-                  '${_task.formattedDistance} • ${_task.formattedEta}',
+                  '${task.formattedDistance} • ${task.formattedEta}',
                   style: AppTypography.labelMedium,
                 ),
               ],
@@ -293,7 +362,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 
-  Widget _buildTaskInfoCard(TaskCategoryData categoryData) {
+  Widget _buildTaskInfoCard(ContractorTask task, TaskCategoryData categoryData) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -323,7 +392,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                       style: AppTypography.labelLarge,
                     ),
                     Text(
-                      _task.address,
+                      task.address,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -337,7 +406,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    _task.formattedEarnings,
+                    task.formattedEarnings,
                     style: AppTypography.h4.copyWith(
                       color: AppColors.primary,
                     ),
@@ -354,7 +423,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            _task.description,
+            task.description,
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.gray600,
             ),
@@ -364,7 +433,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 
-  Widget _buildClientCard() {
+  Widget _buildClientCard(ContractorTask task) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -378,7 +447,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
             radius: 24,
             backgroundColor: AppColors.gray200,
             child: Text(
-              _task.clientName[0],
+              task.clientName.isNotEmpty ? task.clientName[0] : '?',
               style: AppTypography.h4.copyWith(
                 color: AppColors.gray600,
               ),
@@ -390,7 +459,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _task.clientName,
+                  task.clientName,
                   style: AppTypography.labelLarge,
                 ),
                 Row(
@@ -398,7 +467,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                     Icon(Icons.star, size: 14, color: AppColors.warning),
                     SizedBox(width: 2),
                     Text(
-                      _task.clientRating.toStringAsFixed(1),
+                      task.clientRating.toStringAsFixed(1),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray600,
                       ),
@@ -429,7 +498,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 
-  Widget _buildActionButton() {
+  Widget _buildActionButton(ContractorTask task) {
     String buttonText;
     VoidCallback? onPressed;
 
@@ -445,7 +514,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         onPressed = () => _updateStatus(ContractorTaskStatus.inProgress);
       case ContractorTaskStatus.inProgress:
         buttonText = 'Zakończ zlecenie';
-        onPressed = _completeTask;
+        onPressed = () => _completeTask(task);
       default:
         buttonText = 'Zakończono';
         onPressed = null;
@@ -487,26 +556,48 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Future<void> _updateStatus(ContractorTaskStatus newStatus) async {
     setState(() => _isUpdating = true);
 
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      // Backend supports: start, complete, cancel
+      // For MVP: "Wyruszyłem" triggers 'start' (sets status to in_progress)
+      // Other UI statuses (onTheWay, arrived) are just local UI state
+      if (newStatus == ContractorTaskStatus.onTheWay) {
+        // First transition - call backend start
+        await ref.read(activeTaskProvider.notifier).updateStatus(
+          widget.taskId,
+          'start',
+        );
+      }
+      // For arrived and inProgress, just update local UI state
+      // Backend only has: accepted -> in_progress -> completed
 
-    setState(() {
-      _currentStatus = newStatus;
-      _isUpdating = false;
-    });
+      setState(() {
+        _currentStatus = newStatus;
+        _isUpdating = false;
+      });
+    } catch (e) {
+      setState(() => _isUpdating = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
-  void _completeTask() {
+  void _completeTask(ContractorTask task) {
     // Navigate to completion screen
     context.push(
       '/contractor/task/${widget.taskId}/complete',
-      extra: _task,
+      extra: task,
     );
   }
 
-  Future<void> _openNavigation() async {
+  Future<void> _openNavigation(ContractorTask task) async {
     final url =
-        'https://www.google.com/maps/dir/?api=1&destination=${_task.latitude},${_task.longitude}';
+        'https://www.google.com/maps/dir/?api=1&destination=${task.latitude},${task.longitude}';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -518,7 +609,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Future<void> _callClient() async {
-    // TODO: Get client phone number from task
+    // TODO: Get client phone number from task/backend
     final uri = Uri(scheme: 'tel', path: '+48123456789');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -560,20 +651,38 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   void _showCancelConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Anulować zlecenie?'),
         content: const Text(
           'Anulowanie zaakceptowanego zlecenia może wpłynąć na Twoją ocenę i ranking.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Nie'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.pop();
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await ref.read(activeTaskProvider.notifier).updateStatus(
+                  widget.taskId,
+                  'cancel',
+                );
+                ref.read(activeTaskProvider.notifier).clearTask();
+                if (mounted) {
+                  context.go(Routes.contractorHome);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Błąd anulowania: ${e.toString()}'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: AppColors.error,
