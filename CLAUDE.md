@@ -264,6 +264,18 @@ const CONFIG = {
 - **Code**: Always in English (variables, functions, classes, comments, commit messages)
 - **Documentation**: PRD and task tracking in English, README files context-dependent
 
+### User Type Naming Convention
+
+When referring to user types in code, comments, or user-facing Polish text, use these terms:
+
+- **Zleceniodawca** → **szef** (boss/employer)
+- **Zleceniobiorca** → **pracownik** (worker/employee)
+
+**Usage:**
+- In Polish UI strings: "szef" and "pracownik"
+- In code comments: Use English terms (Client/Contractor) or Polish equivalents (szef/pracownik) as appropriate
+- In variable names: Use English (client, contractor) for code, but display as "szef"/"pracownik" in Polish UI
+
 ### Multi-Language Landing Page Structure
 
 The landing page exists in three language versions with shared assets:
@@ -355,9 +367,13 @@ The landing page includes a comprehensive signup form that serves dual purposes:
 
 ### User Types
 
-1. **Client (Zleceniodawca)**: Posts tasks, pays for services
-2. **Contractor (Wykonawca)**: Accepts tasks, earns money (verified via KYC)
+1. **Client (Zleceniodawca / szef)**: Posts tasks, pays for services
+   - Display name in Polish UI: **szef**
+2. **Contractor (Zleceniobiorca / pracownik)**: Accepts tasks, earns money (verified via KYC)
+   - Display name in Polish UI: **pracownik**
 3. **Admin**: Platform operator, dispute resolution
+
+**Note**: See "User Type Naming Convention" in Important Conventions section for naming rules.
 
 ### Task Categories
 
@@ -735,6 +751,7 @@ Before considering documentation complete, verify:
 2. **After Implementation**: Write code examples and test results
 3. **Before Commit**: Complete documentation using the template
 4. **After Review**: Update documentation based on feedback if needed
+5. **
 
 ### Benefits
 

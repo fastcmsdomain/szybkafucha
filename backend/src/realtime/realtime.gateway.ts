@@ -326,6 +326,7 @@ export class RealtimeGateway
     taskId: string,
     status: TaskStatus,
     updatedBy: string,
+    clientId?: string,
   ): void {
     const update: TaskStatusUpdate = {
       taskId,
@@ -334,8 +335,51 @@ export class RealtimeGateway
       updatedBy,
     };
 
+    // Broadcast to task room
     this.server.to(`task:${taskId}`).emit(ServerEvent.TASK_STATUS, update);
+
+    // Also send directly to client (in case they're not in the task room yet)
+    if (clientId) {
+      this.sendToUser(clientId, ServerEvent.TASK_STATUS, update);
+    }
+
     this.logger.debug(`Task ${taskId} status broadcast: ${status}`);
+  }
+
+  /**
+   * Broadcast task status with contractor details
+   * Called from TasksService when contractor accepts a task
+   */
+  broadcastTaskStatusWithContractor(
+    taskId: string,
+    status: TaskStatus,
+    updatedBy: string,
+    clientId: string,
+    contractor: {
+      id: string;
+      name: string;
+      avatarUrl: string | null;
+      rating: number;
+      completedTasks: number;
+    },
+  ): void {
+    const update = {
+      taskId,
+      status,
+      updatedAt: new Date(),
+      updatedBy,
+      contractor,
+    };
+
+    // Broadcast to task room
+    this.server.to(`task:${taskId}`).emit(ServerEvent.TASK_STATUS, update);
+
+    // Also send directly to client (critical: client may not be in room yet)
+    this.sendToUser(clientId, ServerEvent.TASK_STATUS, update);
+
+    this.logger.debug(
+      `Task ${taskId} status broadcast with contractor: ${status} -> ${contractor.name}`,
+    );
   }
 
   /**
