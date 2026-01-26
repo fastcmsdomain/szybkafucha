@@ -177,6 +177,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   void _handleStatusUpdate(TaskStatusEvent event) {
     if (event.taskId != widget.taskId) return;
 
+    // Update UI immediately
     setState(() {
       _status = _mapStringStatus(event.status);
 
@@ -192,6 +193,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           isOnline: true,
         );
       }
+    });
+
+    // Refresh task data from provider to ensure consistency
+    // This ensures the UI is updated with the latest data from the backend
+    Future.microtask(() {
+      ref.read(clientTasksProvider.notifier).refresh();
     });
   }
 
@@ -210,6 +217,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       (previous, next) {
         next.whenData((event) {
           if (event.taskId == widget.taskId) {
+            debugPrint('📡 WebSocket status update received: ${event.status} for task ${event.taskId}');
             _handleStatusUpdate(event);
           }
         });
@@ -238,13 +246,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       },
     );
 
-    // Also listen for task provider updates (fallback)
+    // Also listen for task provider updates (fallback and real-time sync)
     ref.listen<ClientTasksState>(
       clientTasksProvider,
       (previous, next) {
         final task = next.tasks.where((t) => t.id == widget.taskId).firstOrNull;
         if (task != null) {
-          _updateFromTask(task);
+          final newStatus = _mapTaskStatus(task.status);
+          // Only update if status actually changed to avoid unnecessary rebuilds
+          if (newStatus != _status || task.contractor != _contractor) {
+            debugPrint('🔄 Task provider update: status=${task.status}, hasContractor=${task.contractor != null}');
+            _updateFromTask(task);
+          }
         }
       },
     );
