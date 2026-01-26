@@ -6,6 +6,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Post,
   Body,
   UseGuards,
@@ -19,6 +20,7 @@ import { UsersService } from './users.service';
 import { FileStorageService } from './file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserTypeDto } from './dto/update-user-type.dto';
 import {
   UploadAvatarResponseDto,
   ALLOWED_AVATAR_MIMETYPES,
@@ -55,6 +57,21 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(req.user.id, updateUserDto);
+  }
+
+  /**
+   * PATCH /users/me/type
+   * Updates user type (client to contractor or vice versa)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/type')
+  async updateUserType(
+    @Request() req: AuthenticatedRequest,
+    @Body() updateUserTypeDto: UpdateUserTypeDto,
+  ) {
+    return this.usersService.update(req.user.id, {
+      type: updateUserTypeDto.type,
+    });
   }
 
   /**

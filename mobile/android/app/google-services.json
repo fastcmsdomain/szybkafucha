@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463172954504",
+    "project_id": "szybkafucha-e695b",
+    "storage_bucket": "szybkafucha-e695b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463172954504:android:a2e1a106fbcb9b825c323d",
+        "android_client_info": {
+          "package_name": "pl.szybkafucha.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb9FeU9dzeDKEGi7vuODpjcckrCLHTapo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

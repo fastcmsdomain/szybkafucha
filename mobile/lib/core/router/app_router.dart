@@ -1,0 +1,453 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/auth/auth.dart';
+import '../../features/chat/screens/screens.dart' as chat;
+import '../../features/client/client.dart';
+import '../../features/contractor/models/contractor_task.dart';
+import '../../features/contractor/screens/screens.dart' as contractor;
+import '../../features/profile/profile.dart';
+import '../../features/settings/screens/settings_screen.dart';
+import '../providers/auth_provider.dart';
+import 'routes.dart';
+
+// Placeholder screens for features not yet implemented
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text('$title - Coming Soon')),
+    );
+  }
+}
+
+/// App router provider
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+
+  return GoRouter(
+    initialLocation: Routes.welcome,
+    debugLogDiagnostics: true,
+    refreshListenable: _AuthStateNotifier(ref),
+    redirect: (context, state) {
+      final isLoading = authState.isLoading;
+      final isAuthenticated = authState.isAuthenticated;
+      final isAuthRoute = state.matchedLocation == Routes.welcome ||
+          state.matchedLocation == Routes.login ||
+          state.matchedLocation.startsWith('/login');
+
+      // While checking auth state, stay on current route
+      // (Welcome screen will show a loading indicator)
+      if (isLoading) {
+        return null;
+      }
+
+      // If not authenticated and not on auth route, redirect to welcome
+      if (!isAuthenticated && !isAuthRoute) {
+        return Routes.welcome;
+      }
+
+      // If authenticated and on auth route, redirect to appropriate home
+      if (isAuthenticated && isAuthRoute) {
+        final user = authState.user;
+        if (user?.isContractor == true) {
+          return Routes.contractorHome;
+        }
+        return Routes.clientHome;
+      }
+
+      return null;
+    },
+    routes: [
+      // Auth routes
+      GoRoute(
+        path: Routes.welcome,
+        name: 'welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.login,
+        name: 'login',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.phoneLogin,
+        name: 'phoneLogin',
+        builder: (context, state) {
+          final userType = state.extra as String? ?? 'client';
+          return PhoneLoginScreen(userType: userType);
+        },
+      ),
+      GoRoute(
+        path: Routes.phoneOtp,
+        name: 'phoneOtp',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final phoneNumber = extra['phone'] as String? ?? '';
+          final userType = extra['userType'] as String? ?? 'client';
+          return OtpScreen(
+            phoneNumber: phoneNumber,
+            userType: userType,
+          );
+        },
+      ),
+      GoRoute(
+        path: Routes.register,
+        name: 'register',
+        builder: (context, state) => const RegisterScreen(),
+      ),
+
+      // Client routes with shell for bottom navigation
+      ShellRoute(
+        builder: (context, state, child) {
+          return _ClientShell(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: Routes.clientHome,
+            name: 'clientHome',
+            builder: (context, state) => const ClientHomeScreen(),
+          ),
+          GoRoute(
+            path: Routes.clientCategories,
+            name: 'clientCategories',
+            builder: (context, state) => const CategorySelectionScreen(),
+          ),
+          GoRoute(
+            path: Routes.clientHistory,
+            name: 'clientHistory',
+            builder: (context, state) => const TaskHistoryScreen(),
+          ),
+          GoRoute(
+            path: Routes.clientProfile,
+            name: 'clientProfile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          // Task routes inside shell - bottom nav always visible
+          GoRoute(
+            path: Routes.clientCreateTask,
+            name: 'clientCreateTask',
+            builder: (context, state) {
+              final category = state.extra as TaskCategory?;
+              return CreateTaskScreen(initialCategory: category);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientSelectContractor,
+            name: 'clientSelectContractor',
+            builder: (context, state) {
+              final data = state.extra as ContractorSelectionData?;
+              return ContractorSelectionScreen(taskData: data);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientPayment,
+            name: 'clientPayment',
+            builder: (context, state) {
+              final data = state.extra as PaymentData?;
+              return PaymentScreen(paymentData: data);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskDetails,
+            name: 'clientTaskDetails',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Task $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskTracking,
+            name: 'clientTaskTracking',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return TaskTrackingScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskChat,
+            name: 'clientTaskChat',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Chat $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskRating,
+            name: 'clientTaskRating',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Rate $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.clientTaskCompletion,
+            name: 'clientTaskCompletion',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return TaskCompletionScreen(taskId: taskId);
+            },
+          ),
+        ],
+      ),
+
+      // Contractor routes with shell for bottom navigation
+      ShellRoute(
+        builder: (context, state, child) {
+          return _ContractorShell(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: Routes.contractorHome,
+            name: 'contractorHome',
+            builder: (context, state) => const contractor.ContractorHomeScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorTaskList,
+            name: 'contractorTaskList',
+            builder: (context, state) =>
+                const contractor.ContractorTaskListScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorEarnings,
+            name: 'contractorEarnings',
+            builder: (context, state) => const contractor.EarningsScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorProfile,
+            name: 'contractorProfile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          // Task routes inside shell - bottom nav always visible
+          GoRoute(
+            path: Routes.contractorTaskAlert,
+            name: 'contractorTaskAlert',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final task = state.extra as ContractorTask?;
+              return contractor.TaskAlertScreen(taskId: taskId, task: task);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskDetails,
+            name: 'contractorTaskDetails',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return contractor.ActiveTaskScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskNavigation,
+            name: 'contractorTaskNavigation',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return PlaceholderScreen(title: 'Navigation $taskId');
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskChat,
+            name: 'contractorTaskChat',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              return chat.ChatScreen(
+                taskId: taskId,
+                taskTitle: extra?['taskTitle'] ?? 'Czat',
+                otherUserName: extra?['otherUserName'] ?? 'Unknown',
+                otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
+                currentUserId: extra?['currentUserId'] ?? 'user_id',
+                currentUserName: extra?['currentUserName'] ?? 'User',
+              );
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskComplete,
+            name: 'contractorTaskComplete',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final task = state.extra as ContractorTask?;
+              return contractor.TaskCompletionScreen(taskId: taskId, task: task);
+            },
+          ),
+          GoRoute(
+            path: Routes.contractorTaskReview,
+            name: 'contractorTaskReview',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              return contractor.ReviewClientScreen(
+                taskId: taskId,
+                clientName: extra?['clientName'] as String?,
+                earnings: extra?['earnings'] as int?,
+              );
+            },
+          ),
+        ],
+      ),
+
+      // Contractor registration and KYC (outside shell - one-time screens)
+      GoRoute(
+        path: Routes.contractorRegistration,
+        name: 'contractorRegistration',
+        builder: (context, state) => const contractor.ContractorRegistrationScreen(),
+      ),
+      GoRoute(
+        path: Routes.contractorKyc,
+        name: 'contractorKyc',
+        builder: (context, state) => const contractor.KycVerificationScreen(),
+      ),
+
+      // Common routes
+      GoRoute(
+        path: Routes.settings,
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.notifications,
+        name: 'notifications',
+        builder: (context, state) =>
+            const PlaceholderScreen(title: 'Notifications'),
+      ),
+    ],
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Text('Page not found: ${state.uri}'),
+      ),
+    ),
+  );
+});
+
+/// Notifier to refresh router when auth state changes
+class _AuthStateNotifier extends ChangeNotifier {
+  _AuthStateNotifier(this._ref) {
+    _ref.listen(authProvider, (previous, next) => notifyListeners());
+  }
+
+  final Ref _ref;
+}
+
+/// Client bottom navigation shell
+class _ClientShell extends StatelessWidget {
+  final Widget child;
+  const _ClientShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Główna',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.category_outlined),
+            selectedIcon: Icon(Icons.category),
+            label: 'Kategorie',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history),
+            label: 'Historia',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+        selectedIndex: _calculateSelectedIndex(context),
+        onDestinationSelected: (index) => _onItemTapped(index, context),
+      ),
+    );
+  }
+
+  int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith(Routes.clientCategories)) return 1;
+    if (location.startsWith(Routes.clientHistory)) return 2;
+    if (location.startsWith(Routes.clientProfile)) return 3;
+    return 0;
+  }
+
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go(Routes.clientHome);
+      case 1:
+        context.go(Routes.clientCategories);
+      case 2:
+        context.go(Routes.clientHistory);
+      case 3:
+        context.go(Routes.clientProfile);
+    }
+  }
+}
+
+/// Contractor bottom navigation shell
+class _ContractorShell extends StatelessWidget {
+  final Widget child;
+  const _ContractorShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Główna',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.work_outline),
+            selectedIcon: Icon(Icons.work),
+            label: 'Zlecenia',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Zarobki',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+        selectedIndex: _calculateSelectedIndex(context),
+        onDestinationSelected: (index) => _onItemTapped(index, context),
+      ),
+    );
+  }
+
+  int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith(Routes.contractorTaskList)) return 1;
+    if (location.startsWith(Routes.contractorEarnings)) return 2;
+    if (location.startsWith(Routes.contractorProfile)) return 3;
+    return 0;
+  }
+
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go(Routes.contractorHome);
+      case 1:
+        context.go(Routes.contractorTaskList);
+      case 2:
+        context.go(Routes.contractorEarnings);
+      case 3:
+        context.go(Routes.contractorProfile);
+    }
+  }
+}

@@ -94,12 +94,13 @@ export class ContractorService {
   ): Promise<ContractorProfile> {
     const profile = await this.findByUserIdOrFail(userId);
 
+    // TODO: Re-enable KYC check before production (see docs/todo_post_MVP/KYC_VERIFICATION.md)
     // Cannot go online if not verified
-    if (isOnline && profile.kycStatus !== KycStatus.VERIFIED) {
-      throw new BadRequestException(
-        'Complete KYC verification before going online',
-      );
-    }
+    // if (isOnline && profile.kycStatus !== KycStatus.VERIFIED) {
+    //   throw new BadRequestException(
+    //     'Complete KYC verification before going online',
+    //   );
+    // }
 
     profile.isOnline = isOnline;
     return this.contractorRepository.save(profile);

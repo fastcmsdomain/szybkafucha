@@ -152,6 +152,9 @@ export class AuthService {
         type: userType || UserType.CLIENT,
         status: UserStatus.ACTIVE,
       });
+    } else if (userType && user.type !== userType) {
+      // User wants to switch roles - update their type
+      user = await this.usersService.update(user.id, { type: userType });
     }
 
     const token = this.generateToken(user);
@@ -192,6 +195,9 @@ export class AuthService {
           status: UserStatus.ACTIVE,
         });
       }
+    } else if (userType && user.type !== userType) {
+      // User wants to switch roles - update their type
+      user = await this.usersService.update(user.id, { type: userType });
     }
 
     const token = this.generateToken(user);
@@ -234,6 +240,9 @@ export class AuthService {
           status: UserStatus.ACTIVE,
         });
       }
+    } else if (userType && user.type !== userType) {
+      // User wants to switch roles - update their type
+      user = await this.usersService.update(user.id, { type: userType });
     }
 
     const token = this.generateToken(user);

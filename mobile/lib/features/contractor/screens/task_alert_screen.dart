@@ -1,0 +1,474 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
+import '../../../core/theme/theme.dart';
+import '../../client/models/task_category.dart';
+import '../models/contractor_task.dart';
+
+/// Task details screen for contractor to view and accept tasks
+class TaskAlertScreen extends ConsumerStatefulWidget {
+  final String taskId;
+  final ContractorTask? task;
+
+  const TaskAlertScreen({
+    super.key,
+    required this.taskId,
+    this.task,
+  });
+
+  @override
+  ConsumerState<TaskAlertScreen> createState() => _TaskAlertScreenState();
+}
+
+class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
+  bool _isAccepting = false;
+
+  // Get task from widget or use mock
+  ContractorTask get _task =>
+      widget.task ?? ContractorTask.mockNearbyTasks().first;
+
+  /// Navigate back safely - use go() if nothing to pop
+  void _navigateBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(Routes.contractorHome);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryData = TaskCategoryData.fromCategory(_task.category);
+
+    return Scaffold(
+      backgroundColor: AppColors.gray50,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.gray700),
+          onPressed: () => _navigateBack(context),
+        ),
+        title: Text(
+          'Szczegóły zlecenia',
+          style: AppTypography.h4.copyWith(color: AppColors.gray900),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with category and price
+            _buildHeader(categoryData),
+
+            // Task details
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Description section
+                  _buildSection(
+                    title: 'Opis zlecenia',
+                    child: Text(
+                      _task.description,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.gray700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
+                  // Location section
+                  _buildSection(
+                    title: 'Lokalizacja',
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(AppSpacing.paddingSM),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                          child: Icon(
+                            Icons.location_on,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _task.address,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.gray700,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.directions_walk,
+                                    size: 14,
+                                    color: AppColors.gray500,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    '${_task.formattedDistance} • ${_task.formattedEta}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.gray500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
+                  // Client section
+                  _buildSection(
+                    title: 'Zleceniodawca',
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.gray200,
+                          child: Text(
+                            _task.clientName[0].toUpperCase(),
+                            style: AppTypography.h4.copyWith(
+                              color: AppColors.gray600,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _task.clientName,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.gray800,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 16,
+                                    color: AppColors.warning,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    _task.clientRating.toStringAsFixed(1),
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.gray600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  if (_task.isUrgent) ...[
+                    SizedBox(height: AppSpacing.space4),
+                    // Urgent badge
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.paddingMD),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.1),
+                        borderRadius: AppRadius.radiusLG,
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.bolt,
+                            color: AppColors.warning,
+                          ),
+                          SizedBox(width: AppSpacing.gapMD),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pilne zlecenie',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    color: AppColors.warning,
+                                  ),
+                                ),
+                                Text(
+                                  'Zleceniodawca potrzebuje szybkiej pomocy',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  Widget _buildHeader(TaskCategoryData categoryData) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingLG),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Category icon
+              Container(
+                padding: EdgeInsets.all(AppSpacing.paddingMD),
+                decoration: BoxDecoration(
+                  color: categoryData.color.withValues(alpha: 0.1),
+                  borderRadius: AppRadius.radiusLG,
+                ),
+                child: Icon(
+                  categoryData.icon,
+                  color: categoryData.color,
+                  size: 32,
+                ),
+              ),
+              SizedBox(width: AppSpacing.gapMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      categoryData.name,
+                      style: AppTypography.h4.copyWith(
+                        color: AppColors.gray900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      _getTimeAgo(_task.createdAt),
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.space4),
+          // Price
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primaryDark,
+                ],
+              ),
+              borderRadius: AppRadius.radiusLG,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Do zarobienia: ',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+                Text(
+                  _task.formattedEarnings,
+                  style: AppTypography.h2.copyWith(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusLG,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTypography.labelMedium.copyWith(
+              color: AppColors.gray500,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.gray900.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isAccepting ? null : _handleAccept,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.radiusLG,
+              ),
+              disabledBackgroundColor: AppColors.success.withValues(alpha: 0.5),
+            ),
+            child: _isAccepting
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(AppColors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle, size: 24),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Text(
+                        'PRZYJMIJ ZLECENIE',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleAccept() async {
+    setState(() => _isAccepting = true);
+
+    try {
+      final acceptedTask = await ref
+          .read(availableTasksProvider.notifier)
+          .acceptTask(_task.id);
+
+      // Set as active task
+      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
+
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        // Navigate to active task screen - success feedback shown there
+        context.go(Routes.contractorTask(_task.id));
+      }
+    } catch (e) {
+      setState(() => _isAccepting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Przed chwilą';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min temu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} godz. temu';
+    } else {
+      return '${difference.inDays} dni temu';
+    }
+  }
+}
