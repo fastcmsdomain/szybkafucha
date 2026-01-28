@@ -69,11 +69,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                 SizedBox(height: AppSpacing.space8),
 
-                // Illustration placeholder
-                _buildIllustration(),
-
-                SizedBox(height: AppSpacing.space8),
-
                 // Role selection (client or contractor)
                 UserTypeSelector(
                   initialType: _selectedUserType,
@@ -333,35 +328,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildIllustration() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusXL,
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.handshake_outlined,
-              size: 80,
-              color: AppColors.primary.withValues(alpha: 0.7),
-            ),
-            SizedBox(height: AppSpacing.gapMD),
-            Text(
-              'Pomoc na wyciągnięcie ręki',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.gray600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
