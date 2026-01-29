@@ -9,8 +9,8 @@ import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../models/task.dart';
-import '../models/task_category.dart';
-import '../widgets/category_card.dart';
+// import '../models/task_category.dart';
+// import '../widgets/category_card.dart';
 
 /// Client home screen - main dashboard for clients
 /// Shows welcome message, quick actions, and active/recent tasks
@@ -49,17 +49,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               // Welcome header
               _buildWelcomeHeader(user?.name),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Quick action - Create task
-              _buildQuickActionCard(context),
+              // _buildQuickActionCard(context),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Popular categories
-              _buildPopularCategories(context),
+              // _buildPopularCategories(context),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Active tasks section
               _buildActiveTasksSection(context),
@@ -220,60 +220,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPopularCategories(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Popularne kategorie',
-              style: AppTypography.h5,
-            ),
-            TextButton(
-              onPressed: () => context.push(Routes.clientCategories),
-              child: Text(
-                'Zobacz wszystkie',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        SizedBox(
-          height: 90,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: 4,
-            separatorBuilder: (context, index) =>
-                SizedBox(width: AppSpacing.gapMD),
-            itemBuilder: (context, index) {
-              final category = TaskCategoryData.all[index];
-              return _buildCategoryItem(context, category);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryItem(BuildContext context, TaskCategoryData category) {
-    return SizedBox(
-      width: 180,
-      child: CategoryChip(
-        category: category,
-        isSelected: false,
-        onTap: () => context.push(
-          Routes.clientCreateTask,
-          extra: category.category,
         ),
       ),
     );
