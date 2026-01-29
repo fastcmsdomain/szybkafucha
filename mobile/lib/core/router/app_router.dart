@@ -114,6 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ClientHomeScreen(),
           ),
           GoRoute(
+            path: Routes.clientTasks,
+            name: 'clientTasks',
+            builder: (context, state) => const ClientTaskListScreen(),
+          ),
+          GoRoute(
             path: Routes.clientCategories,
             name: 'clientCategories',
             builder: (context, state) => const CategorySelectionScreen(),
@@ -349,9 +354,9 @@ class _ClientShell extends StatelessWidget {
             label: 'Główna',
           ),
           NavigationDestination(
-            icon: Icon(Icons.category_outlined),
-            selectedIcon: Icon(Icons.category),
-            label: 'Kategorie',
+            icon: Icon(Icons.work_outline),
+            selectedIcon: Icon(Icons.work),
+            label: 'Zlecenia',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
@@ -372,7 +377,7 @@ class _ClientShell extends StatelessWidget {
 
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith(Routes.clientCategories)) return 1;
+    if (location.startsWith(Routes.clientTasks)) return 1;
     if (location.startsWith(Routes.clientHistory)) return 2;
     if (location.startsWith(Routes.clientProfile)) return 3;
     return 0;
@@ -382,12 +387,16 @@ class _ClientShell extends StatelessWidget {
     switch (index) {
       case 0:
         context.go(Routes.clientHome);
+        return;
       case 1:
-        context.go(Routes.clientCategories);
+        context.go(Routes.clientTasks);
+        return;
       case 2:
         context.go(Routes.clientHistory);
+        return;
       case 3:
         context.go(Routes.clientProfile);
+        return;
     }
   }
 }
@@ -442,12 +451,16 @@ class _ContractorShell extends StatelessWidget {
     switch (index) {
       case 0:
         context.go(Routes.contractorHome);
+        return;
       case 1:
         context.go(Routes.contractorTaskList);
+        return;
       case 2:
         context.go(Routes.contractorEarnings);
+        return;
       case 3:
         context.go(Routes.contractorProfile);
+        return;
     }
   }
 }

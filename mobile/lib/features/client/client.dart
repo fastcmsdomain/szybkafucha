@@ -18,3 +18,4 @@ export 'screens/payment_screen.dart';
 export 'screens/task_tracking_screen.dart';
 export 'screens/task_completion_screen.dart';
 export 'screens/task_history_screen.dart';
+export 'screens/client_task_list_screen.dart';
