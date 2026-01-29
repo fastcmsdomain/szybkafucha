@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
@@ -12,8 +13,6 @@ import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/models.dart';
 import '../widgets/availability_toggle.dart';
-import '../widgets/earnings_card.dart';
-import '../widgets/nearby_task_card.dart';
 
 /// Contractor home screen / dashboard
 class ContractorHomeScreen extends ConsumerStatefulWidget {
@@ -25,8 +24,6 @@ class ContractorHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
-  final _earnings = EarningsSummary.mock();
-
   @override
   void initState() {
     super.initState();
@@ -63,6 +60,25 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                   style: AppTypography.h4,
                 ),
                 actions: [
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final tasksState = ref.watch(availableTasksProvider);
+                      return IconButton(
+                        icon: tasksState.isLoading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              )
+                            : const Icon(Icons.refresh),
+                        onPressed: tasksState.isLoading ? null : _refreshData,
+                        tooltip: 'Odśwież',
+                      );
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(Icons.notifications_outlined),
                     onPressed: () {
@@ -77,6 +93,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                 padding: EdgeInsets.all(AppSpacing.paddingMD),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
+                    // Greeting with contractor's name
+                    _buildGreeting(),
+
+                    SizedBox(height: AppSpacing.space6),
+
                     // Availability toggle
                     Consumer(
                       builder: (context, ref, _) {
@@ -92,22 +113,13 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
                     SizedBox(height: AppSpacing.space6),
 
-                    // Earnings card
-                    EarningsCard(
-                      earnings: _earnings,
-                      onTap: () => context.push(Routes.contractorEarnings),
-                    ),
+                    // Active task section (shows task or placeholder)
+                    _buildActiveTaskSection(),
 
                     SizedBox(height: AppSpacing.space6),
 
-                    // Active task (if any)
-                    if (_hasActiveTask) ...[
-                      _buildActiveTaskSection(),
-                      SizedBox(height: AppSpacing.space6),
-                    ],
-
-                    // Nearby tasks section
-                    _buildNearbyTasksSection(),
+                    // See all tasks button
+                    _buildSeeAllButton(),
                   ]),
                 ),
               ),
@@ -118,15 +130,23 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     );
   }
 
-  bool get _hasActiveTask {
-    final activeTaskState = ref.watch(activeTaskProvider);
-    return activeTaskState.task != null;
+  Widget _buildGreeting() {
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.name ?? 'Wykonawco';
+    final firstName = userName.split(' ').first;
+
+    return Text(
+      'Dzień dobry, $firstName!',
+      style: AppTypography.h3.copyWith(
+        color: AppColors.gray900,
+        fontWeight: FontWeight.w700,
+      ),
+    );
   }
 
   Widget _buildActiveTaskSection() {
     final activeTaskState = ref.watch(activeTaskProvider);
     final activeTask = activeTaskState.task;
-    if (activeTask == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,42 +158,105 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
               'Aktywne zlecenie',
               style: AppTypography.h4,
             ),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingSM,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: AppRadius.radiusSM,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
+            if (activeTask != null)
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.paddingSM,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: AppRadius.radiusSM,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    activeTask.status.displayName,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
+                    SizedBox(width: AppSpacing.gapXS),
+                    Text(
+                      activeTask.status.displayName,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
         SizedBox(height: AppSpacing.gapMD),
-        _buildActiveTaskCard(activeTask),
+        if (activeTask != null)
+          _buildActiveTaskCard(activeTask)
+        else
+          _buildNoActiveTaskPlaceholder(),
       ],
+    );
+  }
+
+  Widget _buildNoActiveTaskPlaceholder() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingLG),
+      decoration: BoxDecoration(
+        color: AppColors.gray100,
+        borderRadius: AppRadius.radiusLG,
+        border: Border.all(
+          color: AppColors.gray200,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.work_outline,
+            size: 48,
+            color: AppColors.gray400,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            'Brak aktywnych zleceń',
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            'Przejrzyj dostępne zlecenia i zaakceptuj jedno, aby rozpocząć pracę.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeeAllButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => context.push(Routes.contractorTaskList),
+        icon: const Icon(Icons.list_alt),
+        label: const Text('Zobacz wszystkie zlecenia'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
+          padding: EdgeInsets.symmetric(
+            vertical: AppSpacing.paddingMD,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.radiusLG,
+          ),
+        ),
+      ),
     );
   }
 
@@ -272,179 +355,6 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     );
   }
 
-  Widget _buildNearbyTasksSection() {
-    final tasksState = ref.watch(availableTasksProvider);
-    final nearbyTasks = tasksState.tasks;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Zlecenia w pobliżu',
-              style: AppTypography.h4,
-            ),
-            TextButton(
-              onPressed: () => context.push(Routes.contractorTaskList),
-              child: Text(
-                'Zobacz wszystkie',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        if (!ref.watch(contractorAvailabilityProvider).isOnline)
-          _buildOfflineMessage()
-        else if (tasksState.isLoading)
-          _buildLoadingState()
-        else if (tasksState.error != null)
-          _buildErrorState(tasksState.error!)
-        else if (nearbyTasks.isEmpty)
-          _buildNoTasksMessage()
-        else
-          ...nearbyTasks.take(3).map((task) => Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
-                child: NearbyTaskCard(
-                  task: task,
-                  onTap: () => _showTaskDetails(task),
-                  onDetails: () => _showTaskDetails(task),
-                  onAccept: () => _acceptTask(task),
-                ),
-              )),
-      ],
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusLG,
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String error) {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusLG,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: AppColors.error,
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          Text(
-            'Wystąpił błąd',
-            style: AppTypography.labelLarge.copyWith(
-              color: AppColors.gray600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            error,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          ElevatedButton.icon(
-            onPressed: () => ref.read(availableTasksProvider.notifier).refresh(),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Spróbuj ponownie'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfflineMessage() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusLG,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.wifi_off,
-            size: 48,
-            color: AppColors.gray400,
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          Text(
-            'Jesteś offline',
-            style: AppTypography.labelLarge.copyWith(
-              color: AppColors.gray600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Włącz dostępność, aby zobaczyć zlecenia w pobliżu i otrzymywać powiadomienia.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoTasksMessage() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusLG,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 48,
-            color: AppColors.gray400,
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          Text(
-            'Brak zleceń w pobliżu',
-            style: AppTypography.labelLarge.copyWith(
-              color: AppColors.gray600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Poczekaj na nowe zlecenia lub rozszerz promień działania w ustawieniach.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _refreshData() async {
     await ref.read(availableTasksProvider.notifier).refresh();
   }
@@ -481,44 +391,6 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
-  }
-
-  void _showTaskDetails(ContractorTask task) {
-    context.push(
-      Routes.contractorTaskAlertRoute(task.id),
-      extra: task,
-    );
-  }
-
-  Future<void> _acceptTask(ContractorTask task) async {
-    try {
-      final acceptedTask = await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
-
-      // Set as active task in provider
-      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zaakceptowano zlecenie: ${task.category.name}'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        // Navigate to active task screen
-        context.push(Routes.contractorTask(task.id));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }

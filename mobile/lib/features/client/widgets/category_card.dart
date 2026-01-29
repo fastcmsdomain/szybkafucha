@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
 import '../models/task_category.dart';
 
-/// Card widget for displaying a task category
+/// Large pill-style category button (matches common-categories.png)
 class CategoryCard extends StatelessWidget {
   final TaskCategoryData category;
   final bool isSelected;
@@ -18,78 +18,16 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return _CategoryPill(
+      category: category,
+      isSelected: isSelected,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? category.color.withValues(alpha: 0.1)
-              : AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(
-            color: isSelected ? category.color : AppColors.gray200,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: category.color.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon container
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: category.color.withValues(alpha: isSelected ? 0.2 : 0.1),
-                borderRadius: AppRadius.radiusMD,
-              ),
-              child: Icon(
-                category.icon,
-                size: 28,
-                color: category.color,
-              ),
-            ),
-
-            SizedBox(height: AppSpacing.gapSM),
-
-            // Category name
-            Text(
-              category.name,
-              style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? category.color : AppColors.gray800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 2),
-
-            // Price range
-            Text(
-              category.priceRange,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+      dense: false,
     );
   }
 }
 
-/// Compact horizontal category chip for selection lists
+/// Compact pill for inline selection lists (keeps the same visual language)
 class CategoryChip extends StatelessWidget {
   final TaskCategoryData category;
   final bool isSelected;
@@ -104,35 +42,95 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _CategoryPill(
+      category: category,
+      isSelected: isSelected,
+      onTap: onTap,
+      dense: true,
+    );
+  }
+}
+
+/// Shared pill implementation used across screens to keep categories consistent.
+class _CategoryPill extends StatelessWidget {
+  final TaskCategoryData category;
+  final bool isSelected;
+  final bool dense;
+  final VoidCallback onTap;
+
+  const _CategoryPill({
+    required this.category,
+    required this.isSelected,
+    required this.dense,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double verticalPadding =
+        dense ? AppSpacing.paddingSM : AppSpacing.paddingMD;
+    final double horizontalPadding =
+        dense ? AppSpacing.paddingMD : AppSpacing.paddingLG;
+
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 180),
+        constraints: BoxConstraints(
+          minHeight: dense ? 52 : 64,
+          minWidth: dense ? 150 : 180,
+        ),
         padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.paddingMD,
-          vertical: AppSpacing.paddingSM,
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? category.color : AppColors.white,
+          color: isSelected
+              ? category.color.withValues(alpha: 0.06)
+              : AppColors.white,
           borderRadius: AppRadius.radiusFull,
           border: Border.all(
-            color: isSelected ? category.color : AppColors.gray300,
+            color: isSelected
+                ? category.color.withValues(alpha: 0.65)
+                : AppColors.gray300,
+            width: isSelected ? 1.6 : 1.1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: category.color.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: AppColors.gray900.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               category.icon,
-              size: 18,
-              color: isSelected ? AppColors.white : category.color,
+              size: dense ? 20 : 22,
+              color: category.color,
             ),
-            SizedBox(width: AppSpacing.gapSM),
-            Text(
-              category.name,
-              style: AppTypography.bodySmall.copyWith(
-                fontWeight: FontWeight.w500,
-                color: isSelected ? AppColors.white : AppColors.gray700,
+            SizedBox(width: AppSpacing.gapMD),
+            Flexible(
+              child: Text(
+                category.name,
+                style: (dense ? AppTypography.bodyMedium : AppTypography.bodyLarge)
+                    .copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray800,
+                ),
+                overflow: TextOverflow.fade,
+                softWrap: false,
               ),
             ),
           ],

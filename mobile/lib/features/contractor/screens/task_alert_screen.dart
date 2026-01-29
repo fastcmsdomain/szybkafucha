@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_map_view.dart';
+import '../../../core/widgets/sf_location_marker.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
 
@@ -86,53 +90,120 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
 
                   SizedBox(height: AppSpacing.space4),
 
-                  // Location section
+                  // Location section with map
                   _buildSection(
                     title: 'Lokalizacja',
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: EdgeInsets.all(AppSpacing.paddingSM),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: AppRadius.radiusMD,
-                          ),
-                          child: Icon(
-                            Icons.location_on,
-                            color: AppColors.primary,
-                            size: 20,
+                        // Map preview
+                        ClipRRect(
+                          borderRadius: AppRadius.radiusMD,
+                          child: SizedBox(
+                            height: 150,
+                            child: Stack(
+                              children: [
+                                SFMapView(
+                                  center: LatLng(_task.latitude, _task.longitude),
+                                  zoom: 15,
+                                  markers: [
+                                    TaskMarker(
+                                      position: LatLng(_task.latitude, _task.longitude),
+                                    ),
+                                  ],
+                                  interactive: false,
+                                  showZoomControls: false,
+                                ),
+                                // Navigate button overlay
+                                Positioned(
+                                  right: AppSpacing.paddingSM,
+                                  bottom: AppSpacing.paddingSM,
+                                  child: Material(
+                                    color: AppColors.primary,
+                                    borderRadius: AppRadius.radiusMD,
+                                    elevation: 2,
+                                    child: InkWell(
+                                      onTap: _openNavigation,
+                                      borderRadius: AppRadius.radiusMD,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.paddingMD,
+                                          vertical: AppSpacing.paddingSM,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.navigation,
+                                              color: AppColors.white,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 6),
+                                            Text(
+                                              'Nawiguj',
+                                              style: AppTypography.labelMedium.copyWith(
+                                                color: AppColors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        SizedBox(width: AppSpacing.gapMD),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _task.address,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.gray700,
-                                ),
+                        SizedBox(height: AppSpacing.gapMD),
+                        // Address info
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(AppSpacing.paddingSM),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: AppRadius.radiusMD,
                               ),
-                              SizedBox(height: 4),
-                              Row(
+                              child: Icon(
+                                Icons.location_on,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
+                            ),
+                            SizedBox(width: AppSpacing.gapMD),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.directions_walk,
-                                    size: 14,
-                                    color: AppColors.gray500,
-                                  ),
-                                  SizedBox(width: 4),
                                   Text(
-                                    '${_task.formattedDistance} • ${_task.formattedEta}',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.gray500,
+                                    _task.address,
+                                    style: AppTypography.bodyMedium.copyWith(
+                                      color: AppColors.gray700,
                                     ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.directions_walk,
+                                        size: 14,
+                                        color: AppColors.gray500,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        '${_task.formattedDistance} • ${_task.formattedEta}',
+                                        style: AppTypography.caption.copyWith(
+                                          color: AppColors.gray500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -451,6 +522,25 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
             content: Text('Błąd: ${e.toString()}'),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Open navigation to task location in default map app
+  Future<void> _openNavigation() async {
+    final url = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${_task.latitude},${_task.longitude}',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nie można otworzyć nawigacji'),
+            backgroundColor: AppColors.error,
           ),
         );
       }

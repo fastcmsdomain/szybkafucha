@@ -55,6 +55,22 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           style: AppTypography.h4,
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: tasksState.isLoading
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : const Icon(Icons.refresh),
+            onPressed: tasksState.isLoading ? null : _refreshTasks,
+            tooltip: 'Odśwież',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,

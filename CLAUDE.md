@@ -63,6 +63,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── tasks/            # Project documentation
 │   ├── prd-szybka-fucha.md            # Product Requirements Document
 │   └── tasks-prd-szybka-fucha.md      # Development progress tracker
+├── currentupdate.md  # Change log for Claude's tasks (see "Change Tracking with currentupdate.md")
 ├── index.html        # Landing page (Polish)
 ├── index-en.html     # Landing page (English/British)
 ├── index-ua.html     # Landing page (Ukrainian)
@@ -530,6 +531,165 @@ After completing any significant task:
 2. Include changed files, key decisions, and next steps
 3. Save to docs/task-summaries-name/ with timestamp
 
+**Documentation Types:**
+- `docs/task-summaries/...` – **Comprehensive, detailed documentation** for major tasks/features with full code examples, testing evidence, and explanations.
+- `currentupdate.md` – **Lightweight, linear operational log** used by Claude for conflict analysis and change tracking. See "Change Tracking with currentupdate.md" section below.
+
+## Change Tracking with currentupdate.md
+
+**Purpose**: `currentupdate.md` serves as a real-time change log of all tasks completed by Claude in the repository. It enables Claude to analyze previous changes before starting new tasks, preventing regressions and identifying potential conflicts.
+
+### Mandatory Workflow Rules
+
+#### Rule 1: Mandatory Analysis Before Tasks
+
+**Before starting any task, Claude MUST:**
+1. Open and read `currentupdate.md` (if it exists)
+2. Extract a list of recent changes from the log
+3. Identify files that were modified in previous tasks
+4. Understand the context and impact of previous changes
+5. Use this information to avoid overwriting or breaking previous decisions
+
+**Required reading order before tasks:**
+1. `CLAUDE.md` (this file) - Project conventions and rules
+2. `tasks/tasks-prd-szybka-fucha.md` - Current task tracker and progress
+3. `currentupdate.md` - Recent changes and modifications
+4. `tasks/prd-szybka-fucha.md` - Product requirements (if task is feature-related)
+
+#### Rule 2: Mandatory Update After Tasks
+
+**After completing any task, Claude MUST:**
+1. Add a new entry to `currentupdate.md` following the defined format
+2. Place new entries at the **top** of the file (most recent first) for easy analysis
+3. Include all required information: date, task description, changed files, system impact, risks
+4. Never overwrite or clear `currentupdate.md` - only append new entries
+
+#### Rule 3: Regression Protection
+
+**When modifying files that appear in previous `currentupdate.md` entries, Claude MUST:**
+1. Compare the current task intent with the previous change description
+2. Identify if there's a risk of breaking or reverting key functionality
+3. If risk exists, **explicitly inform the user** about the potential conflict
+4. Describe the nature of the conflict and its potential impact
+
+#### Rule 4: Conflict Communication
+
+**If a new task:**
+- Conflicts with previous changes documented in `currentupdate.md`
+- May break existing functionality
+- Requires refactoring that affects previous decisions
+
+**Claude MUST:**
+1. List relevant entries from `currentupdate.md` that may conflict
+2. Briefly describe the nature of the conflict
+3. Propose safe solutions, such as:
+   - Using feature flags
+   - Keeping old implementation alongside new one
+   - Creating file backups before changes
+   - Modifying in a separate component/module
+   - Staged migration approach
+
+**Example conflict communication:**
+```
+⚠️ POTENTIAL CONFLICT DETECTED
+
+The current task modifies `backend/src/newsletter/newsletter.service.ts`, which was recently changed in currentupdate.md entry [2024-01-15].
+
+Previous change: Added email validation with regex pattern
+Current task: Refactoring email validation logic
+
+Conflict: The new refactoring may remove or change the regex validation that was recently added.
+
+Proposed solution: 
+1. Keep existing validation as fallback
+2. Add new validation method alongside old one
+3. Test both approaches before removing old code
+```
+
+#### Rule 5: Consistency with PRD and Task Tracker
+
+**Claude MUST verify consistency:**
+- Check that changes align with `tasks/prd-szybka-fucha.md` (PRD requirements)
+- Verify alignment with `tasks/tasks-prd-szybka-fucha.md` (task tracker progress)
+- If `currentupdate.md` suggests a direction inconsistent with PRD/task tracker, **Claude MUST report this to the user** before proceeding
+
+### Entry Format for currentupdate.md
+
+Each entry in `currentupdate.md` must follow this structure:
+
+```markdown
+## [YYYY-MM-DD] [Brief Task Name]
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Brief description of what was accomplished
+- **Files Changed**:
+  - `path/to/file1.ext` – Brief description of change
+  - `path/to/file2.ext` – Brief description of change
+- **System Impact**: e.g., "newsletter validation change", "new endpoint added", "UI refactoring"
+- **Related Tasks/PRD**: References to `tasks-prd-szybka-fucha.md` / PRD sections
+- **Potential Conflicts/Risks**: List of risks or "None"
+```
+
+**Format Guidelines:**
+- Entries should be **concise but specific**
+- New entries are added at the **top** of the file (most recent first)
+- Include enough detail to understand the change without being verbose
+- Always list all modified files, even if the change is minor
+
+### Additional Safeguards
+
+#### "Extend, Don't Remove" Rule
+
+**Claude should avoid deleting existing logic without strong justification.**
+
+When refactoring:
+1. **First**: Add new implementation alongside old one (if possible)
+2. **Second**: Thoroughly test the new implementation
+3. **Third**: Only then remove old code, clearly documenting this in `currentupdate.md`
+
+#### "Always Verify Tests Pass" Rule
+
+After changes documented in `currentupdate.md`:
+- Ensure all existing tests pass
+- Add new tests for new functionality (especially endpoints, as per project requirements)
+- Document test results in the `currentupdate.md` entry if significant
+
+#### "Never Overwrite currentupdate.md" Rule
+
+**Claude MUST NEVER:**
+- Overwrite or clear `currentupdate.md`
+- Delete previous entries
+- Modify existing entries (except for minor formatting fixes)
+
+**Allowed actions:**
+- Append new entries at the top
+- Organize/format the file if it becomes too large (with user approval)
+- Archive old entries to a separate file if the log becomes too long (with user approval)
+
+### Integration with Development Workflow
+
+**Claude's Standard Workflow:**
+
+**Before Task:**
+1. Read `CLAUDE.md` for project conventions
+2. Read `tasks/tasks-prd-szybka-fucha.md` for current progress
+3. Read `currentupdate.md` for recent changes
+4. Analyze potential conflicts
+5. Report any conflicts or inconsistencies to user
+
+**During Task:**
+1. Take notes on decisions and approaches
+2. Identify files that will be modified
+3. Check if any of these files appear in `currentupdate.md`
+4. If yes, verify compatibility with previous changes
+
+**After Task:**
+1. Update code and tests
+2. Add entry to `currentupdate.md` (at the top)
+3. For major features: Create detailed documentation in `docs/task-summaries/...`
+4. Verify all tests pass
+5. Report completion and any risks to user
+
 ## Skill: Task Completion Documentation
 
 **When to use**: Every time a task, feature, or significant code change is completed.
@@ -747,11 +907,16 @@ Before considering documentation complete, verify:
 
 ### Integration with Development Workflow
 
-1. **During Development**: Take notes on decisions and approaches
-2. **After Implementation**: Write code examples and test results
-3. **Before Commit**: Complete documentation using the template
-4. **After Review**: Update documentation based on feedback if needed
-5. **
+1. **Before Task**: Read `CLAUDE.md`, `tasks/tasks-prd-szybka-fucha.md`, and `currentupdate.md` to understand context and avoid conflicts
+2. **During Development**: Take notes on decisions and approaches
+3. **After Implementation**: Write code examples and test results
+4. **After Task Completion**: 
+   - Add entry to `currentupdate.md` (required for all tasks)
+   - Create detailed documentation in `docs/task-summaries/...` (for major features)
+5. **Before Commit**: Complete documentation using the template
+6. **After Review**: Update documentation based on feedback if needed
+
+**Note**: The `currentupdate.md` entry is mandatory for every task, while detailed `docs/task-summaries/...` documentation is for significant features or major changes. See "Change Tracking with currentupdate.md" section above for details.
 
 ### Benefits
 

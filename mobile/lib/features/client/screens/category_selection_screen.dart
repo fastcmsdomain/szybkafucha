@@ -55,26 +55,34 @@ class _CategorySelectionScreenState
 
               SizedBox(height: AppSpacing.space8),
 
-              // Category grid
+              // Category pills (2-column wrap to mirror design)
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: AppSpacing.gapMD,
-                    mainAxisSpacing: AppSpacing.gapMD,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: TaskCategoryData.all.length,
-                  itemBuilder: (context, index) {
-                    final category = TaskCategoryData.all[index];
-                    return CategoryCard(
-                      category: category,
-                      isSelected: _selectedCategory == category.category,
-                      onTap: () {
-                        setState(() {
-                          _selectedCategory = category.category;
-                        });
-                      },
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double spacing = AppSpacing.gapMD;
+                    final double itemWidth =
+                        (constraints.maxWidth - spacing) / 2;
+
+                    return SingleChildScrollView(
+                      child: Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: TaskCategoryData.all.map((category) {
+                          return SizedBox(
+                            width: itemWidth,
+                            child: CategoryCard(
+                              category: category,
+                              isSelected: _selectedCategory ==
+                                  category.category,
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = category.category;
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     );
                   },
                 ),

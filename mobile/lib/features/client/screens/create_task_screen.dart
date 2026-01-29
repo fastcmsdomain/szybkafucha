@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_address_autocomplete.dart';
+import '../../../core/widgets/sf_map_view.dart';
+import '../../../core/widgets/sf_location_marker.dart';
 import '../models/task_category.dart';
 import '../widgets/category_card.dart';
 
@@ -28,7 +32,6 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
 class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _addressController = TextEditingController();
 
   TaskCategory? _selectedCategory;
   double _budget = 50;
@@ -36,7 +39,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   DateTime _scheduledDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _scheduledTime = TimeOfDay.now();
   bool _isLoading = false;
-  bool _useCurrentLocation = true;
+
+  // Location state
+  LatLng? _selectedLatLng;
+  String? _selectedAddress;
+  String? _locationError;
 
   // Task images (max 5)
   final List<XFile> _selectedImages = [];
@@ -56,7 +63,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   @override
   void dispose() {
     _descriptionController.dispose();
-    _addressController.dispose();
     super.dispose();
   }
 
@@ -475,128 +481,44 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         ),
         SizedBox(height: AppSpacing.gapMD),
 
-        // Use current location toggle
-        GestureDetector(
-          onTap: () => setState(() => _useCurrentLocation = true),
-          child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: _useCurrentLocation
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.gray50,
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: _useCurrentLocation
-                    ? AppColors.primary
-                    : AppColors.gray200,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.my_location,
-                  color: _useCurrentLocation
-                      ? AppColors.primary
-                      : AppColors.gray600,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Użyj mojej lokalizacji',
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: _useCurrentLocation
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      Text(
-                        'Automatycznie wykryj lokalizację GPS',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildRadioIndicator(_useCurrentLocation),
-              ],
-            ),
-          ),
+        // Address input with GPS option
+        SFAddressInput(
+          onLocationSelected: (latLng, address) {
+            setState(() {
+              _selectedLatLng = latLng;
+              _selectedAddress = address;
+              _locationError = null;
+            });
+          },
+          initialAddress: _selectedAddress,
+          initialLatLng: _selectedLatLng,
+          errorText: _locationError,
         ),
 
-        SizedBox(height: AppSpacing.gapMD),
-
-        // Manual address
-        GestureDetector(
-          onTap: () => setState(() => _useCurrentLocation = false),
-          child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
+        // Map preview when location is selected
+        if (_selectedLatLng != null) ...[
+          SizedBox(height: AppSpacing.gapMD),
+          Container(
             decoration: BoxDecoration(
-              color: !_useCurrentLocation
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.gray50,
               borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: !_useCurrentLocation
-                    ? AppColors.primary
-                    : AppColors.gray200,
+              border: Border.all(color: AppColors.gray200),
+            ),
+            child: ClipRRect(
+              borderRadius: AppRadius.radiusMD,
+              child: SFMapPreview(
+                center: _selectedLatLng!,
+                zoom: 15,
+                height: 180,
+                markers: [
+                  TaskMarker(
+                    position: _selectedLatLng!,
+                    label: 'Lokalizacja zlecenia',
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  color: !_useCurrentLocation
-                      ? AppColors.primary
-                      : AppColors.gray600,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Wpisz adres',
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: !_useCurrentLocation
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      if (!_useCurrentLocation) ...[
-                        SizedBox(height: AppSpacing.gapSM),
-                        TextFormField(
-                          controller: _addressController,
-                          style: AppTypography.bodySmall,
-                          decoration: InputDecoration(
-                            hintText: 'np. ul. Marszałkowska 1, Warszawa',
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.paddingSM,
-                              vertical: AppSpacing.paddingSM,
-                            ),
-                          ),
-                          validator: !_useCurrentLocation
-                              ? (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Wprowadź adres';
-                                  }
-                                  return null;
-                                }
-                              : null,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                _buildRadioIndicator(!_useCurrentLocation),
-              ],
-            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -872,7 +794,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ),
           _buildSummaryRow(
             'Lokalizacja',
-            _useCurrentLocation ? 'Moja lokalizacja' : 'Adres ręczny',
+            _selectedAddress ?? 'Nie wybrano',
           ),
           if (category != null) ...[
             Divider(color: AppColors.gray200),
@@ -949,20 +871,25 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
+    // Validate location is selected
+    if (_selectedLatLng == null || _selectedAddress == null) {
+      setState(() {
+        _locationError = 'Wybierz lokalizację zlecenia';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Wybierz lokalizację zlecenia'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Get location data
-      final address = _useCurrentLocation
-          ? 'Warszawa, Polska' // Default for now - TODO: Get real location
-          : _addressController.text;
-
-      // Default coordinates for Warsaw center (TODO: Get real GPS)
-      const defaultLat = 52.2297;
-      const defaultLng = 21.0122;
-
       // Build scheduled datetime if not immediate
       DateTime? scheduledAt;
       if (!_isNow) {
@@ -981,14 +908,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ? description.substring(0, 50)
           : description;
 
-      // Create task via API
+      // Create task via API with real coordinates
       final dto = CreateTaskDto(
         category: _selectedCategory!,
         title: title,
         description: description,
-        locationLat: defaultLat,
-        locationLng: defaultLng,
-        address: address,
+        locationLat: _selectedLatLng!.latitude,
+        locationLng: _selectedLatLng!.longitude,
+        address: _selectedAddress!,
         budgetAmount: _budget,
         scheduledAt: scheduledAt,
       );

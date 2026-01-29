@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
+import '../../client/widgets/category_card.dart';
 
 /// Contractor registration screen - profile setup with photo, categories, and service radius
 class ContractorRegistrationScreen extends ConsumerStatefulWidget {
@@ -319,56 +320,28 @@ class _ContractorRegistrationScreenState
           ),
           SizedBox(height: AppSpacing.gapXL),
 
-          // Category grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: TaskCategory.values.length,
-            itemBuilder: (context, index) {
-              final category = TaskCategory.values[index];
-              final data = TaskCategoryData.fromCategory(category);
-              final isSelected = _selectedCategories.contains(category);
+          // Category pills (shared design)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final spacing = AppSpacing.gapMD;
+              final itemWidth = (constraints.maxWidth - spacing) / 2;
 
-              return GestureDetector(
-                onTap: () => _toggleCategory(category),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.all(AppSpacing.paddingMD),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? data.color.withValues(alpha: 0.1)
-                        : AppColors.gray50,
-                    borderRadius: AppRadius.radiusLG,
-                    border: Border.all(
-                      color: isSelected ? data.color : AppColors.gray200,
-                      width: isSelected ? 2 : 1,
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: TaskCategory.values.map((category) {
+                  final data = TaskCategoryData.fromCategory(category);
+                  final isSelected = _selectedCategories.contains(category);
+
+                  return SizedBox(
+                    width: itemWidth,
+                    child: CategoryCard(
+                      category: data,
+                      isSelected: isSelected,
+                      onTap: () => _toggleCategory(category),
                     ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        data.icon,
-                        size: 32,
-                        color: isSelected ? data.color : AppColors.gray500,
-                      ),
-                      SizedBox(height: AppSpacing.gapSM),
-                      Text(
-                        data.name,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: isSelected ? data.color : AppColors.gray700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+                  );
+                }).toList(),
               );
             },
           ),
