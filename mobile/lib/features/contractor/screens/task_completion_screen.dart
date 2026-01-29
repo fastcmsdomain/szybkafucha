@@ -569,7 +569,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => _buildSuccessDialog(),
+          builder: (dialogContext) => _buildSuccessDialog(dialogContext),
         );
       }
     } catch (e) {
@@ -585,7 +585,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
     }
   }
 
-  Widget _buildSuccessDialog() {
+  Widget _buildSuccessDialog(BuildContext dialogContext) {
     final platformFee = (_task.price * 0.17).round();
     final earnings = _task.price - platformFee;
 
@@ -637,9 +637,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
-                  // Navigate to review client screen
-                  context.go(
+                  // Use dialogContext to pop the dialog, then navigate
+                  Navigator.of(dialogContext).pop();
+                  // Navigate to review client screen using dialogContext
+                  dialogContext.go(
                     Routes.contractorTaskReviewRoute(widget.taskId),
                     extra: {
                       'clientName': _task.clientName,
@@ -661,8 +662,8 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
             SizedBox(height: AppSpacing.gapMD),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
-                context.go(Routes.contractorHome);
+                Navigator.of(dialogContext).pop();
+                dialogContext.go(Routes.contractorHome);
               },
               child: Text(
                 'Pomiń ocenę',

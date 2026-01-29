@@ -1,0 +1,26 @@
+# Szybka Fucha API - .htaccess
+# Security and routing rules
+
+# Deny access to config file
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Enable rewrite engine (optional, for cleaner URLs later)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Optional: Rewrite /api/subscribe to /api/subscribe.php
+    # RewriteRule ^subscribe$ subscribe.php [L,QSA]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes

@@ -37,6 +37,31 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
     super.dispose();
   }
 
+  bool _isRefreshing = false;
+
+  Future<void> _refreshEarnings() async {
+    setState(() => _isRefreshing = true);
+
+    // Simulate API call - in production would fetch real data
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      _summary = EarningsSummary.mock();
+      _transactions = Transaction.mockList();
+      _isRefreshing = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Odświeżono'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,6 +72,20 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: _isRefreshing
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : const Icon(Icons.refresh),
+            onPressed: _isRefreshing ? null : _refreshEarnings,
+            tooltip: 'Odśwież',
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showEarningsInfo,

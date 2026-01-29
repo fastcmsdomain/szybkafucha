@@ -60,5 +60,9 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby znaleźć pomocników w pobliżu.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby śledzić realizację zlecenia.</string>
 </dict>
 </plist>

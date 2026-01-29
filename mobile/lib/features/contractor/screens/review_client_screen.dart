@@ -355,7 +355,7 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -392,8 +392,8 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
-                context.go(Routes.contractorHome);
+                Navigator.of(dialogContext).pop();
+                dialogContext.go(Routes.contractorHome);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -410,20 +410,20 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
   void _finishWithoutRating() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Pominąć ocenę?'),
         content: Text(
           'Twoja opinia pomaga innym wykonawcom poznać klientów.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text('Zostań i oceń'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              context.go(Routes.contractorHome);
+              Navigator.of(dialogContext).pop();
+              dialogContext.go(Routes.contractorHome);
             },
             child: Text(
               'Pomiń',

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/task_provider.dart';
+import '../../../core/widgets/sf_map_view.dart';
+import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -174,6 +177,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshTask,
+            tooltip: 'Odśwież',
+          ),
+          IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: _showOptions,
           ),
@@ -254,36 +262,17 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Widget _buildMapSection(ContractorTask task) {
     return Stack(
       children: [
-        // Map placeholder
-        Container(
-          color: AppColors.gray200,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.map_outlined,
-                  size: 64,
-                  color: AppColors.gray400,
-                ),
-                SizedBox(height: AppSpacing.gapMD),
-                Text(
-                  'Mapa trasy',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.gray500,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.gapSM),
-                Text(
-                  task.address,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.gray500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+        // Real map showing task location
+        SFMapView(
+          center: LatLng(task.latitude, task.longitude),
+          zoom: 15,
+          markers: [
+            TaskMarker(
+              position: LatLng(task.latitude, task.longitude),
             ),
-          ),
+          ],
+          interactive: true,
+          showZoomControls: true,
         ),
 
         // Navigate button overlay
@@ -340,9 +329,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // Simplified 3-step flow: Zaakceptowano → W trakcie → Zakończono
+    // 4-step flow: Oczekuje → Potwierdzone → W trakcie → Zakończono
     final steps = [
-      _StepData('Zaakceptowano', ContractorTaskStatus.accepted),
+      _StepData('Oczekuje', ContractorTaskStatus.accepted),
+      _StepData('Potwierdzone', ContractorTaskStatus.confirmed),
       _StepData('W trakcie', ContractorTaskStatus.inProgress),
       _StepData('Zakończono', ContractorTaskStatus.completed),
     ];
@@ -553,11 +543,18 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Widget _buildActionButton(ContractorTask task) {
     String buttonText;
     VoidCallback? onPressed;
+    bool isWaiting = false;
 
-    // Simplified 2-button flow: "Rozpocznij zadanie" → "Zakończ zlecenie"
+    // Status flow: accepted (waiting) → confirmed → inProgress → completed
     switch (_currentStatus) {
       case ContractorTaskStatus.accepted:
-        buttonText = 'Rozpocznij zadanie';
+        // Waiting for client to confirm - cannot start yet
+        buttonText = 'Oczekuje na potwierdzenie';
+        onPressed = null;
+        isWaiting = true;
+      case ContractorTaskStatus.confirmed:
+        // Client confirmed - can now start work
+        buttonText = 'Rozpocznij';
         onPressed = () => _startTask();
       case ContractorTaskStatus.inProgress:
         buttonText = 'Zakończ zlecenie';
@@ -567,37 +564,110 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         onPressed = null;
     }
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isUpdating ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.radiusLG,
-          ),
-          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-        ),
-        child: _isUpdating
-            ? SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(AppColors.white),
+    // Show cancel button for accepted and confirmed tasks (before work starts)
+    final showCancelButton = _currentStatus == ContractorTaskStatus.accepted ||
+        _currentStatus == ContractorTaskStatus.confirmed;
+
+    return Column(
+      children: [
+        // Info message when waiting for client confirmation
+        if (isWaiting) ...[
+          Container(
+            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.hourglass_empty, color: AppColors.warning, size: 20),
+                SizedBox(width: AppSpacing.gapSM),
+                Expanded(
+                  child: Text(
+                    'Klient musi potwierdzić przyjęcie zlecenia. Poczekaj na potwierdzenie.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
                 ),
-              )
-            : Text(
-                buttonText,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              ],
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+        ],
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isUpdating ? null : onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.radiusLG,
+              ),
+              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
+            ),
+            child: _isUpdating
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(AppColors.white),
+                    ),
+                  )
+                : Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+        if (showCancelButton) ...[
+          SizedBox(height: AppSpacing.gapMD),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isUpdating ? null : _showCancelConfirmation,
+              icon: Icon(Icons.cancel_outlined, color: AppColors.error),
+              label: Text(
+                'Anuluj',
+                style: TextStyle(color: AppColors.error),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.radiusLG,
                 ),
               ),
-      ),
+            ),
+          ),
+        ],
+      ],
     );
+  }
+
+  /// Refresh task data from backend
+  Future<void> _refreshTask() async {
+    await ref.read(activeTaskProvider.notifier).fetchTask(widget.taskId);
+    final task = ref.read(activeTaskProvider).task;
+    if (task != null && mounted) {
+      setState(() {
+        _currentStatus = task.status;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Zlecenie odświeżone'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   /// Start the task - transitions from accepted to in_progress

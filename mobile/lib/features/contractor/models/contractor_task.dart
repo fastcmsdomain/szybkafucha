@@ -139,9 +139,12 @@ class ContractorTask {
   static ContractorTaskStatus _mapBackendStatus(String status) {
     switch (status.toLowerCase()) {
       case 'created':
+      case 'posted':
         return ContractorTaskStatus.available;
       case 'accepted':
-        return ContractorTaskStatus.accepted;
+        return ContractorTaskStatus.accepted; // Waiting for client confirmation
+      case 'confirmed':
+        return ContractorTaskStatus.confirmed; // Client confirmed
       case 'in_progress':
         return ContractorTaskStatus.inProgress;
       case 'completed':
@@ -273,7 +276,8 @@ class ContractorTask {
 enum ContractorTaskStatus {
   available,
   offered, // Contractor received notification
-  accepted,
+  accepted, // Contractor accepted, waiting for client confirmation
+  confirmed, // Client confirmed the contractor
   inProgress,
   completed,
   cancelled,
@@ -287,7 +291,9 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
       case ContractorTaskStatus.offered:
         return 'Nowe zlecenie';
       case ContractorTaskStatus.accepted:
-        return 'Zaakceptowane';
+        return 'Oczekuje'; // Waiting for client confirmation
+      case ContractorTaskStatus.confirmed:
+        return 'Zaakceptowane'; // Client confirmed
       case ContractorTaskStatus.inProgress:
         return 'W trakcie';
       case ContractorTaskStatus.completed:
@@ -299,5 +305,6 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
 
   bool get isActive =>
       this == ContractorTaskStatus.accepted ||
+      this == ContractorTaskStatus.confirmed ||
       this == ContractorTaskStatus.inProgress;
 }

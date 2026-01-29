@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
- import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../models/task.dart';
-import '../models/task_category.dart';
+// import '../models/task_category.dart';
+// import '../widgets/category_card.dart';
 
 /// Client home screen - main dashboard for clients
 /// Shows welcome message, quick actions, and active/recent tasks
@@ -48,17 +49,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               // Welcome header
               _buildWelcomeHeader(user?.name),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Quick action - Create task
-              _buildQuickActionCard(context),
+              // _buildQuickActionCard(context),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Popular categories
-              _buildPopularCategories(context),
+              // _buildPopularCategories(context),
 
-              SizedBox(height: AppSpacing.space8),
+              // SizedBox(height: AppSpacing.space8),
 
               // Active tasks section
               _buildActiveTasksSection(context),
@@ -84,23 +85,57 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildWelcomeHeader(String? userName) {
     final greeting = _getGreeting();
     final name = userName ?? 'Użytkowniku';
+    final tasksState = ref.watch(clientTasksProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          greeting,
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.gray600,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                greeting,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray600,
+                ),
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                name,
+                style: AppTypography.h2,
+              ),
+            ],
           ),
         ),
-        SizedBox(height: AppSpacing.gapXS),
-        Text(
-          name,
-          style: AppTypography.h2,
+        IconButton(
+          icon: tasksState.isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : Icon(Icons.refresh, color: AppColors.primary),
+          onPressed: tasksState.isLoading ? null : _refreshTasks,
+          tooltip: 'Odśwież',
         ),
       ],
     );
+  }
+
+  Future<void> _refreshTasks() async {
+    await ref.read(clientTasksProvider.notifier).refresh();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Odświeżono'),
+          duration: const Duration(seconds: 1),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
   }
 
   String _getGreeting() {
@@ -183,85 +218,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 size: 48,
                 color: AppColors.white,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPopularCategories(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Popularne kategorie',
-              style: AppTypography.h5,
-            ),
-            TextButton(
-              onPressed: () => context.push(Routes.clientCategories),
-              child: Text(
-                'Zobacz wszystkie',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        SizedBox(
-          height: 100,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: 4,
-            separatorBuilder: (context, index) => SizedBox(width: AppSpacing.gapMD),
-            itemBuilder: (context, index) {
-              final category = TaskCategoryData.all[index];
-              return _buildCategoryItem(context, category);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryItem(BuildContext context, TaskCategoryData category) {
-    return GestureDetector(
-      onTap: () => context.push(
-        Routes.clientCreateTask,
-        extra: category.category,
-      ),
-      child: Container(
-        width: 80,
-        padding: EdgeInsets.all(AppSpacing.paddingSM),
-        decoration: BoxDecoration(
-          color: category.color.withValues(alpha: 0.1),
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: category.color.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              category.icon,
-              color: category.color,
-              size: 28,
-            ),
-            SizedBox(height: AppSpacing.gapSM),
-            Text(
-              category.name,
-              style: AppTypography.caption.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

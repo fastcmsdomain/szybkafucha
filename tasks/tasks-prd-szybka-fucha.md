@@ -661,6 +661,59 @@ Then press `y` to accept each license.
   2. Zleceniodawca natychmiast widzi: status "Pomocnik znaleziony" + dane wykonawcy
   3. Push notification wysyłany jako backup (gdy app zamknięta)
 
+- [x] **17.8 Map Integration (MVP Phase 1)** ✅ COMPLETE
+  - [x] Add map packages to pubspec.yaml (flutter_map, latlong2, geolocator, http)
+  - [x] Add iOS location permissions (NSLocationWhenInUseUsageDescription, NSLocationAlwaysAndWhenInUseUsageDescription)
+  - [x] Add Android location permissions (ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION)
+  - [x] Create LocationService (GPS access with permissions, Nominatim API integration)
+  - [x] Create location_provider.dart (Riverpod providers for location state)
+  - [x] Create sf_map_view.dart (reusable OpenStreetMap widget with zoom controls)
+  - [x] Create sf_location_marker.dart (TaskMarker, ContractorMarker, ClientMarker, CurrentLocationMarker)
+  - [x] Create sf_address_autocomplete.dart (Poland address search with Nominatim, dropdown-only selection)
+  - [x] Update create_task_screen.dart (GPS location + address autocomplete + map preview)
+  - [x] Update task_alert_screen.dart (map with TaskMarker + "Nawiguj" button)
+  - [x] Update task_tracking_screen.dart (replace grid placeholder with real SFMapView)
+  - [x] Update active_task_screen.dart (replace gray placeholder with real map)
+
+  **Files Created:**
+  - `lib/core/services/location_service.dart` - GPS access, Nominatim API for address search and reverse geocoding
+  - `lib/core/providers/location_provider.dart` - Riverpod providers: locationServiceProvider, currentLocationProvider, locationSelectionProvider
+  - `lib/core/widgets/sf_map_view.dart` - SFMapView and SFMapPreview widgets with OpenStreetMap tiles
+  - `lib/core/widgets/sf_location_marker.dart` - Custom marker widgets (TaskMarker, ContractorMarker, ClientMarker, CurrentLocationMarker, SelectableMarker)
+  - `lib/core/widgets/sf_address_autocomplete.dart` - SFAddressAutocomplete and SFAddressInput widgets
+
+  **Files Modified:**
+  - `mobile/pubspec.yaml` - Added flutter_map: ^7.0.2, latlong2: ^0.9.1, geolocator: ^13.0.2, http: ^1.2.2
+  - `mobile/ios/Runner/Info.plist` - Added location permission strings (Polish)
+  - `mobile/android/app/src/main/AndroidManifest.xml` - Added location permissions
+  - `lib/features/client/screens/create_task_screen.dart` - GPS + autocomplete + map preview
+  - `lib/features/contractor/screens/task_alert_screen.dart` - Map with TaskMarker + "Nawiguj" button
+  - `lib/features/client/screens/task_tracking_screen.dart` - Real map replacing grid placeholder
+  - `lib/features/contractor/screens/active_task_screen.dart` - Real map replacing gray placeholder
+
+  **Dependencies Added:**
+  - `flutter_map: ^7.0.2` - OpenStreetMap widget (free, no API key required)
+  - `latlong2: ^0.9.1` - Coordinate handling (LatLng class)
+  - `geolocator: ^13.0.2` - GPS location access
+  - `http: ^1.2.2` - HTTP client for Nominatim API
+
+  **Features Implemented:**
+  - ✅ Real OpenStreetMap tiles (free, excellent Poland coverage)
+  - ✅ Custom styled markers with AppColors
+  - ✅ GPS location access with permission handling (Polish messages)
+  - ✅ Address autocomplete with Nominatim API (Poland-biased search)
+  - ✅ Dropdown-only address selection (ensures valid coordinates)
+  - ✅ Map preview on task creation
+  - ✅ "Nawiguj" button opens Google Maps with directions
+  - ✅ Interactive and static map modes
+  - ✅ Zoom controls with proper styling
+
+  **NOT included in MVP Phase 1:**
+  - Real-time contractor location tracking (animation)
+  - Turn-by-turn navigation
+  - Offline map caching
+  - Multiple map providers
+
 ---
 
 ### Phase 5: Admin Dashboard (Week 7)

@@ -319,7 +319,43 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   final Ref _ref;
 
   AvailableTasksNotifier(this._api, this._ref)
-      : super(const AvailableTasksState());
+      : super(const AvailableTasksState()) {
+    _setupWebSocketListener();
+  }
+
+  /// Set up WebSocket listener for task status updates (e.g., client cancels)
+  void _setupWebSocketListener() {
+    _ref.listen<AsyncValue<TaskStatusEvent>>(
+      taskStatusUpdatesProvider,
+      (previous, next) {
+        next.whenData((event) => _handleTaskStatusUpdate(event));
+      },
+    );
+  }
+
+  /// Handle incoming task status update from WebSocket
+  void _handleTaskStatusUpdate(TaskStatusEvent event) {
+    final status = event.status.toLowerCase();
+
+    // If task was cancelled by client, remove it from available tasks
+    if (status == 'cancelled') {
+      _removeTask(event.taskId);
+    }
+    // Also remove if task was accepted by another contractor
+    else if (status == 'accepted' || status == 'in_progress') {
+      _removeTask(event.taskId);
+    }
+  }
+
+  /// Remove a task from available tasks list
+  void _removeTask(String taskId) {
+    final taskExists = state.tasks.any((t) => t.id == taskId);
+    if (taskExists) {
+      state = state.copyWith(
+        tasks: state.tasks.where((t) => t.id != taskId).toList(),
+      );
+    }
+  }
 
   /// Load available tasks for contractors
   /// Note: Location filtering disabled for MVP - shows all available tasks
@@ -441,12 +477,19 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 
     final status = event.status.toLowerCase();
 
-    // If task was cancelled by client, clear it from contractor's active tasks
-    if (status == 'cancelled') {
-      clearTask();
-    }
-    // If task was returned to posted (shouldn't happen to active task, but handle it)
-    else if (status == 'posted' || status == 'created') {
+    // Clear active task when:
+    // - Task was cancelled by client
+    // - Contractor was released/rejected by client (looking for another)
+    // - Task was returned to posted/created status (available again)
+    // - Any status that means contractor is no longer assigned
+    final shouldClearTask = status == 'cancelled' ||
+        status == 'posted' ||
+        status == 'created' ||
+        status == 'released' ||
+        status == 'rejected' ||
+        status == 'available';
+
+    if (shouldClearTask) {
       clearTask();
     }
   }
