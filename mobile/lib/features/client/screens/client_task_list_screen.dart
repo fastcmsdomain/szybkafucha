@@ -1,40 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/providers/task_provider.dart';
-import '../../../core/providers/contractor_availability_provider.dart';
-import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
-import '../models/contractor_task.dart';
-import '../widgets/nearby_task_card.dart';
+import '../../contractor/models/contractor_task.dart';
+import '../../contractor/widgets/nearby_task_card.dart';
 
-/// Full list of available tasks for contractors with map/list tabs
-class ContractorTaskListScreen extends ConsumerStatefulWidget {
-  const ContractorTaskListScreen({super.key});
+/// Client-facing view of all available jobs with map/list tabs
+/// Mirrors the contractor list but without accept actions
+class ClientTaskListScreen extends ConsumerStatefulWidget {
+  const ClientTaskListScreen({super.key});
 
   @override
-  ConsumerState<ContractorTaskListScreen> createState() =>
-      _ContractorTaskListScreenState();
+  ConsumerState<ClientTaskListScreen> createState() => _ClientTaskListScreenState();
 }
 
-class _ContractorTaskListScreenState
-    extends ConsumerState<ContractorTaskListScreen>
+class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final MapController _mapController = MapController();
-  double _currentZoom = 6.0; // Start zoomed out to see all of Poland
+  double _currentZoom = 6.0; // Start zoomed out to show the whole country
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Load tasks on screen open
+    // Load available tasks when screen opens
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
     });
@@ -53,7 +49,6 @@ class _ContractorTaskListScreenState
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
-    final availabilityState = ref.watch(contractorAvailabilityProvider);
     final tasks = tasksState.tasks
         .where(_isActiveOrNew)
         .toList();
@@ -61,7 +56,7 @@ class _ContractorTaskListScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Dostępne zlecenia',
+          'Zlecenia',
           style: AppTypography.h4,
         ),
         centerTitle: true,
@@ -97,28 +92,17 @@ class _ContractorTaskListScreenState
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Map tab
-          _buildMapTab(tasksState, availabilityState, tasks),
-          // List tab
+          _buildMapTab(tasksState, tasks),
           RefreshIndicator(
             onRefresh: _refreshTasks,
-            child: _buildListTab(tasksState, availabilityState, tasks),
+            child: _buildListTab(tasksState, tasks),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMapTab(
-    AvailableTasksState tasksState,
-    dynamic availabilityState,
-    List<ContractorTask> tasks,
-  ) {
-    // Check if contractor is offline
-    if (!availabilityState.isOnline) {
-      return _buildOfflineMessage();
-    }
-
+  Widget _buildMapTab(AvailableTasksState tasksState, List<ContractorTask> tasks) {
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -130,12 +114,14 @@ class _ContractorTaskListScreenState
     }
 
     // Convert tasks to clusterable format
-    final clusterableTasks = tasks.map((task) => ClusterableTask(
-      id: task.id,
-      position: LatLng(task.latitude, task.longitude),
-      category: task.category.name,
-      price: task.price.toDouble(),
-    )).toList();
+    final clusterableTasks = tasks
+        .map((task) => ClusterableTask(
+              id: task.id,
+              position: LatLng(task.latitude, task.longitude),
+              category: task.category.name,
+              price: task.price.toDouble(),
+            ))
+        .toList();
 
     // Create clusters based on current zoom
     final clusters = TaskClusterManager.clusterTasks(clusterableTasks, _currentZoom);
@@ -167,7 +153,6 @@ class _ContractorTaskListScreenState
             MarkerLayer(
               markers: clusters.map((cluster) {
                 if (cluster.isSingleTask) {
-                  // Single task - show regular marker
                   final task = tasks.firstWhere(
                     (t) => t.id == cluster.tasks.first.id,
                     orElse: () => tasks.first,
@@ -182,7 +167,6 @@ class _ContractorTaskListScreenState
                     ),
                   );
                 } else {
-                  // Cluster - show cluster marker
                   final clusterMarker = ClusterMarker(
                     position: cluster.center,
                     count: cluster.count,
@@ -248,17 +232,17 @@ class _ContractorTaskListScreenState
             children: [
               _buildZoomButton(
                 icon: Icons.add,
-                onPressed: () => _zoomIn(),
+                onPressed: _zoomIn,
               ),
               SizedBox(height: AppSpacing.gapXS),
               _buildZoomButton(
                 icon: Icons.remove,
-                onPressed: () => _zoomOut(),
+                onPressed: _zoomOut,
               ),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
                 icon: Icons.center_focus_strong,
-                onPressed: () => _resetView(),
+                onPressed: _resetView,
               ),
             ],
           ),
@@ -276,6 +260,34 @@ class _ContractorTaskListScreenState
     );
   }
 
+  Widget _buildListTab(AvailableTasksState tasksState, List<ContractorTask> tasks) {
+    if (tasksState.isLoading && tasks.isEmpty) {
+      return _buildLoadingState();
+    }
+
+    if (tasksState.error != null) {
+      return _buildErrorState(tasksState.error!);
+    }
+
+    if (tasks.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      itemCount: tasks.length,
+      separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        return NearbyTaskCard(
+          task: task,
+          showActions: false,
+          onTap: () => _showTaskDetails(task),
+        );
+      },
+    );
+  }
+
   Widget _buildZoomButton({
     required IconData icon,
     required VoidCallback onPressed,
@@ -287,10 +299,9 @@ class _ContractorTaskListScreenState
       child: InkWell(
         onTap: onPressed,
         borderRadius: AppRadius.radiusSM,
-        child: Container(
+        child: SizedBox(
           width: 40,
           height: 40,
-          alignment: Alignment.center,
           child: Icon(
             icon,
             size: 22,
@@ -319,82 +330,9 @@ class _ContractorTaskListScreenState
   }
 
   void _zoomToCluster(TaskCluster cluster) {
-    // Zoom in to see individual tasks in cluster
     final newZoom = (_currentZoom + 2).clamp(5.0, 15.0);
     _mapController.move(cluster.center, newZoom);
     setState(() => _currentZoom = newZoom);
-  }
-
-  Widget _buildEmptyMapState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.map_outlined,
-            size: 64,
-            color: AppColors.gray400,
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          Text(
-            'Brak dostępnych zleceń',
-            style: AppTypography.h5.copyWith(
-              color: AppColors.gray600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Na mapie pojawią się zlecenia,\ngdy będą dostępne.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildListTab(
-    AvailableTasksState tasksState,
-    dynamic availabilityState,
-    List<ContractorTask> tasks,
-  ) {
-    // Check if contractor is offline
-    if (!availabilityState.isOnline) {
-      return _buildOfflineMessage();
-    }
-
-    // Loading state
-    if (tasksState.isLoading && tasks.isEmpty) {
-      return _buildLoadingState();
-    }
-
-    // Error state
-    if (tasksState.error != null) {
-      return _buildErrorState(tasksState.error!);
-    }
-
-    // Empty state
-    if (tasks.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    // List of tasks
-    return ListView.separated(
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      itemCount: tasks.length,
-      separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        return NearbyTaskCard(
-          task: task,
-          onTap: () => _showTaskDetails(task),
-          onDetails: () => _showTaskDetails(task),
-          onAccept: () => _acceptTask(task),
-        );
-      },
-    );
   }
 
   Widget _buildLoadingState() {
@@ -482,7 +420,7 @@ class _ContractorTaskListScreenState
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              'Obecnie nie ma żadnych dostępnych zleceń w Twojej okolicy. '
+              'Obecnie nie ma żadnych dostępnych zleceń. '
               'Sprawdź ponownie później.',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.gray500,
@@ -505,56 +443,59 @@ class _ContractorTaskListScreenState
     );
   }
 
-  Widget _buildOfflineMessage() {
+  Widget _buildEmptyMapState() {
     return Center(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.paddingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off,
-              size: 64,
-              color: AppColors.gray400,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.map_outlined,
+            size: 64,
+            color: AppColors.gray400,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            'Brak dostępnych zleceń',
+            style: AppTypography.h5.copyWith(
+              color: AppColors.gray600,
             ),
-            SizedBox(height: AppSpacing.gapMD),
-            Text(
-              'Jesteś offline',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            'Na mapie pojawią się zlecenia, gdy będą dostępne.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
             ),
-            SizedBox(height: AppSpacing.gapSM),
-            Text(
-              'Włącz dostępność, aby zobaczyć dostępne zlecenia i otrzymywać powiadomienia.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: AppSpacing.space6),
-            ElevatedButton.icon(
-              onPressed: () {
-                // Navigate back to home where they can toggle availability
-                context.go(Routes.contractorHome);
-              },
-              icon: const Icon(Icons.home),
-              label: const Text('Wróć do ekranu głównego'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-              ),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
   void _showTaskDetails(ContractorTask task) {
-    context.push(
-      Routes.contractorTaskAlertRoute(task.id),
-      extra: task,
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: NearbyTaskCard(
+                task: task,
+                showActions: false,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -563,38 +504,5 @@ class _ContractorTaskListScreenState
         task.status == ContractorTaskStatus.accepted ||
         task.status == ContractorTaskStatus.confirmed ||
         task.status == ContractorTaskStatus.inProgress;
-  }
-
-  Future<void> _acceptTask(ContractorTask task) async {
-    try {
-      final acceptedTask =
-          await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
-
-      // Set as active task in provider
-      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zaakceptowano zlecenie: ${task.category.name}'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        // Navigate to active task screen
-        context.push(Routes.contractorTask(task.id));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
   }
 }

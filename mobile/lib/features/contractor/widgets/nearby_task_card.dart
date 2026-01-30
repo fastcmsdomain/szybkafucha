@@ -10,6 +10,8 @@ class NearbyTaskCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
   final VoidCallback? onDetails;
+  /// Show action buttons (accept/details). For client list view we hide them.
+  final bool showActions;
 
   const NearbyTaskCard({
     super.key,
@@ -17,6 +19,7 @@ class NearbyTaskCard extends StatelessWidget {
     this.onTap,
     this.onAccept,
     this.onDetails,
+    this.showActions = true,
   });
 
   @override
@@ -241,39 +244,41 @@ class NearbyTaskCard extends StatelessWidget {
                   ),
                 ),
 
-                // More info button
-                OutlinedButton(
-                  onPressed: onDetails,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.gray700,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.paddingSM,
-                      vertical: AppSpacing.paddingSM,
+                if (showActions) ...[
+                  // More info button
+                  OutlinedButton(
+                    onPressed: onDetails,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.gray700,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.paddingSM,
+                        vertical: AppSpacing.paddingSM,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.radiusMD,
+                      ),
+                      side: BorderSide(color: AppColors.gray300),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.radiusMD,
-                    ),
-                    side: BorderSide(color: AppColors.gray300),
+                    child: const Text('Więcej'),
                   ),
-                  child: const Text('Więcej'),
-                ),
-                SizedBox(width: AppSpacing.gapSM),
-                // Accept button
-                ElevatedButton(
-                  onPressed: onAccept,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.paddingMD,
-                      vertical: AppSpacing.paddingSM,
+                  SizedBox(width: AppSpacing.gapSM),
+                  // Accept button
+                  ElevatedButton(
+                    onPressed: onAccept,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.paddingMD,
+                        vertical: AppSpacing.paddingSM,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.radiusMD,
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.radiusMD,
-                    ),
+                    child: const Text('Przyjmij'),
                   ),
-                  child: const Text('Przyjmij'),
-                ),
+                ],
               ],
             ),
           ],
