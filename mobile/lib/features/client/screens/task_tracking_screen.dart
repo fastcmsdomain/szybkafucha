@@ -173,6 +173,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     wsService.leaveTask(widget.taskId);
   }
 
+  /// Manual refresh for user-triggered reload
+  Future<void> _refreshTask() async {
+    await ref.read(clientTasksProvider.notifier).refresh();
+    // After refresh, update local state from latest data
+    final tasksState = ref.read(clientTasksProvider);
+    final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+    if (task != null) {
+      _updateFromTask(task);
+    }
+  }
+
   /// Handle WebSocket task status update
   void _handleStatusUpdate(TaskStatusEvent event) {
     if (event.taskId != widget.taskId) return;
@@ -290,6 +301,20 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       ),
                     ),
                     const Spacer(),
+                    // Reload button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: AppShadows.md,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Odśwież status',
+                        onPressed: _refreshTask,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapSM),
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.white,
