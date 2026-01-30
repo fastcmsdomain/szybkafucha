@@ -76,7 +76,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ],
         ),
         content: const Text(
-          'Klient anulował to zlecenie. Zostaniesz przekierowany do listy dostępnych zleceń.',
+          'Zostaniesz przekierowany do listy dostępnych zleceń.',
         ),
         actions: [
           ElevatedButton(

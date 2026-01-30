@@ -83,13 +83,21 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
       ttl: 300, // Default TTL: 5 minutes (in seconds)
     }),
 
-    // Rate limiting - protect against spam and DoS
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // Time window in milliseconds (60 seconds)
-        limit: 10, // Max 10 requests per TTL window
-      },
-    ]),
+    // Rate limiting - protect against spam and DoS (configurable via env)
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: parseInt(
+            configService.get<string>('THROTTLE_TTL_MS', '60000'),
+          ), // default: 60s
+          limit: parseInt(
+            configService.get<string>('THROTTLE_LIMIT', '50'),
+          ), // default: 10 reqs/window
+        },
+      ],
+      inject: [ConfigService],
+    }),
 
     // Feature modules
     AuthModule,
