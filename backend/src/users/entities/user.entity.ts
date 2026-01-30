@@ -48,6 +48,12 @@ export class User {
   @Column({ type: 'text', nullable: true })
   avatarUrl: string | null;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  bio: string | null;
+
   @Column({
     type: 'enum',
     enum: UserStatus,

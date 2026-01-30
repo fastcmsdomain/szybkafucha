@@ -49,8 +49,11 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.person_outline,
                   title: 'Edytuj profil',
                   onTap: () {
-                    // TODO: Navigate to edit profile
-                    _showComingSoon(context, 'Edycja profilu');
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorProfileEdit);
+                    } else {
+                      _showComingSoon(context, 'Edycja profilu');
+                    }
                   },
                 ),
                 _buildMenuItem(

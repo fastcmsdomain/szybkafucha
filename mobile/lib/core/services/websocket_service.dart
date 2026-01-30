@@ -92,6 +92,7 @@ class ContractorInfo {
   final String? avatarUrl;
   final double rating;
   final int completedTasks;
+  final String? bio;
 
   ContractorInfo({
     required this.id,
@@ -99,6 +100,7 @@ class ContractorInfo {
     this.avatarUrl,
     required this.rating,
     required this.completedTasks,
+    this.bio,
   });
 
   factory ContractorInfo.fromJson(Map<String, dynamic> json) {
@@ -108,6 +110,7 @@ class ContractorInfo {
       avatarUrl: json['avatarUrl'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       completedTasks: json['completedTasks'] as int? ?? 0,
+      bio: json['bio'] as String?,
     );
   }
 
@@ -117,6 +120,7 @@ class ContractorInfo {
     'avatarUrl': avatarUrl,
     'rating': rating,
     'completedTasks': completedTasks,
+    'bio': bio,
   };
 }
 

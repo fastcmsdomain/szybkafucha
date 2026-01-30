@@ -223,6 +223,45 @@ export class ContractorService {
   }
 
   /**
+   * Get public contractor profile (for clients viewing contractor)
+   * Combines User + ContractorProfile data, excluding sensitive fields
+   */
+  async getPublicProfile(userId: string): Promise<{
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    ratingAvg: number;
+    ratingCount: number;
+    completedTasksCount: number;
+    categories: string[];
+    isVerified: boolean;
+    memberSince: Date;
+  }> {
+    const profile = await this.contractorRepository.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    if (!profile || !profile.user) {
+      throw new NotFoundException('Contractor profile not found');
+    }
+
+    return {
+      id: profile.userId,
+      name: profile.user.name || 'Wykonawca',
+      avatarUrl: profile.user.avatarUrl || null,
+      bio: profile.bio || profile.user.bio || null,
+      ratingAvg: Number(profile.ratingAvg) || 0,
+      ratingCount: profile.ratingCount || 0,
+      completedTasksCount: profile.completedTasksCount || 0,
+      categories: profile.categories || [],
+      isVerified: profile.kycStatus === KycStatus.VERIFIED,
+      memberSince: profile.createdAt,
+    };
+  }
+
+  /**
    * Basic IBAN validation
    */
   private validateIban(iban: string): boolean {

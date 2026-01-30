@@ -33,6 +33,8 @@ class User {
   final String userType; // 'client' or 'contractor'
   final String? avatarUrl;
   final bool isVerified;
+  final String? address;
+  final String? bio;
 
   const User({
     required this.id,
@@ -42,6 +44,8 @@ class User {
     required this.userType,
     this.avatarUrl,
     this.isVerified = false,
+    this.address,
+    this.bio,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -57,6 +61,8 @@ class User {
       // Backend returns 'status', check if active
       isVerified: json['is_verified'] as bool? ??
                   (json['status'] == 'active'),
+      address: json['address'] as String?,
+      bio: json['bio'] as String?,
     );
   }
 
@@ -68,6 +74,8 @@ class User {
         'user_type': userType,
         'avatar_url': avatarUrl,
         'is_verified': isVerified,
+        'address': address,
+        'bio': bio,
       };
 
   bool get isClient => userType == 'client';
@@ -81,6 +89,8 @@ class User {
     String? userType,
     String? avatarUrl,
     bool? isVerified,
+    String? address,
+    String? bio,
   }) {
     return User(
       id: id ?? this.id,
@@ -90,6 +100,8 @@ class User {
       userType: userType ?? this.userType,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
+      address: address ?? this.address,
+      bio: bio ?? this.bio,
     );
   }
 }
