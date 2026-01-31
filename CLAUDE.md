@@ -525,6 +525,42 @@ When syncing changes across language versions:
 - Check API responses: Use Postman or `curl` commands
 - Enable TypeORM logging: Set `logging: true` in `app.module.ts`
 
+### Test Contractor Profile Integration
+
+The contractor profile system links mobile app profile screens to the database. Full documentation: `docs/task-summaries/contractor-profile-integration-2026-01-31.md`
+
+**Quick Test Steps:**
+
+1. **Backend endpoint test** (requires JWT token):
+```bash
+curl -X GET http://localhost:3000/api/v1/contractor/{contractorUserId}/public \
+  -H "Authorization: Bearer {jwt_token}" \
+  -H "Content-Type: application/json"
+```
+
+2. **Contractor bio persistence**:
+   - Login as contractor → Profile → "Edytuj profil"
+   - Edit bio → Save → Exit → Re-enter
+   - Verify bio persists (not empty)
+
+3. **Client "Profil" popup**:
+   - Login as client → Create task → Wait for contractor accept
+   - Task tracking screen → Tap "Profil" on contractor card
+   - Verify: Loading spinner → Real bio displayed (or placeholder if empty)
+
+4. **Contractor ratings**:
+   - Login as contractor → Profile → "Edytuj profil"
+   - Scroll to ratings section
+   - Verify: Real values from database (not hardcoded 4.7/32)
+
+**API Endpoint Reference:**
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/contractor/:userId/public` | GET | JWT | Public contractor profile for clients |
+| `/contractor/profile` | GET | JWT | Current contractor's own profile |
+| `/users/me` | PUT | JWT | Update user profile (name, bio, address) |
+
 ## Documentation Standards
 After completing any significant task:
 1. Generate a summary document 

@@ -33,6 +33,7 @@ abstract class Routes {
   static const String contractorTaskChat = '/contractor/task/:taskId/chat';
   static const String contractorTaskComplete = '/contractor/task/:taskId/complete';
   static const String contractorTaskReview = '/contractor/task/:taskId/review';
+  static const String contractorProfileEdit = '/contractor/profile/edit';
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
 

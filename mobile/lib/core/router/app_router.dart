@@ -228,6 +228,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'contractorProfile',
             builder: (context, state) => const ProfileScreen(),
           ),
+          GoRoute(
+            path: Routes.contractorProfileEdit,
+            name: 'contractorProfileEdit',
+            builder: (context, state) => const contractor.ContractorProfileScreen(),
+          ),
           // Task routes inside shell - bottom nav always visible
           GoRoute(
             path: Routes.contractorTaskAlert,

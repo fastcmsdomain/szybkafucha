@@ -361,6 +361,7 @@ export class RealtimeGateway
       avatarUrl: string | null;
       rating: number;
       completedTasks: number;
+      bio?: string | null;
     },
   ): void {
     const update = {

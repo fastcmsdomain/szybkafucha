@@ -7,3 +7,4 @@ export 'kyc_verification_screen.dart';
 export 'review_client_screen.dart';
 export 'task_alert_screen.dart';
 export 'task_completion_screen.dart';
+export 'contractor_profile_screen.dart';

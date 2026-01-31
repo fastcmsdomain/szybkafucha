@@ -10,6 +10,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Param,
 } from '@nestjs/common';
 import { ContractorService } from './contractor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,6 +22,16 @@ import type { AuthenticatedRequest } from '../auth/types/authenticated-request.t
 @UseGuards(JwtAuthGuard)
 export class ContractorController {
   constructor(private readonly contractorService: ContractorService) {}
+
+  /**
+   * GET /contractor/:userId/public
+   * Get public contractor profile for clients viewing contractor
+   * Returns safe public fields: name, avatar, bio, ratings, categories
+   */
+  @Get(':userId/public')
+  async getPublicProfile(@Param('userId') userId: string) {
+    return this.contractorService.getPublicProfile(userId);
+  }
 
   /**
    * GET /contractor/profile
