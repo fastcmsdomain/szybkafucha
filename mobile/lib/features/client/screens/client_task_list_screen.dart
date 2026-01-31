@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
@@ -98,6 +100,13 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
             child: _buildListTab(tasksState, tasks),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go(Routes.clientCreateTask),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Nowe zlecenie'),
       ),
     );
   }
