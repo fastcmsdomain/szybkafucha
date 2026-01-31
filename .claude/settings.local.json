@@ -75,7 +75,12 @@
       "Bash(echo:*)",
       "Bash(networksetup -getwebproxy:*)",
       "Bash(flutter pub deps:*)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(VERBOSE=true ./scripts/run_multi_device_tests.sh:*)",
+      "Bash(tree:*)",
+      "Bash($ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager:*)",
+      "Bash($ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager:*)",
+      "Bash(./scripts/run_multi_device_tests.sh:*)"
     ]
   }
 }
