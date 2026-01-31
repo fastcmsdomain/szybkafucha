@@ -341,8 +341,8 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
     if (status == 'cancelled') {
       _removeTask(event.taskId);
     }
-    // Also remove if task was accepted by another contractor
-    else if (status == 'accepted' || status == 'in_progress') {
+    // Also remove if task was accepted/confirmed/in progress by another contractor
+    else if (status == 'accepted' || status == 'confirmed' || status == 'in_progress') {
       _removeTask(event.taskId);
     }
   }
@@ -367,10 +367,11 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
       // Just get all tasks with status 'created'
       final response = await _api.get<List<dynamic>>('/tasks');
 
-      final tasks = response.map((json) {
-        final data = json as Map<String, dynamic>;
-        return _mapToContractorTask(data);
-      }).toList();
+      final tasks = response
+          .map((json) => _mapToContractorTask(json as Map<String, dynamic>))
+          // Keep only tasks that are still available to contractors
+          .where((task) => task.status == ContractorTaskStatus.available)
+          .toList();
 
       state = state.copyWith(tasks: tasks, isLoading: false);
     } catch (e) {

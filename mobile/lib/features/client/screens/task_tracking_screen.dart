@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/router/routes.dart';
@@ -8,6 +9,8 @@ import '../../../core/theme/theme.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
 import '../../../core/services/websocket_service.dart';
+import '../../../core/widgets/sf_map_view.dart';
+import '../../../core/widgets/sf_location_marker.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
 
@@ -83,11 +86,17 @@ class TaskTrackingScreen extends ConsumerStatefulWidget {
 class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _status = TrackingStatus.searching;
   Contractor? _contractor;
+  Task? _task;
 
   // Contractor location for live tracking
   double? _contractorLat;
   double? _contractorLng;
   DateTime? _lastLocationUpdate;
+
+  // Task location
+  double? _taskLat;
+  double? _taskLng;
+  String? _taskAddress;
 
   // Confirmation loading state
   bool _isConfirming = false;
@@ -119,10 +128,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   /// Update UI from task data
   void _updateFromTask(Task task) {
     setState(() {
+      _task = task;
       _status = _mapTaskStatus(task.status);
       if (task.contractor != null) {
         _contractor = task.contractor;
       }
+      _taskLat = task.latitude;
+      _taskLng = task.longitude;
+      _taskAddress = task.address;
     });
   }
 
@@ -171,6 +184,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   void _leaveTaskRoom() {
     final wsService = ref.read(webSocketServiceProvider);
     wsService.leaveTask(widget.taskId);
+  }
+
+  /// Manual refresh for user-triggered reload
+  Future<void> _refreshTask() async {
+    await ref.read(clientTasksProvider.notifier).refresh();
+    // After refresh, update local state from latest data
+    final tasksState = ref.read(clientTasksProvider);
+    final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+    if (task != null) {
+      _updateFromTask(task);
+    }
   }
 
   /// Handle WebSocket task status update
@@ -265,8 +289,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Map placeholder
-          _buildMapPlaceholder(),
+          // Map / live view
+          _buildMap(),
 
           // Top bar with back button
           Positioned(
@@ -290,6 +314,20 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       ),
                     ),
                     const Spacer(),
+                    // Reload button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: AppShadows.md,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Odśwież status',
+                        onPressed: _refreshTask,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapSM),
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.white,
@@ -319,116 +357,44 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  Widget _buildMapPlaceholder() {
+  Widget _buildMap() {
+    // If we have task coordinates, render real map; otherwise keep lightweight placeholder
+    if (_taskLat != null && _taskLng != null) {
+      final center = LatLng(_taskLat!, _taskLng!);
+      final markers = <SFMarker>[
+        TaskMarker(
+          position: center,
+          label: _taskAddress ?? 'Zlecenie',
+        ),
+      ];
+
+      if (_contractorLat != null && _contractorLng != null) {
+        markers.add(
+          ContractorMarker(
+            position: LatLng(_contractorLat!, _contractorLng!),
+            name: _contractor?.name,
+            isOnline: _isLocationRecent(),
+          ),
+        );
+      }
+
+      return SizedBox.expand(
+        child: SFMapView(
+          center: center,
+          zoom: 14,
+          markers: markers,
+          interactive: true,
+          showZoomControls: true,
+        ),
+      );
+    }
+
+    // Fallback placeholder if no coordinates
     return Container(
       color: AppColors.gray100,
-      child: Stack(
-        children: [
-          // Grid pattern to simulate map
-          CustomPaint(
-            size: Size.infinite,
-            painter: _MapGridPainter(),
-          ),
-
-          // Center marker
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.paddingSM),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: AppRadius.radiusMD,
-                    boxShadow: AppShadows.lg,
-                  ),
-                  child: Text(
-                    'Twoja lokalizacja',
-                    style: AppTypography.caption,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.gapXS),
-                Icon(
-                  Icons.location_on,
-                  color: AppColors.primary,
-                  size: 48,
-                ),
-              ],
-            ),
-          ),
-
-          // Contractor marker (if assigned)
-          if (_contractor != null && _status != TrackingStatus.searching)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOut,
-              // Use live location if available, otherwise default position
-              top: _contractorLat != null
-                  ? MediaQuery.of(context).size.height * 0.3
-                  : MediaQuery.of(context).size.height * 0.25,
-              right: _contractorLng != null
-                  ? MediaQuery.of(context).size.width * 0.3
-                  : MediaQuery.of(context).size.width * 0.25,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.paddingXS),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.radiusSM,
-                      boxShadow: AppShadows.md,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _contractor!.name.split(' ').first,
-                          style: AppTypography.caption.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (_lastLocationUpdate != null) ...[
-                          SizedBox(width: 4),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: _isLocationRecent()
-                                  ? AppColors.success
-                                  : AppColors.warning,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.success.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                        ...AppShadows.md,
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.directions_walk,
-                      color: AppColors.white,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _MapGridPainter(),
       ),
     );
   }
@@ -449,6 +415,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         ],
       ),
       child: SafeArea(
+        top: false, // avoid extra top inset that created blank space
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

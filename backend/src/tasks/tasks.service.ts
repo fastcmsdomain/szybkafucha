@@ -24,6 +24,7 @@ import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
+import { ServerEvent } from '../realtime/realtime.gateway';
 
 // Platform commission percentage
 const COMMISSION_RATE = 0.17;
@@ -538,12 +539,22 @@ export class TasksService {
         task.clientId,
       );
 
+      // Also notify contractor directly (they might not be in the task room)
+      if (previousContractorId) {
+        this.realtimeGateway.sendToUser(previousContractorId, ServerEvent.TASK_STATUS, {
+          taskId,
+          status: TaskStatus.CANCELLED,
+          updatedAt: new Date(),
+          updatedBy: userId,
+        });
+      }
+
       // Notify contractor if there was one assigned
       if (previousContractorId) {
         this.notificationsService
           .sendToUser(previousContractorId, NotificationType.TASK_CANCELLED, {
             taskTitle: task.title,
-            reason: reason || 'Klient anulował zlecenie',
+            reason: reason || 'Anulowałeś zlecenie',
           })
           .catch((err) =>
             this.logger.error(
