@@ -75,7 +75,11 @@
       "Bash(echo:*)",
       "Bash(networksetup -getwebproxy:*)",
       "Bash(flutter pub deps:*)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(/usr/local/share/android-commandlinetools/cmdline-tools/latest/bin/avdmanager:*)",
+      "Bash(adb devices:*)",
+      "Bash(/usr/local/share/android-commandlinetools/emulator/emulator:*)",
+      "Bash(adb shell:*)"
     ]
   }
 }
