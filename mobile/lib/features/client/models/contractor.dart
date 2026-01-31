@@ -1,3 +1,5 @@
+import '../../../core/api/api_config.dart';
+
 /// Contractor profile model for client-facing views
 class Contractor {
   final String id;
@@ -33,10 +35,13 @@ class Contractor {
   });
 
   factory Contractor.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = json['avatar_url'] as String? ?? json['avatarUrl'] as String?;
+
     return Contractor(
       id: json['id'] as String,
       name: json['name'] as String,
-      avatarUrl: json['avatar_url'] as String? ?? json['avatarUrl'] as String?,
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       rating: (json['rating'] as num?)?.toDouble() ??
           (json['ratingAvg'] as num?)?.toDouble() ??
           0.0,

@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
@@ -23,6 +27,7 @@ class _ContractorProfileScreenState
   late final TextEditingController _addressController;
 
   bool _isSaving = false;
+  bool _isUploadingAvatar = false;
 
   // Contractor profile data for ratings
   double? _ratingAvg;
@@ -64,6 +69,136 @@ class _ContractorProfileScreenState
     }
   }
 
+  /// Show bottom sheet with photo source options
+  void _showPhotoSourceOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Wybierz zdjęcie',
+                style: AppTypography.h4,
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(AppSpacing.paddingSM),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.radiusMD,
+                  ),
+                  child: Icon(Icons.camera_alt, color: AppColors.primary),
+                ),
+                title: const Text('Zrób zdjęcie'),
+                subtitle: const Text('Użyj aparatu'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(AppSpacing.paddingSM),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: AppRadius.radiusMD,
+                  ),
+                  child: Icon(Icons.photo_library, color: AppColors.primary),
+                ),
+                title: const Text('Wybierz z galerii'),
+                subtitle: const Text('Wybierz istniejące zdjęcie'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Pick image from camera or gallery
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _uploadAvatar(File(image.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(source == ImageSource.camera
+                ? 'Nie można uzyskać dostępu do aparatu'
+                : 'Nie można uzyskać dostępu do galerii'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Upload avatar to backend
+  Future<void> _uploadAvatar(File imageFile) async {
+    setState(() => _isUploadingAvatar = true);
+
+    try {
+      final api = ref.read(apiClientProvider);
+
+      // Create multipart form data
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: 'avatar.jpg',
+        ),
+      });
+
+      await api.post('/users/me/avatar', data: formData);
+
+      // Refresh user data to get new avatar URL
+      await ref.read(authProvider.notifier).refreshUser();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Zdjęcie profilowe zostało zaktualizowane'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error uploading avatar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nie udało się przesłać zdjęcia: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -88,21 +223,28 @@ class _ContractorProfileScreenState
 
       await api.put('/users/me', data: payload);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Profil zapisany'),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // Refresh user data in authProvider to update local state
+      await ref.read(authProvider.notifier).refreshUser();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Profil zapisany'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nie udało się zapisać: $e'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nie udało się zapisać: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -131,34 +273,32 @@ class _ContractorProfileScreenState
                     backgroundColor: AppColors.gray200,
                     backgroundImage:
                         user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                    child: user?.avatarUrl == null
-                        ? Text(
-                            (user?.name ?? 'W').isNotEmpty
-                                ? user!.name![0].toUpperCase()
-                                : 'W',
-                            style: AppTypography.h3.copyWith(
-                              color: AppColors.gray600,
-                              fontWeight: FontWeight.w700,
-                            ),
+                    child: _isUploadingAvatar
+                        ? const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
                           )
-                        : null,
+                        : user?.avatarUrl == null
+                            ? Text(
+                                (user?.name ?? 'W').isNotEmpty
+                                    ? user!.name![0].toUpperCase()
+                                    : 'W',
+                                style: AppTypography.h3.copyWith(
+                                  color: AppColors.gray600,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Material(
-                      color: AppColors.primary,
+                      color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
                       shape: const CircleBorder(),
                       child: InkWell(
                         customBorder: const CircleBorder(),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Zmiana zdjęcia w przygotowaniu'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
+                        onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
                         child: const Padding(
                           padding: EdgeInsets.all(10),
                           child: Icon(Icons.camera_alt, color: AppColors.white, size: 20),

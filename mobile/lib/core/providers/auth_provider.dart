@@ -49,6 +49,9 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = (json['avatarUrl'] ?? json['avatar_url']) as String?;
+
     return User(
       id: json['id'] as String,
       email: json['email'] as String?,
@@ -56,8 +59,8 @@ class User {
       phone: json['phone'] as String?,
       // Backend returns 'type', but some endpoints may return 'user_type'
       userType: (json['type'] ?? json['user_type']) as String? ?? 'client',
-      // Backend returns 'avatarUrl' (camelCase)
-      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
+      // Convert relative avatar URL to full URL
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
       isVerified: json['is_verified'] as bool? ??
                   (json['status'] == 'active'),

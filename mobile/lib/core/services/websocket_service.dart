@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../api/api_config.dart';
 import '../config/websocket_config.dart';
 
 /// Callback type for event handlers
@@ -104,10 +105,13 @@ class ContractorInfo {
   });
 
   factory ContractorInfo.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = json['avatarUrl'] as String?;
+
     return ContractorInfo(
       id: json['id'] as String,
       name: json['name'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       completedTasks: json['completedTasks'] as int? ?? 0,
       bio: json['bio'] as String?,
