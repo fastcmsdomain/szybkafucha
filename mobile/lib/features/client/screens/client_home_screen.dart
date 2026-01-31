@@ -73,7 +73,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.clientCategories),
+        onPressed: () => context.go(Routes.clientCreateTask),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
