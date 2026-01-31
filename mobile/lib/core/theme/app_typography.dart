@@ -1,74 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 /// Szybka Fucha typography system
-/// Body: Plus Jakarta Sans
-/// Headings: Nunito (weight 800)
+///
+/// Uses system fonts (Roboto on Android, San Francisco on iOS) for reliable
+/// rendering in emulator environments without network access.
+///
+/// For production with Google Fonts (Plus Jakarta Sans, Nunito), fonts should
+/// be bundled in assets or network access ensured.
 abstract class AppTypography {
-  // Font families
-  static String get bodyFontFamily => GoogleFonts.plusJakartaSans().fontFamily!;
-  static String get headingFontFamily => GoogleFonts.nunito().fontFamily!;
+  // System font family
+  static const String _fontFamily = 'Roboto';
 
-  // Text Styles - Headings (Nunito 800)
-  static TextStyle get h1 => GoogleFonts.nunito(
+  // Text Styles - Headings
+  static TextStyle get h1 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 48,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  static TextStyle get h2 => GoogleFonts.nunito(
+  static TextStyle get h2 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 36,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  static TextStyle get h3 => GoogleFonts.nunito(
+  static TextStyle get h3 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 30,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  static TextStyle get h4 => GoogleFonts.nunito(
+  static TextStyle get h4 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 24,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  static TextStyle get h5 => GoogleFonts.nunito(
+  static TextStyle get h5 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 20,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  static TextStyle get h6 => GoogleFonts.nunito(
+  static TextStyle get h6 => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w800,
         height: 1.25,
         color: AppColors.gray900,
       );
 
-  // Text Styles - Body (Plus Jakarta Sans)
-  static TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
+  // Text Styles - Body
+  static TextStyle get bodyLarge => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w400,
         height: 1.5,
         color: AppColors.gray800,
       );
 
-  static TextStyle get bodyMedium => GoogleFonts.plusJakartaSans(
+  static TextStyle get bodyMedium => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
         color: AppColors.gray800,
       );
 
-  static TextStyle get bodySmall => GoogleFonts.plusJakartaSans(
+  static TextStyle get bodySmall => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w400,
         height: 1.5,
@@ -76,21 +87,24 @@ abstract class AppTypography {
       );
 
   // Text Styles - Labels
-  static TextStyle get labelLarge => GoogleFonts.plusJakartaSans(
+  static TextStyle get labelLarge => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w600,
         height: 1.5,
         color: AppColors.gray700,
       );
 
-  static TextStyle get labelMedium => GoogleFonts.plusJakartaSans(
+  static TextStyle get labelMedium => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w600,
         height: 1.5,
         color: AppColors.gray700,
       );
 
-  static TextStyle get labelSmall => GoogleFonts.plusJakartaSans(
+  static TextStyle get labelSmall => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w600,
         height: 1.5,
@@ -98,21 +112,24 @@ abstract class AppTypography {
       );
 
   // Button text
-  static TextStyle get buttonLarge => GoogleFonts.plusJakartaSans(
+  static TextStyle get buttonLarge => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w600,
         height: 1.5,
         color: AppColors.white,
       );
 
-  static TextStyle get buttonMedium => GoogleFonts.plusJakartaSans(
+  static TextStyle get buttonMedium => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w600,
         height: 1.5,
         color: AppColors.white,
       );
 
-  static TextStyle get buttonSmall => GoogleFonts.plusJakartaSans(
+  static TextStyle get buttonSmall => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w600,
         height: 1.5,
@@ -120,7 +137,8 @@ abstract class AppTypography {
       );
 
   // Caption
-  static TextStyle get caption => GoogleFonts.plusJakartaSans(
+  static TextStyle get caption => TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w400,
         height: 1.5,
