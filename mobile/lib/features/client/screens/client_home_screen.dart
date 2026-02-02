@@ -316,7 +316,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       onTap: () {
         if (task.status == TaskStatus.inProgress ||
             task.status == TaskStatus.accepted ||
-            task.status == TaskStatus.confirmed) {
+            task.status == TaskStatus.confirmed ||
+            task.status == TaskStatus.pendingComplete) {
           context.push(Routes.clientTaskTrack(task.id));
         } else {
           // Navigate to history to see details
@@ -419,7 +420,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             // Action buttons for active tasks
             if (task.status == TaskStatus.inProgress ||
                 task.status == TaskStatus.accepted ||
-                task.status == TaskStatus.confirmed) ...[
+                task.status == TaskStatus.confirmed ||
+                task.status == TaskStatus.pendingComplete) ...[
               SizedBox(height: AppSpacing.gapMD),
               Row(
                 children: [
@@ -467,6 +469,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         color = AppColors.success;
       case TaskStatus.inProgress:
         color = AppColors.primary;
+      case TaskStatus.pendingComplete:
+        color = AppColors.info;
       case TaskStatus.completed:
         color = AppColors.success;
       case TaskStatus.cancelled:

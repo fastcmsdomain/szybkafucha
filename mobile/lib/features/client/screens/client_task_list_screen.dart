@@ -503,6 +503,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
     return task.status == ContractorTaskStatus.available ||
         task.status == ContractorTaskStatus.accepted ||
         task.status == ContractorTaskStatus.confirmed ||
-        task.status == ContractorTaskStatus.inProgress;
+        task.status == ContractorTaskStatus.inProgress ||
+        task.status == ContractorTaskStatus.pendingComplete;
   }
 }

@@ -626,7 +626,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              'Środki zostaną przelane po potwierdzeniu przez klienta',
+              'Środki zostaną przelane na Twoje konto',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.gray500,
               ),

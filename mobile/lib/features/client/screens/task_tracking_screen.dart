@@ -150,6 +150,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return TrackingStatus.confirmed;
       case TaskStatus.inProgress:
         return TrackingStatus.inProgress;
+      case TaskStatus.pendingComplete:
+        return TrackingStatus.completed;
       case TaskStatus.completed:
         return TrackingStatus.completed;
       case TaskStatus.cancelled:
@@ -167,6 +169,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return TrackingStatus.confirmed;
       case 'in_progress':
         return TrackingStatus.inProgress;
+      case 'pending_complete':
+        return TrackingStatus.completed;
       case 'completed':
         return TrackingStatus.completed;
       default:

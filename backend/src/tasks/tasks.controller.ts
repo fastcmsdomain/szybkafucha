@@ -145,15 +145,30 @@ export class TasksController {
   }
 
   /**
+   * PUT /tasks/:id/confirm-completion
+   * Client confirms the job is complete (moves to pending_complete)
+   * Contractor must then finalize to complete the task
+   */
+  @Put(':id/confirm-completion')
+  async confirmCompletion(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.tasksService.confirmCompletion(id, req.user.id);
+  }
+
+  /**
    * PUT /tasks/:id/confirm
    * Client confirms task completion (triggers payment release)
+   * @deprecated Use confirm-completion instead
    */
   @Put(':id/confirm')
   async confirm(
     @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.tasksService.confirmTask(id, req.user.id);
+    // For backward compatibility, redirect to confirmCompletion
+    return this.tasksService.confirmCompletion(id, req.user.id);
   }
 
   /**

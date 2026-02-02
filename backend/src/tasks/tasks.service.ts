@@ -375,6 +375,7 @@ export class TasksService {
 
   /**
    * Contractor marks task as complete
+   * Task must be in PENDING_COMPLETE status (client already confirmed)
    */
   async completeTask(
     taskId: string,
@@ -387,8 +388,11 @@ export class TasksService {
       throw new ForbiddenException('You are not assigned to this task');
     }
 
-    if (task.status !== TaskStatus.IN_PROGRESS) {
-      throw new BadRequestException('Task must be in progress to complete');
+    // Task must be in PENDING_COMPLETE (client confirmed) to complete
+    if (task.status !== TaskStatus.PENDING_COMPLETE) {
+      throw new BadRequestException(
+        'Client must confirm completion first before contractor can finalize',
+      );
     }
 
     // Calculate final amounts
@@ -426,20 +430,36 @@ export class TasksService {
   }
 
   /**
-   * Client confirms task completion (triggers payment)
+   * Client confirms task completion
+   * Changes status from IN_PROGRESS to PENDING_COMPLETE
+   * Contractor must then call completeTask to finalize
    */
-  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+  async confirmCompletion(taskId: string, clientId: string): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.clientId !== clientId) {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Task must be completed first');
+    if (task.status !== TaskStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Task must be in progress for client to confirm completion',
+      );
     }
 
-    // Notify contractor that task was confirmed
+    task.status = TaskStatus.PENDING_COMPLETE;
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Broadcast via WebSocket to contractor
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.PENDING_COMPLETE,
+      clientId,
+      task.contractorId!,
+    );
+
+    // Notify contractor that client confirmed - they can now complete the task
     if (task.contractorId) {
       this.notificationsService
         .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
@@ -447,14 +467,21 @@ export class TasksService {
         })
         .catch((err) =>
           this.logger.error(
-            `Failed to send TASK_CONFIRMED notification: ${err}`,
+            `Failed to send completion confirmation notification: ${err}`,
           ),
         );
     }
 
-    // Task is confirmed - payment will be released
-    // Payment logic handled by PaymentsService
-    return task;
+    return savedTask;
+  }
+
+  /**
+   * Client confirms task completion (triggers payment)
+   * @deprecated Use confirmCompletion instead
+   */
+  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+    // Redirect to new confirmCompletion method for backward compatibility
+    return this.confirmCompletion(taskId, clientId);
   }
 
   /**
@@ -568,7 +595,9 @@ export class TasksService {
   }
 
   /**
-   * Rate a completed task
+   * Rate a completed or pending_complete task
+   * Client can rate when confirming completion (PENDING_COMPLETE)
+   * Contractor can rate after completing (COMPLETED)
    */
   async rateTask(
     taskId: string,
@@ -578,8 +607,13 @@ export class TasksService {
   ): Promise<Rating> {
     const task = await this.findByIdOrFail(taskId);
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only rate completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only rate tasks that are completed or pending completion',
+      );
     }
 
     // Check if already rated
@@ -616,6 +650,7 @@ export class TasksService {
 
   /**
    * Add tip to a task
+   * Client can tip when confirming completion (PENDING_COMPLETE) or after (COMPLETED)
    */
   async addTip(
     taskId: string,
@@ -628,8 +663,13 @@ export class TasksService {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only tip completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only tip tasks that are completed or pending completion',
+      );
     }
 
     task.tipAmount = tipAmount;

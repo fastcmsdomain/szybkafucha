@@ -18,6 +18,7 @@ export enum TaskStatus {
   ACCEPTED = 'accepted',
   CONFIRMED = 'confirmed', // Client confirmed the contractor
   IN_PROGRESS = 'in_progress',
+  PENDING_COMPLETE = 'pending_complete', // Client confirmed completion, waiting for contractor
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   DISPUTED = 'disputed',

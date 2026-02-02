@@ -163,6 +163,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     }
 
     final categoryData = TaskCategoryData.fromCategory(task.category);
+    // Keep local status in sync with provider updates (e.g., client confirmation)
+    if (_currentStatus != task.status) {
+      _currentStatus = task.status;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -329,11 +333,12 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 4-step flow: Oczekuje → Potwierdzone → W trakcie → Zakończono
+    // 5-step flow: Oczekuje → Potwierdzone → W trakcie → Do potwierdzenia → Zakończono
     final steps = [
       _StepData('Oczekuje', ContractorTaskStatus.accepted),
       _StepData('Potwierdzone', ContractorTaskStatus.confirmed),
       _StepData('W trakcie', ContractorTaskStatus.inProgress),
+      _StepData('Do potwierdzenia', ContractorTaskStatus.pendingComplete),
       _StepData('Zakończono', ContractorTaskStatus.completed),
     ];
 
@@ -543,7 +548,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Widget _buildActionButton(ContractorTask task) {
     String buttonText;
     VoidCallback? onPressed;
-    bool isWaiting = false;
+    bool isWaitingForStart = false;
+    bool isWaitingForCompletion = false;
 
     // Status flow: accepted (waiting) → confirmed → inProgress → completed
     switch (_currentStatus) {
@@ -551,17 +557,27 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         // Waiting for client to confirm - cannot start yet
         buttonText = 'Oczekuje na potwierdzenie';
         onPressed = null;
-        isWaiting = true;
+        isWaitingForStart = true;
+        break;
       case ContractorTaskStatus.confirmed:
         // Client confirmed - can now start work
         buttonText = 'Rozpocznij';
         onPressed = () => _startTask();
+        break;
       case ContractorTaskStatus.inProgress:
+        // Work is in progress but completion must be confirmed by the client first
+        buttonText = 'Zakończ zlecenie';
+        onPressed = null;
+        isWaitingForCompletion = true;
+        break;
+      case ContractorTaskStatus.pendingComplete:
         buttonText = 'Zakończ zlecenie';
         onPressed = () => _completeTask(task);
+        break;
       default:
         buttonText = 'Zakończono';
         onPressed = null;
+        break;
     }
 
     // Show cancel button for accepted and confirmed tasks (before work starts)
@@ -571,7 +587,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     return Column(
       children: [
         // Info message when waiting for client confirmation
-        if (isWaiting) ...[
+        if (isWaitingForStart) ...[
           Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
@@ -588,6 +604,32 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                     'Klient musi potwierdzić przyjęcie zlecenia. Poczekaj na potwierdzenie.',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.warning,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+        ],
+        if (isWaitingForCompletion) ...[
+          Container(
+            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_outline,
+                    color: AppColors.info, size: 20),
+                SizedBox(width: AppSpacing.gapSM),
+                Expanded(
+                  child: Text(
+                    'Klient musi potwierdzić zakończenie zlecenia. Poczekaj na jego akceptację, zanim zakończysz.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.info,
                     ),
                   ),
                 ),

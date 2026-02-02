@@ -7,6 +7,7 @@ enum TaskStatus {
   accepted,
   confirmed, // Client confirmed the contractor
   inProgress,
+  pendingComplete, // Client confirmed completion, waiting for contractor feedback
   completed,
   cancelled,
   disputed,
@@ -24,6 +25,8 @@ extension TaskStatusExtension on TaskStatus {
         return 'Potwierdzone';
       case TaskStatus.inProgress:
         return 'W trakcie';
+      case TaskStatus.pendingComplete:
+        return 'Oczekuje na potwierdzenie wykonawcy';
       case TaskStatus.completed:
         return 'Zakończone';
       case TaskStatus.cancelled:
@@ -37,7 +40,8 @@ extension TaskStatusExtension on TaskStatus {
       this == TaskStatus.posted ||
       this == TaskStatus.accepted ||
       this == TaskStatus.confirmed ||
-      this == TaskStatus.inProgress;
+      this == TaskStatus.inProgress ||
+      this == TaskStatus.pendingComplete;
 }
 
 /// Task data model
@@ -129,6 +133,8 @@ class Task {
         return TaskStatus.confirmed;
       case 'in_progress':
         return TaskStatus.inProgress;
+      case 'pending_complete':
+        return TaskStatus.pendingComplete;
       case 'completed':
         return TaskStatus.completed;
       case 'cancelled':
