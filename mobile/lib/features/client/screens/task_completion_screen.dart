@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/providers/task_provider.dart';
 
 /// Task completion and rating screen
 class TaskCompletionScreen extends ConsumerStatefulWidget {
@@ -376,8 +377,25 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     setState(() => _isSubmitting = true);
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      final tasksNotifier = ref.read(clientTasksProvider.notifier);
+
+      // 1) Client confirms completion (moves task to pending_complete)
+      await tasksNotifier.confirmTask(widget.taskId);
+
+      // 2) Send rating + optional comment
+      await tasksNotifier.rateTask(
+        widget.taskId,
+        rating: _rating,
+        comment: _reviewController.text.isNotEmpty ? _reviewController.text : null,
+      );
+
+      // 3) Optional tip
+      if (_selectedTip != null && _selectedTip! > 0) {
+        await tasksNotifier.addTip(widget.taskId, _selectedTip!.toDouble());
+      }
+
+      // Refresh cached tasks
+      await tasksNotifier.refresh();
 
       if (mounted) {
         _showThankYouDialog();
@@ -470,8 +488,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
             child: Text('Zostań i oceń'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              await ref.read(clientTasksProvider.notifier).confirmTask(widget.taskId);
+              await ref.read(clientTasksProvider.notifier).refresh();
               context.go(Routes.clientHome);
             },
             child: Text(

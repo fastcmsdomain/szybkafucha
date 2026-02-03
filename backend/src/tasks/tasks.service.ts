@@ -375,7 +375,9 @@ export class TasksService {
   }
 
   /**
-   * Contractor marks task as complete
+   * Contractor acknowledges task completion
+   * Task must be in PENDING_COMPLETE status (client already confirmed)
+   * Status stays PENDING_COMPLETE until both parties rate - then changes to COMPLETED
    */
   async completeTask(
     taskId: string,
@@ -388,59 +390,64 @@ export class TasksService {
       throw new ForbiddenException('You are not assigned to this task');
     }
 
-    if (task.status !== TaskStatus.IN_PROGRESS) {
-      throw new BadRequestException('Task must be in progress to complete');
+    // Task must be in PENDING_COMPLETE (client confirmed) to complete
+    if (task.status !== TaskStatus.PENDING_COMPLETE) {
+      throw new BadRequestException(
+        'Client must confirm completion first before contractor can finalize',
+      );
     }
 
-    // Calculate final amounts
+    // Calculate final amounts (for earnings display)
     const finalAmount = task.budgetAmount;
     const commissionAmount = Number(
       (Number(finalAmount) * COMMISSION_RATE).toFixed(2),
     );
 
-    task.status = TaskStatus.COMPLETED;
-    task.completedAt = new Date();
+    // Status stays PENDING_COMPLETE - will change to COMPLETED when both rate
     task.finalAmount = finalAmount;
     task.commissionAmount = commissionAmount;
     task.completionPhotos = completionPhotos || null;
 
     const savedTask = await this.tasksRepository.save(task);
 
-    // Broadcast via WebSocket to client
-    this.realtimeGateway.broadcastTaskStatus(
-      taskId,
-      TaskStatus.COMPLETED,
-      contractorId,
-      task.clientId,
+    this.logger.log(
+      `Contractor ${contractorId} acknowledged completion of task ${taskId}. Awaiting ratings from both parties.`,
     );
-
-    // Notify client that task was completed (push notification as backup)
-    this.notificationsService
-      .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
-        taskTitle: task.title,
-      })
-      .catch((err) =>
-        this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`),
-      );
 
     return savedTask;
   }
 
   /**
-   * Client confirms task completion (triggers payment)
+   * Client confirms task completion
+   * Changes status from IN_PROGRESS to PENDING_COMPLETE
+   * Contractor must then call completeTask to finalize
    */
-  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+  async confirmCompletion(taskId: string, clientId: string): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.clientId !== clientId) {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Task must be completed first');
+    if (task.status !== TaskStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Task must be in progress for client to confirm completion',
+      );
     }
 
-    // Notify contractor that task was confirmed
+    task.status = TaskStatus.PENDING_COMPLETE;
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Broadcast via WebSocket to contractor
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.PENDING_COMPLETE,
+      clientId,
+      task.contractorId!,
+    );
+
+    // Notify contractor that client confirmed - they can now complete the task
     if (task.contractorId) {
       this.notificationsService
         .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
@@ -448,14 +455,21 @@ export class TasksService {
         })
         .catch((err) =>
           this.logger.error(
-            `Failed to send TASK_CONFIRMED notification: ${err}`,
+            `Failed to send completion confirmation notification: ${err}`,
           ),
         );
     }
 
-    // Task is confirmed - payment will be released
-    // Payment logic handled by PaymentsService
-    return task;
+    return savedTask;
+  }
+
+  /**
+   * Client confirms task completion (triggers payment)
+   * @deprecated Use confirmCompletion instead
+   */
+  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+    // Redirect to new confirmCompletion method for backward compatibility
+    return this.confirmCompletion(taskId, clientId);
   }
 
   /**
@@ -569,7 +583,9 @@ export class TasksService {
   }
 
   /**
-   * Rate a completed task
+   * Rate a completed or pending_complete task
+   * Client can rate when confirming completion (PENDING_COMPLETE)
+   * Contractor can rate after completing (COMPLETED)
    */
   async rateTask(
     taskId: string,
@@ -579,8 +595,13 @@ export class TasksService {
   ): Promise<Rating> {
     const task = await this.findByIdOrFail(taskId);
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only rate completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only rate tasks that are completed or pending completion',
+      );
     }
 
     // Check if already rated
@@ -602,6 +623,54 @@ export class TasksService {
 
     const savedRating = await this.ratingsRepository.save(rating);
 
+    // Track who has rated
+    if (fromUserId === task.clientId) {
+      task.clientRated = true;
+      this.logger.log(`Client ${fromUserId} rated task ${taskId}`);
+    } else if (fromUserId === task.contractorId) {
+      task.contractorRated = true;
+      this.logger.log(`Contractor ${fromUserId} rated task ${taskId}`);
+    }
+
+    // Check if both parties have now rated - if so, mark as COMPLETED
+    if (task.clientRated && task.contractorRated && task.contractorId) {
+      task.status = TaskStatus.COMPLETED;
+      task.completedAt = new Date();
+      this.logger.log(
+        `Both parties rated task ${taskId}. Status changed to COMPLETED.`,
+      );
+
+      // Broadcast COMPLETED status via WebSocket
+      this.realtimeGateway.broadcastTaskStatus(
+        taskId,
+        TaskStatus.COMPLETED,
+        task.contractorId,
+        task.clientId,
+      );
+
+      // Notify both parties that task is fully completed
+      this.notificationsService
+        .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to client: ${err}`,
+          ),
+        );
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to contractor: ${err}`,
+          ),
+        );
+    }
+
+    await this.tasksRepository.save(task);
+
     // Notify the rated user
     this.notificationsService
       .sendToUser(toUserId, NotificationType.TASK_RATED, {
@@ -617,6 +686,7 @@ export class TasksService {
 
   /**
    * Add tip to a task
+   * Client can tip when confirming completion (PENDING_COMPLETE) or after (COMPLETED)
    */
   async addTip(
     taskId: string,
@@ -629,8 +699,13 @@ export class TasksService {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only tip completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only tip tasks that are completed or pending completion',
+      );
     }
 
     task.tipAmount = tipAmount;

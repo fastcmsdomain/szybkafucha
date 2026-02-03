@@ -151,6 +151,9 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
         return TaskStatus.accepted;
       case 'in_progress':
         return TaskStatus.inProgress;
+      case 'pending_complete':
+      case 'pendingcomplete':
+        return TaskStatus.pendingComplete;
       case 'completed':
         return TaskStatus.completed;
       case 'cancelled':
@@ -223,13 +226,27 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     }
   }
 
-  /// Confirm task completion
+  /// Client confirms task completion (awaiting contractor's closure)
   Future<void> confirmTask(String taskId) async {
     try {
-      await _api.put<Map<String, dynamic>>('/tasks/$taskId/confirm');
+      try {
+        await _api.put<Map<String, dynamic>>(
+          '/tasks/$taskId/confirm-completion',
+        );
+      } catch (_) {
+        // Fallback for backends that still use /confirm
+        await _api.put<Map<String, dynamic>>('/tasks/$taskId/confirm');
+      }
 
-      // Refresh tasks to get updated state
-      await loadTasks();
+      // Update local state to pending_complete without full reload
+      state = state.copyWith(
+        tasks: state.tasks.map((t) {
+          if (t.id == taskId) {
+            return t.copyWith(status: TaskStatus.pendingComplete);
+          }
+          return t;
+        }).toList(),
+      );
     } catch (e) {
       rethrow;
     }
@@ -492,7 +509,14 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 
     if (shouldClearTask) {
       clearTask();
+      return;
     }
+
+    // Otherwise update local status to keep UI in sync
+    final newStatus = _mapContractorStatus(status);
+    state = state.copyWith(
+      task: state.task?.copyWith(status: newStatus),
+    );
   }
 
   /// Set the active task (after accepting)
@@ -565,6 +589,26 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
       case 'complete':
         return ContractorTaskStatus.completed;
       case 'cancel':
+        return ContractorTaskStatus.cancelled;
+      default:
+        return state.task?.status ?? ContractorTaskStatus.accepted;
+    }
+  }
+
+  ContractorTaskStatus _mapContractorStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return ContractorTaskStatus.accepted;
+      case 'confirmed':
+        return ContractorTaskStatus.confirmed;
+      case 'in_progress':
+        return ContractorTaskStatus.inProgress;
+      case 'pending_complete':
+      case 'pendingcomplete':
+        return ContractorTaskStatus.pendingComplete;
+      case 'completed':
+        return ContractorTaskStatus.completed;
+      case 'cancelled':
         return ContractorTaskStatus.cancelled;
       default:
         return state.task?.status ?? ContractorTaskStatus.accepted;

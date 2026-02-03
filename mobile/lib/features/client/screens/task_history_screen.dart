@@ -241,7 +241,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
     return GestureDetector(
       onTap: () {
-        if (isActive && task.status == TaskStatus.inProgress) {
+        if (isActive &&
+            (task.status == TaskStatus.inProgress ||
+                task.status == TaskStatus.pendingComplete)) {
           context.push(Routes.clientTaskTrack(task.id));
         } else {
           // Show task details in a bottom sheet
@@ -349,7 +351,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   // Track button (for in progress tasks)
                   if (task.status == TaskStatus.inProgress ||
                       task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed)
+                      task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.pendingComplete)
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
@@ -358,7 +361,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     ),
                   if (task.status == TaskStatus.inProgress ||
                       task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed)
+                      task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
                   // Cancel button (for all active non-completed tasks)
                   Expanded(
@@ -384,25 +388,18 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
   }
 
   Widget _buildStatusBadge(TaskStatus status) {
-    Color color;
-    String text = status.displayName;
+    Color color = switch (status) {
+      TaskStatus.posted => AppColors.warning,
+      TaskStatus.accepted => AppColors.info,
+      TaskStatus.confirmed => AppColors.success,
+      TaskStatus.inProgress => AppColors.primary,
+      TaskStatus.pendingComplete => AppColors.info,
+      TaskStatus.completed => AppColors.success,
+      TaskStatus.cancelled => AppColors.gray500,
+      TaskStatus.disputed => AppColors.error,
+    };
 
-    switch (status) {
-      case TaskStatus.posted:
-        color = AppColors.warning;
-      case TaskStatus.accepted:
-        color = AppColors.info;
-      case TaskStatus.confirmed:
-        color = AppColors.success;
-      case TaskStatus.inProgress:
-        color = AppColors.primary;
-      case TaskStatus.completed:
-        color = AppColors.success;
-      case TaskStatus.cancelled:
-        color = AppColors.gray500;
-      case TaskStatus.disputed:
-        color = AppColors.error;
-    }
+    String text = status.displayName;
 
     return Container(
       padding: EdgeInsets.symmetric(

@@ -69,6 +69,18 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
         ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',
+        // Connection pool configuration to prevent "too many clients" errors
+        extra: {
+          max: 10, // Maximum number of clients in the pool
+          min: 2, // Minimum number of clients in the pool
+          idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+          connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
+        },
+        // Additional connection settings
+        retryAttempts: 3,
+        retryDelay: 3000,
+        autoLoadEntities: false, // Explicit entity loading for better control
+        keepConnectionAlive: true, // Prevent connection drops
       }),
       inject: [ConfigService],
     }),

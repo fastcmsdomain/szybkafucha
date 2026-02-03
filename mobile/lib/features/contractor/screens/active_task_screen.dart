@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -163,6 +164,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     }
 
     final categoryData = TaskCategoryData.fromCategory(task.category);
+    // Keep local status in sync with provider updates (e.g., client confirmation)
+    if (_currentStatus != task.status) {
+      _currentStatus = task.status;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -329,78 +334,34 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 4-step flow: Oczekuje → Potwierdzone → W trakcie → Zakończono
-    final steps = [
-      _StepData('Oczekuje', ContractorTaskStatus.accepted),
-      _StepData('Potwierdzone', ContractorTaskStatus.confirmed),
-      _StepData('W trakcie', ContractorTaskStatus.inProgress),
-      _StepData('Zakończono', ContractorTaskStatus.completed),
-    ];
+    // 4-step flow (per job_flow.md - removed "Do potwierdzenia")
+    // Oczekuje → Potwierdzone → W trakcie → Zakończono
+    const steps = ['Oczekuje', 'Potwierdzone', 'W trakcie', 'Zakończono'];
 
-    return Row(
-      children: steps.asMap().entries.map((entry) {
-        final index = entry.key;
-        final step = entry.value;
-        final isCompleted = _currentStatus.index > step.status.index;
-        final isCurrent = _currentStatus == step.status;
-        final isLast = index == steps.length - 1;
+    // Map current status to step index (0-3)
+    int currentStep;
+    switch (_currentStatus) {
+      case ContractorTaskStatus.accepted:
+        currentStep = 0;
+        break;
+      case ContractorTaskStatus.confirmed:
+        currentStep = 1;
+        break;
+      case ContractorTaskStatus.inProgress:
+        currentStep = 2;
+        break;
+      case ContractorTaskStatus.pendingComplete:
+      case ContractorTaskStatus.completed:
+        currentStep = 3;
+        break;
+      default:
+        currentStep = 0;
+    }
 
-        return Expanded(
-          child: Row(
-            children: [
-              Column(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: isCompleted || isCurrent
-                          ? AppColors.primary
-                          : AppColors.gray200,
-                      shape: BoxShape.circle,
-                    ),
-                    child: isCompleted
-                        ? Icon(Icons.check, size: 18, color: AppColors.white)
-                        : isCurrent
-                            ? Container(
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                              )
-                            : null,
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    step.label,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: isCurrent
-                          ? AppColors.primary
-                          : isCompleted
-                              ? AppColors.gray700
-                              : AppColors.gray400,
-                      fontWeight:
-                          isCurrent ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    height: 3,
-                    margin: EdgeInsets.only(bottom: 24),
-                    color: isCompleted ? AppColors.primary : AppColors.gray200,
-                  ),
-                ),
-            ],
-          ),
-        );
-      }).toList(),
+    return SFRainbowProgress(
+      steps: steps,
+      currentStep: currentStep,
+      isSmall: true, // Smaller version for contractor screen per spec
     );
   }
 
@@ -543,7 +504,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Widget _buildActionButton(ContractorTask task) {
     String buttonText;
     VoidCallback? onPressed;
-    bool isWaiting = false;
+    bool isWaitingForStart = false;
+    bool isWaitingForCompletion = false;
 
     // Status flow: accepted (waiting) → confirmed → inProgress → completed
     switch (_currentStatus) {
@@ -551,17 +513,27 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         // Waiting for client to confirm - cannot start yet
         buttonText = 'Oczekuje na potwierdzenie';
         onPressed = null;
-        isWaiting = true;
+        isWaitingForStart = true;
+        break;
       case ContractorTaskStatus.confirmed:
         // Client confirmed - can now start work
         buttonText = 'Rozpocznij';
         onPressed = () => _startTask();
+        break;
       case ContractorTaskStatus.inProgress:
+        // Work is in progress but completion must be confirmed by the client first
+        buttonText = 'Zakończ zlecenie';
+        onPressed = null;
+        isWaitingForCompletion = true;
+        break;
+      case ContractorTaskStatus.pendingComplete:
         buttonText = 'Zakończ zlecenie';
         onPressed = () => _completeTask(task);
+        break;
       default:
         buttonText = 'Zakończono';
         onPressed = null;
+        break;
     }
 
     // Show cancel button for accepted and confirmed tasks (before work starts)
@@ -571,7 +543,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     return Column(
       children: [
         // Info message when waiting for client confirmation
-        if (isWaiting) ...[
+        if (isWaitingForStart) ...[
           Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
@@ -588,6 +560,32 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                     'Klient musi potwierdzić przyjęcie zlecenia. Poczekaj na potwierdzenie.',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.warning,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+        ],
+        if (isWaitingForCompletion) ...[
+          Container(
+            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_outline,
+                    color: AppColors.info, size: 20),
+                SizedBox(width: AppSpacing.gapSM),
+                Expanded(
+                  child: Text(
+                    'Klient musi potwierdzić zakończenie zlecenia. Poczekaj na jego akceptację, zanim zakończysz.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.info,
                     ),
                   ),
                 ),
@@ -809,9 +807,3 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 }
 
-class _StepData {
-  final String label;
-  final ContractorTaskStatus status;
-
-  _StepData(this.label, this.status);
-}

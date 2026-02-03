@@ -75,7 +75,8 @@
       "Bash(echo:*)",
       "Bash(networksetup -getwebproxy:*)",
       "Bash(flutter pub deps:*)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(pkill:*)"
     ]
   }
 }

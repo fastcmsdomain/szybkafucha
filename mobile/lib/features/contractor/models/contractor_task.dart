@@ -147,6 +147,8 @@ class ContractorTask {
         return ContractorTaskStatus.confirmed; // Client confirmed
       case 'in_progress':
         return ContractorTaskStatus.inProgress;
+      case 'pending_complete':
+        return ContractorTaskStatus.pendingComplete;
       case 'completed':
         return ContractorTaskStatus.completed;
       case 'cancelled':
@@ -279,6 +281,7 @@ enum ContractorTaskStatus {
   accepted, // Contractor accepted, waiting for client confirmation
   confirmed, // Client confirmed the contractor
   inProgress,
+  pendingComplete, // Client confirmed completion, contractor must finish
   completed,
   cancelled,
 }
@@ -296,6 +299,8 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
         return 'Zaakceptowane'; // Client confirmed
       case ContractorTaskStatus.inProgress:
         return 'W trakcie';
+      case ContractorTaskStatus.pendingComplete:
+        return 'Do potwierdzenia';
       case ContractorTaskStatus.completed:
         return 'Zakończone';
       case ContractorTaskStatus.cancelled:
@@ -306,5 +311,6 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
   bool get isActive =>
       this == ContractorTaskStatus.accepted ||
       this == ContractorTaskStatus.confirmed ||
-      this == ContractorTaskStatus.inProgress;
+      this == ContractorTaskStatus.inProgress ||
+      this == ContractorTaskStatus.pendingComplete;
 }
