@@ -45,7 +45,7 @@ export class CreateTaskDto {
   address: string;
 
   @IsNumber()
-  @Min(30) // Minimum 30 PLN per PRD
+  @Min(35) // Minimum 35 PLN per job flow requirements
   budgetAmount: number;
 
   @IsOptional()

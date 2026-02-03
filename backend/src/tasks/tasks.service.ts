@@ -635,6 +635,16 @@ export class TasksService {
 
     const savedRating = await this.ratingsRepository.save(rating);
 
+    // Track who has rated
+    if (fromUserId === task.clientId) {
+      task.clientRated = true;
+      this.logger.log(`Client ${fromUserId} rated task ${taskId}`);
+    } else if (fromUserId === task.contractorId) {
+      task.contractorRated = true;
+      this.logger.log(`Contractor ${fromUserId} rated task ${taskId}`);
+    }
+    await this.tasksRepository.save(task);
+
     // Notify the rated user
     this.notificationsService
       .sendToUser(toUserId, NotificationType.TASK_RATED, {

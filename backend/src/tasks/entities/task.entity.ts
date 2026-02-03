@@ -113,6 +113,13 @@ export class Task {
   @Column({ type: 'timestamp', nullable: true })
   completedAt: Date | null;
 
+  // Track whether each party has rated the task
+  @Column({ type: 'boolean', default: false })
+  clientRated: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  contractorRated: boolean;
+
   @Column({ type: 'timestamp', nullable: true })
   cancelledAt: Date | null;
 

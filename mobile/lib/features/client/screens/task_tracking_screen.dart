@@ -11,6 +11,7 @@ import '../../../core/providers/websocket_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
 
@@ -543,75 +544,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 5 steps including confirmation
-    final steps = ['Szukanie', 'Znaleziony', 'Potwierdz.', 'W trakcie', 'Gotowe'];
+    // 5 steps including confirmation - rainbow colored
+    const steps = ['Szukanie', 'Znaleziony', 'Potwierdz.', 'W trakcie', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
-    return Row(
-      children: List.generate(steps.length * 2 - 1, (index) {
-        if (index.isOdd) {
-          // Connector line
-          final stepIndex = index ~/ 2;
-          final isCompleted = stepIndex < currentStep;
-          return Expanded(
-            child: Container(
-              height: 3,
-              color: isCompleted ? AppColors.primary : AppColors.gray200,
-            ),
-          );
-        } else {
-          // Step circle
-          final stepIndex = index ~/ 2;
-          final isCompleted = stepIndex < currentStep;
-          final isCurrent = stepIndex == currentStep;
-
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: isCompleted || isCurrent
-                      ? AppColors.primary
-                      : AppColors.gray200,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: isCompleted
-                      ? Icon(
-                          Icons.check,
-                          size: 14,
-                          color: AppColors.white,
-                        )
-                      : isCurrent
-                          ? Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: AppColors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            )
-                          : null,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                steps[stepIndex],
-                style: AppTypography.caption.copyWith(
-                  color: isCompleted || isCurrent
-                      ? AppColors.gray700
-                      : AppColors.gray400,
-                  fontWeight:
-                      isCurrent ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          );
-        }
-      }),
+    return SFRainbowProgress(
+      steps: steps,
+      currentStep: currentStep,
     );
   }
 
@@ -737,7 +676,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       ),
                     )
                   : Icon(Icons.check_circle),
-              label: Text(_isConfirming ? 'Potwierdzanie...' : 'Zatwierdź wykonawcę'),
+              label: Text(_isConfirming ? 'Potwierdzanie...' : 'Zatwierdź'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: AppColors.white,
@@ -779,8 +718,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  /// Confirm the contractor - triggers payment and allows work to start
+  /// Show payment popup before confirming contractor
   Future<void> _confirmContractor() async {
+    // Show payment selection popup first
+    final paymentConfirmed = await _showPaymentPopup();
+    if (paymentConfirmed != true) return;
+
     setState(() => _isConfirming = true);
 
     try {
@@ -811,6 +754,185 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     }
+  }
+
+  /// Show payment method selection popup
+  Future<bool?> _showPaymentPopup() async {
+    String? selectedPayment;
+
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.space4),
+
+              // Title
+              Text(
+                'Potwierdź płatność',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.gapSM),
+              Text(
+                'Wybierz metodę płatności',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Payment options - side by side
+              Row(
+                children: [
+                  // Cash option
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectedPayment = 'cash'),
+                      child: Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: selectedPayment == 'cash'
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : AppColors.gray50,
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: selectedPayment == 'cash'
+                                ? AppColors.primary
+                                : AppColors.gray200,
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.payments_outlined,
+                              size: 40,
+                              color: selectedPayment == 'cash'
+                                  ? AppColors.primary
+                                  : AppColors.gray500,
+                            ),
+                            SizedBox(height: AppSpacing.gapSM),
+                            Text(
+                              'Gotówka',
+                              style: AppTypography.labelLarge.copyWith(
+                                color: selectedPayment == 'cash'
+                                    ? AppColors.primary
+                                    : AppColors.gray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  // Card option
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectedPayment = 'card'),
+                      child: Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: selectedPayment == 'card'
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : AppColors.gray50,
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: selectedPayment == 'card'
+                                ? AppColors.primary
+                                : AppColors.gray200,
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.credit_card_outlined,
+                              size: 40,
+                              color: selectedPayment == 'card'
+                                  ? AppColors.primary
+                                  : AppColors.gray500,
+                            ),
+                            SizedBox(height: AppSpacing.gapSM),
+                            Text(
+                              'Karta',
+                              style: AppTypography.labelLarge.copyWith(
+                                color: selectedPayment == 'card'
+                                    ? AppColors.primary
+                                    : AppColors.gray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Confirm button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: selectedPayment != null
+                      ? () => Navigator.pop(context, true)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
+                    ),
+                    disabledBackgroundColor: AppColors.gray300,
+                  ),
+                  child: Text(
+                    'Zatwierdź',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Anuluj',
+                  style: TextStyle(color: AppColors.gray500),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Reject the contractor - task goes back to searching
