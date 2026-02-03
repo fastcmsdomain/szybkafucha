@@ -374,8 +374,9 @@ export class TasksService {
   }
 
   /**
-   * Contractor marks task as complete
+   * Contractor acknowledges task completion
    * Task must be in PENDING_COMPLETE status (client already confirmed)
+   * Status stays PENDING_COMPLETE until both parties rate - then changes to COMPLETED
    */
   async completeTask(
     taskId: string,
@@ -395,36 +396,22 @@ export class TasksService {
       );
     }
 
-    // Calculate final amounts
+    // Calculate final amounts (for earnings display)
     const finalAmount = task.budgetAmount;
     const commissionAmount = Number(
       (Number(finalAmount) * COMMISSION_RATE).toFixed(2),
     );
 
-    task.status = TaskStatus.COMPLETED;
-    task.completedAt = new Date();
+    // Status stays PENDING_COMPLETE - will change to COMPLETED when both rate
     task.finalAmount = finalAmount;
     task.commissionAmount = commissionAmount;
     task.completionPhotos = completionPhotos || null;
 
     const savedTask = await this.tasksRepository.save(task);
 
-    // Broadcast via WebSocket to client
-    this.realtimeGateway.broadcastTaskStatus(
-      taskId,
-      TaskStatus.COMPLETED,
-      contractorId,
-      task.clientId,
+    this.logger.log(
+      `Contractor ${contractorId} acknowledged completion of task ${taskId}. Awaiting ratings from both parties.`,
     );
-
-    // Notify client that task was completed (push notification as backup)
-    this.notificationsService
-      .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
-        taskTitle: task.title,
-      })
-      .catch((err) =>
-        this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`),
-      );
 
     return savedTask;
   }
@@ -643,6 +630,44 @@ export class TasksService {
       task.contractorRated = true;
       this.logger.log(`Contractor ${fromUserId} rated task ${taskId}`);
     }
+
+    // Check if both parties have now rated - if so, mark as COMPLETED
+    if (task.clientRated && task.contractorRated && task.contractorId) {
+      task.status = TaskStatus.COMPLETED;
+      task.completedAt = new Date();
+      this.logger.log(
+        `Both parties rated task ${taskId}. Status changed to COMPLETED.`,
+      );
+
+      // Broadcast COMPLETED status via WebSocket
+      this.realtimeGateway.broadcastTaskStatus(
+        taskId,
+        TaskStatus.COMPLETED,
+        task.contractorId,
+        task.clientId,
+      );
+
+      // Notify both parties that task is fully completed
+      this.notificationsService
+        .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to client: ${err}`,
+          ),
+        );
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to contractor: ${err}`,
+          ),
+        );
+    }
+
     await this.tasksRepository.save(task);
 
     // Notify the rated user

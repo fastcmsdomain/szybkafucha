@@ -553,23 +553,28 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Call API to complete task
+      // Call API to acknowledge completion (status stays PENDING_COMPLETE until both rate)
       // Note: Photo upload would require separate implementation (e.g., multipart upload)
-      // For MVP, we just complete the task without photo URLs
       await ref.read(activeTaskProvider.notifier).completeTask(
         widget.taskId,
         photos: null, // Photos would need to be uploaded first and URLs passed here
       );
 
-      // Clear active task from provider
-      ref.read(activeTaskProvider.notifier).clearTask();
+      // Don't clear task here - it will be cleared after review to avoid
+      // triggering the "task cancelled" listener in active_task_screen
 
       if (mounted) {
-        // Show success dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => _buildSuccessDialog(dialogContext),
+        // Calculate earnings for the review screen
+        final platformFee = (_task.price * 0.17).round();
+        final earnings = _task.price - platformFee;
+
+        // Go directly to review screen without popup
+        context.go(
+          Routes.contractorTaskReviewRoute(widget.taskId),
+          extra: {
+            'clientName': _task.clientName,
+            'earnings': earnings,
+          },
         );
       }
     } catch (e) {

@@ -12,6 +12,43 @@ Each entry documents:
 
 ---
 
+## [2026-02-03] Fix "Zlecenie anulowane" Popup on Contractor Review Screen
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed unwanted "Zlecenie anulowane" popup appearing on contractor's review screen. Moved `clearTask()` from task_completion_screen to review_client_screen to ensure proper state cleanup timing.
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/task_completion_screen.dart` – Removed `clearTask()` call before navigating to review (prevents triggering cancellation listener)
+  - `mobile/lib/features/contractor/screens/review_client_screen.dart` – Added import for `task_provider.dart`; Added `clearTask()` calls in both `_showThankYouDialog()` (after rating) and `_finishWithoutRating()` (when skipping) to properly clean up state after review is complete
+- **System Impact**:
+  - Task state is now cleared at the correct time - after the review flow completes, not before
+  - The active_task_screen listener no longer incorrectly detects task as cancelled when navigating to review
+  - Contractor flow: complete task → review screen → rate or skip → clearTask() → home
+- **Related Tasks/PRD**: `tasks/job_flow.md`, contractor completion flow
+- **Potential Conflicts/Risks**:
+  - None - this is a timing fix for state cleanup
+
+---
+
+## [2026-02-03] Fix Task Completion Flow - Dual Rating Requirement
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed task completion flow so status changes to COMPLETED only when BOTH client and contractor have rated. Removed intermediate popup from contractor flow.
+- **Files Changed**:
+  - `backend/src/tasks/tasks.service.ts` – `completeTask()` no longer changes status to COMPLETED (stays PENDING_COMPLETE); `rateTask()` now checks if both parties rated and only then changes to COMPLETED with notifications
+  - `mobile/lib/features/contractor/screens/task_completion_screen.dart` – Removed success dialog popup, now goes directly to review screen after acknowledging completion
+- **System Impact**:
+  - Task status flow: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → stays `PENDING_COMPLETE` (contractor acknowledges) → `COMPLETED` (only after BOTH rate)
+  - Client rates → stays PENDING_COMPLETE → redirect to home
+  - Contractor acknowledges + rates → stays PENDING_COMPLETE until client also rated → redirect to home
+  - Only when both `clientRated` AND `contractorRated` are true, status changes to COMPLETED
+  - Both parties receive TASK_COMPLETED notification when status changes to COMPLETED
+- **Related Tasks/PRD**: `tasks/job_flow.md` points 8-11
+- **Potential Conflicts/Risks**:
+  - Existing tasks in PENDING_COMPLETE with only one rating will need both parties to rate before completing
+  - Payment release timing may need review - currently happens when contractor calls completeTask
+
+---
+
 ## [2026-02-02] Fix PostgreSQL Connection Pool Configuration
 
 - **Developer/Agent**: Claude

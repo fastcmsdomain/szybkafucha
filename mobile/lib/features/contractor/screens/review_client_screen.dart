@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 
@@ -391,6 +392,8 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
             child: ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
+                // Clear active task after review is complete
+                ref.read(activeTaskProvider.notifier).clearTask();
                 dialogContext.go(Routes.contractorHome);
               },
               style: ElevatedButton.styleFrom(
@@ -421,6 +424,8 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
+              // Clear active task when skipping review
+              ref.read(activeTaskProvider.notifier).clearTask();
               dialogContext.go(Routes.contractorHome);
             },
             child: Text(
