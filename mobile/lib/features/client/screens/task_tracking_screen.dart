@@ -220,6 +220,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           completedTasks: event.contractor!.completedTasks,
           isVerified: true,
           isOnline: true,
+          bio: event.contractor!.bio,
         );
       }
     });
@@ -229,6 +230,24 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     Future.microtask(() {
       ref.read(clientTasksProvider.notifier).refresh();
     });
+  }
+
+  void _showContractorProfile() {
+    if (_contractor == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return _ContractorProfileSheet(
+          contractorId: _contractor!.id,
+          initialContractor: _contractor!,
+        );
+      },
+    );
   }
 
   /// Check if contractor location is recent (within 30 seconds)
@@ -649,6 +668,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: _showContractorProfile,
+            icon: const Icon(Icons.person_outline),
+            label: const Text('Profil'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
             ),
           ),
         ],
@@ -1189,6 +1216,202 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     }
+  }
+}
+
+/// Contractor profile bottom sheet that fetches full profile data
+class _ContractorProfileSheet extends ConsumerStatefulWidget {
+  final String contractorId;
+  final Contractor initialContractor;
+
+  const _ContractorProfileSheet({
+    required this.contractorId,
+    required this.initialContractor,
+  });
+
+  @override
+  ConsumerState<_ContractorProfileSheet> createState() =>
+      _ContractorProfileSheetState();
+}
+
+class _ContractorProfileSheetState
+    extends ConsumerState<_ContractorProfileSheet> {
+  Contractor? _fullProfile;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullProfile();
+  }
+
+  Future<void> _fetchFullProfile() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get('/contractor/${widget.contractorId}/public');
+
+      if (mounted) {
+        setState(() {
+          _fullProfile = Contractor.fromJson(response.data as Map<String, dynamic>);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching contractor profile: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contractor = _fullProfile ?? widget.initialContractor;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingMD),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with title and close button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Profil wykonawcy', style: AppTypography.h4),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Avatar and name row
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.gray200,
+                  backgroundImage: contractor.avatarUrl != null
+                      ? NetworkImage(contractor.avatarUrl!)
+                      : null,
+                  child: contractor.avatarUrl == null
+                      ? Text(
+                          contractor.name.isNotEmpty
+                              ? contractor.name[0].toUpperCase()
+                              : '?',
+                          style: AppTypography.h4.copyWith(
+                            color: AppColors.gray600,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        contractor.name,
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 18, color: AppColors.warning),
+                          SizedBox(width: 4),
+                          Text(
+                            contractor.formattedRating,
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '${contractor.reviewCount} opinii',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Bio section
+            Text(
+              'Opis',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppColors.gray700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 4),
+            _isLoading
+                ? SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : _error != null
+                    ? Text(
+                        'Nie udało się pobrać pełnego profilu',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.gray400,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      )
+                    : Text(
+                    contractor.bio?.isNotEmpty == true
+                        ? contractor.bio!
+                        : 'Brak opisu wykonawcy.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: contractor.bio?.isNotEmpty == true
+                          ? AppColors.gray600
+                          : AppColors.gray400,
+                      fontStyle: contractor.bio?.isNotEmpty == true
+                          ? FontStyle.normal
+                          : FontStyle.italic,
+                    ),
+                  ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Reviews section placeholder
+            Text(
+              'Opinie',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppColors.gray700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Brak opinii do wyświetlenia.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -33,6 +33,8 @@ class User {
   final String userType; // 'client' or 'contractor'
   final String? avatarUrl;
   final bool isVerified;
+  final String? address;
+  final String? bio;
 
   const User({
     required this.id,
@@ -42,9 +44,14 @@ class User {
     required this.userType,
     this.avatarUrl,
     this.isVerified = false,
+    this.address,
+    this.bio,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = (json['avatarUrl'] ?? json['avatar_url']) as String?;
+
     return User(
       id: json['id'] as String,
       email: json['email'] as String?,
@@ -52,11 +59,13 @@ class User {
       phone: json['phone'] as String?,
       // Backend returns 'type', but some endpoints may return 'user_type'
       userType: (json['type'] ?? json['user_type']) as String? ?? 'client',
-      // Backend returns 'avatarUrl' (camelCase)
-      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
+      // Convert relative avatar URL to full URL
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
       isVerified: json['is_verified'] as bool? ??
                   (json['status'] == 'active'),
+      address: json['address'] as String?,
+      bio: json['bio'] as String?,
     );
   }
 
@@ -68,6 +77,8 @@ class User {
         'user_type': userType,
         'avatar_url': avatarUrl,
         'is_verified': isVerified,
+        'address': address,
+        'bio': bio,
       };
 
   bool get isClient => userType == 'client';
@@ -81,6 +92,8 @@ class User {
     String? userType,
     String? avatarUrl,
     bool? isVerified,
+    String? address,
+    String? bio,
   }) {
     return User(
       id: id ?? this.id,
@@ -90,6 +103,8 @@ class User {
       userType: userType ?? this.userType,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
+      address: address ?? this.address,
+      bio: bio ?? this.bio,
     );
   }
 }

@@ -12,108 +12,113 @@ Each entry documents:
 
 ---
 
-## [2026-02-03] Fix "Zlecenie anulowane" Popup on Contractor Review Screen
+## [2026-02-03] Add Dual-Rating Tracking and PENDING_COMPLETE Status
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Fixed unwanted "Zlecenie anulowane" popup appearing on contractor's review screen. Moved `clearTask()` from task_completion_screen to review_client_screen to ensure proper state cleanup timing.
+- **Scope of Changes**: Added missing `clientRated`/`contractorRated` columns and `PENDING_COMPLETE` status to Task entity to fix "column Task.clientRated does not exist" error
 - **Files Changed**:
-  - `mobile/lib/features/contractor/screens/task_completion_screen.dart` – Removed `clearTask()` call before navigating to review (prevents triggering cancellation listener)
-  - `mobile/lib/features/contractor/screens/review_client_screen.dart` – Added import for `task_provider.dart`; Added `clearTask()` calls in both `_showThankYouDialog()` (after rating) and `_finishWithoutRating()` (when skipping) to properly clean up state after review is complete
+  - `backend/src/tasks/entities/task.entity.ts` – Added `clientRated` (boolean, default false), `contractorRated` (boolean, default false) columns and `PENDING_COMPLETE` enum value
 - **System Impact**:
-  - Task state is now cleared at the correct time - after the review flow completes, not before
-  - The active_task_screen listener no longer incorrectly detects task as cancelled when navigating to review
-  - Contractor flow: complete task → review screen → rate or skip → clearTask() → home
-- **Related Tasks/PRD**: `tasks/job_flow.md`, contractor completion flow
+  - Task entity now supports dual-rating tracking (status changes to COMPLETED only when both parties rate)
+  - New task status flow: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → `COMPLETED` (after both rate)
+  - Database schema auto-synchronized via TypeORM (columns and enum value added)
+- **Related Tasks/PRD**: `tasks/job_flow.md`, task completion flow
 - **Potential Conflicts/Risks**:
-  - None - this is a timing fix for state cleanup
+  - Backend service methods that use these fields need to be updated (rateTask, completeTask)
+  - Mobile app task models may need `pendingComplete` status handling
 
 ---
 
-## [2026-02-03] Fix Task Completion Flow - Dual Rating Requirement
+## [2026-01-31] Fix Avatar URL and Public Profile Endpoint
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Fixed task completion flow so status changes to COMPLETED only when BOTH client and contractor have rated. Removed intermediate popup from contractor flow.
+- **Scope of Changes**: Fixed two issues preventing avatar/bio from showing in contractor profile and client popup
 - **Files Changed**:
-  - `backend/src/tasks/tasks.service.ts` – `completeTask()` no longer changes status to COMPLETED (stays PENDING_COMPLETE); `rateTask()` now checks if both parties rated and only then changes to COMPLETED with notifications
-  - `mobile/lib/features/contractor/screens/task_completion_screen.dart` – Removed success dialog popup, now goes directly to review screen after acknowledging completion
+  - `mobile/lib/core/api/api_config.dart` – Added `serverUrl` constants and `getFullMediaUrl()` helper
+  - `mobile/lib/core/providers/auth_provider.dart` – Updated User.fromJson to convert relative avatar URLs to full URLs
+  - `mobile/lib/features/client/models/contractor.dart` – Updated Contractor.fromJson to convert avatar URLs
+  - `mobile/lib/core/services/websocket_service.dart` – Updated ContractorInfo.fromJson to convert avatar URLs
+  - `backend/src/contractor/contractor.service.ts` – Added UsersService injection, updated getPublicProfile to fall back to User data
 - **System Impact**:
-  - Task status flow: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → stays `PENDING_COMPLETE` (contractor acknowledges) → `COMPLETED` (only after BOTH rate)
-  - Client rates → stays PENDING_COMPLETE → redirect to home
-  - Contractor acknowledges + rates → stays PENDING_COMPLETE until client also rated → redirect to home
-  - Only when both `clientRated` AND `contractorRated` are true, status changes to COMPLETED
-  - Both parties receive TASK_COMPLETED notification when status changes to COMPLETED
-- **Related Tasks/PRD**: `tasks/job_flow.md` points 8-11
-- **Potential Conflicts/Risks**:
-  - Existing tasks in PENDING_COMPLETE with only one rating will need both parties to rate before completing
-  - Payment release timing may need review - currently happens when contractor calls completeTask
+  - Avatar URLs now include full server URL (e.g., `http://localhost:3000/uploads/avatars/file.jpg`)
+  - Public profile endpoint no longer throws 404 if contractor_profiles entry doesn't exist
+  - Bio and avatar now correctly display in client popup
+- **Related Tasks/PRD**: Contractor profile management
+- **Potential Conflicts/Risks**: None
+
+
+1. **Avatar not visible**: Backend returned relative URL `/uploads/avatars/file.jpg`, but NetworkImage needs full URL
+2. **Bio/Profile error**: `getPublicProfile` threw 404 if no `contractor_profiles` entry existed - now falls back to User data
 
 ---
 
-## [2026-02-02] Fix PostgreSQL Connection Pool Configuration
+## [2026-01-31] Contractor Profile Photo Upload
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Fixed "too many clients already" PostgreSQL error by adding proper connection pool configuration to TypeORM
+- **Scope of Changes**: Implemented photo upload functionality in contractor profile screen
 - **Files Changed**:
-  - `backend/src/app.module.ts` – Added connection pool settings (max: 10, min: 2, idle timeout, connection timeout), retry configuration, and keepConnectionAlive option
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Added photo picker and upload to `POST /users/me/avatar`
 - **System Impact**:
-  - TypeORM now properly manages database connections with a maximum of 10 concurrent connections
-  - Idle connections are closed after 30 seconds to prevent connection leaks
-  - Connection retry logic added (3 attempts with 3-second delay)
-  - Prevents "too many clients already" errors during hot reloading and development
-- **Related Tasks/PRD**: Backend infrastructure, database configuration
-- **Potential Conflicts/Risks**:
-  - Connection pool settings may need adjustment in production based on load
-  - If multiple backend instances are deployed, ensure total connections across all instances don't exceed PostgreSQL's max_connections (100)
-  - Consider monitoring connection pool metrics in production
+  - Contractors can now upload profile photos from camera or gallery
+  - Photos are uploaded to backend via multipart form data
+  - Avatar displays in contractor profile and client popup (via existing code)
+- **Related Tasks/PRD**: Contractor profile management
+- **Potential Conflicts/Risks**: None
+
+**Features Added**:
+- Bottom sheet with camera/gallery selection
+- Image picker with size optimization (1024x1024, 85% quality)
+- Upload loading indicator on avatar
+- Success/error feedback via SnackBar
 
 ---
 
-## [2026-02-02] MVP Job Flow Implementation
+## [2026-01-31] Bug Fix: Contractor Bio Not Persisting After Save
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Implemented new job flow per `tasks/job_flow.md` requirements including rainbow progress dots, payment popup, dual-rating tracking, and UI enhancements for both client and contractor screens.
+- **Scope of Changes**: Fixed bug where contractor bio ("o mnie") wasn't persisting after save
 - **Files Changed**:
-  - `backend/src/tasks/dto/create-task.dto.ts` – Updated minimum budget from 30 to 35 PLN
-  - `backend/src/tasks/entities/task.entity.ts` – Added `clientRated` and `contractorRated` boolean fields for dual-rating tracking
-  - `backend/src/tasks/tasks.service.ts` – Updated `rateTask()` to set clientRated/contractorRated flags when each party rates
-  - `mobile/lib/core/widgets/sf_rainbow_progress.dart` – NEW: Rainbow progress dots widget with colorful step indicators
-  - `mobile/lib/core/widgets/widgets.dart` – Exported new rainbow progress widget
-  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added rainbow progress, payment popup dialog when confirming contractor
-  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Added rainbow progress (smaller), simplified to 4 steps
-  - `mobile/lib/features/contractor/screens/review_client_screen.dart` – Connected rating submission to backend API
-  - `docs/qa/job-flow-testing-guide.md` – NEW: Comprehensive QA testing guide for job flow
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Added `refreshUser()` call after successful profile save
 - **System Impact**:
-  - Budget validation now requires minimum 35 PLN (was 30 PLN)
-  - Task entity has new columns: `clientRated`, `contractorRated` (booleans, default false)
-  - Rating submission now tracks which party has rated
-  - UI shows rainbow-colored progress indicators instead of plain blue
-  - Client sees payment method popup (cash/card placeholders) before confirming contractor
-  - Contractor progress simplified to 4 steps (removed "Do potwierdzenia")
-- **Related Tasks/PRD**: `tasks/job_flow.md`, Task lifecycle management
-- **Potential Conflicts/Risks**:
-  - Database migration needed for new `clientRated`/`contractorRated` columns in production
-  - Budget minimum change may affect existing task creation flows - verify mobile app validation matches backend
+  - After saving profile, authProvider is now refreshed to fetch updated user data from backend
+  - Bio field now correctly persists when user exits and re-enters profile screen
+- **Related Tasks/PRD**: Contractor profile management
+- **Potential Conflicts/Risks**: None
+
+**Root Cause**: After `api.put('/users/me')` succeeded, the `authProvider` was not refreshed. When user re-entered the profile screen, the old bio was loaded from stale authProvider state.
+
+**Fix Applied**:
+```dart
+await api.put('/users/me', data: payload);
+// Refresh user data in authProvider to update local state
+await ref.read(authProvider.notifier).refreshUser();
+```
 
 ---
 
-## [2026-02-01] Implement PENDING_COMPLETE Task Status Flow
+## [2026-01-31] Contractor Profile Database Integration
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Added new `pending_complete` task status to implement proper two-step task completion flow where client confirms first, then contractor finalizes.
+- **Scope of Changes**: Integrated contractor profile with database - bio persistence, real ratings display, public profile endpoint, WebSocket bio transmission
 - **Files Changed**:
-  - `backend/src/tasks/entities/task.entity.ts` – Added `PENDING_COMPLETE` to TaskStatus enum
-  - `backend/src/tasks/tasks.controller.ts` – Added `/confirm-completion` endpoint for client to confirm job completion
-  - `backend/src/tasks/tasks.service.ts` – Added `confirmCompletion()` method, updated `completeTask()` to require `PENDING_COMPLETE` status, updated `rateTask()` and `addTip()` to accept `PENDING_COMPLETE` status
-  - `mobile/lib/features/client/screens/client_home_screen.dart` – Added missing `pendingComplete` case to switch statement
-  - `mobile/lib/features/contractor/screens/task_completion_screen.dart` – Updated success message text
+  - `backend/src/contractor/contractor.controller.ts` – Added `GET /:userId/public` endpoint
+  - `backend/src/contractor/contractor.service.ts` – Added `getPublicProfile()` method
+  - `backend/src/realtime/realtime.gateway.ts` – Added `bio` field to contractor broadcast type
+  - `backend/src/tasks/tasks.service.ts` – Include bio when broadcasting task acceptance
+  - `mobile/lib/features/client/models/contractor.dart` – Added `bio` field with JSON parsing
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Refactored Profil popup to fetch real data
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Fixed bio initialization, added real ratings fetch
+  - `mobile/lib/core/services/websocket_service.dart` – Added `bio` field to `ContractorInfo`
+  - `docs/task-summaries/contractor-profile-integration-2026-01-31.md` – Created detailed documentation
 - **System Impact**:
-  - New task completion flow: `IN_PROGRESS` → (client confirms) → `PENDING_COMPLETE` → (contractor finalizes) → `COMPLETED`
-  - Client can now rate and tip when task is in `PENDING_COMPLETE` status
-  - WebSocket broadcasts `pending_complete` status updates to both parties
-- **Related Tasks/PRD**: Task lifecycle management, payment flow
+  - New API endpoint: `GET /contractor/:userId/public` (requires JWT)
+  - Contractor profile screen now shows real ratings from database
+  - Client "Profil" popup shows real bio from database
+  - WebSocket task acceptance now includes contractor bio
+- **Related Tasks/PRD**: Contractor profile management, task tracking UI
 - **Potential Conflicts/Risks**:
-  - Database enum change requires migration for production (PostgreSQL enum)
-  - Existing tasks in `IN_PROGRESS` status cannot be completed directly by contractor - they need client confirmation first
+  - Files modified in contractor module - future changes should check this entry
+  - WebSocket message format changed (added bio field) - mobile clients must be updated
 
 ---
 

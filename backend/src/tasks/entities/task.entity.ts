@@ -18,7 +18,7 @@ export enum TaskStatus {
   ACCEPTED = 'accepted',
   CONFIRMED = 'confirmed', // Client confirmed the contractor
   IN_PROGRESS = 'in_progress',
-  PENDING_COMPLETE = 'pending_complete', // Client confirmed completion, waiting for contractor
+  PENDING_COMPLETE = 'pending_complete', // Client confirmed completion, waiting for contractor to finalize
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   DISPUTED = 'disputed',
@@ -113,7 +113,7 @@ export class Task {
   @Column({ type: 'timestamp', nullable: true })
   completedAt: Date | null;
 
-  // Track whether each party has rated the task
+  // Dual-rating tracking - status changes to COMPLETED only when both have rated
   @Column({ type: 'boolean', default: false })
   clientRated: boolean;
 
