@@ -12,6 +12,23 @@ Each entry documents:
 
 ---
 
+## [2026-02-03] Add Dual-Rating Tracking and PENDING_COMPLETE Status
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added missing `clientRated`/`contractorRated` columns and `PENDING_COMPLETE` status to Task entity to fix "column Task.clientRated does not exist" error
+- **Files Changed**:
+  - `backend/src/tasks/entities/task.entity.ts` – Added `clientRated` (boolean, default false), `contractorRated` (boolean, default false) columns and `PENDING_COMPLETE` enum value
+- **System Impact**:
+  - Task entity now supports dual-rating tracking (status changes to COMPLETED only when both parties rate)
+  - New task status flow: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → `COMPLETED` (after both rate)
+  - Database schema auto-synchronized via TypeORM (columns and enum value added)
+- **Related Tasks/PRD**: `tasks/job_flow.md`, task completion flow
+- **Potential Conflicts/Risks**:
+  - Backend service methods that use these fields need to be updated (rateTask, completeTask)
+  - Mobile app task models may need `pendingComplete` status handling
+
+---
+
 ## [2026-01-31] Fix Avatar URL and Public Profile Endpoint
 
 - **Developer/Agent**: Claude
