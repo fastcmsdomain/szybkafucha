@@ -15,12 +15,14 @@ import {
 } from './entities/contractor-profile.entity';
 import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ContractorService {
   constructor(
     @InjectRepository(ContractorProfile)
     private readonly contractorRepository: Repository<ContractorProfile>,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -220,6 +222,66 @@ export class ContractorService {
     ) {
       profile.kycStatus = KycStatus.VERIFIED;
     }
+  }
+
+  /**
+   * Get public contractor profile (for clients viewing contractor)
+   * Combines User + ContractorProfile data, excluding sensitive fields
+   * Falls back to User data if no contractor profile exists
+   */
+  async getPublicProfile(userId: string): Promise<{
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    ratingAvg: number;
+    ratingCount: number;
+    completedTasksCount: number;
+    categories: string[];
+    isVerified: boolean;
+    memberSince: Date;
+  }> {
+    // Try to find contractor profile with user relation
+    const profile = await this.contractorRepository.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    // If contractor profile exists, return full data
+    if (profile && profile.user) {
+      return {
+        id: profile.userId,
+        name: profile.user.name || 'Wykonawca',
+        avatarUrl: profile.user.avatarUrl || null,
+        bio: profile.bio || profile.user.bio || null,
+        ratingAvg: Number(profile.ratingAvg) || 0,
+        ratingCount: profile.ratingCount || 0,
+        completedTasksCount: profile.completedTasksCount || 0,
+        categories: profile.categories || [],
+        isVerified: profile.kycStatus === KycStatus.VERIFIED,
+        memberSince: profile.createdAt,
+      };
+    }
+
+    // Fall back to User data if no contractor profile exists
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Contractor not found');
+    }
+
+    // Return basic profile from User data
+    return {
+      id: user.id,
+      name: user.name || 'Wykonawca',
+      avatarUrl: user.avatarUrl || null,
+      bio: user.bio || null,
+      ratingAvg: 0,
+      ratingCount: 0,
+      completedTasksCount: 0,
+      categories: [],
+      isVerified: false,
+      memberSince: user.createdAt,
+    };
   }
 
   /**
