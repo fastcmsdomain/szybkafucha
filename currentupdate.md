@@ -12,20 +12,30 @@ Each entry documents:
 
 ---
 
-## [2026-02-03] Add Dual-Rating Tracking and PENDING_COMPLETE Status
+## [2026-02-03] Complete Dual-Rating System Implementation
 
 - **Developer/Agent**: Claude
-- **Scope of Changes**: Added missing `clientRated`/`contractorRated` columns and `PENDING_COMPLETE` status to Task entity to fix "column Task.clientRated does not exist" error
+- **Scope of Changes**: Implemented full dual-rating system where task status changes to COMPLETED only when BOTH client and contractor have rated. Fixed database schema, backend logic, and connected mobile screens to API.
 - **Files Changed**:
-  - `backend/src/tasks/entities/task.entity.ts` – Added `clientRated` (boolean, default false), `contractorRated` (boolean, default false) columns and `PENDING_COMPLETE` enum value
+  - `backend/src/tasks/entities/task.entity.ts` – Added `clientRated`, `contractorRated` (boolean) columns and `PENDING_COMPLETE` enum value
+  - `backend/src/tasks/tasks.service.ts` – Updated `rateTask()` to set rating flags and change status when both rated; `completeTask()` requires `PENDING_COMPLETE`; added `confirmCompletion()` for client to confirm job done
+  - `backend/src/tasks/tasks.controller.ts` – Added `PUT /tasks/:id/confirm-completion` endpoint
+  - `mobile/lib/features/client/screens/task_completion_screen.dart` – Connected to backend: `confirmTask()`, `rateTask()`, `addTip()`
+  - `mobile/lib/features/contractor/screens/review_client_screen.dart` – Connected to backend API for rating submission
+  - `mobile/lib/core/providers/task_provider.dart` – `confirmTask()` calls `/confirm-completion`, `rateTask()` and `addTip()` call respective endpoints
 - **System Impact**:
-  - Task entity now supports dual-rating tracking (status changes to COMPLETED only when both parties rate)
-  - New task status flow: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → `COMPLETED` (after both rate)
-  - Database schema auto-synchronized via TypeORM (columns and enum value added)
-- **Related Tasks/PRD**: `tasks/job_flow.md`, task completion flow
+  - **Task flow**: `IN_PROGRESS` → `PENDING_COMPLETE` (client confirms) → stays `PENDING_COMPLETE` (contractor acknowledges) → `COMPLETED` (when both rate)
+  - **Rating saves to database**: Ratings table stores `taskId`, `fromUserId`, `toUserId`, `rating` (1-5), `comment`
+  - **Dual-rating tracking**: `clientRated`/`contractorRated` flags track who has rated
+  - **API endpoints**:
+    - `PUT /tasks/:id/confirm-completion` – client confirms job done
+    - `POST /tasks/:id/rate` – submit rating (sets clientRated or contractorRated)
+    - `POST /tasks/:id/tip` – add tip (works in PENDING_COMPLETE or COMPLETED)
+  - **Notifications**: Both parties notified when task becomes COMPLETED
+- **Related Tasks/PRD**: `tasks/job_flow.md` points 8-11
 - **Potential Conflicts/Risks**:
-  - Backend service methods that use these fields need to be updated (rateTask, completeTask)
-  - Mobile app task models may need `pendingComplete` status handling
+  - Existing tasks in PENDING_COMPLETE need both parties to rate before completing
+  - Payment release timing currently happens when contractor calls completeTask
 
 ---
 
