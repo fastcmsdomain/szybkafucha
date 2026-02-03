@@ -238,18 +238,22 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
   Widget _buildTaskCard(Task task, {required bool isActive}) {
     final category = task.categoryData;
+    final isLocked = task.status == TaskStatus.pendingComplete;
 
     return GestureDetector(
-      onTap: () {
-        if (isActive &&
-            (task.status == TaskStatus.inProgress ||
-                task.status == TaskStatus.pendingComplete)) {
-          context.push(Routes.clientTaskTrack(task.id));
-        } else {
-          // Show task details in a bottom sheet
-          _showTaskDetails(task);
-        }
-      },
+      onTap: isLocked
+          ? null
+          : () {
+              if (isActive &&
+                  (task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.accepted ||
+                      task.status == TaskStatus.confirmed)) {
+                context.push(Routes.clientTaskTrack(task.id));
+              } else {
+                // Show task details in a bottom sheet
+                _showTaskDetails(task);
+              }
+            },
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -314,6 +318,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
             // Footer row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (task.address != null) ...[
                   Icon(
@@ -332,7 +337,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
+                  SizedBox(width: AppSpacing.gapSM),
+                ] else
+                  const Spacer(),
                 Text(
                   '${task.budget} PLN',
                   style: AppTypography.bodyMedium.copyWith(
@@ -343,8 +350,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
               ],
             ),
 
-            // Action buttons for active tasks
-            if (isActive) ...[
+            // Action buttons for active tasks (skip waiting-for-contractor-confirmation)
+            if (isActive && task.status != TaskStatus.pendingComplete) ...[
               SizedBox(height: AppSpacing.gapMD),
               Row(
                 children: [
@@ -560,8 +567,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   // Action buttons row
                   Row(
                     children: [
-                      // More button (active tasks) -> task details
-                      if (task.status.isActive) ...[
+                  // More button (active tasks) -> task details (skip pendingComplete)
+                  if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {

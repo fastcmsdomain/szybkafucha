@@ -26,7 +26,7 @@ extension TaskStatusExtension on TaskStatus {
       case TaskStatus.inProgress:
         return 'W trakcie';
       case TaskStatus.pendingComplete:
-        return 'Oczekuje na potwierdzenie wykonawcy';
+        return 'Oczekuje';
       case TaskStatus.completed:
         return 'Zakończone';
       case TaskStatus.cancelled:

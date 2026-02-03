@@ -318,18 +318,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildTaskCard(BuildContext context, Task task) {
     final category = task.categoryData;
 
+    final isLocked = task.status == TaskStatus.pendingComplete;
+
     return GestureDetector(
-      onTap: () {
-        if (task.status == TaskStatus.inProgress ||
-            task.status == TaskStatus.accepted ||
-            task.status == TaskStatus.confirmed ||
-            task.status == TaskStatus.pendingComplete) {
-          context.push(Routes.clientTaskTrack(task.id));
-        } else {
-          // Navigate to history to see details
-          context.go(Routes.clientHistory);
-        }
-      },
+      onTap: isLocked
+          ? null
+          : () {
+              if (task.status.isActive) {
+                context.push(Routes.clientTaskTrack(task.id));
+              } else {
+                context.go(Routes.clientHistory);
+              }
+            },
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -394,6 +394,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
             // Footer row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (task.address != null) ...[
                   Icon(
@@ -412,7 +413,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
+                  SizedBox(width: AppSpacing.gapSM),
+                ] else
+                  const Spacer(),
                 Text(
                   '${task.budget} PLN',
                   style: AppTypography.bodyMedium.copyWith(
@@ -423,11 +426,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ],
             ),
 
-            // Action buttons for active tasks
-            if (task.status == TaskStatus.inProgress ||
-                task.status == TaskStatus.accepted ||
-                task.status == TaskStatus.confirmed ||
-                task.status == TaskStatus.pendingComplete) ...[
+            // Action button for active tasks (skip waiting-for-contractor-confirmation)
+            if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
               SizedBox(height: AppSpacing.gapMD),
               Row(
                 children: [
