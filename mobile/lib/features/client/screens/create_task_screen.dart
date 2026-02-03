@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
 import '../../../core/widgets/sf_map_view.dart';
@@ -72,7 +73,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+          onPressed: () => context.go(Routes.clientHome),
         ),
         title: Text(
           AppStrings.createTask,

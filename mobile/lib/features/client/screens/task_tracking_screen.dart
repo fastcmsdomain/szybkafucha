@@ -804,35 +804,34 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   /// Confirm the contractor - triggers payment and allows work to start
   Future<void> _confirmContractor() async {
+    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isConfirming = true);
 
     try {
       final api = ref.read(apiClientProvider);
       await api.put('/tasks/${widget.taskId}/confirm-contractor');
 
+      if (!mounted) return;
       setState(() {
         _status = TrackingStatus.confirmed;
         _isConfirming = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Wykonawca zatwierdzony! Praca może się rozpocząć.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Wykonawca zatwierdzony! Praca może się rozpocząć.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isConfirming = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Błąd: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -864,34 +863,33 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
     setState(() => _isRejecting = true);
 
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final api = ref.read(apiClientProvider);
       await api.put('/tasks/${widget.taskId}/reject-contractor');
 
+      if (!mounted) return;
       setState(() {
         _status = TrackingStatus.searching;
         _contractor = null;
         _isRejecting = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Wykonawca odrzucony. Szukamy nowego...'),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Wykonawca odrzucony. Szukamy nowego...'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isRejecting = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Błąd: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -1061,34 +1059,34 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   /// Cancel the task via backend API
   Future<void> _cancelTask() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
     setState(() => _isCancelling = true);
 
     try {
       final api = ref.read(apiClientProvider);
       await api.put('/tasks/${widget.taskId}/cancel');
 
+      if (!mounted) return;
       // Refresh tasks list
       ref.invalidate(clientTasksProvider);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zlecenie zostało anulowane'),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-        context.go(Routes.clientHome);
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Zlecenie zostało anulowane'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      router.go(Routes.clientHome);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isCancelling = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd anulowania: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Błąd anulowania: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 }
