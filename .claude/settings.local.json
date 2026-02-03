@@ -76,7 +76,10 @@
       "Bash(networksetup -getwebproxy:*)",
       "Bash(flutter pub deps:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npm run start:dev:*)",
+      "Bash(xargs kill:*)"
     ]
   }
 }
