@@ -366,15 +366,13 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     SizedBox(width: AppSpacing.gapSM),
                   // Cancel button (for all active non-completed tasks)
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: () => _showCancelConfirmation(task),
-                      icon: Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
-                      label: Text(
-                        'Anuluj',
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      icon: const Icon(Icons.cancel_outlined, size: 18),
+                      label: const Text('Anuluj'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: AppColors.white,
                       ),
                     ),
                   ),
@@ -562,30 +560,27 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   // Action buttons row
                   Row(
                     children: [
-                      // Cancel button (for active tasks)
+                      // More button (active tasks) -> task details
                       if (task.status.isActive) ...[
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: OutlinedButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              _showCancelConfirmation(task);
+                              context.push(Routes.clientTask(task.id));
                             },
-                            icon: Icon(Icons.cancel_outlined, color: AppColors.error),
-                            label: Text(
-                              'Anuluj',
-                              style: TextStyle(color: AppColors.error),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
-                            ),
+                            child: Text('Więcej'),
                           ),
                         ),
                         SizedBox(width: AppSpacing.gapMD),
                       ],
-                      // Close button
+                      // Close button (red)
                       Expanded(
-                        child: OutlinedButton(
+                        child: ElevatedButton(
                           onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.white,
+                          ),
                           child: Text(AppStrings.close),
                         ),
                       ),

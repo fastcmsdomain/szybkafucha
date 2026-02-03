@@ -402,6 +402,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
 
+      final bottomPadding = 260.0 + MediaQuery.of(context).padding.bottom;
+
       return SizedBox.expand(
         child: SFMapView(
           center: center,
@@ -409,6 +411,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           markers: markers,
           interactive: true,
           showZoomControls: true,
+          cameraFitPadding: EdgeInsets.fromLTRB(
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            bottomPadding,
+          ),
         ),
       );
     }
@@ -1094,7 +1102,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       padding: EdgeInsets.only(top: AppSpacing.gapMD),
       child: SizedBox(
         width: double.infinity,
-        child: OutlinedButton.icon(
+        child: ElevatedButton.icon(
           onPressed: _isCancelling ? null : _showCancelDialog,
           icon: _isCancelling
               ? SizedBox(
@@ -1102,16 +1110,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.error,
+                    color: AppColors.white,
                   ),
                 )
-              : Icon(Icons.cancel_outlined, color: AppColors.error),
+              : const Icon(Icons.cancel_outlined),
           label: Text(
             _isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie',
-            style: TextStyle(color: AppColors.error),
           ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.white,
             padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
           ),
         ),
@@ -1132,7 +1140,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               title: Text('Szczegóły zlecenia'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Show task details
+                _showTaskDetails();
               },
             ),
             ListTile(
@@ -1150,6 +1158,245 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 Navigator.pop(context);
                 _showCancelDialog();
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTaskDetails() {
+    if (_task == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.space4),
+
+              // Title
+              Text(
+                'Szczegóły zlecenia',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Category
+              _buildDetailRow(
+                icon: _task!.categoryData.icon,
+                iconColor: _task!.categoryData.color,
+                label: 'Kategoria',
+                value: _task!.categoryData.name,
+              ),
+
+              // Description
+              _buildDetailRow(
+                icon: Icons.description_outlined,
+                label: 'Opis',
+                value: _task!.description,
+              ),
+
+              // Address
+              if (_task!.address != null)
+                _buildDetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Lokalizacja',
+                  value: _task!.address!,
+                ),
+
+              // Budget
+              _buildDetailRow(
+                icon: Icons.payments_outlined,
+                iconColor: AppColors.success,
+                label: 'Budżet',
+                value: '${_task!.budget} PLN',
+                valueStyle: AppTypography.labelLarge.copyWith(
+                  color: AppColors.success,
+                ),
+              ),
+
+              // Scheduled time
+              _buildDetailRow(
+                icon: Icons.schedule_outlined,
+                iconColor: _task!.isImmediate ? AppColors.warning : AppColors.primary,
+                label: 'Termin',
+                value: _task!.isImmediate
+                    ? 'Teraz'
+                    : _task!.scheduledAt != null
+                        ? _formatScheduledTime(_task!.scheduledAt!)
+                        : 'Nie określono',
+              ),
+
+              // Images
+              if (_task!.imageUrls != null && _task!.imageUrls!.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Zdjęcia',
+                  style: AppTypography.labelLarge,
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _task!.imageUrls!.length,
+                    itemBuilder: (context, index) {
+                      final imageUrl = _task!.imageUrls![index];
+                      return GestureDetector(
+                        onTap: () => _showFullImage(imageUrl),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                          decoration: BoxDecoration(
+                            borderRadius: AppRadius.radiusMD,
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AppRadius.radiusMD,
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: AppColors.gray100,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: AppColors.gray400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              SizedBox(height: AppSpacing.space8),
+
+              // Close button
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: BorderSide(color: AppColors.error),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                ),
+                child: Text('Zamknij'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    Color? iconColor,
+    required String label,
+    required String value,
+    TextStyle? valueStyle,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.space4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (iconColor ?? AppColors.gray600).withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusSM,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: iconColor ?? AppColors.gray600,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  value,
+                  style: valueStyle ?? AppTypography.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatScheduledTime(DateTime dateTime) {
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year o $hour:$minute';
+  }
+
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray900.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, color: AppColors.white),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
           ],
         ),

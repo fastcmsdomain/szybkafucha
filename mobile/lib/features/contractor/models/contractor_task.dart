@@ -19,6 +19,8 @@ class ContractorTask {
   final DateTime? acceptedAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final DateTime? scheduledAt;
+  final List<String>? imageUrls;
   final bool isUrgent;
 
   const ContractorTask({
@@ -39,6 +41,8 @@ class ContractorTask {
     this.acceptedAt,
     this.startedAt,
     this.completedAt,
+    this.scheduledAt,
+    this.imageUrls,
     this.isUrgent = false,
   });
 
@@ -111,6 +115,16 @@ class ContractorTask {
           ? DateTime.parse(json['completedAt'] as String)
           : (json['completed_at'] != null
               ? DateTime.parse(json['completed_at'] as String)
+              : null),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : (json['scheduled_at'] != null
+              ? DateTime.parse(json['scheduled_at'] as String)
+              : null),
+      imageUrls: json['imageUrls'] != null
+          ? List<String>.from(json['imageUrls'] as List)
+          : (json['image_urls'] != null
+              ? List<String>.from(json['image_urls'] as List)
               : null),
       isUrgent: json['isUrgent'] as bool? ??
                 json['is_urgent'] as bool? ??

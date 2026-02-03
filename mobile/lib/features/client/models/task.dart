@@ -62,6 +62,7 @@ class Task {
   final DateTime createdAt;
   final DateTime? acceptedAt;
   final DateTime? completedAt;
+  final List<String>? imageUrls;
 
   const Task({
     required this.id,
@@ -80,6 +81,7 @@ class Task {
     required this.createdAt,
     this.acceptedAt,
     this.completedAt,
+    this.imageUrls,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -119,6 +121,9 @@ class Task {
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
           : (json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null),
+      imageUrls: json['imageUrls'] != null
+          ? List<String>.from(json['imageUrls'] as List)
+          : (json['image_urls'] != null ? List<String>.from(json['image_urls'] as List) : null),
     );
   }
 
@@ -180,6 +185,7 @@ class Task {
         'created_at': createdAt.toIso8601String(),
         'accepted_at': acceptedAt?.toIso8601String(),
         'completed_at': completedAt?.toIso8601String(),
+        if (imageUrls != null) 'image_urls': imageUrls,
       };
 
   Task copyWith({
@@ -199,6 +205,7 @@ class Task {
     DateTime? createdAt,
     DateTime? acceptedAt,
     DateTime? completedAt,
+    List<String>? imageUrls,
     bool clearContractor = false,
   }) {
     return Task(
@@ -218,6 +225,7 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,
+      imageUrls: imageUrls ?? this.imageUrls,
     );
   }
 

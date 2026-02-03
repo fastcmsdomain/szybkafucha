@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
@@ -32,9 +34,9 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
 class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
+  final _budgetController = TextEditingController(text: '50');
 
   TaskCategory? _selectedCategory;
-  double _budget = 50;
   bool _isNow = true;
   DateTime _scheduledDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _scheduledTime = TimeOfDay.now();
@@ -56,13 +58,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     _selectedCategory = widget.initialCategory;
     if (_selectedCategory != null) {
       final category = TaskCategoryData.fromCategory(_selectedCategory!);
-      _budget = category.suggestedPrice.toDouble();
+      _budgetController.text = category.suggestedPrice.toString();
     }
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
+    _budgetController.dispose();
     super.dispose();
   }
 
@@ -240,7 +243,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               onTap: () {
                 setState(() {
                   _selectedCategory = category.category;
-                  _budget = category.suggestedPrice.toDouble();
+                  _budgetController.text = category.suggestedPrice.toString();
                 });
               },
             );
@@ -471,6 +474,59 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     });
   }
 
+  /// Upload all selected images and return their URLs
+  Future<List<String>> _uploadImages() async {
+    final api = ref.read(apiClientProvider);
+    final urls = <String>[];
+    int failedCount = 0;
+
+    for (final image in _selectedImages) {
+      try {
+        final bytes = await image.readAsBytes();
+        final formData = FormData.fromMap({
+          'file': MultipartFile.fromBytes(
+            bytes,
+            filename: image.name,
+          ),
+        });
+
+        debugPrint('Uploading image: ${image.name}');
+        final response = await api.post<Map<String, dynamic>>(
+          '/tasks/upload-image',
+          data: formData,
+        );
+
+        debugPrint('Upload response: $response');
+        final imageUrl = response['imageUrl'] as String?;
+        if (imageUrl != null) {
+          urls.add(imageUrl);
+          debugPrint('Image uploaded successfully: $imageUrl');
+        }
+      } catch (e, stackTrace) {
+        // Continue with other images if one fails
+        failedCount++;
+        debugPrint('Failed to upload image ${image.name}: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+    }
+
+    // Show warning if some images failed
+    if (failedCount > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failedCount == _selectedImages.length
+                ? 'Nie udało się przesłać żadnego zdjęcia'
+                : 'Nie udało się przesłać $failedCount zdjęć',
+          ),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
+
+    return urls;
+  }
+
   Widget _buildLocationSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,63 +583,74 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     final category = _selectedCategory != null
         ? TaskCategoryData.fromCategory(_selectedCategory!)
         : null;
-    final minPrice = category?.minPrice.toDouble() ?? 20;
-    final maxPrice = category?.maxPrice.toDouble() ?? 200;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              AppStrings.budget,
-              style: AppTypography.labelLarge,
-            ),
-            Text(
-              '${_budget.round()} PLN',
-              style: AppTypography.h4.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
-          ],
+        Text(
+          AppStrings.budget,
+          style: AppTypography.labelLarge,
         ),
         SizedBox(height: AppSpacing.gapMD),
-        Slider(
-          value: _budget.clamp(minPrice, maxPrice),
-          min: minPrice,
-          max: maxPrice,
-          divisions: ((maxPrice - minPrice) / 5).round(),
-          activeColor: AppColors.primary,
-          inactiveColor: AppColors.gray200,
-          onChanged: (value) {
-            setState(() => _budget = value);
+        TextFormField(
+          controller: _budgetController,
+          keyboardType: TextInputType.number,
+          style: AppTypography.h3.copyWith(
+            color: AppColors.primary,
+          ),
+          decoration: InputDecoration(
+            suffixText: 'PLN',
+            suffixStyle: AppTypography.h4.copyWith(
+              color: AppColors.primary,
+            ),
+            hintText: '35',
+            hintStyle: AppTypography.h3.copyWith(
+              color: AppColors.gray300,
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Wprowadź kwotę';
+            }
+            final amount = double.tryParse(value);
+            if (amount == null) {
+              return 'Wprowadź poprawną kwotę';
+            }
+            if (amount < 35) {
+              return 'Minimalna kwota to 35 PLN';
+            }
+            return null;
           },
         ),
+        SizedBox(height: AppSpacing.gapSM),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              '${minPrice.round()} PLN',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
+            Icon(
+              Icons.info_outline,
+              size: 14,
+              color: AppColors.gray500,
             ),
-            if (category != null)
-              Text(
-                'Sugerowana: ${category.suggestedPrice} PLN',
+            SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                'Cena za całość zlecenia. Minimalna stawka za godzine: 35 PLN',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.gray500,
                 ),
               ),
-            Text(
-              '${maxPrice.round()} PLN',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
             ),
           ],
         ),
+        if (category != null) ...[
+          SizedBox(height: AppSpacing.gapXS),
+          Text(
+            'Sugerowana cena dla "${category.name}": ${category.suggestedPrice} PLN',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -784,7 +851,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ),
           _buildSummaryRow(
             'Budżet',
-            '${_budget.round()} PLN',
+            '${_budgetController.text} PLN',
           ),
           _buildSummaryRow(
             'Kiedy',
@@ -795,6 +862,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           _buildSummaryRow(
             'Lokalizacja',
             _selectedAddress ?? 'Nie wybrano',
+            wrapValue: true,
           ),
           if (category != null) ...[
             Divider(color: AppColors.gray200),
@@ -809,27 +877,47 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isHighlighted = false}) {
+  Widget _buildSummaryRow(String label, String value, {bool isHighlighted = false, bool wrapValue = false}) {
+    final valueStyle = AppTypography.bodySmall.copyWith(
+      fontWeight: FontWeight.w600,
+      color: isHighlighted ? AppColors.primary : AppColors.gray800,
+    );
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray600,
+      child: wrapValue
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.gray600,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  value,
+                  style: valueStyle,
+                  softWrap: true,
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.gray600,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: valueStyle,
+                ),
+              ],
             ),
-          ),
-          Text(
-            value,
-            style: AppTypography.bodySmall.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isHighlighted ? AppColors.primary : AppColors.gray800,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -908,6 +996,15 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ? description.substring(0, 50)
           : description;
 
+      // Parse budget from text field
+      final budgetAmount = double.tryParse(_budgetController.text) ?? 35;
+
+      // Upload images first if any selected
+      List<String>? imageUrls;
+      if (_selectedImages.isNotEmpty) {
+        imageUrls = await _uploadImages();
+      }
+
       // Create task via API with real coordinates
       final dto = CreateTaskDto(
         category: _selectedCategory!,
@@ -916,8 +1013,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         locationLat: _selectedLatLng!.latitude,
         locationLng: _selectedLatLng!.longitude,
         address: _selectedAddress!,
-        budgetAmount: _budget,
+        budgetAmount: budgetAmount,
         scheduledAt: scheduledAt,
+        imageUrls: imageUrls,
       );
 
       final task = await ref.read(clientTasksProvider.notifier).createTask(dto);

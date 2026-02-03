@@ -90,6 +90,125 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
 
                   SizedBox(height: AppSpacing.space4),
 
+                  // Time and Images section
+                  _buildSection(
+                    title: 'Szczegóły',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Created time
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 16,
+                              color: AppColors.gray500,
+                            ),
+                            SizedBox(width: AppSpacing.gapXS),
+                            Text(
+                              'Utworzono: ${_getTimeAgo(_task.createdAt)}',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.gray600,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Scheduled time
+                        if (_task.scheduledAt != null) ...[
+                          SizedBox(height: AppSpacing.gapSM),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_outlined,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: AppSpacing.gapXS),
+                              Text(
+                                'Zaplanowane: ${_formatScheduledTime(_task.scheduledAt!)}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          SizedBox(height: AppSpacing.gapSM),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.bolt,
+                                size: 16,
+                                color: AppColors.warning,
+                              ),
+                              SizedBox(width: AppSpacing.gapXS),
+                              Text(
+                                'Natychmiast',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.warning,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+
+                        // Images
+                        if (_task.imageUrls != null && _task.imageUrls!.isNotEmpty) ...[
+                          SizedBox(height: AppSpacing.gapMD),
+                          Text(
+                            'Zdjęcia',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.gapSM),
+                          SizedBox(
+                            height: 80,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _task.imageUrls!.length,
+                              itemBuilder: (context, index) {
+                                final imageUrl = _task.imageUrls![index];
+                                return GestureDetector(
+                                  onTap: () => _showFullImage(imageUrl),
+                                  child: Container(
+                                    width: 80,
+                                    height: 80,
+                                    margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                                    decoration: BoxDecoration(
+                                      borderRadius: AppRadius.radiusSM,
+                                      border: Border.all(color: AppColors.gray200),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: AppRadius.radiusSM,
+                                      child: Image.network(
+                                        imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          color: AppColors.gray100,
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            color: AppColors.gray400,
+                                            size: 24,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
                   // Location section with map
                   _buildSection(
                     title: 'Lokalizacja',
@@ -560,5 +679,62 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     } else {
       return '${difference.inDays} dni temu';
     }
+  }
+
+  String _formatScheduledTime(DateTime dateTime) {
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year o $hour:$minute';
+  }
+
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: AppColors.gray100,
+                    child: Icon(
+                      Icons.error_outline,
+                      color: AppColors.error,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray900.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: AppColors.white,
+                    size: 24,
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

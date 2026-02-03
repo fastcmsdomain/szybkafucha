@@ -431,7 +431,121 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               color: AppColors.gray600,
             ),
           ),
+
+          // Scheduled time
+          SizedBox(height: AppSpacing.gapMD),
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_outlined,
+                size: 16,
+                color: task.scheduledAt == null ? AppColors.warning : AppColors.primary,
+              ),
+              SizedBox(width: AppSpacing.gapXS),
+              Text(
+                task.scheduledAt == null
+                    ? 'Teraz'
+                    : _formatScheduledTime(task.scheduledAt!),
+                style: AppTypography.caption.copyWith(
+                  color: task.scheduledAt == null ? AppColors.warning : AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          // Images
+          if (task.imageUrls != null && task.imageUrls!.isNotEmpty) ...[
+            SizedBox(height: AppSpacing.gapMD),
+            Text(
+              'Zdjęcia',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            SizedBox(
+              height: 80,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: task.imageUrls!.length,
+                itemBuilder: (context, index) {
+                  final imageUrl = task.imageUrls![index];
+                  return GestureDetector(
+                    onTap: () => _showFullImage(imageUrl),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                      decoration: BoxDecoration(
+                        borderRadius: AppRadius.radiusSM,
+                        border: Border.all(color: AppColors.gray200),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: AppRadius.radiusSM,
+                        child: Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppColors.gray100,
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.gray400,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  String _formatScheduledTime(DateTime dateTime) {
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year o $hour:$minute';
+  }
+
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray900.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, color: AppColors.white),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -741,10 +855,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.cancel_outlined, color: AppColors.error),
-              title: Text(
+              tileColor: AppColors.error,
+              leading: const Icon(Icons.cancel_outlined, color: Colors.white),
+              title: const Text(
                 'Anuluj zlecenie',
-                style: TextStyle(color: AppColors.error),
+                style: TextStyle(color: Colors.white),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -806,4 +921,3 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     );
   }
 }
-

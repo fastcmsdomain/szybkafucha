@@ -22,6 +22,7 @@ class CreateTaskDto {
   final String address;
   final double budgetAmount;
   final DateTime? scheduledAt;
+  final List<String>? imageUrls;
 
   const CreateTaskDto({
     required this.category,
@@ -32,6 +33,7 @@ class CreateTaskDto {
     required this.address,
     required this.budgetAmount,
     this.scheduledAt,
+    this.imageUrls,
   });
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +45,7 @@ class CreateTaskDto {
         'address': address,
         'budgetAmount': budgetAmount,
         if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
+        if (imageUrls != null && imageUrls!.isNotEmpty) 'imageUrls': imageUrls,
       };
 }
 
@@ -668,6 +671,8 @@ extension ContractorTaskCopyWith on ContractorTask {
     DateTime? acceptedAt,
     DateTime? startedAt,
     DateTime? completedAt,
+    DateTime? scheduledAt,
+    List<String>? imageUrls,
     bool? isUrgent,
   }) {
     return ContractorTask(
@@ -688,6 +693,8 @@ extension ContractorTaskCopyWith on ContractorTask {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      imageUrls: imageUrls ?? this.imageUrls,
       isUrgent: isUrgent ?? this.isUrgent,
     );
   }

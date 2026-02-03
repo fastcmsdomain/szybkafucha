@@ -12,6 +12,116 @@ Each entry documents:
 
 ---
 
+## [2026-02-03] BUGFIX: Task Images Not Saving to Database + URL Validation Fix
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed critical bug where task images were not being saved to database due to URL validation failure
+- **Files Changed**:
+  - `backend/src/users/file-storage.service.ts` – Updated to return full URLs (http://localhost:3000/uploads/...) instead of relative paths (/uploads/...)
+  - `backend/src/tasks/dto/create-task.dto.ts` – Relaxed URL validation to accept localhost URLs without TLD requirement
+  - `mobile/lib/features/client/screens/create_task_screen.dart` – Added error handling and logging for image upload failures
+- **Root Cause**:
+  - **Primary Issue**: `@IsUrl()` validator rejected localhost URLs because they lack a TLD (.com, .pl, etc.)
+  - Upload endpoint returned relative URLs: `/uploads/tasks/filename.jpg` (fixed)
+  - Even after fix, validator rejected `http://localhost:3000/...` URLs
+  - Upload failures were silently caught with `debugPrint`, user never saw errors
+- **Fix Applied**:
+  **Backend - File Storage:**
+  - Added `serverUrl` config (default: `http://localhost:3000`)
+  - Updated `uploadAvatar()` to return full URL: `${this.serverUrl}${this.baseUrl}/${filename}`
+  - Updated `uploadTaskImage()` to return full URL: `${this.serverUrl}${this.taskImagesBaseUrl}/${filename}`
+  - Updated `deleteAvatar()` to handle both full URLs and relative paths for backward compatibility
+
+  **Backend - URL Validation:**
+  - Changed `@IsUrl({}, { each: true })` to `@IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false }, { each: true })`
+  - `require_tld: false` allows localhost URLs without `.com`/`.pl` suffix
+  - This was the KEY fix - validator was rejecting `http://localhost:3000/uploads/...`
+
+  **Mobile App:**
+  - Added upload failure counter and user-facing error messages
+  - Enhanced logging with stack traces for debugging
+  - Shows SnackBar warning if any images fail to upload: "Nie udało się przesłać X zdjęć"
+  - Task creation continues even if some images fail (non-blocking)
+- **System Impact**:
+  - **Breaking Change**: Upload endpoints now return full URLs instead of relative paths
+  - Mobile app `getFullMediaUrl()` helper already handles both formats (checks for http:// prefix)
+  - Existing tasks with `null` imageUrls remain unaffected (images were never uploaded)
+  - New task images will now correctly save to database and display in mobile app
+  - Users will now see errors if image uploads fail
+- **Environment Variable**:
+  - New optional config: `SERVER_URL` (defaults to `http://localhost:3000`)
+  - Production deployment should set `SERVER_URL=https://api.szybkafucha.pl`
+- **Testing**:
+  - Backend restarted with fixed validation rules (PID: 75664)
+  - Health check: ✅ `http://localhost:3000/api/v1/health` responds correctly
+  - Upload endpoint verified: Images saved to `backend/uploads/tasks/` directory
+  - Ready for testing with new task creation (should accept `http://localhost:3000/...` URLs now)
+- **Related Issue**: Tasks `75c491a8-8a58-4f18-b4be-a1f15f030d47` and `975f1f7b-57b4-422f-885e-a286e59c7d92` had imageUrls null in database
+- **Potential Conflicts/Risks**:
+  - Any code expecting relative URLs from upload endpoints will need adjustment
+  - Avatar uploads also affected - verify existing avatar display still works
+
+---
+
+## [2026-02-03] Task Alert Screen: Added Time/Date and Images Display
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Enhanced task alert screen (contractor's task details view before accepting) with creation time, scheduled time, and task images display
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/task_alert_screen.dart` – Added "Szczegóły" section showing creation time, scheduled time (or "Natychmiast"), and task images with preview functionality
+- **System Impact**:
+  - **Creation Time**: Displays relative time (e.g., "Przed chwilą", "5 min temu") using existing `_getTimeAgo()` method
+  - **Scheduled Time**: Shows formatted date/time (dd.mm.yyyy o hh:mm) if task has `scheduledAt`, otherwise shows "Natychmiast" with warning icon
+  - **Task Images**: Horizontal scrollable list of images (if `imageUrls` exists) with tap-to-zoom functionality
+  - **Image Preview**: Full-screen dialog with InteractiveViewer for zooming
+  - New section appears between "Opis zlecenia" and "Lokalizacja" sections
+- **Related Tasks/PRD**: Consistent with recent task details enhancements (2026-02-03 entry)
+- **Potential Conflicts/Risks**:
+  - This screen was modified - future changes to task_alert_screen.dart should be aware of the new "Szczegóły" section
+  - Image display depends on `imageUrls` field being populated by backend
+
+---
+
+## [2026-02-03] Create Task Screen Enhancements: Budget Input, Images, Scheduled Time
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Enhanced task creation screen with budget input field (min 35 PLN), image upload, and scheduled time display. Added task details view for both client and contractor screens.
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/app.module.ts` – Added ServeStaticModule to serve uploads directory
+  - `backend/src/users/file-storage.service.ts` – Added `uploadTaskImage()` method for task images
+  - `backend/src/tasks/tasks.controller.ts` – Added `POST /tasks/upload-image` endpoint for task image uploads
+
+  **Mobile - Task Creation:**
+  - `mobile/lib/features/client/screens/create_task_screen.dart` – Replaced budget slider with text input field (min 35 PLN), added `_uploadImages()` method, imports for Dio FormData
+
+  **Mobile - Models:**
+  - `mobile/lib/core/providers/task_provider.dart` – Added `imageUrls` to CreateTaskDto, updated ContractorTask copyWith extension
+  - `mobile/lib/features/client/models/task.dart` – Added `imageUrls` field with JSON parsing and copyWith support
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Added `scheduledAt` and `imageUrls` fields with JSON parsing
+
+  **Mobile - Task Viewing:**
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `_showTaskDetails()` method with full task info (category, description, address, budget, scheduled time, images), `_showFullImage()` for image preview
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Added scheduled time and images display in `_buildTaskInfoCard()`, `_showFullImage()` for image preview
+
+- **System Impact**:
+  - **Budget Validation**: Minimum 35 PLN enforced in both frontend (input validator) and backend (`@Min(35)` in DTO)
+  - **Image Upload Flow**: Client picks images → uploads to `/tasks/upload-image` → receives URLs → creates task with `imageUrls` array
+  - **File Storage**: Task images stored in `uploads/tasks/` directory, served at `/uploads/tasks/<filename>`
+  - **Scheduled Time**: Visible in task details for both client and contractor
+  - **Task Images**: Displayed under description in task details, with tap-to-zoom functionality
+
+- **API Endpoints Added**:
+  - `POST /tasks/upload-image` – Upload task image, returns `{ imageUrl, message }`
+
+- **Related Tasks/PRD**: `tasks/job_flow.md` - UI enhancements
+- **Potential Conflicts/Risks**:
+  - ServeStaticModule may conflict with other static file configurations
+  - Image upload requires backend to be running to store files
+  - Large images may slow down task creation (consider client-side compression)
+
+---
+
 ## [2026-02-03] Complete Dual-Rating System Implementation
 
 - **Developer/Agent**: Claude
