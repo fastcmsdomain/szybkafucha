@@ -432,6 +432,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildBottomPanel() {
+    final maxHeight = MediaQuery.of(context).size.height * 0.6;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -446,72 +448,66 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
         ],
       ),
+      constraints: BoxConstraints(maxHeight: maxHeight),
       child: SafeArea(
         top: false, // avoid extra top inset that created blank space
-        child: LayoutBuilder(
-          builder: (context, constraints) => ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: constraints.maxHeight,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray300,
+                borderRadius: AppRadius.radiusFull,
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle
-                Container(
-                  margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.gray300,
-                    borderRadius: AppRadius.radiusFull,
-                  ),
+
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(AppSpacing.paddingMD),
+                child: Column(
+                  children: [
+                    // Status header
+                    _buildStatusHeader(),
+
+                    SizedBox(height: AppSpacing.space4),
+
+                    // Progress steps
+                    _buildProgressSteps(),
+
+                    SizedBox(height: AppSpacing.space4),
+
+                    // Contractor card (if assigned)
+                    if (_contractor != null &&
+                        _status != TrackingStatus.searching)
+                      _buildContractorCard(),
+
+                    // Confirm/Reject buttons (when waiting for client confirmation)
+                    if (_status == TrackingStatus.accepted &&
+                        _contractor != null)
+                      _buildConfirmContractorButtons(),
+
+                    // Action buttons (chat, call)
+                    if (_status != TrackingStatus.searching &&
+                        _status != TrackingStatus.accepted &&
+                        _status != TrackingStatus.completed)
+                      _buildActionButtons(),
+
+                    // Complete button (when in progress)
+                    if (_status == TrackingStatus.inProgress)
+                      _buildCompleteButton(),
+
+                    // Cancel button (for all non-completed tasks)
+                    if (_status != TrackingStatus.completed)
+                      _buildCancelButton(),
+                  ],
                 ),
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(AppSpacing.paddingMD),
-                    child: Column(
-                      children: [
-                        // Status header
-                        _buildStatusHeader(),
-
-                        SizedBox(height: AppSpacing.space4),
-
-                        // Progress steps
-                        _buildProgressSteps(),
-
-                        SizedBox(height: AppSpacing.space4),
-
-                        // Contractor card (if assigned)
-                        if (_contractor != null &&
-                            _status != TrackingStatus.searching)
-                          _buildContractorCard(),
-
-                        // Confirm/Reject buttons (when waiting for client confirmation)
-                        if (_status == TrackingStatus.accepted &&
-                            _contractor != null)
-                          _buildConfirmContractorButtons(),
-
-                        // Action buttons (chat, call)
-                        if (_status != TrackingStatus.searching &&
-                            _status != TrackingStatus.accepted &&
-                            _status != TrackingStatus.completed)
-                          _buildActionButtons(),
-
-                        // Complete button (when in progress)
-                        if (_status == TrackingStatus.inProgress)
-                          _buildCompleteButton(),
-
-                        // Cancel button (for all non-completed tasks)
-                        if (_status != TrackingStatus.completed)
-                          _buildCancelButton(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
