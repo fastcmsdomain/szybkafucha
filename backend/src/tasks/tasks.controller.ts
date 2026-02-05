@@ -65,7 +65,7 @@ export class TasksController {
     @Query('categories') categories?: string,
     @Query('radiusKm') radiusKm?: number,
   ) {
-    if (req.user.type === UserType.CLIENT) {
+    if (req.user.types.includes(UserType.CLIENT)) {
       return this.tasksService.findByClient(req.user.id);
     }
 

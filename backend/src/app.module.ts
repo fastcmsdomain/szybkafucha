@@ -19,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ContractorModule } from './contractor/contractor.module';
+import { ClientModule } from './client/client.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -124,6 +125,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     UsersModule,
     TasksModule,
     ContractorModule,
+    ClientModule,
     PaymentsModule,
     AdminModule,
     RealtimeModule,

@@ -12,6 +12,83 @@ Each entry documents:
 
 ---
 
+## [2026-02-05] Dual-Role Architecture Implementation - Complete Backend & Mobile Migration
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Complete implementation of dual-role architecture allowing users to be both clients AND contractors simultaneously, with separate profile data and ratings for each role
+- **Files Changed**:
+
+  **Backend - Database Entities:**
+  - `backend/src/users/entities/user.entity.ts` – Changed `type` from single enum to `types` array (simple-array type)
+  - `backend/src/client/entities/client-profile.entity.ts` – **NEW**: Created ClientProfile entity for client-specific bio and ratings
+  - `backend/src/tasks/entities/rating.entity.ts` – Added `role` field ('client' | 'contractor') to separate ratings by role
+
+  **Backend - Services:**
+  - `backend/src/users/users.service.ts` – Added `addRole()` method for role switching
+  - `backend/src/client/client.service.ts` – Complete rewrite with lazy profile creation, role-based ratings (`role='client'`)
+  - `backend/src/contractor/contractor.service.ts` – Added `isProfileComplete()` validation, role-based ratings (`role='contractor'`)
+  - `backend/src/tasks/tasks.service.ts` – Added profile completion guard in `acceptTask()`, added `role` field to `rateTask()`
+
+  **Backend - Controllers:**
+  - `backend/src/users/users.controller.ts` – Added `POST /users/me/add-role` endpoint
+  - `backend/src/client/client.controller.ts` – Added `PUT /client/profile` endpoint for client bio
+  - `backend/src/contractor/contractor.controller.ts` – Added `GET /contractor/profile/complete` endpoint
+  - `backend/src/client/dto/update-client-profile.dto.ts` – **NEW**: Created DTO for client profile updates
+
+  **Backend - Auth:**
+  - `backend/src/auth/auth.service.ts` – Updated all auth methods (phone, Google, Apple) to use `types` array
+  - `backend/src/auth/types/auth-user.type.ts` – Changed `type: UserType` to `types: string[]`
+  - `backend/src/auth/strategies/jwt.strategy.ts` – Updated JWT payload to use `types` array
+  - `backend/src/admin/admin.service.ts` – Updated user count queries to search arrays with LIKE pattern
+
+  **Backend - Tasks:**
+  - `backend/src/tasks/tasks.controller.ts` – Updated role check from `req.user.type === UserType.CLIENT` to `req.user.types.includes(UserType.CLIENT)`
+
+  **Mobile - Core:**
+  - `mobile/lib/core/providers/auth_provider.dart` – Updated User model with `userTypes` array, added `isClient`, `isContractor`, `hasBothRoles` getters, added `addRole()` and `setActiveRole()` methods, added `activeRole` to AuthState
+  - `mobile/lib/core/providers/contractor_availability_provider.dart` – Updated contractor check from `userType != 'contractor'` to `!userTypes.contains('contractor')`
+  - `mobile/lib/core/providers/task_provider.dart` – Added profile completion guard before task acceptance
+
+  **Mobile - Profile Screens:**
+  - `mobile/lib/features/client/screens/client_profile_screen.dart` – Split save: shared data to `/users/me`, client bio to `/client/profile`
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Added categories selector, service radius slider, profile progress bar, validation, split save endpoints
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Added profile completion check and banner
+
+  **Mobile - Router:**
+  - `mobile/lib/core/router/app_router.dart` – Redirected ContractorRegistrationScreen to profile edit
+
+  **Seed Data:**
+  - `backend/src/database/seeds/seed.data.ts` – Updated all users to `types` array, added dual-role user example, separated bio fields
+
+- **System Impact**:
+  - **BREAKING CHANGE**: User entity `type` field replaced with `types` array - all code accessing `user.type` updated to `user.types`
+  - **New Table**: `client_profiles` table created for client-specific data (bio, ratings)
+  - **Rating Separation**: Client and contractor ratings now tracked separately with `role` field
+  - **Lazy Profile Creation**: Profiles created on first edit, not when role added
+  - **Profile Completion Validation**: Contractors BLOCKED from accepting tasks until profile complete (name, address, bio, categories, service radius, KYC)
+  - **Registration Flow**: User registers with email/phone/OAuth, immediately enters app, adds roles later
+  - **TypeScript Migration**: Fixed 19 compilation errors related to type → types change
+  - **Flutter Migration**: Fixed 2 compilation errors (user.userType → user.userTypes)
+
+- **API Endpoints Added**:
+  - `POST /users/me/add-role` – Add client or contractor role to user
+  - `PUT /client/profile` – Update client profile (bio)
+  - `GET /contractor/profile/complete` – Check if contractor profile is complete
+
+- **Validation Rules**:
+  - **Client**: Only name required to create tasks; phone, address, bio optional
+  - **Contractor**: Name, address, bio, categories (min 1), service radius, KYC required to accept tasks
+
+- **Related Tasks/PRD**: `/Users/simacbook/.claude/plans/staged-shimmying-cerf.md` - Complete dual-role architecture plan
+- **Potential Conflicts/Risks**:
+  - Any code checking `user.type` will fail - must use `user.types.includes()` or `user.types.contains()`
+  - Database migration required - existing users need `type` → `types` conversion
+  - Existing ratings may need `role` field backfilled (set based on toUser's type)
+  - Profile screens heavily modified - future changes should be aware of split endpoint architecture
+  - Auth flow changed - code expecting single userType may break
+
+---
+
 ## [2026-02-03] BUGFIX: Task Images Not Saving to Database + URL Validation Fix
 
 - **Developer/Agent**: Claude

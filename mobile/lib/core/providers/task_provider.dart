@@ -400,8 +400,23 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   }
 
   /// Accept a task
+  /// Checks if contractor profile is complete before allowing acceptance
   Future<ContractorTask> acceptTask(String taskId) async {
     try {
+      // Check if contractor profile is complete
+      final profileCheckResponse = await _api.get<Map<String, dynamic>>(
+        '/contractor/profile/complete',
+      );
+
+      final isComplete = profileCheckResponse['complete'] as bool? ?? false;
+
+      if (!isComplete) {
+        throw Exception(
+          'Dokończ swój profil wykonawcy, aby zaakceptować zlecenie',
+        );
+      }
+
+      // Profile is complete, proceed with accepting the task
       final response = await _api.put<Map<String, dynamic>>(
         '/tasks/$taskId/accept',
       );
@@ -559,6 +574,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
             id: state.task!.id,
             category: state.task!.category,
             description: state.task!.description,
+            clientId: state.task!.clientId,
             clientName: state.task!.clientName,
             clientAvatarUrl: state.task!.clientAvatarUrl,
             clientRating: state.task!.clientRating,
@@ -657,6 +673,7 @@ extension ContractorTaskCopyWith on ContractorTask {
     String? id,
     TaskCategory? category,
     String? description,
+    String? clientId,
     String? clientName,
     String? clientAvatarUrl,
     double? clientRating,
@@ -679,6 +696,7 @@ extension ContractorTaskCopyWith on ContractorTask {
       id: id ?? this.id,
       category: category ?? this.category,
       description: description ?? this.description,
+      clientId: clientId ?? this.clientId,
       clientName: clientName ?? this.clientName,
       clientAvatarUrl: clientAvatarUrl ?? this.clientAvatarUrl,
       clientRating: clientRating ?? this.clientRating,

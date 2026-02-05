@@ -9,7 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, Raw } from 'typeorm';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
@@ -65,8 +65,12 @@ export class AdminService {
     const [totalUsers, clients, contractors, newToday, newThisWeek] =
       await Promise.all([
         this.userRepository.count(),
-        this.userRepository.count({ where: { type: UserType.CLIENT } }),
-        this.userRepository.count({ where: { type: UserType.CONTRACTOR } }),
+        this.userRepository.count({
+          where: { types: Raw((alias) => `${alias} LIKE '%client%'`) },
+        }),
+        this.userRepository.count({
+          where: { types: Raw((alias) => `${alias} LIKE '%contractor%'`) },
+        }),
         this.userRepository.count({
           where: { createdAt: MoreThan(startOfDay) },
         }),
@@ -269,7 +273,7 @@ export class AdminService {
     }
 
     // If contractor, include profile
-    if (user.type === UserType.CONTRACTOR) {
+    if (user.types.includes(UserType.CONTRACTOR)) {
       const profile = await this.contractorProfileRepository.findOne({
         where: { userId },
       });

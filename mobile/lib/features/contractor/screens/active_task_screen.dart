@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
@@ -233,6 +234,31 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                           borderRadius: AppRadius.radiusSM,
                         ),
                       ),
+                    ),
+
+                    SizedBox(height: AppSpacing.space4),
+
+                    // Task header above progress
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(AppSpacing.paddingSM),
+                          decoration: BoxDecoration(
+                            color: categoryData.color.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            categoryData.icon,
+                            color: categoryData.color,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Text(
+                          'Twoje zlecenie',
+                          style: AppTypography.h5,
+                        ),
+                      ],
                     ),
 
                     SizedBox(height: AppSpacing.space4),
@@ -551,6 +577,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildClientCard(ContractorTask task) {
+    final canContact = _currentStatus != ContractorTaskStatus.accepted;
+
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -594,22 +622,38 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: _openChat,
-            icon: const Icon(Icons.chat_outlined),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.gray100,
+          TextButton.icon(
+            onPressed: () => _showClientProfile(task),
+            icon: const Icon(Icons.person_outline, color: AppColors.white),
+            label: const Text(''),
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.paddingMD,
+                vertical: AppSpacing.paddingSM,
+              ),
             ),
           ),
-          SizedBox(width: AppSpacing.gapSM),
-          IconButton(
-            onPressed: _callClient,
-            icon: const Icon(Icons.phone_outlined),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.success.withValues(alpha: 0.1),
-              foregroundColor: AppColors.success,
+          if (canContact) ...[
+            SizedBox(width: AppSpacing.gapSM),
+            IconButton(
+              onPressed: _openChat,
+              icon: const Icon(Icons.chat_outlined),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.gray100,
+              ),
             ),
-          ),
+            SizedBox(width: AppSpacing.gapSM),
+            IconButton(
+              onPressed: _callClient,
+              icon: const Icon(Icons.phone_outlined),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.success.withValues(alpha: 0.1),
+                foregroundColor: AppColors.success,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -831,6 +875,22 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     context.push(Routes.contractorTaskChatRoute(widget.taskId));
   }
 
+  void _showClientProfile(ContractorTask task) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _ClientProfileSheet(
+        clientId: task.clientId,
+        clientName: task.clientName,
+        clientRating: task.clientRating,
+        clientAvatarUrl: task.clientAvatarUrl,
+      ),
+    );
+  }
+
   Future<void> _callClient() async {
     // TODO: Get client phone number from task/backend
     final uri = Uri(scheme: 'tel', path: '+48123456789');
@@ -917,6 +977,205 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
             child: const Text('Tak, anuluj'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Client profile bottom sheet that fetches full profile data
+class _ClientProfileSheet extends ConsumerStatefulWidget {
+  final String clientId;
+  final String clientName;
+  final double clientRating;
+  final String? clientAvatarUrl;
+
+  const _ClientProfileSheet({
+    required this.clientId,
+    required this.clientName,
+    required this.clientRating,
+    this.clientAvatarUrl,
+  });
+
+  @override
+  ConsumerState<_ClientProfileSheet> createState() =>
+      _ClientProfileSheetState();
+}
+
+class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
+  String? _bio;
+  double? _ratingAvg;
+  int? _ratingCount;
+  String? _avatarUrl;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullProfile();
+  }
+
+  Future<void> _fetchFullProfile() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get('/client/${widget.clientId}/public');
+
+      // Backend returns flat structure with bio at root level
+      final data = response.data as Map<String, dynamic>;
+
+      if (mounted) {
+        setState(() {
+          _bio = data['bio'] as String?;
+          _ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
+          _ratingCount = data['ratingCount'] as int?;
+          _avatarUrl = data['avatarUrl'] as String?;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching client profile: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rating = _ratingAvg ?? widget.clientRating;
+    final reviewCount = _ratingCount ?? 0;
+    final avatarUrl = _avatarUrl ?? widget.clientAvatarUrl;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingLG),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with title and close button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Profil klienta', style: AppTypography.h4),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Avatar and name row
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: AppColors.gray200,
+                  backgroundImage: avatarUrl != null
+                      ? NetworkImage(avatarUrl)
+                      : null,
+                  child: avatarUrl == null
+                      ? Text(
+                          widget.clientName.isNotEmpty
+                              ? widget.clientName[0].toUpperCase()
+                              : '?',
+                          style: AppTypography.h4.copyWith(
+                            color: AppColors.gray600,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.clientName,
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 18, color: AppColors.warning),
+                          SizedBox(width: 4),
+                          Text(
+                            rating.toStringAsFixed(1),
+                            style: AppTypography.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '$reviewCount opinii',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Bio section
+            Text(
+              'Opis',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppColors.gray700,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: 4),
+            _isLoading
+                ? SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : _error != null
+                    ? Text(
+                        'Nie udało się pobrać pełnego profilu',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.gray400,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      )
+                    : Text(
+                        _bio?.isNotEmpty == true
+                            ? _bio!
+                            : 'Brak opisu klienta.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: _bio?.isNotEmpty == true
+                              ? AppColors.gray600
+                              : AppColors.gray400,
+                          fontStyle: _bio?.isNotEmpty == true
+                              ? FontStyle.normal
+                              : FontStyle.italic,
+                        ),
+                      ),
+            SizedBox(height: AppSpacing.gapMD),
+
+            // Close button
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Zamknij'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/router/routes.dart';
@@ -250,6 +251,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
+  void _openChatWithContractor() {
+    if (_task == null) return;
+    context.push(Routes.clientTaskChatRoute(_task!.id));
+  }
+
+  void _callContractor() {
+    // TODO: Replace with real contractor phone once available from backend
+    final uri = Uri(scheme: 'tel', path: '+48123456789');
+    launchUrl(uri);
+  }
+
   /// Check if contractor location is recent (within 30 seconds)
   bool _isLocationRecent() {
     if (_lastLocationUpdate == null) return false;
@@ -402,7 +414,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
 
-      final bottomPadding = 260.0 + MediaQuery.of(context).padding.bottom;
+      // Extra padding so markers aren't hidden behind the bottom panel/FAB
+      final bottomPadding = 284.0 + MediaQuery.of(context).padding.bottom;
 
       return SizedBox.expand(
         child: SFMapView(
@@ -489,12 +502,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     if (_status == TrackingStatus.accepted &&
                         _contractor != null)
                       _buildConfirmContractorButtons(),
-
-                    // Action buttons (chat, call)
-                    if (_status != TrackingStatus.searching &&
-                        _status != TrackingStatus.accepted &&
-                        _status != TrackingStatus.completed)
-                      _buildActionButtons(),
 
                     // Complete button (when in progress)
                     if (_status == TrackingStatus.inProgress)
@@ -663,18 +670,24 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ],
                 ),
                 SizedBox(height: 2),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.star, size: 16, color: AppColors.warning),
-                    SizedBox(width: 4),
-                    Text(
-                      _contractor!.formattedRating,
-                      style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 16, color: AppColors.warning),
+                        SizedBox(width: 4),
+                        Text(
+                          _contractor!.formattedRating,
+                          style: AppTypography.labelMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 2),
                     Text(
-                      ' • ${_contractor!.completedTasks} zleceń',
+                      'Nr zleceń: ${_contractor!.completedTasks}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -684,12 +697,34 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               ],
             ),
           ),
-          TextButton.icon(
+          TextButton(
             onPressed: _showContractorProfile,
-            icon: const Icon(Icons.person_outline),
-            label: const Text('Profil'),
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.paddingSM,
+                vertical: AppSpacing.paddingSM,
+              ),
+              minimumSize: const Size(44, 44),
+            ),
+            child: const Icon(Icons.person_outline, color: AppColors.white),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _openChatWithContractor,
+            icon: const Icon(Icons.chat_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.gray100,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _callContractor,
+            icon: const Icon(Icons.phone_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.success.withValues(alpha: 0.1),
+              foregroundColor: AppColors.success,
             ),
           ),
         ],
@@ -1033,44 +1068,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     }
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to chat
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja czatu wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.chat_bubble_outline),
-            label: Text('Czat'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-        SizedBox(width: AppSpacing.gapMD),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Call contractor
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja połączenia wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.phone_outlined),
-            label: Text('Zadzwoń'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildCompleteButton() {
@@ -1504,9 +1501,12 @@ class _ContractorProfileSheetState
       final api = ref.read(apiClientProvider);
       final response = await api.get('/contractor/${widget.contractorId}/public');
 
+      // Backend returns flat structure with bio at root level
+      final data = response.data as Map<String, dynamic>;
+
       if (mounted) {
         setState(() {
-          _fullProfile = Contractor.fromJson(response.data as Map<String, dynamic>);
+          _fullProfile = Contractor.fromJson(data);
           _isLoading = false;
         });
       }
@@ -1676,7 +1676,7 @@ class _MapGridPainter extends CustomPainter {
       ..color = AppColors.gray200
       ..strokeWidth = 1;
 
-    const spacing = 50.0;
+    const spacing = 20.0;
 
     // Vertical lines
     for (double x = 0; x < size.width; x += spacing) {

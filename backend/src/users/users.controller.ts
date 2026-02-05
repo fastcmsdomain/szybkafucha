@@ -21,6 +21,7 @@ import { FileStorageService } from './file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserTypeDto } from './dto/update-user-type.dto';
+import { AddRoleDto } from './dto/add-role.dto';
 import {
   UploadAvatarResponseDto,
   ALLOWED_AVATAR_MIMETYPES,
@@ -69,9 +70,8 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() updateUserTypeDto: UpdateUserTypeDto,
   ) {
-    return this.usersService.update(req.user.id, {
-      type: updateUserTypeDto.type,
-    });
+    // In dual-role architecture, this adds a role rather than replacing it
+    return this.usersService.addRole(req.user.id, updateUserTypeDto.type);
   }
 
   /**
@@ -148,5 +148,19 @@ export class UsersController {
       avatarUrl,
       message: 'Avatar uploaded successfully',
     };
+  }
+
+  /**
+   * POST /users/me/add-role
+   * Add a role (client or contractor) to the current user
+   * Allows users to become dual-role (both client and contractor)
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('me/add-role')
+  async addRole(
+    @Request() req: AuthenticatedRequest,
+    @Body() addRoleDto: AddRoleDto,
+  ) {
+    return this.usersService.addRole(req.user.id, addRoleDto.role);
   }
 }

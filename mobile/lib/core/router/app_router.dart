@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/auth.dart';
 import '../../features/chat/screens/screens.dart' as chat;
 import '../../features/client/client.dart';
+import '../../features/client/screens/client_profile_screen.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
 import '../../features/profile/profile.dart';
@@ -132,6 +133,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.clientProfile,
             name: 'clientProfile',
             builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: Routes.clientProfileEdit,
+            name: 'clientProfileEdit',
+            builder: (context, state) => const ClientProfileScreen(),
           ),
           // Task routes inside shell - bottom nav always visible
           GoRoute(
@@ -304,7 +310,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.contractorRegistration,
         name: 'contractorRegistration',
-        builder: (context, state) => const contractor.ContractorRegistrationScreen(),
+        redirect: (context, state) => Routes.contractorProfileEdit, // Redirect to profile edit
       ),
       GoRoute(
         path: Routes.contractorKyc,

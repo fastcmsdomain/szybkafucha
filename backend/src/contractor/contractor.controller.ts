@@ -50,21 +50,26 @@ export class ContractorController {
   /**
    * PUT /contractor/profile
    * Update contractor profile (bio, categories, radius)
+   * Automatically creates profile if it doesn't exist (lazy creation)
    */
   @Put('profile')
   async updateProfile(
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateContractorProfileDto,
   ) {
-    // Create profile if doesn't exist
-    const existingProfile = await this.contractorService.findByUserId(
-      req.user.id,
-    );
-    if (!existingProfile) {
-      await this.contractorService.create(req.user.id);
-    }
-
     return this.contractorService.update(req.user.id, dto);
+  }
+
+  /**
+   * GET /contractor/profile/complete
+   * Check if contractor profile is complete
+   * Returns: { complete: boolean }
+   */
+  @Get('profile/complete')
+  async checkProfileComplete(@Request() req: AuthenticatedRequest) {
+    return {
+      complete: await this.contractorService.isProfileComplete(req.user.id),
+    };
   }
 
   /**

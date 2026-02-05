@@ -30,11 +30,10 @@ export class User {
   id: string;
 
   @Column({
-    type: 'enum',
-    enum: UserType,
-    default: UserType.CLIENT,
+    type: 'simple-array',
+    default: 'client',
   })
-  type: UserType;
+  types: string[]; // ['client'] or ['contractor'] or ['client', 'contractor']
 
   @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
   phone: string | null;

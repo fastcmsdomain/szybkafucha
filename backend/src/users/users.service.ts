@@ -96,4 +96,26 @@ export class UsersService {
   async activate(id: string): Promise<User> {
     return this.updateStatus(id, UserStatus.ACTIVE);
   }
+
+  /**
+   * Add a role to user (client or contractor)
+   * Creates empty profile when role is added
+   * Profiles are created lazy - they'll be populated when user edits their profile
+   */
+  async addRole(userId: string, role: 'client' | 'contractor'): Promise<User> {
+    const user = await this.findByIdOrFail(userId);
+
+    // Check if user already has this role
+    if (user.types.includes(role)) {
+      return user; // Already has role, no change needed
+    }
+
+    // Add role to types array
+    user.types.push(role);
+
+    // Note: Profiles (ClientProfile/ContractorProfile) are created lazy
+    // They'll be created automatically when user first edits their profile for that role
+
+    return this.usersRepository.save(user);
+  }
 }

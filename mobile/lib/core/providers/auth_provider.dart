@@ -30,7 +30,7 @@ class User {
   final String? email;
   final String? name;
   final String? phone;
-  final String userType; // 'client' or 'contractor'
+  final List<String> userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
   final String? avatarUrl;
   final bool isVerified;
   final String? address;
@@ -41,7 +41,7 @@ class User {
     this.email,
     this.name,
     this.phone,
-    required this.userType,
+    required this.userTypes,
     this.avatarUrl,
     this.isVerified = false,
     this.address,
@@ -52,13 +52,26 @@ class User {
     // Get raw avatar URL and convert to full URL if relative
     final rawAvatarUrl = (json['avatarUrl'] ?? json['avatar_url']) as String?;
 
+    // Parse types array from backend (backend returns 'types' as string array or comma-separated)
+    final types = json['types'];
+    List<String> userTypes;
+    if (types is List) {
+      userTypes = types.map((e) => e.toString()).toList();
+    } else if (types is String) {
+      // Backend may return comma-separated string
+      userTypes = types.split(',').map((e) => e.trim()).toList();
+    } else {
+      // Fallback to single type field for backward compatibility
+      final singleType = (json['type'] ?? json['user_type']) as String?;
+      userTypes = singleType != null ? [singleType] : ['client'];
+    }
+
     return User(
       id: json['id'] as String,
       email: json['email'] as String?,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
-      // Backend returns 'type', but some endpoints may return 'user_type'
-      userType: (json['type'] ?? json['user_type']) as String? ?? 'client',
+      userTypes: userTypes,
       // Convert relative avatar URL to full URL
       avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
@@ -74,22 +87,23 @@ class User {
         'email': email,
         'name': name,
         'phone': phone,
-        'user_type': userType,
+        'types': userTypes,
         'avatar_url': avatarUrl,
         'is_verified': isVerified,
         'address': address,
         'bio': bio,
       };
 
-  bool get isClient => userType == 'client';
-  bool get isContractor => userType == 'contractor';
+  bool get isClient => userTypes.contains('client');
+  bool get isContractor => userTypes.contains('contractor');
+  bool get hasBothRoles => userTypes.length == 2;
 
   User copyWith({
     String? id,
     String? email,
     String? name,
     String? phone,
-    String? userType,
+    List<String>? userTypes,
     String? avatarUrl,
     bool? isVerified,
     String? address,
@@ -100,7 +114,7 @@ class User {
       email: email ?? this.email,
       name: name ?? this.name,
       phone: phone ?? this.phone,
-      userType: userType ?? this.userType,
+      userTypes: userTypes ?? this.userTypes,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
       address: address ?? this.address,
@@ -116,6 +130,7 @@ class AuthState {
   final String? token;
   final String? refreshToken;
   final String? error;
+  final String activeRole; // 'client' or 'contractor' - current active role
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -123,6 +138,7 @@ class AuthState {
     this.token,
     this.refreshToken,
     this.error,
+    this.activeRole = 'client', // Default to client
   });
 
   AuthState copyWith({
@@ -131,6 +147,7 @@ class AuthState {
     String? token,
     String? refreshToken,
     String? error,
+    String? activeRole,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -140,6 +157,7 @@ class AuthState {
       token: token ?? this.token,
       refreshToken: refreshToken ?? this.refreshToken,
       error: clearError ? null : (error ?? this.error),
+      activeRole: activeRole ?? this.activeRole,
     );
   }
 
@@ -164,7 +182,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'client@test.pl',
     name: 'Jan Kowalski',
     phone: '+48123456789',
-    userType: 'client',
+    userTypes: ['client'],
     isVerified: true,
   );
 
@@ -173,7 +191,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'contractor@test.pl',
     name: 'Anna Nowak',
     phone: '+48987654321',
-    userType: 'contractor',
+    userTypes: ['contractor'],
     isVerified: true,
   );
 
@@ -200,7 +218,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveToken(mockToken);
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
-    await _storage.saveUserType(user.userType);
+    await _storage.saveUserType(user.userTypes.first);
 
     state = state.copyWith(
       status: AuthStatus.authenticated,
@@ -357,7 +375,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
-    await _storage.saveUserType(user.userType);
+    await _storage.saveUserType(user.userTypes.first);
     _ref.read(apiClientProvider).setAuthToken(token);
   }
 
@@ -641,6 +659,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
     } catch (_) {
       // Silently fail - user data will be refreshed on next successful request
+    }
+  }
+
+  /// Add a role to the current user (client or contractor)
+  /// Creates empty profile when role is added
+  Future<void> addRole(String role) async {
+    if (!state.isAuthenticated) return;
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/users/me/add-role',
+        data: {'role': role},
+      );
+
+      // Refresh user data to get updated roles
+      await refreshUser();
+    } catch (e) {
+      // Error adding role
+      state = state.copyWith(
+        error: 'Failed to add role: $e',
+      );
+      rethrow;
+    }
+  }
+
+  /// Set the active role for the current session
+  /// Only works if user has this role
+  void setActiveRole(String role) {
+    if (state.user?.userTypes.contains(role) == true) {
+      state = state.copyWith(activeRole: role);
     }
   }
 
