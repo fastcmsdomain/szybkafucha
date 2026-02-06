@@ -221,7 +221,7 @@ export class TasksService {
         avatarUrl: contractorProfile?.user?.avatarUrl || null,
         rating: contractorProfile?.ratingAvg || 0,
         completedTasks: contractorProfile?.completedTasksCount || 0,
-        bio: contractorProfile?.bio || contractorProfile?.user?.bio || null,
+        bio: contractorProfile?.bio || null,
       },
     );
 

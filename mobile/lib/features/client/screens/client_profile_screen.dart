@@ -41,7 +41,7 @@ class _ClientProfileScreenState
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _bioController = TextEditingController(text: user?.bio ?? '');
+    _bioController = TextEditingController(text: ''); // Bio loaded from client profile
     _addressController = TextEditingController(text: user?.address ?? '');
     _loadClientProfile();
   }
@@ -50,12 +50,37 @@ class _ClientProfileScreenState
     try {
       final api = ref.read(apiClientProvider);
       final response = await api.get('/client/profile');
-      final data = response.data as Map<String, dynamic>;
+      final data = response as Map<String, dynamic>;
+
+      // DEBUG: Print the entire response
+      debugPrint('=== CLIENT PROFILE API RESPONSE ===');
+      debugPrint('Full response: $data');
+      debugPrint('Bio: ${data['bio']}');
+      debugPrint('RatingAvg: ${data['ratingAvg']}');
+      debugPrint('RatingCount: ${data['ratingCount']}');
+      debugPrint('===================================');
 
       if (mounted) {
         setState(() {
-          _ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
-          _ratingCount = data['ratingCount'] as int?;
+          // Handle ratingAvg which comes as string from PostgreSQL decimal type
+          final ratingAvgValue = data['ratingAvg'];
+          _ratingAvg = ratingAvgValue != null
+              ? double.tryParse(ratingAvgValue.toString())
+              : null;
+
+          // Handle ratingCount
+          final ratingCountValue = data['ratingCount'];
+          _ratingCount = ratingCountValue is int
+              ? ratingCountValue
+              : int.tryParse(ratingCountValue?.toString() ?? '');
+
+          // Load bio from client profile (role-specific)
+          final bio = data['bio'] as String?;
+          debugPrint('DEBUG: Loading bio = $bio');
+          // Always set controller text to match backend state (even if null/empty)
+          _bioController.text = bio ?? '';
+          debugPrint('DEBUG: Set bioController.text to: ${_bioController.text}');
+
           _isLoadingProfile = false;
         });
       }
@@ -221,6 +246,9 @@ class _ClientProfileScreenState
       userPayload['phone'] = _phoneController.text.trim();
       userPayload['address'] = _addressController.text.trim();
 
+      debugPrint('=== SAVING CLIENT PROFILE ===');
+      debugPrint('User payload: $userPayload');
+
       await api.put('/users/me', data: userPayload);
 
       // Update client profile (bio - role-specific data)
@@ -228,10 +256,18 @@ class _ClientProfileScreenState
         'bio': _bioController.text.trim(),
       };
 
+      debugPrint('Client payload: $clientPayload');
+
       await api.put('/client/profile', data: clientPayload);
+
+      debugPrint('Profile saved successfully');
+      debugPrint('============================');
 
       // Refresh user data in authProvider to update local state
       await ref.read(authProvider.notifier).refreshUser();
+
+      // Reload client profile to refresh bio in UI
+      await _loadClientProfile();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

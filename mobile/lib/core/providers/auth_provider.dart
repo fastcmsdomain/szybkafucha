@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_config.dart';
@@ -398,6 +399,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+
+      // DEBUG: Print JWT token for backend API testing
+      debugPrint('=== JWT TOKEN FOR API TESTING ===');
+      debugPrint('Token: $token');
+      debugPrint('User: ${user.email}');
+      debugPrint('=================================');
 
       await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
 

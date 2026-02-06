@@ -319,7 +319,7 @@ export class ContractorService {
         id: profile.userId,
         name: profile.user.name || 'Wykonawca',
         avatarUrl: profile.user.avatarUrl || null,
-        bio: profile.bio || profile.user.bio || null,
+        bio: profile.bio || null,
         ratingAvg: Number(profile.ratingAvg) || 0,
         ratingCount: profile.ratingCount || 0,
         completedTasksCount: profile.completedTasksCount || 0,
@@ -335,12 +335,12 @@ export class ContractorService {
       throw new NotFoundException('Contractor not found');
     }
 
-    // Return basic profile from User data
+    // Return basic profile from User data (no bio since it's role-specific)
     return {
       id: user.id,
       name: user.name || 'Wykonawca',
       avatarUrl: user.avatarUrl || null,
-      bio: user.bio || null,
+      bio: null, // Bio is role-specific, stored in contractor_profiles
       ratingAvg: 0,
       ratingCount: 0,
       completedTasksCount: 0,

@@ -37,8 +37,4 @@ export class UpdateUserDto {
    @IsString()
    @MaxLength(255)
    address?: string;
-
-   @IsOptional()
-   @IsString()
-   bio?: string;
 }

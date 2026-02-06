@@ -11,6 +11,8 @@ import { UsersService } from '../users/users.service';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 
 export interface ClientProfileDto {
+  userId: string;
+  bio: string | null;
   ratingAvg: number;
   ratingCount: number;
 }
@@ -92,8 +94,16 @@ export class ClientService {
   /**
    * Get client profile with aggregated ratings
    * Calculates average rating and count from ratings table where toUserId = clientId AND role = 'client'
+   * Also returns bio from client_profiles table
    */
   async getClientProfile(userId: string): Promise<ClientProfileDto> {
+    // Get or create client profile (lazy creation)
+    let profile = await this.findByUserId(userId);
+    if (!profile) {
+      profile = await this.createProfile(userId);
+    }
+
+    // Get aggregated ratings for client role
     const result = await this.ratingRepository
       .createQueryBuilder('rating')
       .select('AVG(rating.rating)', 'avg')
@@ -107,6 +117,8 @@ export class ClientService {
     const ratingCount = result?.count ? parseInt(result.count, 10) : 0;
 
     return {
+      userId: profile.userId,
+      bio: profile.bio,
       ratingAvg,
       ratingCount,
     };

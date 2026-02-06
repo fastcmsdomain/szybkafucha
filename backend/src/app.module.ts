@@ -32,6 +32,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 // Entities
 import { User } from './users/entities/user.entity';
 import { ContractorProfile } from './contractor/entities/contractor-profile.entity';
+import { ClientProfile } from './client/entities/client-profile.entity';
 import { Task } from './tasks/entities/task.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
@@ -63,6 +64,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
         entities: [
           User,
           ContractorProfile,
+          ClientProfile,
           Task,
           Rating,
           Message,

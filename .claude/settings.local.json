@@ -79,7 +79,9 @@
       "Bash(pkill:*)",
       "Bash(npx ts-node:*)",
       "Bash(npm run start:dev:*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(npm run seed:fresh:*)",
+      "Bash(python3 -m json.tool:*)"
     ]
   }
 }

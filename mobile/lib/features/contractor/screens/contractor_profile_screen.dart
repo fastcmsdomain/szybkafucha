@@ -38,6 +38,9 @@ class _ContractorProfileScreenState
   Set<String> _selectedCategories = {};
   double _serviceRadius = 10.0;
 
+  // KYC verification status
+  bool _isKycVerified = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +48,7 @@ class _ContractorProfileScreenState
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _bioController = TextEditingController(text: user?.bio ?? '');
+    _bioController = TextEditingController(text: ''); // Bio loaded from contractor profile
     _addressController = TextEditingController(text: user?.address ?? '');
     _loadContractorProfile();
   }
@@ -54,29 +57,65 @@ class _ContractorProfileScreenState
     try {
       final api = ref.read(apiClientProvider);
       final response = await api.get('/contractor/profile');
-      final data = response.data as Map<String, dynamic>;
+      final data = response as Map<String, dynamic>;
+
+      // DEBUG: Print the entire response
+      debugPrint('=== CONTRACTOR PROFILE API RESPONSE ===');
+      debugPrint('Full response: $data');
+      debugPrint('Bio: ${data['bio']}');
+      debugPrint('Categories: ${data['categories']}');
+      debugPrint('ServiceRadiusKm: ${data['serviceRadiusKm']}');
+      debugPrint('KYC Status: ${data['kycStatus']}');
+      debugPrint('======================================');
 
       if (mounted) {
         setState(() {
-          _ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
-          _ratingCount = data['ratingCount'] as int?;
+          // Handle ratingAvg which comes as string from PostgreSQL decimal type
+          final ratingAvgValue = data['ratingAvg'];
+          _ratingAvg = ratingAvgValue != null
+              ? double.tryParse(ratingAvgValue.toString())
+              : null;
+
+          // Handle ratingCount
+          final ratingCountValue = data['ratingCount'];
+          _ratingCount = ratingCountValue is int
+              ? ratingCountValue
+              : int.tryParse(ratingCountValue?.toString() ?? '');
+
+          // Load bio from contractor profile (role-specific)
+          final bio = data['bio'] as String?;
+          debugPrint('DEBUG: Loading bio = $bio');
+          // Always set controller text to match backend state (even if null/empty)
+          _bioController.text = bio ?? '';
+          debugPrint('DEBUG: Set bioController.text to: ${_bioController.text}');
 
           // Load categories and service radius
           final categories = data['categories'] as List?;
+          debugPrint('DEBUG: Loading categories = $categories');
           if (categories != null) {
             _selectedCategories = Set<String>.from(categories);
+            debugPrint('DEBUG: Set selectedCategories to: $_selectedCategories');
           }
 
+          // Handle serviceRadiusKm which might come as string or number
           final serviceRadiusKm = data['serviceRadiusKm'];
+          debugPrint('DEBUG: Loading serviceRadiusKm = $serviceRadiusKm');
           if (serviceRadiusKm != null) {
-            _serviceRadius = (serviceRadiusKm as num).toDouble();
+            _serviceRadius = double.tryParse(serviceRadiusKm.toString()) ?? 10.0;
+            debugPrint('DEBUG: Set serviceRadius to: $_serviceRadius');
           }
+
+          // Load KYC verification status
+          final kycStatus = data['kycStatus'] as String?;
+          _isKycVerified = (kycStatus == 'verified');
+          debugPrint('DEBUG: Set isKycVerified to: $_isKycVerified');
 
           _isLoadingProfile = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error loading contractor profile: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoadingProfile = false;
@@ -255,6 +294,9 @@ class _ContractorProfileScreenState
         'address': _addressController.text.trim(),
       };
 
+      debugPrint('=== SAVING CONTRACTOR PROFILE ===');
+      debugPrint('User payload: $userPayload');
+
       await api.put('/users/me', data: userPayload);
 
       // Update contractor profile (bio, categories, serviceRadiusKm - role-specific data)
@@ -264,10 +306,18 @@ class _ContractorProfileScreenState
         'serviceRadiusKm': _serviceRadius.toInt(),
       };
 
+      debugPrint('Contractor payload: $contractorPayload');
+
       await api.put('/contractor/profile', data: contractorPayload);
+
+      debugPrint('Profile saved successfully');
+      debugPrint('=================================');
 
       // Refresh user data in authProvider to update local state
       await ref.read(authProvider.notifier).refreshUser();
+
+      // Reload contractor profile to refresh bio, categories, and service radius in UI
+      await _loadContractorProfile();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -480,8 +530,7 @@ class _ContractorProfileScreenState
     if (_bioController.text.isNotEmpty) completedFields++;
     if (_selectedCategories.isNotEmpty) completedFields++;
     if (_serviceRadius > 0) completedFields++;
-    // KYC check would go here (not implemented in UI yet)
-    // if (_kycVerified == true) completedFields++;
+    if (_isKycVerified == true) completedFields++;
 
     final percent = (completedFields / totalFields * 100).toInt();
     final isComplete = percent == 100;
