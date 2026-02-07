@@ -65,6 +65,7 @@ describe('ContractorController', () => {
     const mockService = {
       findByUserId: jest.fn(),
       findByUserIdOrFail: jest.fn(),
+      getRatingsByUserId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       setAvailability: jest.fn(),
@@ -104,6 +105,40 @@ describe('ContractorController', () => {
       expect(service.findByUserId).toHaveBeenCalledWith('user-123');
       expect(service.create).toHaveBeenCalledWith('user-123');
       expect(result).toEqual(mockProfile);
+    });
+  });
+
+  describe('GET /contractor/profile/ratings', () => {
+    it('should return contractor ratings and comments', async () => {
+      const ratings = [
+        {
+          id: 'rating-1',
+          rating: 5,
+          comment: 'Świetna współpraca',
+          createdAt: new Date(),
+          fromUserId: 'client-1',
+          fromUserName: 'Anna',
+          fromUserAvatarUrl: null,
+        },
+      ];
+      service.getRatingsByUserId.mockResolvedValue(ratings as any);
+
+      const result = await controller.getMyRatings(mockRequest as any);
+
+      expect(service.getRatingsByUserId).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual(ratings);
+    });
+  });
+
+  describe('GET /contractor/:userId/ratings', () => {
+    it('should return ratings for selected contractor', async () => {
+      const ratings = [{ id: 'rating-1', rating: 4, comment: 'Super' }];
+      service.getRatingsByUserId.mockResolvedValue(ratings as any);
+
+      const result = await controller.getPublicRatings('user-999');
+
+      expect(service.getRatingsByUserId).toHaveBeenCalledWith('user-999');
+      expect(result).toEqual(ratings);
     });
   });
 

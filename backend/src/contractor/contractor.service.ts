@@ -13,6 +13,7 @@ import {
   ContractorProfile,
   KycStatus,
 } from './entities/contractor-profile.entity';
+import { Rating } from '../tasks/entities/rating.entity';
 import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { UsersService } from '../users/users.service';
@@ -22,6 +23,8 @@ export class ContractorService {
   constructor(
     @InjectRepository(ContractorProfile)
     private readonly contractorRepository: Repository<ContractorProfile>,
+    @InjectRepository(Rating)
+    private readonly ratingsRepository: Repository<Rating>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -282,6 +285,39 @@ export class ContractorService {
       isVerified: false,
       memberSince: user.createdAt,
     };
+  }
+
+  /**
+   * Get ratings and comments left for a contractor
+   */
+  async getRatingsByUserId(userId: string): Promise<
+    Array<{
+      id: string;
+      taskId: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+      fromUserId: string;
+      fromUserName: string | null;
+      fromUserAvatarUrl: string | null;
+    }>
+  > {
+    const ratings = await this.ratingsRepository.find({
+      where: { toUserId: userId },
+      relations: ['fromUser'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return ratings.map((rating) => ({
+      id: rating.id,
+      taskId: rating.taskId,
+      rating: rating.rating,
+      comment: rating.comment,
+      createdAt: rating.createdAt,
+      fromUserId: rating.fromUserId,
+      fromUserName: rating.fromUser?.name ?? null,
+      fromUserAvatarUrl: rating.fromUser?.avatarUrl ?? null,
+    }));
   }
 
   /**

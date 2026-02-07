@@ -11,6 +11,7 @@ import {
   UseGuards,
   Request,
   Param,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ContractorService } from './contractor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -31,6 +32,24 @@ export class ContractorController {
   @Get(':userId/public')
   async getPublicProfile(@Param('userId') userId: string) {
     return this.contractorService.getPublicProfile(userId);
+  }
+
+  /**
+   * GET /contractor/profile/ratings
+   * Get ratings/comments received by currently logged contractor
+   */
+  @Get('profile/ratings')
+  async getMyRatings(@Request() req: AuthenticatedRequest) {
+    return this.contractorService.getRatingsByUserId(req.user.id);
+  }
+
+  /**
+   * GET /contractor/:userId/ratings
+   * Get ratings/comments received by a specific contractor
+   */
+  @Get(':userId/ratings')
+  async getPublicRatings(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.contractorService.getRatingsByUserId(userId);
   }
 
   /**

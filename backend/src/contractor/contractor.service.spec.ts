@@ -11,11 +11,14 @@ import {
   ContractorProfile,
   KycStatus,
 } from './entities/contractor-profile.entity';
+import { Rating } from '../tasks/entities/rating.entity';
+import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 
 describe('ContractorService', () => {
   let service: ContractorService;
   let repository: jest.Mocked<Repository<ContractorProfile>>;
+  let ratingsRepository: jest.Mocked<Repository<Rating>>;
 
   const mockUser: User = {
     id: 'user-123',
@@ -60,6 +63,12 @@ describe('ContractorService', () => {
       create: jest.fn(),
       save: jest.fn(),
     };
+    const mockRatingsRepository = {
+      find: jest.fn(),
+    };
+    const mockUsersService = {
+      findById: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,11 +77,20 @@ describe('ContractorService', () => {
           provide: getRepositoryToken(ContractorProfile),
           useValue: mockRepository,
         },
+        {
+          provide: getRepositoryToken(Rating),
+          useValue: mockRatingsRepository,
+        },
+        {
+          provide: UsersService,
+          useValue: mockUsersService,
+        },
       ],
     }).compile();
 
     service = module.get<ContractorService>(ContractorService);
     repository = module.get(getRepositoryToken(ContractorProfile));
+    ratingsRepository = module.get(getRepositoryToken(Rating));
   });
 
   describe('findByUserId', () => {
@@ -213,18 +231,20 @@ describe('ContractorService', () => {
       expect(result.isOnline).toBe(true);
     });
 
-    it('should throw BadRequestException when going online without KYC', async () => {
-      repository.findOne.mockResolvedValue({
+    it('should allow going online without KYC (MVP temporary behavior)', async () => {
+      const pendingProfile = {
         ...mockProfile,
         kycStatus: KycStatus.PENDING,
-      });
+        isOnline: false,
+      };
+      const onlineProfile = { ...pendingProfile, isOnline: true };
 
-      await expect(service.setAvailability('user-123', true)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.setAvailability('user-123', true)).rejects.toThrow(
-        'Complete KYC verification before going online',
-      );
+      repository.findOne.mockResolvedValue(pendingProfile);
+      repository.save.mockResolvedValue(onlineProfile);
+
+      const result = await service.setAvailability('user-123', true);
+
+      expect(result.isOnline).toBe(true);
     });
   });
 
@@ -391,6 +411,44 @@ describe('ContractorService', () => {
       const result = await service.incrementCompletedTasks('user-123');
 
       expect(result.completedTasksCount).toBe(1);
+    });
+  });
+
+  describe('getRatingsByUserId', () => {
+    it('should return mapped ratings with author metadata', async () => {
+      ratingsRepository.find.mockResolvedValue([
+        {
+          id: 'rating-1',
+          taskId: 'task-1',
+          fromUserId: 'user-a',
+          toUserId: 'user-123',
+          rating: 5,
+          comment: 'Bardzo szybko i profesjonalnie. Polecam!',
+          createdAt: new Date('2026-01-01T10:00:00.000Z'),
+          fromUser: {
+            name: 'Jan Kowalski',
+            avatarUrl: '/uploads/jan.jpg',
+          },
+        },
+      ] as Rating[]);
+
+      const result = await service.getRatingsByUserId('user-123');
+
+      expect(ratingsRepository.find).toHaveBeenCalledWith({
+        where: { toUserId: 'user-123' },
+        relations: ['fromUser'],
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: 'rating-1',
+        taskId: 'task-1',
+        rating: 5,
+        comment: 'Bardzo szybko i profesjonalnie. Polecam!',
+        fromUserId: 'user-a',
+        fromUserName: 'Jan Kowalski',
+        fromUserAvatarUrl: '/uploads/jan.jpg',
+      });
     });
   });
 });
