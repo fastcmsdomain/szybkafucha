@@ -21,6 +21,7 @@ class CreateTaskDto {
   final double locationLng;
   final String address;
   final double budgetAmount;
+  final double? estimatedDurationHours;
   final DateTime? scheduledAt;
   final List<String>? imageUrls;
 
@@ -32,6 +33,7 @@ class CreateTaskDto {
     required this.locationLng,
     required this.address,
     required this.budgetAmount,
+    this.estimatedDurationHours,
     this.scheduledAt,
     this.imageUrls,
   });
@@ -44,6 +46,7 @@ class CreateTaskDto {
         'locationLng': locationLng,
         'address': address,
         'budgetAmount': budgetAmount,
+        if (estimatedDurationHours != null) 'estimatedDurationHours': estimatedDurationHours,
         if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
         if (imageUrls != null && imageUrls!.isNotEmpty) 'imageUrls': imageUrls,
       };

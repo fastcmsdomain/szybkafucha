@@ -35,6 +35,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _budgetController = TextEditingController(text: '50');
+  final _estimatedDurationController = TextEditingController();
 
   TaskCategory? _selectedCategory;
   bool _isNow = true;
@@ -60,12 +61,18 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       final category = TaskCategoryData.fromCategory(_selectedCategory!);
       _budgetController.text = category.suggestedPrice.toString();
     }
+
+    // Add listener to update summary when duration changes
+    _estimatedDurationController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _budgetController.dispose();
+    _estimatedDurationController.dispose();
     super.dispose();
   }
 
@@ -587,40 +594,100 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.budget,
-          style: AppTypography.labelLarge,
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        TextFormField(
-          controller: _budgetController,
-          keyboardType: TextInputType.number,
-          style: AppTypography.h3.copyWith(
-            color: AppColors.primary,
-          ),
-          decoration: InputDecoration(
-            suffixText: 'PLN',
-            suffixStyle: AppTypography.h4.copyWith(
-              color: AppColors.primary,
+        // Row with two inputs side by side
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Budget field
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.budget,
+                    style: AppTypography.labelLarge,
+                  ),
+                  SizedBox(height: AppSpacing.gapMD),
+                  TextFormField(
+                    controller: _budgetController,
+                    keyboardType: TextInputType.number,
+                    style: AppTypography.h3.copyWith(
+                      color: AppColors.primary,
+                    ),
+                    decoration: InputDecoration(
+                      suffixText: 'PLN',
+                      suffixStyle: AppTypography.h4.copyWith(
+                        color: AppColors.primary,
+                      ),
+                      hintText: '35',
+                      hintStyle: AppTypography.h3.copyWith(
+                        color: AppColors.gray300,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Wprowadź kwotę';
+                      }
+                      final amount = double.tryParse(value);
+                      if (amount == null) {
+                        return 'Wprowadź poprawną kwotę';
+                      }
+                      if (amount < 35) {
+                        return 'Min. 35 PLN';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
-            hintText: '35',
-            hintStyle: AppTypography.h3.copyWith(
-              color: AppColors.gray300,
+            SizedBox(width: AppSpacing.gapMD),
+            // Estimated duration field
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Szacowany czas',
+                    style: AppTypography.labelLarge,
+                  ),
+                  SizedBox(height: AppSpacing.gapMD),
+                  TextFormField(
+                    controller: _estimatedDurationController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    style: AppTypography.h3.copyWith(
+                      color: AppColors.primary,
+                    ),
+                    decoration: InputDecoration(
+                      suffixText: 'h',
+                      suffixStyle: AppTypography.h4.copyWith(
+                        color: AppColors.primary,
+                      ),
+                      hintText: '2.5',
+                      hintStyle: AppTypography.h3.copyWith(
+                        color: AppColors.gray300,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return null; // Optional field
+                      }
+                      final hours = double.tryParse(value);
+                      if (hours == null) {
+                        return 'Podaj liczbę';
+                      }
+                      if (hours < 0.5) {
+                        return 'Min. 0.5h';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Wprowadź kwotę';
-            }
-            final amount = double.tryParse(value);
-            if (amount == null) {
-              return 'Wprowadź poprawną kwotę';
-            }
-            if (amount < 35) {
-              return 'Minimalna kwota to 35 PLN';
-            }
-            return null;
-          },
+          ],
         ),
         SizedBox(height: AppSpacing.gapSM),
         Row(
@@ -864,7 +931,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             _selectedAddress ?? 'Nie wybrano',
             wrapValue: true,
           ),
-          if (category != null) ...[
+          if (_estimatedDurationController.text.isNotEmpty) ...[
+            Divider(color: AppColors.gray200),
+            _buildSummaryRow(
+              'Szacowany czas',
+              _formatDurationForSummary(_estimatedDurationController.text),
+              isHighlighted: true,
+            ),
+          ] else if (category != null) ...[
             Divider(color: AppColors.gray200),
             _buildSummaryRow(
               'Szacowany czas',
@@ -919,6 +993,25 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               ],
             ),
     );
+  }
+
+  /// Format duration hours for summary display
+  String _formatDurationForSummary(String hoursText) {
+    if (hoursText.isEmpty) return '';
+
+    final hours = double.tryParse(hoursText);
+    if (hours == null) return hoursText;
+
+    if (hours < 1) {
+      final minutes = (hours * 60).round();
+      return '$minutes min';
+    } else if (hours == hours.floor()) {
+      return '${hours.toInt()}h';
+    } else {
+      final wholeHours = hours.floor();
+      final remainingMinutes = ((hours - wholeHours) * 60).round();
+      return '${wholeHours}h ${remainingMinutes}min';
+    }
   }
 
   /// Custom radio indicator to replace deprecated Radio widget
@@ -999,6 +1092,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       // Parse budget from text field
       final budgetAmount = double.tryParse(_budgetController.text) ?? 35;
 
+      // Parse estimated duration (optional)
+      final estimatedDurationHours = _estimatedDurationController.text.isNotEmpty
+          ? double.tryParse(_estimatedDurationController.text)
+          : null;
+
       // Upload images first if any selected
       List<String>? imageUrls;
       if (_selectedImages.isNotEmpty) {
@@ -1014,6 +1112,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         locationLng: _selectedLatLng!.longitude,
         address: _selectedAddress!,
         budgetAmount: budgetAmount,
+        estimatedDurationHours: estimatedDurationHours,
         scheduledAt: scheduledAt,
         imageUrls: imageUrls,
       );

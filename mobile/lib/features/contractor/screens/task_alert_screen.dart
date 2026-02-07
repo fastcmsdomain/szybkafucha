@@ -114,6 +114,28 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                           ],
                         ),
 
+                        // Estimated duration
+                        if (_task.estimatedDurationHours != null) ...[
+                          SizedBox(height: AppSpacing.gapSM),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 16,
+                                color: AppColors.info,
+                              ),
+                              SizedBox(width: AppSpacing.gapXS),
+                              Text(
+                                'Szacowany czas: ${_formatDuration(_task.estimatedDurationHours!)}',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.info,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+
                         // Scheduled time
                         if (_task.scheduledAt != null) ...[
                           SizedBox(height: AppSpacing.gapSM),
@@ -688,6 +710,22 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$day.$month.$year o $hour:$minute';
+  }
+
+  String _formatDuration(double hours) {
+    if (hours < 1) {
+      // Less than 1 hour - show in minutes
+      final minutes = (hours * 60).round();
+      return '$minutes min';
+    } else if (hours == hours.floor()) {
+      // Whole hours (1.0, 2.0, etc.)
+      return '${hours.toInt()}h';
+    } else {
+      // Hours with minutes (1.5, 2.5, etc.)
+      final wholeHours = hours.floor();
+      final remainingMinutes = ((hours - wholeHours) * 60).round();
+      return '${wholeHours}h ${remainingMinutes}min';
+    }
   }
 
   void _showFullImage(String imageUrl) {

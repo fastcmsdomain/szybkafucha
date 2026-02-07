@@ -1502,7 +1502,15 @@ class _ContractorProfileSheetState
       final response = await api.get('/contractor/${widget.contractorId}/public');
 
       // Backend returns flat structure with bio at root level
-      final data = response.data as Map<String, dynamic>;
+      // API client returns data directly, not wrapped in response.data
+      final data = response as Map<String, dynamic>;
+
+      debugPrint('=== CONTRACTOR PROFILE POPUP ===');
+      debugPrint('Fetched profile for contractor: ${widget.contractorId}');
+      debugPrint('Bio: ${data['bio']}');
+      debugPrint('Name: ${data['name']}');
+      debugPrint('Rating: ${data['ratingAvg']}');
+      debugPrint('===============================');
 
       if (mounted) {
         setState(() {
@@ -1510,8 +1518,9 @@ class _ContractorProfileSheetState
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error fetching contractor profile: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _error = e.toString();

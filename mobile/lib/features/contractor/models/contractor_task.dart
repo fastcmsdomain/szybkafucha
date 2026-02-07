@@ -14,6 +14,7 @@ class ContractorTask {
   final double longitude;
   final double distanceKm;
   final int estimatedMinutes;
+  final double? estimatedDurationHours; // Client's estimated duration in hours
   final int price;
   final ContractorTaskStatus status;
   final DateTime createdAt;
@@ -37,6 +38,7 @@ class ContractorTask {
     required this.longitude,
     required this.distanceKm,
     required this.estimatedMinutes,
+    this.estimatedDurationHours,
     required this.price,
     required this.status,
     required this.createdAt,
@@ -98,6 +100,8 @@ class ContractorTask {
       // Estimated minutes - default to 15
       estimatedMinutes: _parseInt(json['estimatedMinutes']) ??
                         _parseInt(json['estimated_minutes']) ?? 15,
+      // Estimated duration in hours from client
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       // Budget from backend - may be String like "50.00"
       price: _parseInt(json['budgetAmount']) ??
              _parseInt(json['price']) ??

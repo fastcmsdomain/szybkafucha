@@ -630,7 +630,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: AppColors.white,
               padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingMD,
+                horizontal: AppSpacing.paddingSM,
                 vertical: AppSpacing.paddingSM,
               ),
             ),

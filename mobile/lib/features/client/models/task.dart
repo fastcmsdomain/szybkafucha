@@ -53,6 +53,7 @@ class Task {
   final double? latitude;
   final double? longitude;
   final int budget;
+  final double? estimatedDurationHours;
   final DateTime? scheduledAt;
   final bool isImmediate;
   final TaskStatus status;
@@ -72,6 +73,7 @@ class Task {
     this.latitude,
     this.longitude,
     required this.budget,
+    this.estimatedDurationHours,
     this.scheduledAt,
     this.isImmediate = true,
     this.status = TaskStatus.posted,
@@ -104,6 +106,8 @@ class Task {
       longitude: _parseDouble(json['locationLng']) ?? _parseDouble(json['longitude']),
       // Backend sends budgetAmount as decimal String (e.g., "50.00")
       budget: _parseInt(json['budgetAmount']) ?? _parseInt(json['budget']) ?? 0,
+      // Backend sends estimatedDurationHours as decimal (e.g., 2.5)
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       scheduledAt: json['scheduledAt'] != null
           ? DateTime.parse(json['scheduledAt'] as String)
           : (json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null),
