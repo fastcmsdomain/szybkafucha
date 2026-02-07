@@ -7,7 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { APP_GUARD } from '@nestjs/core';
+import { join } from 'path';
 import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ContractorModule } from './contractor/contractor.module';
+import { ClientModule } from './client/client.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -29,6 +32,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 // Entities
 import { User } from './users/entities/user.entity';
 import { ContractorProfile } from './contractor/entities/contractor-profile.entity';
+import { ClientProfile } from './client/entities/client-profile.entity';
 import { Task } from './tasks/entities/task.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
@@ -60,6 +64,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
         entities: [
           User,
           ContractorProfile,
+          ClientProfile,
           Task,
           Rating,
           Message,
@@ -111,11 +116,18 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
       inject: [ConfigService],
     }),
 
+    // Serve static files (uploads)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
+
     // Feature modules
     AuthModule,
     UsersModule,
     TasksModule,
     ContractorModule,
+    ClientModule,
     PaymentsModule,
     AdminModule,
     RealtimeModule,

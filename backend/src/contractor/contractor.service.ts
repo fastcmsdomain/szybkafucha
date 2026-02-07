@@ -17,6 +17,7 @@ import { Rating } from '../tasks/entities/rating.entity';
 import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { UsersService } from '../users/users.service';
+import { Rating } from '../tasks/entities/rating.entity';
 
 @Injectable()
 export class ContractorService {
@@ -24,7 +25,7 @@ export class ContractorService {
     @InjectRepository(ContractorProfile)
     private readonly contractorRepository: Repository<ContractorProfile>,
     @InjectRepository(Rating)
-    private readonly ratingsRepository: Repository<Rating>,
+    private readonly ratingRepository: Repository<Rating>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -68,12 +69,18 @@ export class ContractorService {
 
   /**
    * Update contractor profile
+   * Automatically creates profile if it doesn't exist (lazy creation)
    */
   async update(
     userId: string,
     dto: UpdateContractorProfileDto,
   ): Promise<ContractorProfile> {
-    const profile = await this.findByUserIdOrFail(userId);
+    let profile = await this.findByUserId(userId);
+
+    // Lazy creation: create profile if it doesn't exist
+    if (!profile) {
+      profile = await this.create(userId);
+    }
 
     if (dto.bio !== undefined) {
       profile.bio = dto.bio;
@@ -88,6 +95,63 @@ export class ContractorService {
     }
 
     return this.contractorRepository.save(profile);
+  }
+
+  /**
+   * Check if contractor profile is complete
+   * Required fields: name, address, bio, categories (min 1), service radius, KYC verified
+   */
+  async isProfileComplete(userId: string): Promise<boolean> {
+    const user = await this.usersService.findById(userId);
+    const profile = await this.findByUserId(userId);
+
+    if (!user || !profile) {
+      return false;
+    }
+
+    return !!(
+      user.name &&
+      user.address &&
+      profile.bio &&
+      profile.categories.length > 0 &&
+      profile.serviceRadiusKm &&
+      profile.kycStatus === KycStatus.VERIFIED
+    );
+  }
+
+  /**
+   * Get contractor profile with aggregated ratings
+   * Calculates average rating and count from ratings table where toUserId = contractorId AND role = 'contractor'
+   */
+  async getContractorProfile(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    completedTasksCount: number;
+    categories: string[];
+    serviceRadiusKm: number | null;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'contractor' }) // NEW: Filter by contractor role
+      .getRawOne();
+
+    // Handle case when contractor has no ratings
+    const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;
+    const ratingCount = result?.count ? parseInt(result.count, 10) : 0;
+
+    // Get contractor profile for other data
+    const profile = await this.findByUserId(userId);
+
+    return {
+      ratingAvg,
+      ratingCount,
+      completedTasksCount: profile?.completedTasksCount || 0,
+      categories: profile?.categories || [],
+      serviceRadiusKm: profile?.serviceRadiusKm || null,
+    };
   }
 
   /**
@@ -256,7 +320,7 @@ export class ContractorService {
         id: profile.userId,
         name: profile.user.name || 'Wykonawca',
         avatarUrl: profile.user.avatarUrl || null,
-        bio: profile.bio || profile.user.bio || null,
+        bio: profile.bio || null,
         ratingAvg: Number(profile.ratingAvg) || 0,
         ratingCount: profile.ratingCount || 0,
         completedTasksCount: profile.completedTasksCount || 0,
@@ -272,12 +336,12 @@ export class ContractorService {
       throw new NotFoundException('Contractor not found');
     }
 
-    // Return basic profile from User data
+    // Return basic profile from User data (no bio since it's role-specific)
     return {
       id: user.id,
       name: user.name || 'Wykonawca',
       avatarUrl: user.avatarUrl || null,
-      bio: user.bio || null,
+      bio: null, // Bio is role-specific, stored in contractor_profiles
       ratingAvg: 0,
       ratingCount: 0,
       completedTasksCount: 0,
@@ -302,7 +366,7 @@ export class ContractorService {
       fromUserAvatarUrl: string | null;
     }>
   > {
-    const ratings = await this.ratingsRepository.find({
+    const ratings = await this.ratingRepository.find({
       where: { toUserId: userId },
       relations: ['fromUser'],
       order: { createdAt: 'DESC' },

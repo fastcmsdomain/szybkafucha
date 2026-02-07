@@ -19,30 +19,42 @@ const randomOffset = () => (Math.random() - 0.5) * 0.1;
 export const seedClients = [
   {
     id: '11111111-1111-1111-1111-111111111111',
-    type: UserType.CLIENT,
+    types: ['client'], // CHANGED: now array of roles
     phone: '+48111111111',
     email: 'jan.kowalski@test.pl',
     name: 'Jan Kowalski',
     status: UserStatus.ACTIVE,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jan',
+    // Bio moved to client_profiles table
+    clientProfile: {
+      bio: 'Regularny klient platformy. Cenię terminowość i profesjonalizm.',
+    },
   },
   {
     id: '11111111-1111-1111-1111-111111111112',
-    type: UserType.CLIENT,
+    types: ['client'], // CHANGED: now array of roles
     phone: '+48111111112',
     email: 'anna.nowak@test.pl',
     name: 'Anna Nowak',
     status: UserStatus.ACTIVE,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=anna',
+    // Bio moved to client_profiles table
+    clientProfile: {
+      bio: 'Pracuję zdalnie, często potrzebuję pomocy z zakupami i odbiorem paczek.',
+    },
   },
   {
     id: '11111111-1111-1111-1111-111111111113',
-    type: UserType.CLIENT,
+    types: ['client'], // CHANGED: now array of roles
     phone: '+48111111113',
     email: 'piotr.wisniewski@test.pl',
     name: 'Piotr Wiśniewski',
     status: UserStatus.ACTIVE,
     avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=piotr',
+    // Bio moved to client_profiles table
+    clientProfile: {
+      bio: 'Przedsiębiorca, często podróżuję. Szukam rzetelnych wykonawców do różnych zleceń.',
+    },
   },
 ];
 
@@ -51,12 +63,13 @@ export const seedContractors = [
   {
     user: {
       id: '22222222-2222-2222-2222-222222222221',
-      type: UserType.CONTRACTOR,
+      types: ['contractor'], // CHANGED: now array of roles
       phone: '+48222222221',
       email: 'marek.kurier@test.pl',
       name: 'Marek Szybki',
       status: UserStatus.ACTIVE,
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=marek',
+      // Bio moved to contractor_profiles table
     },
     profile: {
       bio: 'Profesjonalny kurier z 5-letnim doświadczeniem. Szybko i bezpiecznie dostarczam paczki w całej Warszawie.',
@@ -82,12 +95,13 @@ export const seedContractors = [
   {
     user: {
       id: '22222222-2222-2222-2222-222222222222',
-      type: UserType.CONTRACTOR,
+      types: ['contractor'], // CHANGED: now array of roles
       phone: '+48222222222',
       email: 'tomek.zlotaraczka@test.pl',
       name: 'Tomasz Złota Rączka',
       status: UserStatus.ACTIVE,
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tomek',
+      // Bio moved to contractor_profiles table
     },
     profile: {
       bio: 'Montuję meble IKEA i nie tylko. Mam własne narzędzia. Szybko i solidnie.',
@@ -109,12 +123,13 @@ export const seedContractors = [
   {
     user: {
       id: '22222222-2222-2222-2222-222222222223',
-      type: UserType.CONTRACTOR,
+      types: ['contractor'], // CHANGED: now array of roles
       phone: '+48222222223',
       email: 'kasia.sprzataczka@test.pl',
       name: 'Katarzyna Czyścioch',
       status: UserStatus.ACTIVE,
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kasia',
+      // Bio moved to contractor_profiles table
     },
     profile: {
       bio: 'Profesjonalne sprzątanie mieszkań i biur. Mam własne środki czystości. Terminowo i dokładnie.',
@@ -136,12 +151,13 @@ export const seedContractors = [
   {
     user: {
       id: '22222222-2222-2222-2222-222222222224',
-      type: UserType.CONTRACTOR,
+      types: ['contractor'], // CHANGED: now array of roles
       phone: '+48222222224',
       email: 'adam.nowy@test.pl',
       name: 'Adam Nowy',
       status: UserStatus.ACTIVE,
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=adam',
+      // Bio moved to contractor_profiles table
     },
     profile: {
       bio: 'Nowy na platformie, ale chętny do pracy! Pomogę z zakupami, paczkami i czekaniem w kolejkach.',
@@ -162,6 +178,37 @@ export const seedContractors = [
       lastLocationLat: WARSAW_CENTER.lat + randomOffset(),
       lastLocationLng: WARSAW_CENTER.lng + randomOffset(),
       lastLocationAt: new Date(),
+    },
+  },
+  // DUAL-ROLE USER: Both client and contractor
+  {
+    user: {
+      id: '44444444-4444-4444-4444-444444444441',
+      types: ['client', 'contractor'], // DUAL-ROLE: has both roles
+      phone: '+48444444441',
+      email: 'dual@test.pl',
+      name: 'Michał Dual',
+      status: UserStatus.ACTIVE,
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=michal',
+    },
+    profile: {
+      bio: 'Wykonawca z doświadczeniem, który także korzysta z platformy jako klient.',
+      categories: [TaskCategory.MONTAZ],
+      serviceRadiusKm: 12,
+      kycStatus: KycStatus.VERIFIED,
+      kycIdVerified: true,
+      kycSelfieVerified: true,
+      kycBankVerified: true,
+      ratingAvg: 4.6,
+      ratingCount: 45,
+      completedTasksCount: 52,
+      isOnline: false,
+      lastLocationLat: WARSAW_CENTER.lat + randomOffset(),
+      lastLocationLng: WARSAW_CENTER.lng + randomOffset(),
+      lastLocationAt: new Date(Date.now() - 7200000), // 2 hours ago
+    },
+    clientProfile: {
+      bio: 'Regularny klient platformy, korzystam z pomocy przy zakupach.',
     },
   },
 ];

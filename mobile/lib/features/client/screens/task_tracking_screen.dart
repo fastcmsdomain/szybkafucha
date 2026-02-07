@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/router/routes.dart';
@@ -250,6 +251,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
+  void _openChatWithContractor() {
+    if (_task == null) return;
+    context.push(Routes.clientTaskChatRoute(_task!.id));
+  }
+
+  void _callContractor() {
+    // TODO: Replace with real contractor phone once available from backend
+    final uri = Uri(scheme: 'tel', path: '+48123456789');
+    launchUrl(uri);
+  }
+
   /// Check if contractor location is recent (within 30 seconds)
   bool _isLocationRecent() {
     if (_lastLocationUpdate == null) return false;
@@ -402,6 +414,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
 
+      // Extra padding so markers aren't hidden behind the bottom panel/FAB
+      final bottomPadding = 284.0 + MediaQuery.of(context).padding.bottom;
+
       return SizedBox.expand(
         child: SFMapView(
           center: center,
@@ -409,6 +424,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           markers: markers,
           interactive: true,
           showZoomControls: true,
+          cameraFitPadding: EdgeInsets.fromLTRB(
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            bottomPadding,
+          ),
         ),
       );
     }
@@ -424,6 +445,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildBottomPanel() {
+    final maxHeight = MediaQuery.of(context).size.height * 0.6;
+    // Add bottom safe area as scroll padding instead of wrapping in SafeArea
+    // to avoid layout conflicts with NavigationBar in _ClientShell
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -438,64 +464,64 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false, // avoid extra top inset that created blank space
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: AppRadius.radiusFull,
-              ),
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gray300,
+              borderRadius: AppRadius.radiusFull,
             ),
+          ),
 
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.paddingMD),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD + bottomSafe,
+              ),
               child: Column(
-                children: [
-                  // Status header
-                  _buildStatusHeader(),
+                  children: [
+                    // Status header
+                    _buildStatusHeader(),
 
-                  SizedBox(height: AppSpacing.space4),
+                    SizedBox(height: AppSpacing.space4),
 
-                  // Progress steps
-                  _buildProgressSteps(),
+                    // Progress steps
+                    _buildProgressSteps(),
 
-                  SizedBox(height: AppSpacing.space4),
+                    SizedBox(height: AppSpacing.space4),
 
-                  // Contractor card (if assigned)
-                  if (_contractor != null &&
-                      _status != TrackingStatus.searching)
-                    _buildContractorCard(),
+                    // Contractor card (if assigned)
+                    if (_contractor != null &&
+                        _status != TrackingStatus.searching)
+                      _buildContractorCard(),
 
-                  // Confirm/Reject buttons (when waiting for client confirmation)
-                  if (_status == TrackingStatus.accepted && _contractor != null)
-                    _buildConfirmContractorButtons(),
+                    // Confirm/Reject buttons (when waiting for client confirmation)
+                    if (_status == TrackingStatus.accepted &&
+                        _contractor != null)
+                      _buildConfirmContractorButtons(),
 
-                  // Action buttons (chat, call)
-                  if (_status != TrackingStatus.searching &&
-                      _status != TrackingStatus.accepted &&
-                      _status != TrackingStatus.completed)
-                    _buildActionButtons(),
+                    // Complete button (when in progress)
+                    if (_status == TrackingStatus.inProgress)
+                      _buildCompleteButton(),
 
-                  // Complete button (when in progress)
-                  if (_status == TrackingStatus.inProgress)
-                    _buildCompleteButton(),
-
-                  // Cancel button (for all non-completed tasks)
-                  if (_status != TrackingStatus.completed)
-                    _buildCancelButton(),
-                ],
+                    // Cancel button (for all non-completed tasks)
+                    if (_status != TrackingStatus.completed)
+                      _buildCancelButton(),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -649,18 +675,24 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ],
                 ),
                 SizedBox(height: 2),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.star, size: 16, color: AppColors.warning),
-                    SizedBox(width: 4),
-                    Text(
-                      _contractor!.formattedRating,
-                      style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 16, color: AppColors.warning),
+                        SizedBox(width: 4),
+                        Text(
+                          _contractor!.formattedRating,
+                          style: AppTypography.labelMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 2),
                     Text(
-                      ' • ${_contractor!.completedTasks} zleceń',
+                      'Nr zleceń: ${_contractor!.completedTasks}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -670,12 +702,34 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               ],
             ),
           ),
-          TextButton.icon(
+          TextButton(
             onPressed: _showContractorProfile,
-            icon: const Icon(Icons.person_outline),
-            label: const Text('Profil'),
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.primary,
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.paddingSM,
+                vertical: AppSpacing.paddingSM,
+              ),
+              minimumSize: const Size(44, 44),
+            ),
+            child: const Icon(Icons.person_outline, color: AppColors.white),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _openChatWithContractor,
+            icon: const Icon(Icons.chat_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.gray100,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _callContractor,
+            icon: const Icon(Icons.phone_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.success.withValues(alpha: 0.1),
+              foregroundColor: AppColors.success,
             ),
           ),
         ],
@@ -1021,44 +1075,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     }
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to chat
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja czatu wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.chat_bubble_outline),
-            label: Text('Czat'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-        SizedBox(width: AppSpacing.gapMD),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Call contractor
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja połączenia wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.phone_outlined),
-            label: Text('Zadzwoń'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildCompleteButton() {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.gapMD),
@@ -1094,7 +1110,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       padding: EdgeInsets.only(top: AppSpacing.gapMD),
       child: SizedBox(
         width: double.infinity,
-        child: OutlinedButton.icon(
+        child: ElevatedButton.icon(
           onPressed: _isCancelling ? null : _showCancelDialog,
           icon: _isCancelling
               ? SizedBox(
@@ -1102,16 +1118,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.error,
+                    color: AppColors.white,
                   ),
                 )
-              : Icon(Icons.cancel_outlined, color: AppColors.error),
+              : const Icon(Icons.cancel_outlined),
           label: Text(
             _isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie',
-            style: TextStyle(color: AppColors.error),
           ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.white,
             padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
           ),
         ),
@@ -1132,7 +1148,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               title: Text('Szczegóły zlecenia'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Show task details
+                _showTaskDetails();
               },
             ),
             ListTile(
@@ -1150,6 +1166,245 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 Navigator.pop(context);
                 _showCancelDialog();
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTaskDetails() {
+    if (_task == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.space4),
+
+              // Title
+              Text(
+                'Szczegóły zlecenia',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Category
+              _buildDetailRow(
+                icon: _task!.categoryData.icon,
+                iconColor: _task!.categoryData.color,
+                label: 'Kategoria',
+                value: _task!.categoryData.name,
+              ),
+
+              // Description
+              _buildDetailRow(
+                icon: Icons.description_outlined,
+                label: 'Opis',
+                value: _task!.description,
+              ),
+
+              // Address
+              if (_task!.address != null)
+                _buildDetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Lokalizacja',
+                  value: _task!.address!,
+                ),
+
+              // Budget
+              _buildDetailRow(
+                icon: Icons.payments_outlined,
+                iconColor: AppColors.success,
+                label: 'Budżet',
+                value: '${_task!.budget} PLN',
+                valueStyle: AppTypography.labelLarge.copyWith(
+                  color: AppColors.success,
+                ),
+              ),
+
+              // Scheduled time
+              _buildDetailRow(
+                icon: Icons.schedule_outlined,
+                iconColor: _task!.isImmediate ? AppColors.warning : AppColors.primary,
+                label: 'Termin',
+                value: _task!.isImmediate
+                    ? 'Teraz'
+                    : _task!.scheduledAt != null
+                        ? _formatScheduledTime(_task!.scheduledAt!)
+                        : 'Nie określono',
+              ),
+
+              // Images
+              if (_task!.imageUrls != null && _task!.imageUrls!.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Zdjęcia',
+                  style: AppTypography.labelLarge,
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _task!.imageUrls!.length,
+                    itemBuilder: (context, index) {
+                      final imageUrl = _task!.imageUrls![index];
+                      return GestureDetector(
+                        onTap: () => _showFullImage(imageUrl),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                          decoration: BoxDecoration(
+                            borderRadius: AppRadius.radiusMD,
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AppRadius.radiusMD,
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: AppColors.gray100,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: AppColors.gray400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              SizedBox(height: AppSpacing.space8),
+
+              // Close button
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: BorderSide(color: AppColors.error),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                ),
+                child: Text('Zamknij'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    Color? iconColor,
+    required String label,
+    required String value,
+    TextStyle? valueStyle,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.space4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (iconColor ?? AppColors.gray600).withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusSM,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: iconColor ?? AppColors.gray600,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  value,
+                  style: valueStyle ?? AppTypography.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatScheduledTime(DateTime dateTime) {
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year o $hour:$minute';
+  }
+
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray900.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, color: AppColors.white),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
           ],
         ),
@@ -1251,14 +1506,26 @@ class _ContractorProfileSheetState
       final api = ref.read(apiClientProvider);
       final response = await api.get('/contractor/${widget.contractorId}/public');
 
+      // Backend returns flat structure with bio at root level
+      // API client returns data directly, not wrapped in response.data
+      final data = response as Map<String, dynamic>;
+
+      debugPrint('=== CONTRACTOR PROFILE POPUP ===');
+      debugPrint('Fetched profile for contractor: ${widget.contractorId}');
+      debugPrint('Bio: ${data['bio']}');
+      debugPrint('Name: ${data['name']}');
+      debugPrint('Rating: ${data['ratingAvg']}');
+      debugPrint('===============================');
+
       if (mounted) {
         setState(() {
-          _fullProfile = Contractor.fromJson(response.data as Map<String, dynamic>);
+          _fullProfile = Contractor.fromJson(data);
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error fetching contractor profile: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -1423,7 +1690,7 @@ class _MapGridPainter extends CustomPainter {
       ..color = AppColors.gray200
       ..strokeWidth = 1;
 
-    const spacing = 50.0;
+    const spacing = 20.0;
 
     // Vertical lines
     for (double x = 0; x < size.width; x += spacing) {

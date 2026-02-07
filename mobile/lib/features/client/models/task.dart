@@ -26,7 +26,7 @@ extension TaskStatusExtension on TaskStatus {
       case TaskStatus.inProgress:
         return 'W trakcie';
       case TaskStatus.pendingComplete:
-        return 'Oczekuje na potwierdzenie wykonawcy';
+        return 'Oczekuje';
       case TaskStatus.completed:
         return 'Zakończone';
       case TaskStatus.cancelled:
@@ -53,6 +53,7 @@ class Task {
   final double? latitude;
   final double? longitude;
   final int budget;
+  final double? estimatedDurationHours;
   final DateTime? scheduledAt;
   final bool isImmediate;
   final TaskStatus status;
@@ -62,6 +63,7 @@ class Task {
   final DateTime createdAt;
   final DateTime? acceptedAt;
   final DateTime? completedAt;
+  final List<String>? imageUrls;
 
   const Task({
     required this.id,
@@ -71,6 +73,7 @@ class Task {
     this.latitude,
     this.longitude,
     required this.budget,
+    this.estimatedDurationHours,
     this.scheduledAt,
     this.isImmediate = true,
     this.status = TaskStatus.posted,
@@ -80,6 +83,7 @@ class Task {
     required this.createdAt,
     this.acceptedAt,
     this.completedAt,
+    this.imageUrls,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -102,6 +106,8 @@ class Task {
       longitude: _parseDouble(json['locationLng']) ?? _parseDouble(json['longitude']),
       // Backend sends budgetAmount as decimal String (e.g., "50.00")
       budget: _parseInt(json['budgetAmount']) ?? _parseInt(json['budget']) ?? 0,
+      // Backend sends estimatedDurationHours as decimal (e.g., 2.5)
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       scheduledAt: json['scheduledAt'] != null
           ? DateTime.parse(json['scheduledAt'] as String)
           : (json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null),
@@ -119,6 +125,9 @@ class Task {
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
           : (json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null),
+      imageUrls: json['imageUrls'] != null
+          ? List<String>.from(json['imageUrls'] as List)
+          : (json['image_urls'] != null ? List<String>.from(json['image_urls'] as List) : null),
     );
   }
 
@@ -180,6 +189,7 @@ class Task {
         'created_at': createdAt.toIso8601String(),
         'accepted_at': acceptedAt?.toIso8601String(),
         'completed_at': completedAt?.toIso8601String(),
+        if (imageUrls != null) 'image_urls': imageUrls,
       };
 
   Task copyWith({
@@ -199,6 +209,7 @@ class Task {
     DateTime? createdAt,
     DateTime? acceptedAt,
     DateTime? completedAt,
+    List<String>? imageUrls,
     bool clearContractor = false,
   }) {
     return Task(
@@ -218,6 +229,7 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,
+      imageUrls: imageUrls ?? this.imageUrls,
     );
   }
 

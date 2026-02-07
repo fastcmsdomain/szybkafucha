@@ -67,7 +67,10 @@ class Contractor {
           : json['memberSince'] != null
               ? DateTime.parse(json['memberSince'] as String)
               : null,
-      bio: json['bio'] as String?,
+      bio: (json['bio'] ??
+              json['description'] ??
+              json['about'] ??
+              json['bioText']) as String?,
     );
   }
 

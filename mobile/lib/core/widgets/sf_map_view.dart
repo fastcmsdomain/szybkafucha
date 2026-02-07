@@ -36,6 +36,8 @@ class SFMapView extends StatefulWidget {
 
   /// Border radius for the map container
   final BorderRadius? borderRadius;
+  /// Padding to keep markers visible when overlays (e.g., bottom sheets) cover part of the map
+  final EdgeInsets? cameraFitPadding;
 
   const SFMapView({
     super.key,
@@ -47,6 +49,7 @@ class SFMapView extends StatefulWidget {
     this.onTap,
     this.height,
     this.borderRadius,
+    this.cameraFitPadding,
   });
 
   @override
@@ -92,6 +95,15 @@ class _SFMapViewState extends State<SFMapView> {
       options: MapOptions(
         initialCenter: widget.center,
         initialZoom: widget.zoom,
+        initialCameraFit: widget.cameraFitPadding != null && widget.markers.isNotEmpty
+            ? CameraFit.coordinates(
+                coordinates: widget.markers.map((m) => m.position).toList(),
+                padding: widget.cameraFitPadding!,
+                maxZoom: 18,
+                minZoom: 3,
+                forceIntegerZoomLevel: false,
+              )
+            : null,
         minZoom: 3,
         maxZoom: 18,
         interactionOptions: InteractionOptions(
