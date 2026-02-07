@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -88,12 +89,45 @@ class LocationService {
         return null;
       }
 
-      return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        ),
-      );
+      // Try high accuracy first (30s timeout)
+      try {
+        return await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 30),
+          ),
+        );
+      } on TimeoutException {
+        debugPrint('High accuracy timed out, falling back to medium...');
+        // Fallback to medium accuracy
+        try {
+          return await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 15),
+            ),
+          );
+        } on TimeoutException {
+          debugPrint('Medium accuracy also timed out.');
+          // In debug mode (simulator), return default Warsaw location
+          if (kDebugMode) {
+            debugPrint('DEBUG: Using default Warsaw location for simulator.');
+            return Position(
+              latitude: 52.2297,
+              longitude: 21.0122,
+              timestamp: DateTime.now(),
+              accuracy: 100.0,
+              altitude: 0.0,
+              altitudeAccuracy: 0.0,
+              heading: 0.0,
+              headingAccuracy: 0.0,
+              speed: 0.0,
+              speedAccuracy: 0.0,
+            );
+          }
+          rethrow;
+        }
+      }
     } catch (e) {
       debugPrint('Error getting current position: $e');
       return null;

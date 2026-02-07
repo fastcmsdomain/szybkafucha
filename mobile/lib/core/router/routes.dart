@@ -20,6 +20,7 @@ abstract class Routes {
   static const String clientTaskCompletion = '/client/task/:taskId/complete';
   static const String clientHistory = '/client/history';
   static const String clientProfile = '/client/profile';
+  static const String clientProfileEdit = '/client/profile/edit';
   static const String clientTasks = '/client/tasks';
 
   // Contractor routes

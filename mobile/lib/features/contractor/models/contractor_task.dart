@@ -5,6 +5,7 @@ class ContractorTask {
   final String id;
   final TaskCategory category;
   final String description;
+  final String clientId;
   final String clientName;
   final String? clientAvatarUrl;
   final double clientRating;
@@ -13,18 +14,22 @@ class ContractorTask {
   final double longitude;
   final double distanceKm;
   final int estimatedMinutes;
+  final double? estimatedDurationHours; // Client's estimated duration in hours
   final int price;
   final ContractorTaskStatus status;
   final DateTime createdAt;
   final DateTime? acceptedAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final DateTime? scheduledAt;
+  final List<String>? imageUrls;
   final bool isUrgent;
 
   const ContractorTask({
     required this.id,
     required this.category,
     required this.description,
+    required this.clientId,
     required this.clientName,
     this.clientAvatarUrl,
     this.clientRating = 0.0,
@@ -33,12 +38,15 @@ class ContractorTask {
     required this.longitude,
     required this.distanceKm,
     required this.estimatedMinutes,
+    this.estimatedDurationHours,
     required this.price,
     required this.status,
     required this.createdAt,
     this.acceptedAt,
     this.startedAt,
     this.completedAt,
+    this.scheduledAt,
+    this.imageUrls,
     this.isUrgent = false,
   });
 
@@ -49,6 +57,10 @@ class ContractorTask {
 
     // Handle client data - may be nested object or flat fields
     final client = json['client'] as Map<String, dynamic>?;
+    final clientId = client?['id'] as String? ??
+                     json['clientId'] as String? ??
+                     json['client_id'] as String? ??
+                     '';
     final clientName = client?['name'] as String? ??
                        client?['fullName'] as String? ??
                        client?['full_name'] as String? ??
@@ -66,6 +78,7 @@ class ContractorTask {
 
     return ContractorTask(
       id: json['id'] as String,
+      clientId: clientId,
       category: TaskCategory.values.firstWhere(
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.sprzatanie,
@@ -87,6 +100,8 @@ class ContractorTask {
       // Estimated minutes - default to 15
       estimatedMinutes: _parseInt(json['estimatedMinutes']) ??
                         _parseInt(json['estimated_minutes']) ?? 15,
+      // Estimated duration in hours from client
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       // Budget from backend - may be String like "50.00"
       price: _parseInt(json['budgetAmount']) ??
              _parseInt(json['price']) ??
@@ -111,6 +126,16 @@ class ContractorTask {
           ? DateTime.parse(json['completedAt'] as String)
           : (json['completed_at'] != null
               ? DateTime.parse(json['completed_at'] as String)
+              : null),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : (json['scheduled_at'] != null
+              ? DateTime.parse(json['scheduled_at'] as String)
+              : null),
+      imageUrls: json['imageUrls'] != null
+          ? List<String>.from(json['imageUrls'] as List)
+          : (json['image_urls'] != null
+              ? List<String>.from(json['image_urls'] as List)
               : null),
       isUrgent: json['isUrgent'] as bool? ??
                 json['is_urgent'] as bool? ??
@@ -189,6 +214,7 @@ class ContractorTask {
         category: TaskCategory.sprzatanie,
         description:
             'Potrzebuję pomocy ze sprzątaniem 2-pokojowego mieszkania po remoncie. Około 50m2.',
+        clientId: 'client1',
         clientName: 'Anna K.',
         clientRating: 4.8,
         address: 'ul. Marszałkowska 100, Warszawa',
@@ -206,6 +232,7 @@ class ContractorTask {
         category: TaskCategory.zakupy,
         description:
             'Zakupy spożywcze w Biedronce - lista około 15 produktów. Preferuję dostawę do 14:00.',
+        clientId: 'client2',
         clientName: 'Piotr M.',
         clientRating: 4.5,
         address: 'ul. Puławska 45, Warszawa',
@@ -222,6 +249,7 @@ class ContractorTask {
         category: TaskCategory.montaz,
         description:
             'Montaż szafy PAX z IKEA. Szafa 3-drzwiowa, wszystkie elementy są na miejscu.',
+        clientId: 'client3',
         clientName: 'Karolina W.',
         clientRating: 5.0,
         address: 'ul. Żelazna 28, Warszawa',
@@ -238,6 +266,7 @@ class ContractorTask {
         category: TaskCategory.przeprowadzki,
         description:
             'Pomoc przy przeprowadzce - przeniesienie mebli z 3 piętra do samochodu. Około 10 kartonów i kilka mebli.',
+        clientId: 'client4',
         clientName: 'Tomasz B.',
         clientRating: 4.2,
         address: 'ul. Hoża 15, Warszawa',
@@ -258,6 +287,7 @@ class ContractorTask {
       category: TaskCategory.sprzatanie,
       description:
           'Sprzątanie mieszkania 3-pokojowego. Proszę o dokładne sprzątanie łazienki.',
+      clientId: 'client5',
       clientName: 'Magdalena S.',
       clientAvatarUrl: null,
       clientRating: 4.9,

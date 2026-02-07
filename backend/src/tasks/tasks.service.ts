@@ -25,6 +25,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 import { ServerEvent } from '../realtime/realtime.gateway';
+import { ContractorService } from '../contractor/contractor.service';
 
 // Platform commission percentage
 const COMMISSION_RATE = 0.17;
@@ -66,6 +67,8 @@ export class TasksService {
     @Inject(forwardRef(() => RealtimeGateway))
     private readonly realtimeGateway: RealtimeGateway,
     private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => ContractorService))
+    private readonly contractorService: ContractorService,
   ) {}
 
   /**
@@ -176,12 +179,22 @@ export class TasksService {
 
   /**
    * Contractor accepts a task
+   * Validates that contractor profile is complete before allowing acceptance
    */
   async acceptTask(taskId: string, contractorId: string): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.status !== TaskStatus.CREATED) {
       throw new BadRequestException('Task is no longer available');
+    }
+
+    // NEW: Check if contractor profile is complete
+    const isComplete =
+      await this.contractorService.isProfileComplete(contractorId);
+    if (!isComplete) {
+      throw new BadRequestException(
+        'Complete your contractor profile before accepting tasks',
+      );
     }
 
     task.contractorId = contractorId;
@@ -208,7 +221,7 @@ export class TasksService {
         avatarUrl: contractorProfile?.user?.avatarUrl || null,
         rating: contractorProfile?.ratingAvg || 0,
         completedTasks: contractorProfile?.completedTasksCount || 0,
-        bio: contractorProfile?.bio || contractorProfile?.user?.bio || null,
+        bio: contractorProfile?.bio || null,
       },
     );
 
@@ -613,12 +626,18 @@ export class TasksService {
       throw new BadRequestException('You have already rated this task');
     }
 
+    // Determine the role of the person being rated
+    // If toUserId is the client, they're being rated as a client
+    // If toUserId is the contractor, they're being rated as a contractor
+    const role = toUserId === task.clientId ? 'client' : 'contractor';
+
     const rating = this.ratingsRepository.create({
       taskId,
       fromUserId,
       toUserId,
       rating: dto.rating,
       comment: dto.comment,
+      role, // NEW: Add role field
     });
 
     const savedRating = await this.ratingsRepository.save(rating);

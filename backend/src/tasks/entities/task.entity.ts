@@ -81,6 +81,10 @@ export class Task {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   tipAmount: number;
 
+  // Estimated duration in hours (e.g., 1.5 = 1h 30min)
+  @Column({ type: 'decimal', precision: 4, scale: 1, nullable: true })
+  estimatedDurationHours: number | null;
+
   // Task status
   @Column({
     type: 'enum',

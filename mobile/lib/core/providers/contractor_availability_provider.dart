@@ -45,7 +45,7 @@ class ContractorAvailabilityNotifier
   Future<void> _initialize() async {
     final authState = _ref.read(authProvider);
     if (!authState.isAuthenticated ||
-        authState.user?.userType != 'contractor') {
+        !(authState.user?.userTypes.contains('contractor') ?? false)) {
       return;
     }
 

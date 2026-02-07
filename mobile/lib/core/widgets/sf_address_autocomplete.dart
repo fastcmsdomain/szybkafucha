@@ -431,12 +431,45 @@ class _SFAddressInputState extends ConsumerState<SFAddressInput> {
     });
 
     final service = ref.read(locationServiceProvider);
+
+    // Check permission first
+    final permissionStatus = await service.checkPermission();
+    debugPrint('Location permission status: $permissionStatus');
+
+    if (permissionStatus == LocationPermissionStatus.deniedForever) {
+      setState(() {
+        _isLoadingGps = false;
+        _gpsError = 'Dostęp do lokalizacji zablokowany. Włącz w ustawieniach.';
+      });
+      _showPermissionDialog(permanently: true);
+      return;
+    }
+
+    if (permissionStatus != LocationPermissionStatus.granted) {
+      // Request permission
+      final newStatus = await service.requestPermission();
+      debugPrint('Permission request result: $newStatus');
+
+      if (newStatus != LocationPermissionStatus.granted) {
+        setState(() {
+          _isLoadingGps = false;
+          _gpsError = 'Dostęp do lokalizacji jest wymagany';
+        });
+        if (newStatus == LocationPermissionStatus.deniedForever) {
+          _showPermissionDialog(permanently: true);
+        } else {
+          _showPermissionDialog(permanently: false);
+        }
+        return;
+      }
+    }
+
     final latLng = await service.getCurrentLatLng();
 
     if (latLng == null) {
       setState(() {
         _isLoadingGps = false;
-        _gpsError = 'Nie udało się pobrać lokalizacji';
+        _gpsError = 'Nie udało się pobrać lokalizacji. Sprawdź GPS.';
       });
       return;
     }
@@ -472,6 +505,39 @@ class _SFAddressInputState extends ConsumerState<SFAddressInput> {
     });
 
     widget.onLocationSelected(suggestion.latLng, suggestion.shortName);
+  }
+
+  void _showPermissionDialog({required bool permanently}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dostęp do lokalizacji'),
+        content: Text(
+          permanently
+              ? 'Dostęp do lokalizacji został trwale zablokowany. Aby użyć GPS, przejdź do ustawień aplikacji i przyznaj uprawnienia.'
+              : 'Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby automatycznie ustawić adres zlecenia.\n\nMożesz też wpisać adres ręcznie.',
+        ),
+        actions: [
+          if (!permanently)
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Anuluj'),
+            ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (permanently) {
+                await ref.read(locationServiceProvider).openAppSettings();
+              } else {
+                // Try again
+                _getCurrentLocation();
+              }
+            },
+            child: Text(permanently ? 'Otwórz ustawienia' : 'Spróbuj ponownie'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

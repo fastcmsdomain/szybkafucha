@@ -13,18 +13,31 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { TasksService } from './tasks.service';
+import { FileStorageService } from '../users/file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { UserType } from '../users/entities/user.entity';
 import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
+import type { UploadedFile as FileType } from '../users/file-storage.service';
+
+// Max 5MB per image
+const MAX_TASK_IMAGE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
-  constructor(private readonly tasksService: TasksService) {}
+  constructor(
+    private readonly tasksService: TasksService,
+    private readonly fileStorageService: FileStorageService,
+  ) {}
 
   /**
    * POST /tasks
@@ -43,16 +56,25 @@ export class TasksController {
    * List tasks filtered by user role
    * - Clients see their own tasks
    * - Contractors see available nearby tasks
+   * Use ?role=client or ?role=contractor for dual-role users
    */
   @Get()
   async findAll(
     @Request() req: AuthenticatedRequest,
+    @Query('role') role?: string,
     @Query('lat') lat?: number,
     @Query('lng') lng?: number,
     @Query('categories') categories?: string,
     @Query('radiusKm') radiusKm?: number,
   ) {
-    if (req.user.type === UserType.CLIENT) {
+    // Use explicit role param, or infer from user types
+    const activeRole =
+      role ||
+      (req.user.types.includes(UserType.CONTRACTOR)
+        ? UserType.CONTRACTOR
+        : UserType.CLIENT);
+
+    if (activeRole === UserType.CLIENT) {
       return this.tasksService.findByClient(req.user.id);
     }
 
@@ -218,5 +240,53 @@ export class TasksController {
     @Body('amount') amount: number,
   ) {
     return this.tasksService.addTip(id, req.user.id, amount);
+  }
+
+  /**
+   * POST /tasks/upload-image
+   * Upload a task image before creating the task
+   * Returns the URL of the uploaded image
+   */
+  @Post('upload-image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_TASK_IMAGE_SIZE,
+      },
+    }),
+  )
+  async uploadTaskImage(
+    @Request() req: AuthenticatedRequest,
+    @UploadedFile() file: FileType,
+  ): Promise<{ imageUrl: string; message: string }> {
+    // Validate file exists
+    if (!file) {
+      throw new BadRequestException('No file provided. Use form field "file".');
+    }
+
+    // Validate file type
+    if (!ALLOWED_IMAGE_MIMETYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Invalid file type: ${file.mimetype}. Allowed: JPEG, PNG, WebP`,
+      );
+    }
+
+    // Validate file size
+    if (file.size > MAX_TASK_IMAGE_SIZE) {
+      throw new BadRequestException(
+        `File too large: ${Math.round(file.size / 1024 / 1024)}MB. Max: 5MB`,
+      );
+    }
+
+    // Upload image
+    const imageUrl = await this.fileStorageService.uploadTaskImage(
+      file,
+      req.user.id,
+    );
+
+    return {
+      imageUrl,
+      message: 'Image uploaded successfully',
+    };
   }
 }

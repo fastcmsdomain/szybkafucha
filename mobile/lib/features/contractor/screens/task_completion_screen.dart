@@ -87,13 +87,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
 
             SizedBox(height: AppSpacing.space6),
 
-            // Photo proof section
-            _buildPhotoProofSection(),
-
-            SizedBox(height: AppSpacing.space6),
-
-            // Notes section
-            _buildNotesSection(),
+            // Photo proof & notes hidden for MVP (leave code below commented)
+            // _buildPhotoProofSection(),
+            // SizedBox(height: AppSpacing.space6),
+            // _buildNotesSection(),
 
             SizedBox(height: AppSpacing.space8),
 
@@ -195,13 +192,13 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
             ),
             child: Column(
               children: [
-                _buildEarningsRow('Wartość zlecenia', '${_task.price} zł'),
-                SizedBox(height: AppSpacing.gapSM),
-                _buildEarningsRow('Prowizja platformy (17%)', '-$platformFee zł'),
-                Divider(
-                  color: AppColors.white.withValues(alpha: 0.3),
-                  height: AppSpacing.gapLG,
-                ),
+                // _buildEarningsRow('Wartość zlecenia', '${_task.price} zł'),
+                // SizedBox(height: AppSpacing.gapSM),
+                // _buildEarningsRow('Prowizja platformy (17%)', '-$platformFee zł'),
+                // Divider(
+                  // color: AppColors.white.withValues(alpha: 0.3),
+                  // height: AppSpacing.gapLG,
+                // ),
                 _buildEarningsRow('Do wypłaty', '$earnings zł', isBold: true),
               ],
             ),
@@ -233,60 +230,60 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
     );
   }
 
-  Widget _buildPhotoProofSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.camera_alt, size: 20, color: AppColors.gray700),
-            SizedBox(width: AppSpacing.gapSM),
-            Text(
-              'Zdjęcie wykonanej pracy',
-              style: AppTypography.labelLarge,
-            ),
-            SizedBox(width: AppSpacing.gapSM),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingSM,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: AppRadius.radiusSM,
-              ),
-              child: Text(
-                'Opcjonalne',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapSM),
-        Text(
-          'Dodaj zdjęcia jako potwierdzenie wykonania zlecenia',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.gray500,
-          ),
-        ),
-        SizedBox(height: AppSpacing.gapMD),
+  // Widget _buildPhotoProofSection() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(Icons.camera_alt, size: 20, color: AppColors.gray700),
+  //           SizedBox(width: AppSpacing.gapSM),
+  //           Text(
+  //             'Zdjęcie wykonanej pracy',
+  //             style: AppTypography.labelLarge,
+  //           ),
+  //           SizedBox(width: AppSpacing.gapSM),
+  //           Container(
+  //             padding: EdgeInsets.symmetric(
+  //               horizontal: AppSpacing.paddingSM,
+  //               vertical: 2,
+  //             ),
+  //             decoration: BoxDecoration(
+  //               color: AppColors.gray200,
+  //               borderRadius: AppRadius.radiusSM,
+  //             ),
+  //             child: Text(
+  //               'Opcjonalne',
+  //               style: AppTypography.caption.copyWith(
+  //                 color: AppColors.gray600,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       SizedBox(height: AppSpacing.gapSM),
+  //       Text(
+  //         'Dodaj zdjęcia jako potwierdzenie wykonania zlecenia',
+  //         style: AppTypography.bodySmall.copyWith(
+  //           color: AppColors.gray500,
+  //         ),
+  //       ),
+  //       SizedBox(height: AppSpacing.gapMD),
 
-        // Photo grid
-        Wrap(
-          spacing: AppSpacing.gapMD,
-          runSpacing: AppSpacing.gapMD,
-          children: [
-            ..._photos.asMap().entries.map((entry) {
-              return _buildPhotoTile(entry.value, entry.key);
-            }),
-            if (_photos.length < 4) _buildAddPhotoTile(),
-          ],
-        ),
-      ],
-    );
-  }
+  //       // Photo grid
+  //       Wrap(
+  //         spacing: AppSpacing.gapMD,
+  //         runSpacing: AppSpacing.gapMD,
+  //         children: [
+  //           ..._photos.asMap().entries.map((entry) {
+  //             return _buildPhotoTile(entry.value, entry.key);
+  //           }),
+  //           if (_photos.length < 4) _buildAddPhotoTile(),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildPhotoTile(File photo, int index) {
     return Stack(
@@ -356,66 +353,66 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
     );
   }
 
-  Widget _buildNotesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.note_alt_outlined, size: 20, color: AppColors.gray700),
-            SizedBox(width: AppSpacing.gapSM),
-            Text(
-              'Notatki',
-              style: AppTypography.labelLarge,
-            ),
-            SizedBox(width: AppSpacing.gapSM),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingSM,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: AppRadius.radiusSM,
-              ),
-              child: Text(
-                'Opcjonalne',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        TextField(
-          controller: _notesController,
-          maxLines: 3,
-          maxLength: 500,
-          decoration: InputDecoration(
-            hintText: 'Dodatkowe informacje o wykonanym zleceniu...',
-            hintStyle: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray400,
-            ),
-            filled: true,
-            fillColor: AppColors.gray50,
-            border: OutlineInputBorder(
-              borderRadius: AppRadius.radiusMD,
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppRadius.radiusMD,
-              borderSide: BorderSide(color: AppColors.gray200),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.radiusMD,
-              borderSide: BorderSide(color: AppColors.primary),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildNotesSection() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(Icons.note_alt_outlined, size: 20, color: AppColors.gray700),
+  //           SizedBox(width: AppSpacing.gapSM),
+  //           Text(
+  //             'Notatki',
+  //             style: AppTypography.labelLarge,
+  //           ),
+  //           SizedBox(width: AppSpacing.gapSM),
+  //           Container(
+  //             padding: EdgeInsets.symmetric(
+  //               horizontal: AppSpacing.paddingSM,
+  //               vertical: 2,
+  //             ),
+  //             decoration: BoxDecoration(
+  //               color: AppColors.gray200,
+  //               borderRadius: AppRadius.radiusSM,
+  //             ),
+  //             child: Text(
+  //               'Opcjonalne',
+  //               style: AppTypography.caption.copyWith(
+  //                 color: AppColors.gray600,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       SizedBox(height: AppSpacing.gapMD),
+  //       TextField(
+  //         controller: _notesController,
+  //         maxLines: 3,
+  //         maxLength: 500,
+  //         decoration: InputDecoration(
+  //           hintText: 'Dodatkowe informacje o wykonanym zleceniu...',
+  //           hintStyle: AppTypography.bodyMedium.copyWith(
+  //             color: AppColors.gray400,
+  //           ),
+  //           filled: true,
+  //           fillColor: AppColors.gray50,
+  //           border: OutlineInputBorder(
+  //             borderRadius: AppRadius.radiusMD,
+  //             borderSide: BorderSide(color: AppColors.gray200),
+  //           ),
+  //           enabledBorder: OutlineInputBorder(
+  //             borderRadius: AppRadius.radiusMD,
+  //             borderSide: BorderSide(color: AppColors.gray200),
+  //           ),
+  //           focusedBorder: OutlineInputBorder(
+  //             borderRadius: AppRadius.radiusMD,
+  //             borderSide: BorderSide(color: AppColors.primary),
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildSubmitButton() {
     return SizedBox(

@@ -38,11 +38,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
+    final bottomNavPadding = AppSpacing.paddingLG + kBottomNavigationBarHeight;
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            bottomNavPadding + AppSpacing.paddingMD,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -73,7 +79,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.clientCategories),
+        onPressed: () => context.go(Routes.clientCreateTask),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
@@ -312,18 +318,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildTaskCard(BuildContext context, Task task) {
     final category = task.categoryData;
 
+    final isLocked = task.status == TaskStatus.pendingComplete;
+
     return GestureDetector(
-      onTap: () {
-        if (task.status == TaskStatus.inProgress ||
-            task.status == TaskStatus.accepted ||
-            task.status == TaskStatus.confirmed ||
-            task.status == TaskStatus.pendingComplete) {
-          context.push(Routes.clientTaskTrack(task.id));
-        } else {
-          // Navigate to history to see details
-          context.go(Routes.clientHistory);
-        }
-      },
+      onTap: isLocked
+          ? null
+          : () {
+              if (task.status.isActive) {
+                context.push(Routes.clientTaskTrack(task.id));
+              } else {
+                context.go(Routes.clientHistory);
+              }
+            },
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -388,6 +394,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
             // Footer row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (task.address != null) ...[
                   Icon(
@@ -406,7 +413,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
+                  SizedBox(width: AppSpacing.gapSM),
+                ] else
+                  const Spacer(),
                 Text(
                   '${task.budget} PLN',
                   style: AppTypography.bodyMedium.copyWith(
@@ -417,11 +426,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               ],
             ),
 
-            // Action buttons for active tasks
-            if (task.status == TaskStatus.inProgress ||
-                task.status == TaskStatus.accepted ||
-                task.status == TaskStatus.confirmed ||
-                task.status == TaskStatus.pendingComplete) ...[
+            // Action button for active tasks (skip waiting-for-contractor-confirmation)
+            if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
               SizedBox(height: AppSpacing.gapMD),
               Row(
                 children: [
@@ -430,21 +436,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                     child: OutlinedButton(
                       onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
                       child: Text('Więcej'),
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                  // Cancel button
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showCancelConfirmation(context, task),
-                      icon: Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
-                      label: Text(
-                        'Anuluj',
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
-                      ),
                     ),
                   ),
                 ],

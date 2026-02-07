@@ -52,7 +52,7 @@ class ProfileScreen extends ConsumerWidget {
                     if (user?.isContractor == true) {
                       context.push(Routes.contractorProfileEdit);
                     } else {
-                      _showComingSoon(context, 'Edycja profilu');
+                      context.push(Routes.clientProfileEdit);
                     }
                   },
                 ),
