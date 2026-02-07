@@ -12,6 +12,23 @@ Each entry documents:
 
 ---
 
+## [2026-02-07] Bug Fixes: Location Timeout, Task Visibility, RenderFlex Overflow
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed three bugs discovered during testing: location timeout, tasks not visible to contractor, and RenderFlex overflow on task tracking screen
+
+- **Files Changed**:
+  - `mobile/lib/core/services/location_service.dart` – Increased GPS timeout from 15s to 30s; added fallback from high to medium accuracy on TimeoutException
+  - `backend/src/tasks/tasks.controller.ts` – Added `role` query parameter to `GET /tasks` endpoint; explicit role param allows dual-role users to fetch correct task list (client's own tasks vs available tasks for contractor)
+  - `mobile/lib/core/providers/task_provider.dart` – Client `loadTasks()` now passes `role=client`; Contractor `loadTasks()` now passes `role=contractor`
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Replaced `SafeArea(top: false)` wrapper in `_buildBottomPanel()` with bottom safe area padding added to `SingleChildScrollView` content padding, preventing RenderFlex overflow when screen is inside _ClientShell with NavigationBar
+
+- **System Impact**: Location detection more reliable on cold GPS start; contractor now correctly sees available tasks (not their own client tasks); task tracking bottom panel no longer overflows
+- **Related Tasks/PRD**: Task lifecycle flow, dual-role user experience
+- **Potential Conflicts/Risks**: The `role` query parameter change means older mobile app versions calling `GET /tasks` without `role` param will still work (backward compatible — defaults to contractor if user has contractor type, otherwise client)
+
+---
+
 ## [2026-02-05] Dual-Role Architecture Implementation - Complete Backend & Mobile Migration
 
 - **Developer/Agent**: Claude

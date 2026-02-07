@@ -174,7 +174,10 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response = await _api.get<List<dynamic>>('/tasks');
+      final response = await _api.get<List<dynamic>>(
+        '/tasks',
+        queryParameters: {'role': 'client'},
+      );
       final tasks = response
           .map((json) => Task.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -388,7 +391,10 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
     try {
       // For MVP, we don't filter by location
       // Just get all tasks with status 'created'
-      final response = await _api.get<List<dynamic>>('/tasks');
+      final response = await _api.get<List<dynamic>>(
+        '/tasks',
+        queryParameters: {'role': 'contractor'},
+      );
 
       final tasks = response
           .map((json) => _mapToContractorTask(json as Map<String, dynamic>))

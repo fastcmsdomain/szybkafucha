@@ -446,6 +446,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   Widget _buildBottomPanel() {
     final maxHeight = MediaQuery.of(context).size.height * 0.6;
+    // Add bottom safe area as scroll padding instead of wrapping in SafeArea
+    // to avoid layout conflicts with NavigationBar in _ClientShell
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -462,26 +465,29 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         ],
       ),
       constraints: BoxConstraints(maxHeight: maxHeight),
-      child: SafeArea(
-        top: false, // avoid extra top inset that created blank space
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: AppRadius.radiusFull,
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gray300,
+              borderRadius: AppRadius.radiusFull,
             ),
+          ),
 
-            Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(AppSpacing.paddingMD),
-                child: Column(
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD + bottomSafe,
+              ),
+              child: Column(
                   children: [
                     // Status header
                     _buildStatusHeader(),
@@ -516,7 +522,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

@@ -56,16 +56,25 @@ export class TasksController {
    * List tasks filtered by user role
    * - Clients see their own tasks
    * - Contractors see available nearby tasks
+   * Use ?role=client or ?role=contractor for dual-role users
    */
   @Get()
   async findAll(
     @Request() req: AuthenticatedRequest,
+    @Query('role') role?: string,
     @Query('lat') lat?: number,
     @Query('lng') lng?: number,
     @Query('categories') categories?: string,
     @Query('radiusKm') radiusKm?: number,
   ) {
-    if (req.user.types.includes(UserType.CLIENT)) {
+    // Use explicit role param, or infer from user types
+    const activeRole =
+      role ||
+      (req.user.types.includes(UserType.CONTRACTOR)
+        ? UserType.CONTRACTOR
+        : UserType.CLIENT);
+
+    if (activeRole === UserType.CLIENT) {
       return this.tasksService.findByClient(req.user.id);
     }
 
