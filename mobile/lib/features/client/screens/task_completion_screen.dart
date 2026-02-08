@@ -54,6 +54,12 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tasksState = ref.watch(clientTasksProvider);
+    final currentTask = tasksState.tasks
+        .where((task) => task.id == widget.taskId)
+        .firstOrNull;
+    final contractor = currentTask?.contractor;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -70,7 +76,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               SizedBox(height: AppSpacing.space8),
 
               // Rating section
-              _buildRatingSection(),
+              _buildRatingSection(
+                contractorName: contractor?.name,
+                contractorAvatarUrl: contractor?.avatarUrl,
+              ),
 
               SizedBox(height: AppSpacing.space6),
 
@@ -140,7 +149,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     );
   }
 
-  Widget _buildRatingSection() {
+  Widget _buildRatingSection({
+    String? contractorName,
+    String? contractorAvatarUrl,
+  }) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingLG),
       decoration: BoxDecoration(
@@ -150,6 +162,38 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
       ),
       child: Column(
         children: [
+          if (contractorName != null && contractorName.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.gray200,
+                  backgroundImage: contractorAvatarUrl != null &&
+                          contractorAvatarUrl.isNotEmpty
+                      ? NetworkImage(contractorAvatarUrl)
+                      : null,
+                  child: contractorAvatarUrl == null || contractorAvatarUrl.isEmpty
+                      ? Text(
+                          contractorName[0].toUpperCase(),
+                          style: AppTypography.h4.copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Flexible(
+                  child: Text(
+                    contractorName,
+                    style: AppTypography.labelLarge,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.space4),
+          ],
           Text(
             'Jak oceniasz usługę?',
             style: AppTypography.labelLarge,
@@ -225,12 +269,12 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
                 style: AppTypography.labelLarge,
               ),
               SizedBox(width: AppSpacing.gapSM),
-              Text(
-                '(opcjonalnie)',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
+                Text(
+                  '(opcjonalnie)',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
                 ),
-              ),
             ],
           ),
           SizedBox(height: AppSpacing.gapMD),

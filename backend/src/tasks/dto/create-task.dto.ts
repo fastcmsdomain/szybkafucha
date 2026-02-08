@@ -63,6 +63,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(5)
-  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false }, { each: true })
+  @IsUrl(
+    {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+      require_tld: false,
+    },
+    { each: true },
+  )
   imageUrls?: string[];
 }

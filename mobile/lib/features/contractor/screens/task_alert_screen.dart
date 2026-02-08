@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -400,6 +401,32 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                             ],
                           ),
                         ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        TextButton.icon(
+                          onPressed: _showClientProfilePopup,
+                          icon: const Icon(
+                            Icons.person_outline,
+                            color: AppColors.white,
+                            size: 18,
+                          ),
+                          label: Text(
+                            'Profil',
+                            style: AppTypography.labelMedium.copyWith(
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.white,
+                            shape: const StadiumBorder(),
+                            minimumSize: const Size(88, 44),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.paddingSM,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -773,6 +800,400 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showClientProfilePopup() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      useSafeArea: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.5,
+        child: _TaskAlertClientProfileSheet(
+          clientId: _task.clientId,
+          clientName: _task.clientName,
+          clientRating: _task.clientRating,
+          clientAvatarUrl: _task.clientAvatarUrl,
+        ),
+      ),
+    );
+  }
+}
+
+class _TaskAlertClientProfileSheet extends ConsumerStatefulWidget {
+  final String clientId;
+  final String clientName;
+  final double clientRating;
+  final String? clientAvatarUrl;
+
+  const _TaskAlertClientProfileSheet({
+    required this.clientId,
+    required this.clientName,
+    required this.clientRating,
+    this.clientAvatarUrl,
+  });
+
+  @override
+  ConsumerState<_TaskAlertClientProfileSheet> createState() =>
+      _TaskAlertClientProfileSheetState();
+}
+
+class _TaskAlertClientProfileSheetState
+    extends ConsumerState<_TaskAlertClientProfileSheet> {
+  String? _bio;
+  double? _ratingAvg;
+  int? _ratingCount;
+  String? _avatarUrl;
+  bool _isLoading = true;
+  bool _isReviewsLoading = true;
+  String? _error;
+  List<_TaskAlertClientPublicReview> _reviews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullProfile();
+  }
+
+  Future<void> _fetchFullProfile() async {
+    final api = ref.read(apiClientProvider);
+    String? bio;
+    double? ratingAvg;
+    int? ratingCount;
+    String? avatarUrl;
+    String? error;
+    List<_TaskAlertClientPublicReview> reviews = const [];
+
+    try {
+      final response = await api.get('/client/${widget.clientId}/public');
+      final data = response as Map<String, dynamic>;
+
+      bio = data['bio'] as String?;
+      ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
+      ratingCount = data['ratingCount'] as int?;
+      avatarUrl = data['avatarUrl'] as String?;
+    } catch (e) {
+      error = e.toString();
+    }
+
+    try {
+      final reviewsResponse = await api.get('/client/${widget.clientId}/reviews');
+      final reviewsData = reviewsResponse as Map<String, dynamic>;
+      final reviewsList = (reviewsData['reviews'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(_TaskAlertClientPublicReview.fromJson)
+          .toList();
+
+      reviews = reviewsList;
+      ratingAvg ??= (reviewsData['ratingAvg'] as num?)?.toDouble();
+      ratingCount ??= reviewsData['ratingCount'] as int?;
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    setState(() {
+      _bio = bio;
+      _ratingAvg = ratingAvg;
+      _ratingCount = ratingCount;
+      _avatarUrl = avatarUrl;
+      _error = error;
+      _reviews = reviews;
+      _isLoading = false;
+      _isReviewsLoading = false;
+    });
+  }
+
+  String _formatDate(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day.$month.$year';
+  }
+
+  Widget _buildReviewCard(_TaskAlertClientPublicReview review) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, color: AppColors.warning, size: 18),
+              SizedBox(width: 4),
+              Text(
+                review.rating.toString(),
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDate(review.createdAt),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.gray500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            review.comment?.trim().isNotEmpty == true
+                ? review.comment!.trim()
+                : 'Brak komentarza.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    if (_isReviewsLoading) {
+      return SizedBox(
+        height: 16,
+        width: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    final reviewCount = _ratingCount ?? 0;
+    final rating = _ratingAvg ?? widget.clientRating;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.star, size: 18, color: AppColors.warning),
+            SizedBox(width: 4),
+            Text(
+              rating.toStringAsFixed(1),
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(width: 8),
+            Text(
+              'na podstawie $reviewCount opinii',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.gapSM),
+        if (_reviews.isEmpty)
+          Text(
+            'Brak opinii do wyświetlenia.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+          )
+        else
+          ..._reviews.take(5).map(
+                (review) => Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
+                  child: _buildReviewCard(review),
+                ),
+              ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rating = _ratingAvg ?? widget.clientRating;
+    final reviewCount = _ratingCount ?? 0;
+    final avatarUrl = _avatarUrl ?? widget.clientAvatarUrl;
+
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.paddingLG,
+              AppSpacing.paddingSM,
+              AppSpacing.paddingLG,
+              0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Profil klienta', style: AppTypography.h4),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingLG,
+                0,
+                AppSpacing.paddingLG,
+                AppSpacing.paddingLG,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: AppSpacing.gapMD),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.gray200,
+                        backgroundImage:
+                            avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                        child: avatarUrl == null
+                            ? Text(
+                                widget.clientName.isNotEmpty
+                                    ? widget.clientName[0].toUpperCase()
+                                    : '?',
+                                style: AppTypography.h4.copyWith(
+                                  color: AppColors.gray600,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.clientName,
+                              style: AppTypography.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  size: 18,
+                                  color: AppColors.warning,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  rating.toStringAsFixed(1),
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '$reviewCount opinii',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.gapMD),
+                  Text(
+                    'Opis',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  _isLoading
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : _error != null
+                          ? Text(
+                              'Nie udało się pobrać pełnego profilu',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.gray400,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          : Text(
+                              _bio?.isNotEmpty == true
+                                  ? _bio!
+                                  : 'Brak opisu klienta.',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: _bio?.isNotEmpty == true
+                                    ? AppColors.gray600
+                                    : AppColors.gray400,
+                                fontStyle: _bio?.isNotEmpty == true
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
+                              ),
+                            ),
+                  SizedBox(height: AppSpacing.gapMD),
+                  Text(
+                    'Opinie',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  _buildReviewsSection(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskAlertClientPublicReview {
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  const _TaskAlertClientPublicReview({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory _TaskAlertClientPublicReview.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt']?.toString();
+    return _TaskAlertClientPublicReview(
+      rating: int.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      comment: json['comment']?.toString(),
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 }

@@ -34,6 +34,15 @@ export class ContractorController {
   }
 
   /**
+   * GET /contractor/:userId/reviews
+   * Get public contractor reviews for client-facing views
+   */
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.contractorService.getPublicContractorReviews(userId);
+  }
+
+  /**
    * GET /contractor/profile
    * Get current contractor's profile
    */
@@ -45,6 +54,15 @@ export class ContractorController {
       profile = await this.contractorService.create(req.user.id);
     }
     return profile;
+  }
+
+  /**
+   * GET /contractor/reviews
+   * Get current contractor's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.contractorService.getContractorReviews(req.user.id);
   }
 
   /**

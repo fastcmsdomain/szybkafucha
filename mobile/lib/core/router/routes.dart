@@ -21,6 +21,7 @@ abstract class Routes {
   static const String clientHistory = '/client/history';
   static const String clientProfile = '/client/profile';
   static const String clientProfileEdit = '/client/profile/edit';
+  static const String clientReviews = '/client/reviews';
   static const String clientTasks = '/client/tasks';
 
   // Contractor routes
@@ -37,6 +38,7 @@ abstract class Routes {
   static const String contractorProfileEdit = '/contractor/profile/edit';
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
+  static const String contractorReviews = '/contractor/reviews';
 
   // Common routes
   static const String settings = '/settings';

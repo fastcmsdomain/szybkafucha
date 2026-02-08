@@ -57,6 +57,17 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 _buildMenuItem(
+                  icon: Icons.reviews_outlined,
+                  title: 'Opinie',
+                  onTap: () {
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorReviews);
+                    } else {
+                      context.push(Routes.clientReviews);
+                    }
+                  },
+                ),
+                _buildMenuItem(
                   icon: Icons.notifications_outlined,
                   title: AppStrings.notifications,
                   onTap: () => context.push(Routes.notifications),

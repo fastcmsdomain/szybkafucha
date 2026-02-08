@@ -29,11 +29,6 @@ class _ContractorProfileScreenState
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
 
-  // Contractor profile data for ratings
-  double? _ratingAvg;
-  int? _ratingCount;
-  bool _isLoadingProfile = true;
-
   // Categories and service radius
   Set<String> _selectedCategories = {};
   double _serviceRadius = 10.0;
@@ -70,18 +65,6 @@ class _ContractorProfileScreenState
 
       if (mounted) {
         setState(() {
-          // Handle ratingAvg which comes as string from PostgreSQL decimal type
-          final ratingAvgValue = data['ratingAvg'];
-          _ratingAvg = ratingAvgValue != null
-              ? double.tryParse(ratingAvgValue.toString())
-              : null;
-
-          // Handle ratingCount
-          final ratingCountValue = data['ratingCount'];
-          _ratingCount = ratingCountValue is int
-              ? ratingCountValue
-              : int.tryParse(ratingCountValue?.toString() ?? '');
-
           // Load bio from contractor profile (role-specific)
           final bio = data['bio'] as String?;
           debugPrint('DEBUG: Loading bio = $bio');
@@ -109,18 +92,11 @@ class _ContractorProfileScreenState
           final kycStatus = data['kycStatus'] as String?;
           _isKycVerified = (kycStatus == 'verified');
           debugPrint('DEBUG: Set isKycVerified to: $_isKycVerified');
-
-          _isLoadingProfile = false;
         });
       }
     } catch (e, stackTrace) {
       debugPrint('Error loading contractor profile: $e');
       debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() {
-          _isLoadingProfile = false;
-        });
-      }
     }
   }
 
@@ -459,10 +435,6 @@ class _ContractorProfileScreenState
 
             SizedBox(height: AppSpacing.space6),
 
-            _buildRatingsSection(),
-
-            SizedBox(height: AppSpacing.space6),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -658,71 +630,4 @@ class _ContractorProfileScreenState
     );
   }
 
-  Widget _buildRatingsSection() {
-    final user = ref.read(authProvider).user;
-    final rating = _ratingAvg ?? 0.0;
-    final reviews = _ratingCount ?? 0;
-
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      decoration: BoxDecoration(
-        color: AppColors.gray50,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Oceny zleceniodawców',
-            style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          if (_isLoadingProfile)
-            SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Row(
-              children: [
-                Icon(Icons.star, color: AppColors.warning, size: 22),
-                SizedBox(width: 6),
-                Text(
-                  rating.toStringAsFixed(1),
-                  style: AppTypography.h4,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'na podstawie $reviews opinii',
-                  style: AppTypography.caption.copyWith(color: AppColors.gray600),
-                ),
-              ],
-            ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Opinie wkrótce dostępne do podglądu w aplikacji.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
-          ),
-          if (user?.isVerified == true) ...[
-            SizedBox(height: AppSpacing.gapSM),
-            Row(
-              children: [
-                Icon(Icons.verified, color: AppColors.primary, size: 18),
-                SizedBox(width: 6),
-                Text(
-                  'Zweryfikowany wykonawca',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.gray700,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
