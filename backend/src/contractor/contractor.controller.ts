@@ -34,6 +34,15 @@ export class ContractorController {
   }
 
   /**
+   * GET /contractor/:userId/reviews
+   * Get public contractor reviews for client-facing views
+   */
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.contractorService.getPublicContractorReviews(userId);
+  }
+
+  /**
    * GET /contractor/profile
    * Get current contractor's profile
    */

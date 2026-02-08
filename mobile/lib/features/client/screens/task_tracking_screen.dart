@@ -239,13 +239,19 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return _ContractorProfileSheet(
-          contractorId: _contractor!.id,
-          initialContractor: _contractor!,
+        return FractionallySizedBox(
+          heightFactor: 0.7,
+          child: _ContractorProfileSheet(
+            contractorId: _contractor!.id,
+            initialContractor: _contractor!,
+          ),
         );
       },
     );
@@ -1493,7 +1499,11 @@ class _ContractorProfileSheetState
     extends ConsumerState<_ContractorProfileSheet> {
   Contractor? _fullProfile;
   bool _isLoading = true;
+  bool _isReviewsLoading = true;
   String? _error;
+  double _ratingAvg = 0.0;
+  int _ratingCount = 0;
+  List<_ContractorPublicReview> _reviews = [];
 
   @override
   void initState() {
@@ -1502,37 +1512,160 @@ class _ContractorProfileSheetState
   }
 
   Future<void> _fetchFullProfile() async {
+    final api = ref.read(apiClientProvider);
+    Contractor? fullProfile;
+    String? profileError;
+    var ratingAvg = widget.initialContractor.rating;
+    var ratingCount = widget.initialContractor.reviewCount;
+    List<_ContractorPublicReview> reviews = const [];
+
     try {
-      final api = ref.read(apiClientProvider);
       final response = await api.get('/contractor/${widget.contractorId}/public');
-
-      // Backend returns flat structure with bio at root level
-      // API client returns data directly, not wrapped in response.data
       final data = response as Map<String, dynamic>;
-
-      debugPrint('=== CONTRACTOR PROFILE POPUP ===');
-      debugPrint('Fetched profile for contractor: ${widget.contractorId}');
-      debugPrint('Bio: ${data['bio']}');
-      debugPrint('Name: ${data['name']}');
-      debugPrint('Rating: ${data['ratingAvg']}');
-      debugPrint('===============================');
-
-      if (mounted) {
-        setState(() {
-          _fullProfile = Contractor.fromJson(data);
-          _isLoading = false;
-        });
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error fetching contractor profile: $e');
-      debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
+      fullProfile = Contractor.fromJson(data);
+    } catch (e) {
+      profileError = e.toString();
     }
+
+    try {
+      final reviewsResponse =
+          await api.get('/contractor/${widget.contractorId}/reviews');
+      final reviewsData = reviewsResponse as Map<String, dynamic>;
+
+      final ratingAvgValue = reviewsData['ratingAvg'];
+      final ratingCountValue = reviewsData['ratingCount'];
+
+      ratingAvg = ratingAvgValue != null
+          ? (double.tryParse(ratingAvgValue.toString()) ?? 0.0)
+          : 0.0;
+      ratingCount = ratingCountValue is int
+          ? ratingCountValue
+          : (int.tryParse(ratingCountValue?.toString() ?? '') ?? 0);
+
+      reviews = (reviewsData['reviews'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(_ContractorPublicReview.fromJson)
+          .toList();
+    } catch (_) {
+      // Keep fallback values from initial contractor card if reviews endpoint fails.
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _fullProfile = fullProfile;
+      _error = profileError;
+      _ratingAvg = ratingAvg;
+      _ratingCount = ratingCount;
+      _reviews = reviews;
+      _isLoading = false;
+      _isReviewsLoading = false;
+    });
+  }
+
+  String _formatDate(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day.$month.$year';
+  }
+
+  Widget _buildReviewCard(_ContractorPublicReview review) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, color: AppColors.warning, size: 18),
+              SizedBox(width: 4),
+              Text(
+                review.rating.toString(),
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDate(review.createdAt),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.gray500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            review.comment?.trim().isNotEmpty == true
+                ? review.comment!.trim()
+                : 'Brak komentarza.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    if (_isReviewsLoading) {
+      return SizedBox(
+        height: 16,
+        width: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.star, size: 18, color: AppColors.warning),
+            SizedBox(width: 4),
+            Text(
+              _ratingAvg.toStringAsFixed(1),
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(width: 8),
+            Text(
+              'na podstawie $_ratingCount opinii',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.gapSM),
+        if (_reviews.isEmpty)
+          Text(
+            'Brak opinii do wyświetlenia.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+          )
+        else
+          ..._reviews.take(5).map(
+                (review) => Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
+                  child: _buildReviewCard(review),
+                ),
+              ),
+      ],
+    );
   }
 
   @override
@@ -1540,14 +1673,16 @@ class _ContractorProfileSheetState
     final contractor = _fullProfile ?? widget.initialContractor;
 
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row with title and close button
-            Row(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.paddingMD,
+              AppSpacing.paddingSM,
+              AppSpacing.paddingMD,
+              0,
+            ),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Profil wykonawcy', style: AppTypography.h4),
@@ -1557,127 +1692,163 @@ class _ContractorProfileSheetState
                 ),
               ],
             ),
-            SizedBox(height: AppSpacing.gapMD),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingMD,
+                0,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: AppSpacing.gapMD),
 
-            // Avatar and name row
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.gray200,
-                  backgroundImage: contractor.avatarUrl != null
-                      ? NetworkImage(contractor.avatarUrl!)
-                      : null,
-                  child: contractor.avatarUrl == null
-                      ? Text(
-                          contractor.name.isNotEmpty
-                              ? contractor.name[0].toUpperCase()
-                              : '?',
-                          style: AppTypography.h4.copyWith(
-                            color: AppColors.gray600,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        )
-                      : null,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Avatar and name row
+                  Row(
                     children: [
-                      Text(
-                        contractor.name,
-                        style: AppTypography.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.gray200,
+                        backgroundImage: contractor.avatarUrl != null
+                            ? NetworkImage(contractor.avatarUrl!)
+                            : null,
+                        child: contractor.avatarUrl == null
+                            ? Text(
+                                contractor.name.isNotEmpty
+                                    ? contractor.name[0].toUpperCase()
+                                    : '?',
+                                style: AppTypography.h4.copyWith(
+                                  color: AppColors.gray600,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
                       ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.star, size: 18, color: AppColors.warning),
-                          SizedBox(width: 4),
-                          Text(
-                            contractor.formattedRating,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              contractor.name,
+                              style: AppTypography.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            '${contractor.reviewCount} opinii',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray500,
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  size: 18,
+                                  color: AppColors.warning,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  contractor.formattedRating,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '${contractor.reviewCount} opinii',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.gapMD),
+                  SizedBox(height: AppSpacing.gapMD),
 
-            // Bio section
-            Text(
-              'Opis',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppColors.gray700,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: 4),
-            _isLoading
-                ? SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  )
-                : _error != null
-                    ? Text(
-                        'Nie udało się pobrać pełnego profilu',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.gray400,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      )
-                    : Text(
-                    contractor.bio?.isNotEmpty == true
-                        ? contractor.bio!
-                        : 'Brak opisu wykonawcy.',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: contractor.bio?.isNotEmpty == true
-                          ? AppColors.gray600
-                          : AppColors.gray400,
-                      fontStyle: contractor.bio?.isNotEmpty == true
-                          ? FontStyle.normal
-                          : FontStyle.italic,
+                  // Bio section
+                  Text(
+                    'Opis',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-            SizedBox(height: AppSpacing.gapMD),
+                  SizedBox(height: 4),
+                  _isLoading
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : _error != null
+                          ? Text(
+                              'Nie udało się pobrać pełnego profilu',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.gray400,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          : Text(
+                              contractor.bio?.isNotEmpty == true
+                                  ? contractor.bio!
+                                  : 'Brak opisu wykonawcy.',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: contractor.bio?.isNotEmpty == true
+                                    ? AppColors.gray600
+                                    : AppColors.gray400,
+                                fontStyle: contractor.bio?.isNotEmpty == true
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
+                              ),
+                            ),
+                  SizedBox(height: AppSpacing.gapMD),
 
-            // Reviews section placeholder
-            Text(
-              'Opinie',
-              style: AppTypography.labelLarge.copyWith(
-                color: AppColors.gray700,
-                fontWeight: FontWeight.w700,
+                  Text(
+                    'Opinie',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  _buildReviewsSection(),
+                  SizedBox(height: AppSpacing.gapMD),
+                ],
               ),
             ),
-            SizedBox(height: 4),
-            Text(
-              'Brak opinii do wyświetlenia.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
-            ),
-            SizedBox(height: AppSpacing.gapMD),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _ContractorPublicReview {
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  const _ContractorPublicReview({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory _ContractorPublicReview.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt']?.toString();
+    return _ContractorPublicReview(
+      rating: int.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      comment: json['comment']?.toString(),
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 }

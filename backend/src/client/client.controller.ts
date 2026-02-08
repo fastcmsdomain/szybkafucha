@@ -32,6 +32,15 @@ export class ClientController {
   }
 
   /**
+   * GET /client/:userId/reviews
+   * Get public client reviews for contractor-facing views
+   */
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.clientService.getPublicClientReviews(userId);
+  }
+
+  /**
    * GET /client/profile
    * Get current client's profile with aggregated ratings
    * Returns: { ratingAvg: number, ratingCount: number }
