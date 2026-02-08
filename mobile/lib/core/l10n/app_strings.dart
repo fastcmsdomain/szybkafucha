@@ -2,7 +2,7 @@
 /// All user-facing strings should be defined here for easy localization
 abstract class AppStrings {
   // ============ App ============
-  static const String appName = 'Szybka Fucha';
+  static const String appName = 'SzybkaFucha';
   static const String appTagline = 'Pomoc jest bliżej niż myślisz';
 
   // ============ Common ============
