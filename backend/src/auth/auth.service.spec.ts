@@ -25,10 +25,11 @@ describe('AuthService', () => {
 
   const mockUser: User = {
     id: 'user-123',
-    type: UserType.CLIENT,
+    types: [UserType.CLIENT],
     phone: '+48123456789',
     email: 'test@example.com',
     name: 'Test User',
+    address: null,
     avatarUrl: null,
     status: UserStatus.ACTIVE,
     googleId: null,
@@ -41,7 +42,7 @@ describe('AuthService', () => {
   const mockContractor: User = {
     ...mockUser,
     id: 'contractor-123',
-    type: UserType.CONTRACTOR,
+    types: [UserType.CONTRACTOR],
     phone: '+48222222221',
     email: 'contractor@example.com',
     name: 'Test Contractor',
@@ -98,7 +99,7 @@ describe('AuthService', () => {
 
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: mockUser.id,
-        type: mockUser.type,
+        types: mockUser.types,
       });
       expect(result.accessToken).toBe('mock-jwt-token');
     });
@@ -107,7 +108,7 @@ describe('AuthService', () => {
       const result = service.generateToken(mockUser);
 
       expect(result.user.id).toBe(mockUser.id);
-      expect(result.user.type).toBe(mockUser.type);
+      expect(result.user.types).toEqual(mockUser.types);
       expect(result.user.name).toBe(mockUser.name);
       expect(result.user.email).toBe(mockUser.email);
       expect(result.user.phone).toBe(mockUser.phone);
@@ -181,7 +182,7 @@ describe('AuthService', () => {
 
       expect(usersService.create).toHaveBeenCalledWith({
         phone,
-        type: UserType.CLIENT,
+        types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
@@ -200,7 +201,7 @@ describe('AuthService', () => {
 
       expect(usersService.create).toHaveBeenCalledWith({
         phone,
-        type: UserType.CONTRACTOR,
+        types: [UserType.CONTRACTOR],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
@@ -295,7 +296,7 @@ describe('AuthService', () => {
         email,
         name,
         avatarUrl,
-        type: UserType.CLIENT,
+        types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
@@ -315,7 +316,7 @@ describe('AuthService', () => {
       );
 
       expect(usersService.create).toHaveBeenCalledWith(
-        expect.objectContaining({ type: UserType.CONTRACTOR }),
+        expect.objectContaining({ types: [UserType.CONTRACTOR] }),
       );
     });
   });
@@ -358,7 +359,7 @@ describe('AuthService', () => {
         appleId,
         email,
         name,
-        type: UserType.CLIENT,
+        types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
@@ -375,7 +376,7 @@ describe('AuthService', () => {
         appleId,
         email: undefined,
         name: undefined,
-        type: UserType.CLIENT,
+        types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
@@ -393,7 +394,7 @@ describe('AuthService', () => {
       );
 
       expect(usersService.create).toHaveBeenCalledWith(
-        expect.objectContaining({ type: UserType.CONTRACTOR }),
+        expect.objectContaining({ types: [UserType.CONTRACTOR] }),
       );
     });
   });

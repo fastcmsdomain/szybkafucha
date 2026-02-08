@@ -14,6 +14,7 @@ import {
 } from '../contractor/entities/contractor-profile.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ContractorService } from '../contractor/contractor.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -100,6 +101,10 @@ describe('TasksService', () => {
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
+    const mockContractorService = {
+      isProfileComplete: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -111,6 +116,7 @@ describe('TasksService', () => {
         },
         { provide: RealtimeGateway, useValue: mockRealtimeGateway },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: ContractorService, useValue: mockContractorService },
       ],
     }).compile();
 
