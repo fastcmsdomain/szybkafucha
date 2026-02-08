@@ -29,6 +29,28 @@ jest.mock('@chakra-ui/react', () => ({
   useColorModeValue: (light: any, dark: any) => light,
 }));
 
+// Mock @ark-ui/react (ESM package causing Jest parse issues in CRA setup)
+jest.mock('@ark-ui/react', () => ({
+  Dialog: {
+    Root: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Backdrop: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Positioner: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Content: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Title: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    CloseTrigger: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <button {...props}>{children}</button>
+    ),
+  },
+}));
+
 describe('App', () => {
   it('renders without crashing', () => {
     // Simple smoke test - the app mounts without throwing
