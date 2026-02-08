@@ -26,13 +26,15 @@ describe('AdminService', () => {
 
   const mockUser: User = {
     id: 'user-123',
-    type: UserType.CLIENT,
+    types: [UserType.CLIENT],
     phone: '+48111111111',
     email: 'test@example.com',
     name: 'Test User',
+    address: null,
     avatarUrl: null,
     googleId: null,
     appleId: null,
+    fcmToken: null,
     status: UserStatus.ACTIVE,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -41,7 +43,7 @@ describe('AdminService', () => {
   const mockContractor: User = {
     ...mockUser,
     id: 'contractor-123',
-    type: UserType.CONTRACTOR,
+    types: [UserType.CONTRACTOR],
     name: 'Test Contractor',
   };
 
@@ -494,8 +496,11 @@ describe('AdminService', () => {
 
   describe('resolveDispute', () => {
     beforeEach(() => {
-      taskRepository.findOne.mockResolvedValue(mockTask);
-      paymentRepository.findOne.mockResolvedValue(mockPayment);
+      taskRepository.findOne.mockResolvedValue({ ...mockTask });
+      paymentRepository.findOne.mockResolvedValue({
+        ...mockPayment,
+        status: PaymentStatus.HELD,
+      });
       taskRepository.save.mockImplementation((task) =>
         Promise.resolve(task as Task),
       );

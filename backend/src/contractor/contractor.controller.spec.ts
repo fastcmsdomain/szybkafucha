@@ -157,7 +157,7 @@ describe('ContractorController', () => {
       expect(result.serviceRadiusKm).toBe(25);
     });
 
-    it('should create profile before update if not exists', async () => {
+    it('should delegate update even when profile does not exist yet', async () => {
       const updateDto = { bio: 'New bio' };
 
       service.findByUserId.mockResolvedValue(null);
@@ -166,7 +166,6 @@ describe('ContractorController', () => {
 
       await controller.updateProfile(mockRequest as any, updateDto);
 
-      expect(service.create).toHaveBeenCalledWith('user-123');
       expect(service.update).toHaveBeenCalledWith('user-123', updateDto);
     });
   });

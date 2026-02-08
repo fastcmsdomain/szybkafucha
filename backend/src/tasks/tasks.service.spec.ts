@@ -5,7 +5,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TasksService, RankedContractor } from './tasks.service';
+import { TasksService } from './tasks.service';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
 import {
@@ -14,11 +14,11 @@ import {
 } from '../contractor/entities/contractor-profile.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ContractorService } from '../contractor/contractor.service';
 
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepository: jest.Mocked<Repository<Task>>;
-  let ratingRepository: jest.Mocked<Repository<Rating>>;
   let contractorProfileRepository: jest.Mocked<Repository<ContractorProfile>>;
   let realtimeGateway: jest.Mocked<RealtimeGateway>;
 
@@ -101,6 +101,10 @@ describe('TasksService', () => {
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
+    const mockContractorService = {
+      isProfileComplete: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -112,12 +116,12 @@ describe('TasksService', () => {
         },
         { provide: RealtimeGateway, useValue: mockRealtimeGateway },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: ContractorService, useValue: mockContractorService },
       ],
     }).compile();
 
     service = module.get<TasksService>(TasksService);
     taskRepository = module.get(getRepositoryToken(Task));
-    ratingRepository = module.get(getRepositoryToken(Rating));
     contractorProfileRepository = module.get(
       getRepositoryToken(ContractorProfile),
     );

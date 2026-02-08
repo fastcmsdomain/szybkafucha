@@ -9,7 +9,7 @@ import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserType, UserStatus } from '../src/users/entities/user.entity';
+import { User } from '../src/users/entities/user.entity';
 import {
   ContractorProfile,
   KycStatus,
