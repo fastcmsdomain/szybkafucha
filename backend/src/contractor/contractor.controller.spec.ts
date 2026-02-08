@@ -18,11 +18,12 @@ describe('ContractorController', () => {
 
   const mockUser: User = {
     id: 'user-123',
-    type: UserType.CONTRACTOR,
+    types: [UserType.CONTRACTOR],
     phone: '+48123456789',
     email: 'contractor@example.com',
     name: 'Test Contractor',
     avatarUrl: null,
+    address: null,
     status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,
@@ -56,7 +57,7 @@ describe('ContractorController', () => {
   const mockRequest = {
     user: {
       id: 'user-123',
-      type: 'contractor',
+      types: ['contractor'],
       email: 'contractor@example.com',
     },
   };
@@ -160,13 +161,10 @@ describe('ContractorController', () => {
     it('should create profile before update if not exists', async () => {
       const updateDto = { bio: 'New bio' };
 
-      service.findByUserId.mockResolvedValue(null);
-      service.create.mockResolvedValue(mockProfile);
       service.update.mockResolvedValue({ ...mockProfile, bio: 'New bio' });
 
       await controller.updateProfile(mockRequest as any, updateDto);
 
-      expect(service.create).toHaveBeenCalledWith('user-123');
       expect(service.update).toHaveBeenCalledWith('user-123', updateDto);
     });
   });

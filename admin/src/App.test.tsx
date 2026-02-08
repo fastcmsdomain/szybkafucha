@@ -23,11 +23,34 @@ jest.mock('@chakra-ui/react', () => ({
   Input: (props: any) => <input {...props} />,
   VStack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   HStack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
+  Spinner: ({ ...props }: any) => <div {...props} />,
+  Textarea: (props: any) => <textarea {...props} />,
   Container: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   Stack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   ChakraProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useColorModeValue: (light: any, dark: any) => light,
 }));
+
+// Mock @ark-ui/react to avoid ESM transform issues in CRA/Jest
+jest.mock('@ark-ui/react', () => {
+  const MockPart = ({ children, ...props }: any) => <div {...props}>{children}</div>;
+  const MockButtonPart = ({ children, ...props }: any) => (
+    <button type="button" {...props}>
+      {children}
+    </button>
+  );
+
+  return {
+    Dialog: {
+      Root: MockPart,
+      Backdrop: MockPart,
+      Positioner: MockPart,
+      Content: MockPart,
+      Title: MockPart,
+      CloseTrigger: MockButtonPart,
+    },
+  };
+});
 
 describe('App', () => {
   it('renders without crashing', () => {
