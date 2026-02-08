@@ -18,6 +18,11 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { UsersService } from '../users/users.service';
 import { Rating } from '../tasks/entities/rating.entity';
 
+type RatingAggregateRow = {
+  avg: string | null;
+  count: string | null;
+};
+
 @Injectable()
 export class ContractorService {
   constructor(
@@ -135,7 +140,7 @@ export class ContractorService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'contractor' }) // NEW: Filter by contractor role
-      .getRawOne<{ avg: string | null; count: string | null }>();
+      .getRawOne<RatingAggregateRow>();
 
     // Handle case when contractor has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;
@@ -150,6 +155,50 @@ export class ContractorService {
       completedTasksCount: profile?.completedTasksCount || 0,
       categories: profile?.categories || [],
       serviceRadiusKm: profile?.serviceRadiusKm || null,
+    };
+  }
+
+  /**
+   * Get contractor reviews with aggregated rating data
+   */
+  async getContractorReviews(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'contractor' })
+      .getRawOne<RatingAggregateRow>();
+
+    const reviews = await this.ratingRepository.find({
+      where: {
+        toUserId: userId,
+        role: 'contractor',
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      ratingAvg: result?.avg ? parseFloat(result.avg) : 0.0,
+      ratingCount: result?.count ? parseInt(result.count, 10) : 0,
+      reviews,
     };
   }
 

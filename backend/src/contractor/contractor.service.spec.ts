@@ -11,8 +11,8 @@ import {
   ContractorProfile,
   KycStatus,
 } from './entities/contractor-profile.entity';
-import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { Rating } from '../tasks/entities/rating.entity';
+import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 
 describe('ContractorService', () => {
@@ -25,8 +25,8 @@ describe('ContractorService', () => {
     phone: '+48123456789',
     email: 'contractor@example.com',
     name: 'Test Contractor',
+    address: 'Warsaw',
     avatarUrl: null,
-    address: null,
     status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,
@@ -64,10 +64,17 @@ describe('ContractorService', () => {
       save: jest.fn(),
     };
     const mockRatingRepository = {
-      createQueryBuilder: jest.fn(),
+      createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ avg: null, count: '0' }),
+      })),
+      find: jest.fn().mockResolvedValue([]),
     };
     const mockUsersService = {
-      findById: jest.fn(),
+      findById: jest.fn().mockResolvedValue(mockUser),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -195,12 +202,17 @@ describe('ContractorService', () => {
       expect(result.serviceRadiusKm).toBe(20);
     });
 
-    it('should create profile when not found and then update', async () => {
-      repository.findOne.mockResolvedValue(null);
-      repository.create.mockReturnValue(mockProfile);
-      repository.save
-        .mockResolvedValueOnce(mockProfile)
-        .mockResolvedValueOnce({ ...mockProfile, bio: 'Test' });
+    it('should create profile when not found and then update it', async () => {
+      repository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      repository.create.mockReturnValue({
+        ...mockProfile,
+        userId: 'nonexistent',
+      });
+      repository.save.mockImplementation((profile) =>
+        Promise.resolve(profile as ContractorProfile),
+      );
 
       const result = await service.update('nonexistent', { bio: 'Test' });
 
@@ -239,11 +251,7 @@ describe('ContractorService', () => {
     });
 
     it('should allow going online without KYC (MVP)', async () => {
-      const onlineProfile = {
-        ...mockProfile,
-        kycStatus: KycStatus.PENDING,
-        isOnline: true,
-      };
+      const onlineProfile = { ...mockProfile, isOnline: true };
       repository.findOne.mockResolvedValue({
         ...mockProfile,
         kycStatus: KycStatus.PENDING,

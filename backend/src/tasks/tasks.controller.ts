@@ -13,6 +13,7 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  ParseEnumPipe,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -61,7 +62,8 @@ export class TasksController {
   @Get()
   async findAll(
     @Request() req: AuthenticatedRequest,
-    @Query('role') role?: string,
+    @Query('role', new ParseEnumPipe(UserType, { optional: true }))
+    role?: UserType,
     @Query('lat') lat?: number,
     @Query('lng') lng?: number,
     @Query('categories') categories?: string,

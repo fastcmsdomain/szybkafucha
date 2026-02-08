@@ -48,6 +48,15 @@ export class ContractorController {
   }
 
   /**
+   * GET /contractor/reviews
+   * Get current contractor's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.contractorService.getContractorReviews(req.user.id);
+  }
+
+  /**
    * PUT /contractor/profile
    * Update contractor profile (bio, categories, radius)
    * Automatically creates profile if it doesn't exist (lazy creation)

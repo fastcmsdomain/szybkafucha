@@ -158,7 +158,7 @@ describe('ContractorController', () => {
       expect(result.serviceRadiusKm).toBe(25);
     });
 
-    it('should create profile before update if not exists', async () => {
+    it('should delegate update even when profile does not exist yet', async () => {
       const updateDto = { bio: 'New bio' };
 
       service.update.mockResolvedValue({ ...mockProfile, bio: 'New bio' });

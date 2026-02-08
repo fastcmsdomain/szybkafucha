@@ -30,6 +30,7 @@ describe('AdminService', () => {
     phone: '+48111111111',
     email: 'test@example.com',
     name: 'Test User',
+    address: null,
     avatarUrl: null,
     address: null,
     googleId: null,

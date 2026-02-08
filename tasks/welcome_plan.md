@@ -6,10 +6,27 @@ Let first-time users see what the app offers before requiring login. Encourage e
 ## New User Flow
 ```
 App opens
+  ├── Returning (not logged in) → PublicBrowseScreen
   ├── First launch → OnboardingScreen (3 pages) → PublicBrowseScreen
   ├── Returning (not logged in) → PublicBrowseScreen
   └── Logged in → ClientHome / ContractorHome (existing)
 ```
+
+## Existing Logged-In User Flow
+```
+Użytkownik otwiera aplikację
+  └── Jeśli zalogowany:
+      ├── Ekran powitalny: "Hej {User name}"
+      └── Przekierowanie do ekranu zleceń:
+          Tab 1: MAPA (zlecenia z całej Polski)
+          Tab 2: LISTA (zlecenia z całej Polski)
+```
+
+### UX Notes (existing user)
+- Powitanie ma używać nazwy zalogowanego użytkownika.
+- Dla zalogowanego wykonawcy domyślnym ekranem po starcie jest ekran zleceń `MAPA/LISTA`.
+ Dane na mapie i liście nie są zawężane do jednego miasta - mają pokazywać zlecenia z całej Polski.
+
 
 ## Onboarding Screens (3 pages with PageView)
 

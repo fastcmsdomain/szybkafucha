@@ -29,6 +29,7 @@ describe('AuthService', () => {
     phone: '+48123456789',
     email: 'test@example.com',
     name: 'Test User',
+    address: null,
     avatarUrl: null,
     address: null,
     status: UserStatus.ACTIVE,

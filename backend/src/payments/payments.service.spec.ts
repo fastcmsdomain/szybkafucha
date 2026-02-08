@@ -22,7 +22,6 @@ describe('PaymentsService', () => {
   let paymentRepository: jest.Mocked<Repository<Payment>>;
   let taskRepository: jest.Mocked<Repository<Task>>;
   let contractorProfileRepository: jest.Mocked<Repository<ContractorProfile>>;
-  let _userRepository: jest.Mocked<Repository<User>>;
 
   const mockTask: Task = {
     id: 'task-123',
@@ -156,7 +155,6 @@ describe('PaymentsService', () => {
     contractorProfileRepository = module.get(
       getRepositoryToken(ContractorProfile),
     );
-    _userRepository = module.get(getRepositoryToken(User));
   });
 
   describe('createConnectAccount', () => {

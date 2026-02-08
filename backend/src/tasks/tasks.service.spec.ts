@@ -19,7 +19,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 describe('TasksService', () => {
   let service: TasksService;
   let taskRepository: jest.Mocked<Repository<Task>>;
-  let _ratingRepository: jest.Mocked<Repository<Rating>>;
   let contractorProfileRepository: jest.Mocked<Repository<ContractorProfile>>;
   let realtimeGateway: jest.Mocked<RealtimeGateway>;
 
@@ -125,7 +124,6 @@ describe('TasksService', () => {
 
     service = module.get<TasksService>(TasksService);
     taskRepository = module.get(getRepositoryToken(Task));
-    _ratingRepository = module.get(getRepositoryToken(Rating));
     contractorProfileRepository = module.get(
       getRepositoryToken(ContractorProfile),
     );

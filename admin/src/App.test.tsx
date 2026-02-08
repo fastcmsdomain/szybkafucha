@@ -31,26 +31,27 @@ jest.mock('@chakra-ui/react', () => ({
   useColorModeValue: (light: any, dark: any) => light,
 }));
 
-// Mock @ark-ui/react to avoid ESM transform issues in CRA/Jest
-jest.mock('@ark-ui/react', () => {
-  const MockPart = ({ children, ...props }: any) => <div {...props}>{children}</div>;
-  const MockButtonPart = ({ children, ...props }: any) => (
-    <button type="button" {...props}>
-      {children}
-    </button>
-  );
-
-  return {
-    Dialog: {
-      Root: MockPart,
-      Backdrop: MockPart,
-      Positioner: MockPart,
-      Content: MockPart,
-      Title: MockPart,
-      CloseTrigger: MockButtonPart,
-    },
-  };
-});
+// Mock @ark-ui/react (ESM package causing Jest parse issues in CRA setup)
+jest.mock('@ark-ui/react', () => ({
+  Dialog: {
+    Root: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Backdrop: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Positioner: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Content: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Title: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    CloseTrigger: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <button {...props}>{children}</button>
+    ),
+  },
+}));
 
 describe('App', () => {
   it('renders without crashing', () => {
