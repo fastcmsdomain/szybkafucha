@@ -29,40 +29,75 @@ class PlaceholderScreen extends StatelessWidget {
 
 /// App router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final authNotifier = _AuthStateNotifier(ref);
 
   return GoRouter(
     initialLocation: Routes.welcome,
     debugLogDiagnostics: true,
-    refreshListenable: _AuthStateNotifier(ref),
+    refreshListenable: authNotifier,
     redirect: (context, state) {
-      final isLoading = authState.isLoading;
-      final isAuthenticated = authState.isAuthenticated;
+      // Read current auth state from notifier (not captured variable)
+      final isLoading = authNotifier.isLoading;
+      final isAuthenticated = authNotifier.isAuthenticated;
+      final onboardingComplete = authNotifier.onboardingComplete;
+
       final isAuthRoute = state.matchedLocation == Routes.welcome ||
           state.matchedLocation == Routes.login ||
-          state.matchedLocation.startsWith('/login');
+          state.matchedLocation.startsWith('/login') ||
+          state.matchedLocation == Routes.register;
+
+      final isOnboardingRoute = state.matchedLocation == Routes.onboarding;
+      final isBrowseRoute = state.matchedLocation == Routes.browse;
+
+      // Debug logging
+      print('🔍 Router redirect check:');
+      print('  - Location: ${state.matchedLocation}');
+      print('  - Loading: $isLoading');
+      print('  - Authenticated: $isAuthenticated');
+      print('  - Onboarding complete: $onboardingComplete');
 
       // While checking auth state, stay on current route
-      // (Welcome screen will show a loading indicator)
-      if (isLoading) {
+      if (isLoading) return null;
+
+      // === AUTHENTICATED USERS ===
+      // Always redirect to home (skip onboarding/browse)
+      if (isAuthenticated) {
+        // If on auth, onboarding, or browse route → redirect to home
+        if (isAuthRoute || isOnboardingRoute || isBrowseRoute) {
+          final user = authNotifier.user;
+          final destination = user?.isContractor == true
+              ? Routes.contractorHome
+              : Routes.clientHome;
+          print('  ✅ Authenticated → redirecting to $destination');
+          return destination;
+        }
+        // Already on valid route
         return null;
       }
 
-      // If not authenticated and not on auth route, redirect to welcome
-      if (!isAuthenticated && !isAuthRoute) {
-        return Routes.welcome;
-      }
+      // === NOT AUTHENTICATED ===
 
-      // If authenticated and on auth route, redirect to appropriate home
-      if (isAuthenticated && isAuthRoute) {
-        final user = authState.user;
-        if (user?.isContractor == true) {
-          return Routes.contractorHome;
+      // First time user → show onboarding
+      if (!onboardingComplete) {
+        if (!isOnboardingRoute) {
+          print('  ✅ No onboarding → redirecting to onboarding');
+          return Routes.onboarding;
         }
-        return Routes.clientHome;
+        // Already on onboarding, allow it
+        print('  ✅ On onboarding screen, allow');
+        return null;
       }
 
-      return null;
+      // Onboarding complete but not logged in
+      // Allow /browse and auth routes (so users can log in)
+      if (isBrowseRoute || isAuthRoute) {
+        print('  ✅ On browse or auth route, allow');
+        return null;
+      }
+
+      // Everything else → redirect to browse
+      print('  ✅ Onboarding done, not on browse/auth → redirecting to browse');
+      return Routes.browse;
     },
     routes: [
       // Auth routes
@@ -70,6 +105,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.welcome,
         name: 'welcome',
         builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.onboarding,
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: Routes.browse,
+        name: 'browse',
+        builder: (context, state) => const PublicBrowseScreen(),
       ),
       GoRoute(
         path: Routes.login,
@@ -354,10 +399,19 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// Notifier to refresh router when auth state changes
 class _AuthStateNotifier extends ChangeNotifier {
   _AuthStateNotifier(this._ref) {
-    _ref.listen(authProvider, (previous, next) => notifyListeners());
+    _ref.listen(authProvider, (previous, next) {
+      print('🔄 _AuthStateNotifier: Auth state changed, notifying listeners');
+      notifyListeners();
+    });
   }
 
   final Ref _ref;
+
+  // Expose current auth state properties (reads from provider each time)
+  bool get isLoading => _ref.read(authProvider).isLoading;
+  bool get isAuthenticated => _ref.read(authProvider).isAuthenticated;
+  bool get onboardingComplete => _ref.read(authProvider).onboardingComplete;
+  User? get user => _ref.read(authProvider).user;
 }
 
 /// Client bottom navigation shell

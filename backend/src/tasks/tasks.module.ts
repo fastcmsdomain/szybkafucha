@@ -9,6 +9,7 @@ import { Rating } from './entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
+import { PublicTasksController } from './public-tasks.controller';
 import { UsersModule } from '../users/users.module';
 import { ContractorModule } from '../contractor/contractor.module';
 import { RealtimeModule } from '../realtime/realtime.module';
@@ -22,7 +23,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     forwardRef(() => RealtimeModule),
     NotificationsModule,
   ],
-  controllers: [TasksController],
+  controllers: [TasksController, PublicTasksController],
   providers: [TasksService],
   exports: [TasksService],
 })

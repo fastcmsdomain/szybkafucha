@@ -2,6 +2,8 @@
 abstract class Routes {
   // Auth routes
   static const String welcome = '/';
+  static const String onboarding = '/onboarding';
+  static const String browse = '/browse';
   static const String login = '/login';
   static const String phoneLogin = '/login/phone';
   static const String phoneOtp = '/login/phone/otp';

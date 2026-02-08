@@ -143,6 +143,40 @@ class ContractorTask {
     );
   }
 
+  /// Factory for public task data (from /tasks/browse endpoint)
+  /// Public tasks don't include client personal information
+  factory ContractorTask.fromPublicJson(Map<String, dynamic> json) {
+    return ContractorTask(
+      id: json['id'] as String,
+      category: TaskCategory.values.firstWhere(
+        (c) => c.name == json['category'],
+        orElse: () => TaskCategory.sprzatanie,
+      ),
+      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      // Public tasks don't have client info
+      clientId: '',
+      clientName: 'Użytkownik', // Generic name for privacy
+      clientAvatarUrl: null,
+      clientRating: 0.0,
+      // Address is sanitized (city/district only)
+      address: json['address'] as String? ?? '',
+      // Coordinates are rounded for privacy
+      latitude: _parseDouble(json['locationLat']) ?? 0.0,
+      longitude: _parseDouble(json['locationLng']) ?? 0.0,
+      price: _parseInt(json['budgetAmount']) ?? 0,
+      distanceKm: 0.0, // Unknown for public tasks
+      estimatedMinutes: 30, // Default estimate
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
+      status: ContractorTaskStatus.available,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : null,
+      imageUrls: null, // No images in public view
+      isUrgent: false, // Urgency not shown publicly
+    );
+  }
+
   /// Parse dynamic value to double (handles both String and num)
   static double? _parseDouble(dynamic value) {
     if (value == null) return null;
