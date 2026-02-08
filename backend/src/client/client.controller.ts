@@ -34,6 +34,15 @@ export class ClientController {
   }
 
   /**
+   * GET /client/reviews
+   * Get current client's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.clientService.getClientReviews(req.user.id);
+  }
+
+  /**
    * PUT /client/profile
    * Update current client's profile (bio only)
    * Automatically creates profile if it doesn't exist (lazy creation)

@@ -18,6 +18,7 @@ class _ContractorReviewsScreenState
     extends ConsumerState<ContractorReviewsScreen> {
   double _ratingAvg = 0.0;
   int _ratingCount = 0;
+  List<_ContractorReview> _reviews = [];
   bool _isLoading = true;
 
   @override
@@ -29,11 +30,15 @@ class _ContractorReviewsScreenState
   Future<void> _loadRatings() async {
     try {
       final api = ref.read(apiClientProvider);
-      final response = await api.get('/contractor/profile');
+      final response = await api.get('/contractor/reviews');
       final data = response as Map<String, dynamic>;
 
       final ratingAvgValue = data['ratingAvg'];
       final ratingCountValue = data['ratingCount'];
+      final reviewsData = (data['reviews'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(_ContractorReview.fromJson)
+          .toList();
 
       if (!mounted) return;
       setState(() {
@@ -43,6 +48,7 @@ class _ContractorReviewsScreenState
         _ratingCount = ratingCountValue is int
             ? ratingCountValue
             : (int.tryParse(ratingCountValue?.toString() ?? '') ?? 0);
+        _reviews = reviewsData;
         _isLoading = false;
       });
     } catch (_) {
@@ -71,78 +77,12 @@ class _ContractorReviewsScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: EdgeInsets.all(AppSpacing.paddingMD),
-                decoration: BoxDecoration(
-                  color: AppColors.gray50,
-                  borderRadius: AppRadius.radiusMD,
-                  border: Border.all(color: AppColors.gray200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Oceny zleceniodawców',
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.gapSM),
-                    if (_isLoading)
-                      SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: AppColors.warning, size: 22),
-                          SizedBox(width: 6),
-                          Text(
-                            _ratingAvg.toStringAsFixed(1),
-                            style: AppTypography.h4,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'na podstawie $_ratingCount opinii',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    SizedBox(height: AppSpacing.gapSM),
-                    Text(
-                      'Opinie wkrótce dostępne do podglądu w aplikacji.',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                    ),
-                    if (user?.isVerified == true) ...[
-                      SizedBox(height: AppSpacing.gapSM),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            color: AppColors.primary,
-                            size: 18,
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'Zweryfikowany wykonawca',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: AppColors.gray700,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+              _buildSummaryCard(user?.isVerified == true),
+              SizedBox(height: AppSpacing.space4),
+              Expanded(
+                child: _buildReviewsList(),
               ),
-              const Spacer(),
+              SizedBox(height: AppSpacing.space4),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -162,6 +102,178 @@ class _ContractorReviewsScreenState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSummaryCard(bool isVerified) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Oceny zleceniodawców',
+            style: AppTypography.bodyLarge.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          if (_isLoading)
+            SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Row(
+              children: [
+                Icon(Icons.star, color: AppColors.warning, size: 22),
+                SizedBox(width: 6),
+                Text(
+                  _ratingAvg.toStringAsFixed(1),
+                  style: AppTypography.h4,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'na podstawie $_ratingCount opinii',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          if (_reviews.isEmpty) ...[
+            SizedBox(height: AppSpacing.gapSM),
+            Text(
+              'Opinie wkrótce dostępne do podglądu w aplikacji.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+          if (isVerified) ...[
+            SizedBox(height: AppSpacing.gapSM),
+            Row(
+              children: [
+                Icon(
+                  Icons.verified,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Zweryfikowany wykonawca',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.gray700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsList() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_reviews.isEmpty) {
+      return Center(
+        child: Text(
+          'Brak opinii do wyświetlenia.',
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: _reviews.length,
+      separatorBuilder: (_, index) => SizedBox(height: AppSpacing.gapSM),
+      itemBuilder: (context, index) {
+        final review = _reviews[index];
+        return Container(
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusMD,
+            border: Border.all(color: AppColors.gray200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.star, color: AppColors.warning, size: 18),
+                  SizedBox(width: 4),
+                  Text(
+                    review.rating.toString(),
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _formatDate(review.createdAt),
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.gapSM),
+              Text(
+                review.comment?.trim().isNotEmpty == true
+                    ? review.comment!.trim()
+                    : 'Brak komentarza.',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray700,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDate(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day.$month.$year';
+  }
+}
+
+class _ContractorReview {
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  _ContractorReview({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory _ContractorReview.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt']?.toString();
+    return _ContractorReview(
+      rating: int.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      comment: json['comment']?.toString(),
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 }

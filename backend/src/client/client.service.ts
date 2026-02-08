@@ -125,6 +125,50 @@ export class ClientService {
   }
 
   /**
+   * Get client reviews with aggregated rating data
+   */
+  async getClientReviews(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'client' })
+      .getRawOne();
+
+    const reviews = await this.ratingRepository.find({
+      where: {
+        toUserId: userId,
+        role: 'client',
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      ratingAvg: result?.avg ? parseFloat(result.avg) : 0.0,
+      ratingCount: result?.count ? parseInt(result.count, 10) : 0,
+      reviews,
+    };
+  }
+
+  /**
    * Get public client profile for contractors viewing client
    * Returns safe public fields: name, avatar, bio, ratings
    */
