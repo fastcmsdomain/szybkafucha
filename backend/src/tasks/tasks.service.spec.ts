@@ -12,9 +12,9 @@ import {
   ContractorProfile,
   KycStatus,
 } from '../contractor/entities/contractor-profile.entity';
+import { ContractorService } from '../contractor/contractor.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
-import { ContractorService } from '../contractor/contractor.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -92,6 +92,12 @@ describe('TasksService', () => {
 
     const mockRealtimeGateway = {
       sendToUser: jest.fn().mockReturnValue(true),
+      broadcastTaskStatusWithContractor: jest.fn(),
+      broadcastTaskStatus: jest.fn(),
+    };
+
+    const mockContractorService = {
+      isProfileComplete: jest.fn().mockResolvedValue(true),
     };
 
     const mockNotificationsService = {
@@ -99,10 +105,6 @@ describe('TasksService', () => {
       sendToUsers: jest
         .fn()
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
-    };
-
-    const mockContractorService = {
-      isProfileComplete: jest.fn().mockResolvedValue(true),
     };
 
     const module: TestingModule = await Test.createTestingModule({

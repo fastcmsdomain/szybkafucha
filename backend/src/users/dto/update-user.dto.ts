@@ -24,17 +24,17 @@ export class UpdateUserDto {
   @IsString()
   fcmToken?: string;
 
-   @IsOptional()
-   @IsString()
-   @MaxLength(20)
-   phone?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
 
-   @IsOptional()
-   @IsEmail()
-   email?: string;
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
-   @IsOptional()
-   @IsString()
-   @MaxLength(255)
-   address?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  address?: string;
 }

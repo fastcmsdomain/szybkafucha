@@ -49,7 +49,11 @@ export class Rating {
 
   // Role in which toUserId was rated ('client' or 'contractor')
   // Separates client ratings (how good they are as clients) from contractor ratings (how good they are as workers)
-  @Column({ type: 'enum', enum: ['client', 'contractor'], default: 'contractor' })
+  @Column({
+    type: 'enum',
+    enum: ['client', 'contractor'],
+    default: 'contractor',
+  })
   role: string;
 
   @CreateDateColumn()

@@ -31,6 +31,7 @@ describe('AuthService', () => {
     name: 'Test User',
     address: null,
     avatarUrl: null,
+    address: null,
     status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,

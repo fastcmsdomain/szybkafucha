@@ -71,10 +71,11 @@ export class TasksController {
   ) {
     // Use explicit role param, or infer from user types
     const activeRole: UserType =
-      role ||
-      (req.user.types.includes(UserType.CONTRACTOR)
-        ? UserType.CONTRACTOR
-        : UserType.CLIENT);
+      role === UserType.CLIENT || role === UserType.CONTRACTOR
+        ? role
+        : req.user.types.includes(UserType.CONTRACTOR)
+          ? UserType.CONTRACTOR
+          : UserType.CLIENT;
 
     if (activeRole === UserType.CLIENT) {
       return this.tasksService.findByClient(req.user.id);

@@ -105,12 +105,8 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => [
         {
-          ttl: parseInt(
-            configService.get<string>('THROTTLE_TTL_MS', '60000'),
-          ), // default: 60s
-          limit: parseInt(
-            configService.get<string>('THROTTLE_LIMIT', '50'),
-          ), // default: 10 reqs/window
+          ttl: parseInt(configService.get<string>('THROTTLE_TTL_MS', '60000')), // default: 60s
+          limit: parseInt(configService.get<string>('THROTTLE_LIMIT', '50')), // default: 10 reqs/window
         },
       ],
       inject: [ConfigService],

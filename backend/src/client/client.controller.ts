@@ -2,7 +2,15 @@
  * Client Controller
  * REST endpoints for client-specific operations
  */
-import { Controller, Get, Put, UseGuards, Request, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  UseGuards,
+  Request,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { ClientService } from './client.service';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';

@@ -32,6 +32,7 @@ describe('AdminService', () => {
     name: 'Test User',
     address: null,
     avatarUrl: null,
+    address: null,
     googleId: null,
     appleId: null,
     fcmToken: null,
@@ -496,7 +497,10 @@ describe('AdminService', () => {
 
   describe('resolveDispute', () => {
     beforeEach(() => {
-      taskRepository.findOne.mockResolvedValue({ ...mockTask });
+      taskRepository.findOne.mockResolvedValue({
+        ...mockTask,
+        status: TaskStatus.DISPUTED,
+      });
       paymentRepository.findOne.mockResolvedValue({
         ...mockPayment,
         status: PaymentStatus.HELD,
