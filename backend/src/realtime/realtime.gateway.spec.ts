@@ -5,7 +5,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { Socket, Server } from 'socket.io';
-import { RealtimeGateway, ServerEvent, ClientEvent } from './realtime.gateway';
+import { RealtimeGateway, ServerEvent } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
 import { TaskStatus } from '../tasks/entities/task.entity';
 

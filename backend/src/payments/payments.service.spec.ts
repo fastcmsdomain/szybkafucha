@@ -6,11 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import {
-  BadRequestException,
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
@@ -18,7 +14,7 @@ import {
   ContractorProfile,
   KycStatus,
 } from '../contractor/entities/contractor-profile.entity';
-import { User, UserType, UserStatus } from '../users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
 describe('PaymentsService', () => {
@@ -26,7 +22,6 @@ describe('PaymentsService', () => {
   let paymentRepository: jest.Mocked<Repository<Payment>>;
   let taskRepository: jest.Mocked<Repository<Task>>;
   let contractorProfileRepository: jest.Mocked<Repository<ContractorProfile>>;
-  let userRepository: jest.Mocked<Repository<User>>;
 
   const mockTask: Task = {
     id: 'task-123',
@@ -160,7 +155,6 @@ describe('PaymentsService', () => {
     contractorProfileRepository = module.get(
       getRepositoryToken(ContractorProfile),
     );
-    userRepository = module.get(getRepositoryToken(User));
   });
 
   describe('createConnectAccount', () => {

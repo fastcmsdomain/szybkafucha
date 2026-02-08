@@ -18,6 +18,11 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { UsersService } from '../users/users.service';
 import { Rating } from '../tasks/entities/rating.entity';
 
+type RatingAggregateRow = {
+  avg: string | null;
+  count: string | null;
+};
+
 @Injectable()
 export class ContractorService {
   constructor(
@@ -135,7 +140,7 @@ export class ContractorService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'contractor' }) // NEW: Filter by contractor role
-      .getRawOne();
+      .getRawOne<RatingAggregateRow>();
 
     // Handle case when contractor has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;
@@ -172,7 +177,7 @@ export class ContractorService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'contractor' })
-      .getRawOne();
+      .getRawOne<RatingAggregateRow>();
 
     const reviews = await this.ratingRepository.find({
       where: {

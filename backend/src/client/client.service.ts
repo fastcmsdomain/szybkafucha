@@ -17,6 +17,11 @@ export interface ClientProfileDto {
   ratingCount: number;
 }
 
+type RatingAggregateRow = {
+  avg: string | null;
+  count: string | null;
+};
+
 @Injectable()
 export class ClientService {
   constructor(
@@ -110,7 +115,7 @@ export class ClientService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'client' }) // NEW: Filter by client role
-      .getRawOne();
+      .getRawOne<RatingAggregateRow>();
 
     // Handle case when client has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;
@@ -143,7 +148,7 @@ export class ClientService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'client' })
-      .getRawOne();
+      .getRawOne<RatingAggregateRow>();
 
     const reviews = await this.ratingRepository.find({
       where: {
