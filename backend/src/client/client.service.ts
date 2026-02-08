@@ -110,7 +110,7 @@ export class ClientService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'client' }) // NEW: Filter by client role
-      .getRawOne();
+      .getRawOne<{ avg: string | null; count: string | null }>();
 
     // Handle case when client has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;

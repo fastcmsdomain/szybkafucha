@@ -135,7 +135,7 @@ export class ContractorService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'contractor' }) // NEW: Filter by contractor role
-      .getRawOne();
+      .getRawOne<{ avg: string | null; count: string | null }>();
 
     // Handle case when contractor has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;

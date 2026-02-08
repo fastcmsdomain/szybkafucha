@@ -15,10 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
-import {
-  ContractorProfile,
-  KycStatus,
-} from '../contractor/entities/contractor-profile.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -502,7 +499,9 @@ export class TasksService {
       task.status === TaskStatus.COMPLETED ||
       task.status === TaskStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot cancel completed or already cancelled task');
+      throw new BadRequestException(
+        'Cannot cancel completed or already cancelled task',
+      );
     }
 
     const isContractorCancelling = task.contractorId === userId;
@@ -517,7 +516,9 @@ export class TasksService {
 
     if (isContractorCancelling) {
       // CONTRACTOR is cancelling - return task to 'posted' status so other contractors can accept it
-      this.logger.log(`Contractor ${userId} releasing task ${taskId} - returning to posted status`);
+      this.logger.log(
+        `Contractor ${userId} releasing task ${taskId} - returning to posted status`,
+      );
 
       task.status = TaskStatus.CREATED;
       task.contractorId = null;
@@ -540,7 +541,9 @@ export class TasksService {
       this.notificationsService
         .sendToUser(task.clientId, NotificationType.TASK_CANCELLED, {
           taskTitle: task.title,
-          reason: reason || 'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
+          reason:
+            reason ||
+            'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
         })
         .catch((err) =>
           this.logger.error(
@@ -551,7 +554,9 @@ export class TasksService {
       return savedTask;
     } else {
       // CLIENT is cancelling - truly cancel the task
-      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
+      this.logger.log(
+        `Client ${userId} cancelling task ${taskId} in status ${task.status}`,
+      );
 
       task.status = TaskStatus.CANCELLED;
       task.cancelledAt = new Date();
@@ -569,12 +574,16 @@ export class TasksService {
 
       // Also notify contractor directly (they might not be in the task room)
       if (previousContractorId) {
-        this.realtimeGateway.sendToUser(previousContractorId, ServerEvent.TASK_STATUS, {
-          taskId,
-          status: TaskStatus.CANCELLED,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        });
+        this.realtimeGateway.sendToUser(
+          previousContractorId,
+          ServerEvent.TASK_STATUS,
+          {
+            taskId,
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date(),
+            updatedBy: userId,
+          },
+        );
       }
 
       // Notify contractor if there was one assigned
