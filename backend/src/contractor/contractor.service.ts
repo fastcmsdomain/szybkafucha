@@ -203,6 +203,52 @@ export class ContractorService {
   }
 
   /**
+   * Get public contractor reviews with aggregated rating data
+   * Returns latest 5 reviews for client-facing views
+   */
+  async getPublicContractorReviews(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'contractor' })
+      .getRawOne<RatingAggregateRow>();
+
+    const reviews = await this.ratingRepository.find({
+      where: {
+        toUserId: userId,
+        role: 'contractor',
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      take: 5,
+    });
+
+    return {
+      ratingAvg: result?.avg ? parseFloat(result.avg) : 0.0,
+      ratingCount: result?.count ? parseInt(result.count, 10) : 0,
+      reviews,
+    };
+  }
+
+  /**
    * Toggle contractor availability
    */
   async setAvailability(
