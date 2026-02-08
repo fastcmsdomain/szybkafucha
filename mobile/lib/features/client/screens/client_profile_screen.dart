@@ -29,11 +29,6 @@ class _ClientProfileScreenState
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
 
-  // Client profile data for ratings
-  double? _ratingAvg;
-  int? _ratingCount;
-  bool _isLoadingProfile = true;
-
   @override
   void initState() {
     super.initState();
@@ -56,41 +51,20 @@ class _ClientProfileScreenState
       debugPrint('=== CLIENT PROFILE API RESPONSE ===');
       debugPrint('Full response: $data');
       debugPrint('Bio: ${data['bio']}');
-      debugPrint('RatingAvg: ${data['ratingAvg']}');
-      debugPrint('RatingCount: ${data['ratingCount']}');
       debugPrint('===================================');
 
       if (mounted) {
         setState(() {
-          // Handle ratingAvg which comes as string from PostgreSQL decimal type
-          final ratingAvgValue = data['ratingAvg'];
-          _ratingAvg = ratingAvgValue != null
-              ? double.tryParse(ratingAvgValue.toString())
-              : null;
-
-          // Handle ratingCount
-          final ratingCountValue = data['ratingCount'];
-          _ratingCount = ratingCountValue is int
-              ? ratingCountValue
-              : int.tryParse(ratingCountValue?.toString() ?? '');
-
           // Load bio from client profile (role-specific)
           final bio = data['bio'] as String?;
           debugPrint('DEBUG: Loading bio = $bio');
           // Always set controller text to match backend state (even if null/empty)
           _bioController.text = bio ?? '';
           debugPrint('DEBUG: Set bioController.text to: ${_bioController.text}');
-
-          _isLoadingProfile = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading client profile: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingProfile = false;
-        });
-      }
     }
   }
 
@@ -387,10 +361,6 @@ class _ClientProfileScreenState
 
             SizedBox(height: AppSpacing.space6),
 
-            _buildRatingsSection(),
-
-            SizedBox(height: AppSpacing.space6),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -447,54 +417,4 @@ class _ClientProfileScreenState
     );
   }
 
-  Widget _buildRatingsSection() {
-    final rating = _ratingAvg ?? 0.0;
-    final reviews = _ratingCount ?? 0;
-
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      decoration: BoxDecoration(
-        color: AppColors.gray50,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Oceny wykonawców',
-            style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          if (_isLoadingProfile)
-            SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Row(
-              children: [
-                Icon(Icons.star, color: AppColors.warning, size: 22),
-                SizedBox(width: 6),
-                Text(
-                  rating.toStringAsFixed(1),
-                  style: AppTypography.h4,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'na podstawie $reviews opinii',
-                  style: AppTypography.caption.copyWith(color: AppColors.gray600),
-                ),
-              ],
-            ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Opinie wkrótce dostępne do podglądu w aplikacji.',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
-          ),
-        ],
-      ),
-    );
-  }
 }
