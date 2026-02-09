@@ -31,10 +31,18 @@ class TaskAlertScreen extends ConsumerStatefulWidget {
 
 class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   bool _isAccepting = false;
+  double? _clientRatingAvg;
+  int? _clientRatingCount;
 
   // Get task from widget or use mock
   ContractorTask get _task =>
       widget.task ?? ContractorTask.mockNearbyTasks().first;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchClientRatingSummary();
+  }
 
   /// Navigate back safely - use go() if nothing to pop
   void _navigateBack(BuildContext context) {
@@ -48,6 +56,8 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   @override
   Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(_task.category);
+    final rating = _clientRatingAvg ?? _task.clientRating;
+    final reviewCount = _clientRatingCount ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.gray50,
@@ -390,10 +400,17 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    _task.clientRating.toStringAsFixed(1),
+                                    rating.toStringAsFixed(1),
                                     style: AppTypography.bodySmall.copyWith(
                                       color: AppColors.gray600,
                                       fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    '$reviewCount opinii',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.gray500,
                                     ),
                                   ),
                                 ],
@@ -801,6 +818,30 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _fetchClientRatingSummary() async {
+    if (_task.clientId.isEmpty) return;
+
+    final api = ref.read(apiClientProvider);
+
+    try {
+      final response = await api.get('/client/${_task.clientId}/public');
+      final data = response as Map<String, dynamic>;
+
+      if (!mounted) return;
+
+      setState(() {
+        _clientRatingAvg = (data['ratingAvg'] as num?)?.toDouble();
+        _clientRatingCount = data['ratingCount'] as int?;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _clientRatingAvg = _task.clientRating;
+        _clientRatingCount = _clientRatingCount ?? 0;
+      });
+    }
   }
 
   void _showClientProfilePopup() {

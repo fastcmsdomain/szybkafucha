@@ -1,7 +1,7 @@
 # Welcome Onboarding & Public Browse — Implementation Plan
 
 ## Goal
-Let first-time users see what the app offers before requiring login. Encourage engagement through 3 onboarding screens, then show available tasks publicly.
+Let first-time users see what the app offers before requiring login. Encourage engagement through 3 onboarding screens, then show available tasks publicly. Desing i UX na podtawie SzybkaFucha.pl index.html z stylami styles.css w root folder
 
 ## New User Flow
 ```

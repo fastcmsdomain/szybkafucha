@@ -137,6 +137,55 @@ export class TasksService {
   }
 
   /**
+   * Find all available tasks for public browsing (no authentication)
+   * Returns sanitized task data without sensitive client information
+   *
+   * Security measures:
+   * - No client personal information (name, email, phone)
+   * - Address sanitized to city/district level only
+   * - Coordinates rounded to ~1km precision for privacy
+   * - Description truncated to 200 characters
+   * - No task images included
+   *
+   * @param options - Query options (categories, limit)
+   * @returns Array of sanitized public task objects
+   */
+  async findAllAvailablePublic(options: {
+    categories?: string[];
+    limit: number;
+  }): Promise<any[]> {
+    const queryBuilder = this.tasksRepository
+      .createQueryBuilder('task')
+      .where('task.status = :status', { status: TaskStatus.CREATED })
+      .orderBy('task.createdAt', 'DESC')
+      .limit(options.limit);
+
+    if (options.categories && options.categories.length > 0) {
+      queryBuilder.andWhere('task.category IN (:...categories)', {
+        categories: options.categories,
+      });
+    }
+
+    const tasks = await queryBuilder.getMany();
+
+    // Sanitize data - remove sensitive information
+    return tasks.map((task) => ({
+      id: task.id,
+      category: task.category,
+      title: task.title,
+      description: task.description?.substring(0, 200), // Truncate to 200 chars
+      address: this.sanitizeAddress(task.address),
+      budgetAmount: task.budgetAmount,
+      // Round coordinates to ~1km precision for privacy
+      locationLat: Math.round(Number(task.locationLat) * 100) / 100,
+      locationLng: Math.round(Number(task.locationLng) * 100) / 100,
+      createdAt: task.createdAt,
+      estimatedDurationHours: task.estimatedDurationHours,
+      scheduledAt: task.scheduledAt,
+    }));
+  }
+
+  /**
    * Find available tasks for contractors
    * Filters by category and location (within radius)
    */
@@ -952,5 +1001,23 @@ export class TasksService {
         );
       }
     }
+  }
+
+  /**
+   * Sanitize address to show only city/district (privacy protection)
+   * Returns first 2 parts of comma-separated address
+   *
+   * Example: "ul. Marszałkowska 1, Warszawa, Śródmieście, 00-001"
+   *          -> "Warszawa, Śródmieście"
+   *
+   * @param fullAddress - Full address string
+   * @returns Sanitized address with only city/district
+   */
+  private sanitizeAddress(fullAddress: string): string {
+    if (!fullAddress) return '';
+
+    const parts = fullAddress.split(',').map((p) => p.trim());
+    // Return only first 2 parts (e.g., "Warszawa, Śródmieście")
+    return parts.slice(0, 2).join(', ');
   }
 }

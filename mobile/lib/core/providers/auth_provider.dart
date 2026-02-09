@@ -132,6 +132,7 @@ class AuthState {
   final String? refreshToken;
   final String? error;
   final String activeRole; // 'client' or 'contractor' - current active role
+  final bool onboardingComplete; // Track if user completed onboarding
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -140,6 +141,7 @@ class AuthState {
     this.refreshToken,
     this.error,
     this.activeRole = 'client', // Default to client
+    this.onboardingComplete = false, // Default to not completed
   });
 
   AuthState copyWith({
@@ -149,6 +151,7 @@ class AuthState {
     String? refreshToken,
     String? error,
     String? activeRole,
+    bool? onboardingComplete,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -159,6 +162,7 @@ class AuthState {
       refreshToken: refreshToken ?? this.refreshToken,
       error: clearError ? null : (error ?? this.error),
       activeRole: activeRole ?? this.activeRole,
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
 
@@ -234,13 +238,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // Check for stored tokens
+      // Check for stored tokens and onboarding completion
       final token = await _storage.getToken();
       final refreshToken = await _storage.getRefreshToken();
+      final onboardingComplete = await _storage.isOnboardingComplete();
 
       if (token == null) {
         // No stored credentials - user must login
-        state = state.copyWith(status: AuthStatus.unauthenticated);
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          onboardingComplete: onboardingComplete,
+        );
         return;
       }
 
@@ -265,6 +273,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           token: token,
           refreshToken: refreshToken,
           user: cachedUser,
+          onboardingComplete: onboardingComplete,
         );
 
         // In dev mode with mock token, skip server validation
@@ -768,6 +777,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       rethrow;
     }
   }
+
+  /// Mark onboarding as complete
+  /// Updates both storage and state
+  Future<void> markOnboardingComplete() async {
+    print('🔧 AuthProvider: Marking onboarding as complete');
+    print('  - Before: onboardingComplete = ${state.onboardingComplete}');
+    await _storage.setOnboardingComplete();
+    state = state.copyWith(onboardingComplete: true);
+    print('  - After: onboardingComplete = ${state.onboardingComplete}');
+  }
+
+  /// Reset onboarding flag (dev/testing only)
+  /// Use this to test onboarding flow again
+  Future<void> resetOnboarding() async {
+    await _storage.deleteOnboardingComplete();
+    state = state.copyWith(onboardingComplete: false);
+  }
 }
 
 /// Auth state provider
@@ -799,4 +825,9 @@ final isClientProvider = Provider<bool>((ref) {
 /// Convenience provider for checking if user is a contractor
 final isContractorProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).user?.isContractor ?? false;
+});
+
+/// Convenience provider for checking if user has completed onboarding
+final onboardingCompleteProvider = Provider<bool>((ref) {
+  return ref.watch(authProvider).onboardingComplete;
 });

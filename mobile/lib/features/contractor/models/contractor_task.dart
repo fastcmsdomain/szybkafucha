@@ -9,6 +9,7 @@ class ContractorTask {
   final String clientName;
   final String? clientAvatarUrl;
   final double clientRating;
+  final int clientReviewCount;
   final String address;
   final double latitude;
   final double longitude;
@@ -33,6 +34,7 @@ class ContractorTask {
     required this.clientName,
     this.clientAvatarUrl,
     this.clientRating = 0.0,
+    this.clientReviewCount = 0,
     required this.address,
     required this.latitude,
     required this.longitude,
@@ -71,6 +73,15 @@ class ContractorTask {
                          _parseDouble(json['clientRating']) ??
                          _parseDouble(json['client_rating']) ??
                          0.0;
+    final clientReviewCount = _parseInt(client?['reviewCount']) ??
+                              _parseInt(client?['review_count']) ??
+                              _parseInt(client?['ratingCount']) ??
+                              _parseInt(client?['rating_count']) ??
+                              _parseInt(json['clientReviewCount']) ??
+                              _parseInt(json['client_review_count']) ??
+                              _parseInt(json['ratingCount']) ??
+                              _parseInt(json['rating_count']) ??
+                              0;
     final clientAvatarUrl = client?['avatarUrl'] as String? ??
                             client?['avatar_url'] as String? ??
                             json['clientAvatarUrl'] as String? ??
@@ -88,6 +99,7 @@ class ContractorTask {
       clientName: clientName,
       clientAvatarUrl: clientAvatarUrl,
       clientRating: clientRating,
+      clientReviewCount: clientReviewCount,
       // Backend uses camelCase - may return String or num
       address: json['address'] as String? ?? '',
       latitude: _parseDouble(json['locationLat']) ??
@@ -140,6 +152,41 @@ class ContractorTask {
       isUrgent: json['isUrgent'] as bool? ??
                 json['is_urgent'] as bool? ??
                 json['scheduledAt'] == null, // Immediate = urgent
+    );
+  }
+
+  /// Factory for public task data (from /tasks/browse endpoint)
+  /// Public tasks don't include client personal information
+  factory ContractorTask.fromPublicJson(Map<String, dynamic> json) {
+    return ContractorTask(
+      id: json['id'] as String,
+      category: TaskCategory.values.firstWhere(
+        (c) => c.name == json['category'],
+        orElse: () => TaskCategory.sprzatanie,
+      ),
+      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      // Public tasks don't have client info
+      clientId: '',
+      clientName: 'Użytkownik', // Generic name for privacy
+      clientAvatarUrl: null,
+      clientRating: 0.0,
+      clientReviewCount: 0,
+      // Address is sanitized (city/district only)
+      address: json['address'] as String? ?? '',
+      // Coordinates are rounded for privacy
+      latitude: _parseDouble(json['locationLat']) ?? 0.0,
+      longitude: _parseDouble(json['locationLng']) ?? 0.0,
+      price: _parseInt(json['budgetAmount']) ?? 0,
+      distanceKm: 0.0, // Unknown for public tasks
+      estimatedMinutes: 30, // Default estimate
+      estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
+      status: ContractorTaskStatus.available,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : null,
+      imageUrls: null, // No images in public view
+      isUrgent: false, // Urgency not shown publicly
     );
   }
 
