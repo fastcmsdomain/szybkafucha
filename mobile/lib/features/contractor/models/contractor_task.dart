@@ -9,6 +9,7 @@ class ContractorTask {
   final String clientName;
   final String? clientAvatarUrl;
   final double clientRating;
+  final int clientReviewCount;
   final String address;
   final double latitude;
   final double longitude;
@@ -33,6 +34,7 @@ class ContractorTask {
     required this.clientName,
     this.clientAvatarUrl,
     this.clientRating = 0.0,
+    this.clientReviewCount = 0,
     required this.address,
     required this.latitude,
     required this.longitude,
@@ -71,6 +73,15 @@ class ContractorTask {
                          _parseDouble(json['clientRating']) ??
                          _parseDouble(json['client_rating']) ??
                          0.0;
+    final clientReviewCount = _parseInt(client?['reviewCount']) ??
+                              _parseInt(client?['review_count']) ??
+                              _parseInt(client?['ratingCount']) ??
+                              _parseInt(client?['rating_count']) ??
+                              _parseInt(json['clientReviewCount']) ??
+                              _parseInt(json['client_review_count']) ??
+                              _parseInt(json['ratingCount']) ??
+                              _parseInt(json['rating_count']) ??
+                              0;
     final clientAvatarUrl = client?['avatarUrl'] as String? ??
                             client?['avatar_url'] as String? ??
                             json['clientAvatarUrl'] as String? ??
@@ -88,6 +99,7 @@ class ContractorTask {
       clientName: clientName,
       clientAvatarUrl: clientAvatarUrl,
       clientRating: clientRating,
+      clientReviewCount: clientReviewCount,
       // Backend uses camelCase - may return String or num
       address: json['address'] as String? ?? '',
       latitude: _parseDouble(json['locationLat']) ??
@@ -158,6 +170,7 @@ class ContractorTask {
       clientName: 'Użytkownik', // Generic name for privacy
       clientAvatarUrl: null,
       clientRating: 0.0,
+      clientReviewCount: 0,
       // Address is sanitized (city/district only)
       address: json['address'] as String? ?? '',
       // Coordinates are rounded for privacy

@@ -6,6 +6,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -180,6 +181,39 @@ class _OnboardingPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Logo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/szybkafucha_logo_1024.png',
+                  height: 48,
+                  width: 48,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Szybka',
+                      style: AppTypography.h3,
+                    ),
+                    TextSpan(
+                      text: 'Fucha',
+                      style: AppTypography.h3.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
           Icon(
             icon,
             size: 120,
@@ -252,6 +286,7 @@ class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
     _controller = VideoPlayerController.asset(widget.videoPath);
     try {
       await _controller.initialize();
+      await _controller.setVolume(0.0); // Mute the video
       await _controller.setLooping(true);
       await _controller.play();
       if (mounted) {
@@ -275,6 +310,39 @@ class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Logo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/szybkafucha_logo_1024.png',
+                  height: 48,
+                  width: 48,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Szybka',
+                      style: AppTypography.h3,
+                    ),
+                    TextSpan(
+                      text: 'Fucha',
+                      style: AppTypography.h3.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
           Text(
             widget.title,
             style: const TextStyle(

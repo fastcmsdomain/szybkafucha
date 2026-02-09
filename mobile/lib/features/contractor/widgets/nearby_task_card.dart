@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
 
 /// Nearby task card for contractor dashboard
-class NearbyTaskCard extends StatelessWidget {
+class NearbyTaskCard extends ConsumerStatefulWidget {
   final ContractorTask task;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
@@ -23,11 +25,41 @@ class NearbyTaskCard extends StatelessWidget {
   });
 
   @override
+  ConsumerState<NearbyTaskCard> createState() => _NearbyTaskCardState();
+}
+
+class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
+  static final Map<String, _ClientRatingSummary> _ratingCache = {};
+
+  double? _clientRatingAvg;
+  int? _clientRatingCount;
+
+  ContractorTask get task => widget.task;
+
+  @override
+  void initState() {
+    super.initState();
+    _hydrateOrFetchClientRatingSummary();
+  }
+
+  @override
+  void didUpdateWidget(covariant NearbyTaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.clientId != widget.task.clientId) {
+      _clientRatingAvg = null;
+      _clientRatingCount = null;
+      _hydrateOrFetchClientRatingSummary();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(task.category);
+    final rating = _clientRatingAvg ?? task.clientRating;
+    final reviewCount = _clientRatingCount ?? task.clientReviewCount;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -224,18 +256,25 @@ class NearbyTaskCard extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Icon(
                             Icons.star,
                             size: 12,
                             color: AppColors.warning,
                           ),
-                          SizedBox(width: 2),
                           Text(
-                            task.clientRating.toStringAsFixed(1),
+                            rating.toStringAsFixed(1),
                             style: AppTypography.caption.copyWith(
                               color: AppColors.gray600,
+                            ),
+                          ),
+                          Text(
+                            '$reviewCount opinii',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
                             ),
                           ),
                         ],
@@ -244,10 +283,10 @@ class NearbyTaskCard extends StatelessWidget {
                   ),
                 ),
 
-                if (showActions) ...[
+                if (widget.showActions) ...[
                   // More info button
                   OutlinedButton(
-                    onPressed: onDetails,
+                    onPressed: widget.onDetails,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.gray700,
                       padding: EdgeInsets.symmetric(
@@ -264,7 +303,7 @@ class NearbyTaskCard extends StatelessWidget {
                   SizedBox(width: AppSpacing.gapSM),
                   // Accept button
                   ElevatedButton(
-                    onPressed: onAccept,
+                    onPressed: widget.onAccept,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.white,
@@ -287,6 +326,50 @@ class NearbyTaskCard extends StatelessWidget {
     );
   }
 
+  void _hydrateOrFetchClientRatingSummary() {
+    if (task.clientId.isEmpty) return;
+
+    final cached = _ratingCache[task.clientId];
+    if (cached != null) {
+      _clientRatingAvg = cached.ratingAvg;
+      _clientRatingCount = cached.ratingCount;
+      return;
+    }
+
+    _fetchClientRatingSummary();
+  }
+
+  Future<void> _fetchClientRatingSummary() async {
+    if (task.clientId.isEmpty) return;
+
+    final api = ref.read(apiClientProvider);
+
+    try {
+      final response = await api.get('/client/${task.clientId}/public');
+      final data = response as Map<String, dynamic>;
+      final ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
+      final ratingCount = data['ratingCount'] as int?;
+
+      _ratingCache[task.clientId] = _ClientRatingSummary(
+        ratingAvg: ratingAvg,
+        ratingCount: ratingCount,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _clientRatingAvg = ratingAvg;
+        _clientRatingCount = ratingCount;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _clientRatingAvg = task.clientRating;
+        _clientRatingCount = task.clientReviewCount;
+      });
+    }
+  }
+
   String _getTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -301,4 +384,14 @@ class NearbyTaskCard extends StatelessWidget {
       return '${difference.inDays} dni temu';
     }
   }
+}
+
+class _ClientRatingSummary {
+  final double? ratingAvg;
+  final int? ratingCount;
+
+  const _ClientRatingSummary({
+    required this.ratingAvg,
+    required this.ratingCount,
+  });
 }
