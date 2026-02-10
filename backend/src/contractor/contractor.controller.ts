@@ -35,21 +35,12 @@ export class ContractorController {
   }
 
   /**
-   * GET /contractor/profile/ratings
-   * Get ratings/comments received by currently logged contractor
+   * GET /contractor/:userId/reviews
+   * Get public contractor reviews for client-facing views
    */
-  @Get('profile/ratings')
-  async getMyRatings(@Request() req: AuthenticatedRequest) {
-    return this.contractorService.getRatingsByUserId(req.user.id);
-  }
-
-  /**
-   * GET /contractor/:userId/ratings
-   * Get ratings/comments received by a specific contractor
-   */
-  @Get(':userId/ratings')
-  async getPublicRatings(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.contractorService.getRatingsByUserId(userId);
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.contractorService.getPublicContractorReviews(userId);
   }
 
   /**
@@ -64,6 +55,15 @@ export class ContractorController {
       profile = await this.contractorService.create(req.user.id);
     }
     return profile;
+  }
+
+  /**
+   * GET /contractor/reviews
+   * Get current contractor's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.contractorService.getContractorReviews(req.user.id);
   }
 
   /**

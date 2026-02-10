@@ -12,8 +12,8 @@ import {
   KycStatus,
 } from './entities/contractor-profile.entity';
 import { Rating } from '../tasks/entities/rating.entity';
-import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
 
 describe('ContractorService', () => {
   let service: ContractorService;
@@ -22,10 +22,11 @@ describe('ContractorService', () => {
 
   const mockUser: User = {
     id: 'user-123',
-    type: UserType.CONTRACTOR,
+    types: [UserType.CONTRACTOR],
     phone: '+48123456789',
     email: 'contractor@example.com',
     name: 'Test Contractor',
+    address: 'Warsaw',
     avatarUrl: null,
     status: UserStatus.ACTIVE,
     googleId: null,
@@ -63,11 +64,18 @@ describe('ContractorService', () => {
       create: jest.fn(),
       save: jest.fn(),
     };
-    const mockRatingsRepository = {
-      find: jest.fn(),
+    const mockRatingRepository = {
+      createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({ avg: null, count: '0' }),
+      })),
+      find: jest.fn().mockResolvedValue([]),
     };
     const mockUsersService = {
-      findById: jest.fn(),
+      findById: jest.fn().mockResolvedValue(mockUser),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -79,7 +87,7 @@ describe('ContractorService', () => {
         },
         {
           provide: getRepositoryToken(Rating),
-          useValue: mockRatingsRepository,
+          useValue: mockRatingRepository,
         },
         {
           provide: UsersService,
@@ -196,12 +204,25 @@ describe('ContractorService', () => {
       expect(result.serviceRadiusKm).toBe(20);
     });
 
-    it('should throw NotFoundException when profile not found', async () => {
-      repository.findOne.mockResolvedValue(null);
+    it('should create profile when not found and then update it', async () => {
+      repository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      repository.create.mockReturnValue({
+        ...mockProfile,
+        userId: 'nonexistent',
+      });
+      repository.save.mockImplementation((profile) =>
+        Promise.resolve(profile as ContractorProfile),
+      );
 
-      await expect(
-        service.update('nonexistent', { bio: 'Test' }),
-      ).rejects.toThrow(NotFoundException);
+      const result = await service.update('nonexistent', { bio: 'Test' });
+
+      expect(repository.create).toHaveBeenCalledWith({
+        userId: 'nonexistent',
+        categories: [],
+      });
+      expect(result.bio).toBe('Test');
     });
   });
 
@@ -231,19 +252,15 @@ describe('ContractorService', () => {
       expect(result.isOnline).toBe(true);
     });
 
-    it('should allow going online without KYC (MVP temporary behavior)', async () => {
-      const pendingProfile = {
+    it('should allow going online without KYC (MVP)', async () => {
+      const onlineProfile = { ...mockProfile, isOnline: true };
+      repository.findOne.mockResolvedValue({
         ...mockProfile,
         kycStatus: KycStatus.PENDING,
-        isOnline: false,
-      };
-      const onlineProfile = { ...pendingProfile, isOnline: true };
-
-      repository.findOne.mockResolvedValue(pendingProfile);
+      });
       repository.save.mockResolvedValue(onlineProfile);
 
       const result = await service.setAvailability('user-123', true);
-
       expect(result.isOnline).toBe(true);
     });
   });

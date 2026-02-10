@@ -473,6 +473,8 @@ The landing page includes a comprehensive signup form that serves dual purposes:
    - Display name in Polish UI: **pracownik**
 3. **Admin**: Platform operator, dispute resolution
 
+**MVP Restriction**: Dual-role functionality is disabled for MVP. Users select their role during registration and cannot switch roles afterward. The backend still supports `types` array for future dual-role support, but role switching endpoints are protected and UI is removed. See `currentupdate.md` entry [2026-02-09] for details.
+
 **Note**: See "User Type Naming Convention" in Important Conventions section for naming rules.
 
 ### Task Categories

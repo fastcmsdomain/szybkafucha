@@ -152,8 +152,8 @@ export class AuthService {
         types: [userType || UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
-    } else if (userType && !user.types.includes(userType)) {
-      // User wants to add a new role - use addRole method
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, userType);
     }
 
@@ -195,8 +195,8 @@ export class AuthService {
           status: UserStatus.ACTIVE,
         });
       }
-    } else if (userType && !user.types.includes(userType)) {
-      // User wants to add a new role - use addRole method
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, userType);
     }
 
@@ -240,8 +240,8 @@ export class AuthService {
           status: UserStatus.ACTIVE,
         });
       }
-    } else if (userType && !user.types.includes(userType)) {
-      // User wants to add a new role - use addRole method
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, userType);
     }
 

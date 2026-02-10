@@ -54,6 +54,7 @@ dependencies:
   # Media
   image_picker: ^1.0.7
   url_launcher: ^6.2.5
+  video_player: ^2.9.2
 
   # Maps & Location (MVP Phase 1)
   flutter_map: ^7.0.2
@@ -78,5 +79,6 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/videos/
 
   # Fonts are loaded via google_fonts package

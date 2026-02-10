@@ -17,6 +17,11 @@ export interface ClientProfileDto {
   ratingCount: number;
 }
 
+type RatingAggregateRow = {
+  avg: string | null;
+  count: string | null;
+};
+
 @Injectable()
 export class ClientService {
   constructor(
@@ -110,7 +115,7 @@ export class ClientService {
       .addSelect('COUNT(rating.id)', 'count')
       .where('rating.toUserId = :userId', { userId })
       .andWhere('rating.role = :role', { role: 'client' }) // NEW: Filter by client role
-      .getRawOne();
+      .getRawOne<RatingAggregateRow>();
 
     // Handle case when client has no ratings
     const ratingAvg = result?.avg ? parseFloat(result.avg) : 0.0;
@@ -121,6 +126,96 @@ export class ClientService {
       bio: profile.bio,
       ratingAvg,
       ratingCount,
+    };
+  }
+
+  /**
+   * Get client reviews with aggregated rating data
+   */
+  async getClientReviews(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'client' })
+      .getRawOne<RatingAggregateRow>();
+
+    const reviews = await this.ratingRepository.find({
+      where: {
+        toUserId: userId,
+        role: 'client',
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      ratingAvg: result?.avg ? parseFloat(result.avg) : 0.0,
+      ratingCount: result?.count ? parseInt(result.count, 10) : 0,
+      reviews,
+    };
+  }
+
+  /**
+   * Get public client reviews with aggregated rating data
+   * Returns latest 5 reviews for contractor-facing views
+   */
+  async getPublicClientReviews(userId: string): Promise<{
+    ratingAvg: number;
+    ratingCount: number;
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    }>;
+  }> {
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.rating)', 'avg')
+      .addSelect('COUNT(rating.id)', 'count')
+      .where('rating.toUserId = :userId', { userId })
+      .andWhere('rating.role = :role', { role: 'client' })
+      .getRawOne<RatingAggregateRow>();
+
+    const reviews = await this.ratingRepository.find({
+      where: {
+        toUserId: userId,
+        role: 'client',
+      },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      take: 5,
+    });
+
+    return {
+      ratingAvg: result?.avg ? parseFloat(result.avg) : 0.0,
+      ratingCount: result?.count ? parseInt(result.count, 10) : 0,
+      reviews,
     };
   }
 

@@ -13,6 +13,7 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  ParseEnumPipe,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -61,18 +62,20 @@ export class TasksController {
   @Get()
   async findAll(
     @Request() req: AuthenticatedRequest,
-    @Query('role') role?: string,
+    @Query('role', new ParseEnumPipe(UserType, { optional: true }))
+    role?: UserType,
     @Query('lat') lat?: number,
     @Query('lng') lng?: number,
     @Query('categories') categories?: string,
     @Query('radiusKm') radiusKm?: number,
   ) {
     // Use explicit role param, or infer from user types
-    const activeRole =
-      role ||
-      (req.user.types.includes(UserType.CONTRACTOR)
-        ? UserType.CONTRACTOR
-        : UserType.CLIENT);
+    const activeRole: UserType =
+      role === UserType.CLIENT || role === UserType.CONTRACTOR
+        ? role
+        : req.user.types.includes(UserType.CONTRACTOR)
+          ? UserType.CONTRACTOR
+          : UserType.CLIENT;
 
     if (activeRole === UserType.CLIENT) {
       return this.tasksService.findByClient(req.user.id);

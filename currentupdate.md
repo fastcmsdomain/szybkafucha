@@ -12,6 +12,30 @@ Each entry documents:
 
 ---
 
+## [2026-02-09] Disable Dual Role Functionality for MVP
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Disabled dual-role functionality to simplify MVP - users can no longer switch between client and contractor roles after initial registration
+- **Files Changed**:
+  - `backend/src/auth/auth.service.ts` – Modified phone OTP, Google, and Apple auth methods to only add roles for new users (when `types.length === 0`); prevents automatic role addition on subsequent logins
+  - `backend/src/users/users.controller.ts` – Added validation guards to `PATCH /users/me/type` and `POST /users/me/add-role` endpoints to block role changes for users who already have roles (throws `BadRequestException`)
+  - `mobile/lib/features/settings/screens/settings_screen.dart` – Removed role switch UI: deleted `_buildRoleSwitchTile()`, `_showRoleSwitchConfirmation()`, and `_performRoleSwitch()` methods; cleaned up unused imports
+- **System Impact**:
+  - **Role Locking**: Users' roles are now locked after initial registration - client stays client, contractor stays contractor
+  - **Backend Protection**: Even if role switch endpoints are called directly, they return 400 error for existing users
+  - **Login Behavior**: Selecting different user type on welcome screen no longer adds second role
+  - **Settings UI**: "Zmienić rolę?" (Change role) button removed from settings screen
+  - **Auth Provider**: `switchUserType()`, `addRole()`, and `setActiveRole()` methods remain in auth provider (not exposed in UI, may be useful post-MVP)
+  - **User Type Selector**: Welcome/login screens still allow user type selection (required for initial registration)
+- **Related Tasks/PRD**: MVP simplification - reduces complexity in onboarding and navigation logic
+- **Potential Conflicts/Risks**:
+  - **Rollback Path**: To re-enable dual-role: (1) Remove validation guards in controller, (2) Restore auto-add logic in auth service (revert to `!user.types.includes(userType)` check), (3) Restore role switch UI in settings screen
+  - **Admin Override**: Admin panel may need updates if support team needs to manually change user roles
+  - **Testing**: Users wanting to switch roles must create new account during MVP period
+  - **Post-MVP**: Feature can be easily re-enabled by reverting these changes
+
+---
+
 ## [2026-02-07] Bug Fixes: Location Timeout, Task Visibility, RenderFlex Overflow
 
 - **Developer/Agent**: Claude

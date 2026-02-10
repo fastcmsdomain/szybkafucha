@@ -2,7 +2,15 @@
  * Client Controller
  * REST endpoints for client-specific operations
  */
-import { Controller, Get, Put, UseGuards, Request, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  UseGuards,
+  Request,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { ClientService } from './client.service';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,6 +32,15 @@ export class ClientController {
   }
 
   /**
+   * GET /client/:userId/reviews
+   * Get public client reviews for contractor-facing views
+   */
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.clientService.getPublicClientReviews(userId);
+  }
+
+  /**
    * GET /client/profile
    * Get current client's profile with aggregated ratings
    * Returns: { ratingAvg: number, ratingCount: number }
@@ -31,6 +48,15 @@ export class ClientController {
   @Get('profile')
   async getProfile(@Request() req: AuthenticatedRequest) {
     return this.clientService.getClientProfile(req.user.id);
+  }
+
+  /**
+   * GET /client/reviews
+   * Get current client's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.clientService.getClientReviews(req.user.id);
   }
 
   /**

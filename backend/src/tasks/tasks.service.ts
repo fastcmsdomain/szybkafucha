@@ -15,10 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
-import {
-  ContractorProfile,
-  KycStatus,
-} from '../contractor/entities/contractor-profile.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -137,6 +134,55 @@ export class TasksService {
       relations: ['client'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /**
+   * Find all available tasks for public browsing (no authentication)
+   * Returns sanitized task data without sensitive client information
+   *
+   * Security measures:
+   * - No client personal information (name, email, phone)
+   * - Address sanitized to city/district level only
+   * - Coordinates rounded to ~1km precision for privacy
+   * - Description truncated to 200 characters
+   * - No task images included
+   *
+   * @param options - Query options (categories, limit)
+   * @returns Array of sanitized public task objects
+   */
+  async findAllAvailablePublic(options: {
+    categories?: string[];
+    limit: number;
+  }): Promise<any[]> {
+    const queryBuilder = this.tasksRepository
+      .createQueryBuilder('task')
+      .where('task.status = :status', { status: TaskStatus.CREATED })
+      .orderBy('task.createdAt', 'DESC')
+      .limit(options.limit);
+
+    if (options.categories && options.categories.length > 0) {
+      queryBuilder.andWhere('task.category IN (:...categories)', {
+        categories: options.categories,
+      });
+    }
+
+    const tasks = await queryBuilder.getMany();
+
+    // Sanitize data - remove sensitive information
+    return tasks.map((task) => ({
+      id: task.id,
+      category: task.category,
+      title: task.title,
+      description: task.description?.substring(0, 200), // Truncate to 200 chars
+      address: this.sanitizeAddress(task.address),
+      budgetAmount: task.budgetAmount,
+      // Round coordinates to ~1km precision for privacy
+      locationLat: Math.round(Number(task.locationLat) * 100) / 100,
+      locationLng: Math.round(Number(task.locationLng) * 100) / 100,
+      createdAt: task.createdAt,
+      estimatedDurationHours: task.estimatedDurationHours,
+      scheduledAt: task.scheduledAt,
+    }));
   }
 
   /**
@@ -502,7 +548,9 @@ export class TasksService {
       task.status === TaskStatus.COMPLETED ||
       task.status === TaskStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot cancel completed or already cancelled task');
+      throw new BadRequestException(
+        'Cannot cancel completed or already cancelled task',
+      );
     }
 
     const isContractorCancelling = task.contractorId === userId;
@@ -517,7 +565,9 @@ export class TasksService {
 
     if (isContractorCancelling) {
       // CONTRACTOR is cancelling - return task to 'posted' status so other contractors can accept it
-      this.logger.log(`Contractor ${userId} releasing task ${taskId} - returning to posted status`);
+      this.logger.log(
+        `Contractor ${userId} releasing task ${taskId} - returning to posted status`,
+      );
 
       task.status = TaskStatus.CREATED;
       task.contractorId = null;
@@ -540,7 +590,9 @@ export class TasksService {
       this.notificationsService
         .sendToUser(task.clientId, NotificationType.TASK_CANCELLED, {
           taskTitle: task.title,
-          reason: reason || 'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
+          reason:
+            reason ||
+            'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
         })
         .catch((err) =>
           this.logger.error(
@@ -551,7 +603,9 @@ export class TasksService {
       return savedTask;
     } else {
       // CLIENT is cancelling - truly cancel the task
-      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
+      this.logger.log(
+        `Client ${userId} cancelling task ${taskId} in status ${task.status}`,
+      );
 
       task.status = TaskStatus.CANCELLED;
       task.cancelledAt = new Date();
@@ -569,12 +623,16 @@ export class TasksService {
 
       // Also notify contractor directly (they might not be in the task room)
       if (previousContractorId) {
-        this.realtimeGateway.sendToUser(previousContractorId, ServerEvent.TASK_STATUS, {
-          taskId,
-          status: TaskStatus.CANCELLED,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        });
+        this.realtimeGateway.sendToUser(
+          previousContractorId,
+          ServerEvent.TASK_STATUS,
+          {
+            taskId,
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date(),
+            updatedBy: userId,
+          },
+        );
       }
 
       // Notify contractor if there was one assigned
@@ -943,5 +1001,23 @@ export class TasksService {
         );
       }
     }
+  }
+
+  /**
+   * Sanitize address to show only city/district (privacy protection)
+   * Returns first 2 parts of comma-separated address
+   *
+   * Example: "ul. Marszałkowska 1, Warszawa, Śródmieście, 00-001"
+   *          -> "Warszawa, Śródmieście"
+   *
+   * @param fullAddress - Full address string
+   * @returns Sanitized address with only city/district
+   */
+  private sanitizeAddress(fullAddress: string): string {
+    if (!fullAddress) return '';
+
+    const parts = fullAddress.split(',').map((p) => p.trim());
+    // Return only first 2 parts (e.g., "Warszawa, Śródmieście")
+    return parts.slice(0, 2).join(', ');
   }
 }

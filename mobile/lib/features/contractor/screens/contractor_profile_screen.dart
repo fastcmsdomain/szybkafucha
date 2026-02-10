@@ -66,13 +66,6 @@ class _ContractorProfileScreenState
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
 
-  // Contractor profile data for ratings
-  double? _ratingAvg;
-  int? _ratingCount;
-  bool _isLoadingProfile = true;
-  bool _isLoadingReviews = true;
-  List<_ContractorReview> _reviews = const [];
-
   // Categories and service radius
   Set<String> _selectedCategories = {};
   double _serviceRadius = 10.0;
@@ -116,18 +109,6 @@ class _ContractorProfileScreenState
 
       if (mounted) {
         setState(() {
-          // Handle ratingAvg which comes as string from PostgreSQL decimal type
-          final ratingAvgValue = data['ratingAvg'];
-          _ratingAvg = ratingAvgValue != null
-              ? double.tryParse(ratingAvgValue.toString())
-              : null;
-
-          // Handle ratingCount
-          final ratingCountValue = data['ratingCount'];
-          _ratingCount = ratingCountValue is int
-              ? ratingCountValue
-              : int.tryParse(ratingCountValue?.toString() ?? '');
-
           // Load bio from contractor profile (role-specific)
           final bio = data['bio'] as String?;
           debugPrint('DEBUG: Loading bio = $bio');
@@ -155,18 +136,11 @@ class _ContractorProfileScreenState
           final kycStatus = data['kycStatus'] as String?;
           _isKycVerified = (kycStatus == 'verified');
           debugPrint('DEBUG: Set isKycVerified to: $_isKycVerified');
-
-          _isLoadingProfile = false;
         });
       }
     } catch (e, stackTrace) {
       debugPrint('Error loading contractor profile: $e');
       debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() {
-          _isLoadingProfile = false;
-        });
-      }
     }
   }
 
@@ -547,10 +521,6 @@ class _ContractorProfileScreenState
 
             SizedBox(height: AppSpacing.space6),
 
-            _buildRatingsSection(),
-
-            SizedBox(height: AppSpacing.space6),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -746,183 +716,4 @@ class _ContractorProfileScreenState
     );
   }
 
-  Widget _buildRatingsSection() {
-    final user = ref.read(authProvider).user;
-    final rating = _ratingAvg ?? 0.0;
-    final reviewCount = _ratingCount ?? _reviews.length;
-
-    return RefreshIndicator(
-      onRefresh: _loadContractorData,
-      child: ListView(
-        padding: EdgeInsets.all(AppSpacing.paddingLG),
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(color: AppColors.gray200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Oceny zleceniodawców',
-                  style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w700),
-                ),
-                SizedBox(height: AppSpacing.gapSM),
-                if (_isLoadingProfile)
-                  const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Row(
-                    children: [
-                      SFRatingStars(
-                        rating: rating,
-                        size: 22,
-                        showValue: true,
-                      ),
-                      SizedBox(width: AppSpacing.gapSM),
-                      Text(
-                        '$reviewCount opinii',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                    ],
-                  ),
-                if (user?.isVerified == true) ...[
-                  SizedBox(height: AppSpacing.gapSM),
-                  Row(
-                    children: [
-                      Icon(Icons.verified, color: AppColors.primary, size: 18),
-                      SizedBox(width: 6),
-                      Text(
-                        'Zweryfikowany wykonawca',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.gray700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapMD),
-          if (_isLoadingReviews)
-            const Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.primary,
-              ),
-            )
-          else if (_reviews.isEmpty)
-            Container(
-              padding: EdgeInsets.all(AppSpacing.paddingMD),
-              decoration: BoxDecoration(
-                color: AppColors.gray50,
-                borderRadius: AppRadius.radiusMD,
-                border: Border.all(color: AppColors.gray200),
-              ),
-              child: Text(
-                'Brak opinii do wyświetlenia.',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.gray500,
-                ),
-              ),
-            )
-          else
-            ..._reviews.map(_buildReviewCard),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewCard(_ContractorReview review) {
-    final reviewerInitial =
-        (review.fromUserName?.trim().isNotEmpty == true ? review.fromUserName! : 'U')[0]
-            .toUpperCase();
-    final comment = review.comment?.trim();
-
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.gapSM),
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.gray200,
-                backgroundImage: review.fromUserAvatarUrl != null
-                    ? NetworkImage(review.fromUserAvatarUrl!)
-                    : null,
-                child: review.fromUserAvatarUrl == null
-                    ? Text(
-                        reviewerInitial,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.gray700,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      )
-                    : null,
-              ),
-              SizedBox(width: AppSpacing.gapSM),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      review.fromUserName ?? 'Użytkownik',
-                      style: AppTypography.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      _formatReviewDate(review.createdAt),
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SFRatingStars(
-                rating: review.rating.toDouble(),
-                size: 18,
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            (comment?.isNotEmpty == true) ? comment! : 'Brak komentarza.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray700,
-              fontStyle: (comment?.isNotEmpty == true)
-                  ? FontStyle.normal
-                  : FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatReviewDate(DateTime? date) {
-    if (date == null) {
-      return '';
-    }
-    return _reviewDateFormat.format(date.toLocal());
-  }
 }
