@@ -63,6 +63,7 @@ export class UsersController {
   /**
    * PATCH /users/me/type
    * Updates user type (client to contractor or vice versa)
+   * MVP: Disabled for users who already have roles
    */
   @UseGuards(JwtAuthGuard)
   @Patch('me/type')
@@ -70,6 +71,13 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() updateUserTypeDto: UpdateUserTypeDto,
   ) {
+    // MVP: Prevent role changes for users who already have roles
+    if (req.user.types && req.user.types.length > 0) {
+      throw new BadRequestException(
+        'Role changes are not allowed in MVP. Please contact support if you need to change your role.',
+      );
+    }
+
     // In dual-role architecture, this adds a role rather than replacing it
     return this.usersService.addRole(req.user.id, updateUserTypeDto.type);
   }
@@ -153,7 +161,7 @@ export class UsersController {
   /**
    * POST /users/me/add-role
    * Add a role (client or contractor) to the current user
-   * Allows users to become dual-role (both client and contractor)
+   * MVP: Disabled for users who already have roles
    */
   @UseGuards(JwtAuthGuard)
   @Post('me/add-role')
@@ -161,6 +169,13 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() addRoleDto: AddRoleDto,
   ) {
+    // MVP: Prevent adding roles for users who already have roles
+    if (req.user.types && req.user.types.length > 0) {
+      throw new BadRequestException(
+        'Adding roles is not allowed in MVP. Please contact support if you need to add a role.',
+      );
+    }
+
     return this.usersService.addRole(req.user.id, addRoleDto.role);
   }
 }
