@@ -24,6 +24,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _isLoading = false;
   String? _loadingProvider; // 'google', 'apple', or null
   String _selectedUserType = 'client'; // User role selection (client or contractor)
+  int _selectedBottomNavIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +32,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final appleAvailable = ref.watch(appleSignInAvailableProvider);
 
     return Scaffold(
+      bottomNavigationBar: _buildBottomNavigation(),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingLG),
@@ -66,11 +68,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-
-                SizedBox(height: AppSpacing.space8),
-
-                // Illustration placeholder
-                _buildIllustration(),
 
                 SizedBox(height: AppSpacing.space8),
 
@@ -302,17 +299,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: AppRadius.radiusMD,
-          ),
-          child: const Icon(
-            Icons.bolt_rounded,
-            color: AppColors.white,
-            size: 32,
+        ClipRRect(
+          borderRadius: AppRadius.radiusMD,
+          child: Image.asset(
+            'assets/images/szybkafucha_logo_1024.png',
+            height: 56,
+            width: 56,
+            fit: BoxFit.cover,
           ),
         ),
         SizedBox(width: AppSpacing.gapMD),
@@ -336,32 +329,42 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 
-  Widget _buildIllustration() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: AppRadius.radiusXL,
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.handshake_outlined,
-              size: 80,
-              color: AppColors.primary.withValues(alpha: 0.7),
+  Widget _buildBottomNavigation() {
+    return NavigationBar(
+      selectedIndex: _selectedBottomNavIndex,
+      onDestinationSelected: (index) {
+        if (index == 0) {
+          setState(() => _selectedBottomNavIndex = 0);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Strona główna - wkrótce'),
+              duration: Duration(seconds: 1),
             ),
-            SizedBox(height: AppSpacing.gapMD),
-            Text(
-              'Pomoc na wyciągnięcie ręki',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.gray600,
-              ),
-            ),
-          ],
+          );
+        } else if (index == 1) {
+          context.go(Routes.browse);
+        } else if (index == 2) {
+          setState(() => _selectedBottomNavIndex = 2);
+          context.go(Routes.welcome);
+        }
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: AppStrings.menuHome,
         ),
-      ),
+        NavigationDestination(
+          icon: Icon(Icons.work_outline),
+          selectedIcon: Icon(Icons.work),
+          label: AppStrings.menuTasks,
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: AppStrings.menuProfile,
+        ),
+      ],
     );
   }
 
@@ -467,6 +470,25 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ),
               ),
             ],
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          // Reset onboarding button
+          OutlinedButton.icon(
+            onPressed: () async {
+              await ref.read(authProvider.notifier).resetOnboarding();
+              if (mounted) {
+                context.go(Routes.onboarding);
+              }
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('🔄 Reset Onboarding'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.info,
+              side: BorderSide(color: AppColors.info),
+              padding: EdgeInsets.symmetric(
+                vertical: AppSpacing.paddingSM,
+              ),
+            ),
           ),
         ],
       ),

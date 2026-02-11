@@ -1,3 +1,5 @@
+import '../../../core/api/api_config.dart';
+
 /// Contractor profile model for client-facing views
 class Contractor {
   final String id;
@@ -13,6 +15,7 @@ class Contractor {
   final int? proposedPrice;
   final List<String> categories;
   final DateTime? memberSince;
+  final String? bio;
 
   const Contractor({
     required this.id,
@@ -28,18 +31,30 @@ class Contractor {
     this.proposedPrice,
     this.categories = const [],
     this.memberSince,
+    this.bio,
   });
 
   factory Contractor.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = json['avatar_url'] as String? ?? json['avatarUrl'] as String?;
+
     return Contractor(
       id: json['id'] as String,
       name: json['name'] as String,
-      avatarUrl: json['avatar_url'] as String?,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      completedTasks: json['completed_tasks'] as int? ?? 0,
-      reviewCount: json['review_count'] as int? ?? 0,
-      isVerified: json['is_verified'] as bool? ?? false,
-      isOnline: json['is_online'] as bool? ?? false,
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
+      rating: (json['rating'] as num?)?.toDouble() ??
+          (json['ratingAvg'] as num?)?.toDouble() ??
+          0.0,
+      completedTasks: json['completed_tasks'] as int? ??
+          json['completedTasksCount'] as int? ??
+          0,
+      reviewCount: json['review_count'] as int? ??
+          json['ratingCount'] as int? ??
+          0,
+      isVerified: json['is_verified'] as bool? ??
+          json['isVerified'] as bool? ??
+          false,
+      isOnline: json['is_online'] as bool? ?? json['isOnline'] as bool? ?? false,
       distanceKm: (json['distance_km'] as num?)?.toDouble(),
       etaMinutes: json['eta_minutes'] as int?,
       proposedPrice: json['proposed_price'] as int?,
@@ -49,7 +64,13 @@ class Contractor {
           [],
       memberSince: json['member_since'] != null
           ? DateTime.parse(json['member_since'] as String)
-          : null,
+          : json['memberSince'] != null
+              ? DateTime.parse(json['memberSince'] as String)
+              : null,
+      bio: (json['bio'] ??
+              json['description'] ??
+              json['about'] ??
+              json['bioText']) as String?,
     );
   }
 
@@ -67,6 +88,7 @@ class Contractor {
         'proposed_price': proposedPrice,
         'categories': categories,
         'member_since': memberSince?.toIso8601String(),
+        'bio': bio,
       };
 
   /// Get formatted rating with one decimal

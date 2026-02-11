@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/router/routes.dart';
@@ -11,6 +12,7 @@ import '../../../core/providers/websocket_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
 
@@ -150,6 +152,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return TrackingStatus.confirmed;
       case TaskStatus.inProgress:
         return TrackingStatus.inProgress;
+      case TaskStatus.pendingComplete:
+        return TrackingStatus.completed;
       case TaskStatus.completed:
         return TrackingStatus.completed;
       case TaskStatus.cancelled:
@@ -167,6 +171,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return TrackingStatus.confirmed;
       case 'in_progress':
         return TrackingStatus.inProgress;
+      case 'pending_complete':
+        return TrackingStatus.completed;
       case 'completed':
         return TrackingStatus.completed;
       default:
@@ -215,6 +221,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           completedTasks: event.contractor!.completedTasks,
           isVerified: true,
           isOnline: true,
+          bio: event.contractor!.bio,
         );
       }
     });
@@ -224,6 +231,41 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     Future.microtask(() {
       ref.read(clientTasksProvider.notifier).refresh();
     });
+  }
+
+  void _showContractorProfile() {
+    if (_contractor == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.7,
+          child: _ContractorProfileSheet(
+            contractorId: _contractor!.id,
+            initialContractor: _contractor!,
+          ),
+        );
+      },
+    );
+  }
+
+  void _openChatWithContractor() {
+    if (_task == null) return;
+    context.push(Routes.clientTaskChatRoute(_task!.id));
+  }
+
+  void _callContractor() {
+    // TODO: Replace with real contractor phone once available from backend
+    final uri = Uri(scheme: 'tel', path: '+48123456789');
+    launchUrl(uri);
   }
 
   /// Check if contractor location is recent (within 30 seconds)
@@ -378,6 +420,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
 
+      // Extra padding so markers aren't hidden behind the bottom panel/FAB
+      final bottomPadding = 284.0 + MediaQuery.of(context).padding.bottom;
+
       return SizedBox.expand(
         child: SFMapView(
           center: center,
@@ -385,6 +430,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           markers: markers,
           interactive: true,
           showZoomControls: true,
+          cameraFitPadding: EdgeInsets.fromLTRB(
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            AppSpacing.paddingLG,
+            bottomPadding,
+          ),
         ),
       );
     }
@@ -400,6 +451,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildBottomPanel() {
+    final maxHeight = MediaQuery.of(context).size.height * 0.6;
+    // Add bottom safe area as scroll padding instead of wrapping in SafeArea
+    // to avoid layout conflicts with NavigationBar in _ClientShell
+    final bottomSafe = MediaQuery.of(context).padding.bottom;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -414,64 +470,64 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false, // avoid extra top inset that created blank space
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: AppRadius.radiusFull,
-              ),
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gray300,
+              borderRadius: AppRadius.radiusFull,
             ),
+          ),
 
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.paddingMD),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD + bottomSafe,
+              ),
               child: Column(
-                children: [
-                  // Status header
-                  _buildStatusHeader(),
+                  children: [
+                    // Status header
+                    _buildStatusHeader(),
 
-                  SizedBox(height: AppSpacing.space4),
+                    SizedBox(height: AppSpacing.space4),
 
-                  // Progress steps
-                  _buildProgressSteps(),
+                    // Progress steps
+                    _buildProgressSteps(),
 
-                  SizedBox(height: AppSpacing.space4),
+                    SizedBox(height: AppSpacing.space4),
 
-                  // Contractor card (if assigned)
-                  if (_contractor != null &&
-                      _status != TrackingStatus.searching)
-                    _buildContractorCard(),
+                    // Contractor card (if assigned)
+                    if (_contractor != null &&
+                        _status != TrackingStatus.searching)
+                      _buildContractorCard(),
 
-                  // Confirm/Reject buttons (when waiting for client confirmation)
-                  if (_status == TrackingStatus.accepted && _contractor != null)
-                    _buildConfirmContractorButtons(),
+                    // Confirm/Reject buttons (when waiting for client confirmation)
+                    if (_status == TrackingStatus.accepted &&
+                        _contractor != null)
+                      _buildConfirmContractorButtons(),
 
-                  // Action buttons (chat, call)
-                  if (_status != TrackingStatus.searching &&
-                      _status != TrackingStatus.accepted &&
-                      _status != TrackingStatus.completed)
-                    _buildActionButtons(),
+                    // Complete button (when in progress)
+                    if (_status == TrackingStatus.inProgress)
+                      _buildCompleteButton(),
 
-                  // Complete button (when in progress)
-                  if (_status == TrackingStatus.inProgress)
-                    _buildCompleteButton(),
-
-                  // Cancel button (for all non-completed tasks)
-                  if (_status != TrackingStatus.completed)
-                    _buildCancelButton(),
-                ],
+                    // Cancel button (for all non-completed tasks)
+                    if (_status != TrackingStatus.completed)
+                      _buildCancelButton(),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -539,75 +595,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 5 steps including confirmation
-    final steps = ['Szukanie', 'Znaleziony', 'Potwierdz.', 'W trakcie', 'Gotowe'];
+    // 5 steps including confirmation - rainbow colored
+    const steps = ['Szukanie', 'Znaleziony', 'Potwierdz.', 'W trakcie', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
-    return Row(
-      children: List.generate(steps.length * 2 - 1, (index) {
-        if (index.isOdd) {
-          // Connector line
-          final stepIndex = index ~/ 2;
-          final isCompleted = stepIndex < currentStep;
-          return Expanded(
-            child: Container(
-              height: 3,
-              color: isCompleted ? AppColors.primary : AppColors.gray200,
-            ),
-          );
-        } else {
-          // Step circle
-          final stepIndex = index ~/ 2;
-          final isCompleted = stepIndex < currentStep;
-          final isCurrent = stepIndex == currentStep;
-
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: isCompleted || isCurrent
-                      ? AppColors.primary
-                      : AppColors.gray200,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: isCompleted
-                      ? Icon(
-                          Icons.check,
-                          size: 14,
-                          color: AppColors.white,
-                        )
-                      : isCurrent
-                          ? Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: AppColors.white,
-                                shape: BoxShape.circle,
-                              ),
-                            )
-                          : null,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                steps[stepIndex],
-                style: AppTypography.caption.copyWith(
-                  color: isCompleted || isCurrent
-                      ? AppColors.gray700
-                      : AppColors.gray400,
-                  fontWeight:
-                      isCurrent ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          );
-        }
-      }),
+    return SFRainbowProgress(
+      steps: steps,
+      currentStep: currentStep,
     );
   }
 
@@ -687,18 +681,24 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ],
                 ),
                 SizedBox(height: 2),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.star, size: 16, color: AppColors.warning),
-                    SizedBox(width: 4),
-                    Text(
-                      _contractor!.formattedRating,
-                      style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.star, size: 16, color: AppColors.warning),
+                        SizedBox(width: 4),
+                        Text(
+                          _contractor!.formattedRating,
+                          style: AppTypography.labelMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
+                    SizedBox(height: 2),
                     Text(
-                      ' • ${_contractor!.completedTasks} zleceń',
+                      'Nr zleceń: ${_contractor!.completedTasks}',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -706,6 +706,36 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ],
                 ),
               ],
+            ),
+          ),
+          TextButton(
+            onPressed: _showContractorProfile,
+            style: TextButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.paddingSM,
+                vertical: AppSpacing.paddingSM,
+              ),
+              minimumSize: const Size(44, 44),
+            ),
+            child: const Icon(Icons.person_outline, color: AppColors.white),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _openChatWithContractor,
+            icon: const Icon(Icons.chat_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.gray100,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapSM),
+          IconButton(
+            onPressed: _callContractor,
+            icon: const Icon(Icons.phone_outlined),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.success.withValues(alpha: 0.1),
+              foregroundColor: AppColors.success,
             ),
           ),
         ],
@@ -733,7 +763,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       ),
                     )
                   : Icon(Icons.check_circle),
-              label: Text(_isConfirming ? 'Potwierdzanie...' : 'Zatwierdź wykonawcę'),
+              label: Text(_isConfirming ? 'Potwierdzanie...' : 'Zatwierdź'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.success,
                 foregroundColor: AppColors.white,
@@ -775,8 +805,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  /// Confirm the contractor - triggers payment and allows work to start
+  /// Show payment popup before confirming contractor
   Future<void> _confirmContractor() async {
+    // Show payment selection popup first
+    final paymentConfirmed = await _showPaymentPopup();
+    if (paymentConfirmed != true) return;
+
     setState(() => _isConfirming = true);
 
     try {
@@ -807,6 +841,185 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     }
+  }
+
+  /// Show payment method selection popup
+  Future<bool?> _showPaymentPopup() async {
+    String? selectedPayment;
+
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.space4),
+
+              // Title
+              Text(
+                'Potwierdź płatność',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.gapSM),
+              Text(
+                'Wybierz metodę płatności',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Payment options - side by side
+              Row(
+                children: [
+                  // Cash option
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectedPayment = 'cash'),
+                      child: Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: selectedPayment == 'cash'
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : AppColors.gray50,
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: selectedPayment == 'cash'
+                                ? AppColors.primary
+                                : AppColors.gray200,
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.payments_outlined,
+                              size: 40,
+                              color: selectedPayment == 'cash'
+                                  ? AppColors.primary
+                                  : AppColors.gray500,
+                            ),
+                            SizedBox(height: AppSpacing.gapSM),
+                            Text(
+                              'Gotówka',
+                              style: AppTypography.labelLarge.copyWith(
+                                color: selectedPayment == 'cash'
+                                    ? AppColors.primary
+                                    : AppColors.gray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  // Card option
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setModalState(() => selectedPayment = 'card'),
+                      child: Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: selectedPayment == 'card'
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : AppColors.gray50,
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: selectedPayment == 'card'
+                                ? AppColors.primary
+                                : AppColors.gray200,
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.credit_card_outlined,
+                              size: 40,
+                              color: selectedPayment == 'card'
+                                  ? AppColors.primary
+                                  : AppColors.gray500,
+                            ),
+                            SizedBox(height: AppSpacing.gapSM),
+                            Text(
+                              'Karta',
+                              style: AppTypography.labelLarge.copyWith(
+                                color: selectedPayment == 'card'
+                                    ? AppColors.primary
+                                    : AppColors.gray700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Confirm button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: selectedPayment != null
+                      ? () => Navigator.pop(context, true)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
+                    ),
+                    disabledBackgroundColor: AppColors.gray300,
+                  ),
+                  child: Text(
+                    'Zatwierdź',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Cancel button
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Anuluj',
+                  style: TextStyle(color: AppColors.gray500),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Reject the contractor - task goes back to searching
@@ -868,44 +1081,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     }
   }
 
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Navigate to chat
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja czatu wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.chat_bubble_outline),
-            label: Text('Czat'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-        SizedBox(width: AppSpacing.gapMD),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Call contractor
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Funkcja połączenia wkrótce dostępna')),
-              );
-            },
-            icon: Icon(Icons.phone_outlined),
-            label: Text('Zadzwoń'),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildCompleteButton() {
     return Padding(
       padding: EdgeInsets.only(top: AppSpacing.gapMD),
@@ -941,7 +1116,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       padding: EdgeInsets.only(top: AppSpacing.gapMD),
       child: SizedBox(
         width: double.infinity,
-        child: OutlinedButton.icon(
+        child: ElevatedButton.icon(
           onPressed: _isCancelling ? null : _showCancelDialog,
           icon: _isCancelling
               ? SizedBox(
@@ -949,16 +1124,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.error,
+                    color: AppColors.white,
                   ),
                 )
-              : Icon(Icons.cancel_outlined, color: AppColors.error),
+              : const Icon(Icons.cancel_outlined),
           label: Text(
             _isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie',
-            style: TextStyle(color: AppColors.error),
           ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.white,
             padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
           ),
         ),
@@ -979,7 +1154,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               title: Text('Szczegóły zlecenia'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Show task details
+                _showTaskDetails();
               },
             ),
             ListTile(
@@ -997,6 +1172,245 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 Navigator.pop(context);
                 _showCancelDialog();
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTaskDetails() {
+    if (_task == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.space4),
+
+              // Title
+              Text(
+                'Szczegóły zlecenia',
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space6),
+
+              // Category
+              _buildDetailRow(
+                icon: _task!.categoryData.icon,
+                iconColor: _task!.categoryData.color,
+                label: 'Kategoria',
+                value: _task!.categoryData.name,
+              ),
+
+              // Description
+              _buildDetailRow(
+                icon: Icons.description_outlined,
+                label: 'Opis',
+                value: _task!.description,
+              ),
+
+              // Address
+              if (_task!.address != null)
+                _buildDetailRow(
+                  icon: Icons.location_on_outlined,
+                  label: 'Lokalizacja',
+                  value: _task!.address!,
+                ),
+
+              // Budget
+              _buildDetailRow(
+                icon: Icons.payments_outlined,
+                iconColor: AppColors.success,
+                label: 'Budżet',
+                value: '${_task!.budget} PLN',
+                valueStyle: AppTypography.labelLarge.copyWith(
+                  color: AppColors.success,
+                ),
+              ),
+
+              // Scheduled time
+              _buildDetailRow(
+                icon: Icons.schedule_outlined,
+                iconColor: _task!.isImmediate ? AppColors.warning : AppColors.primary,
+                label: 'Termin',
+                value: _task!.isImmediate
+                    ? 'Teraz'
+                    : _task!.scheduledAt != null
+                        ? _formatScheduledTime(_task!.scheduledAt!)
+                        : 'Nie określono',
+              ),
+
+              // Images
+              if (_task!.imageUrls != null && _task!.imageUrls!.isNotEmpty) ...[
+                SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Zdjęcia',
+                  style: AppTypography.labelLarge,
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _task!.imageUrls!.length,
+                    itemBuilder: (context, index) {
+                      final imageUrl = _task!.imageUrls![index];
+                      return GestureDetector(
+                        onTap: () => _showFullImage(imageUrl),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                          decoration: BoxDecoration(
+                            borderRadius: AppRadius.radiusMD,
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AppRadius.radiusMD,
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: AppColors.gray100,
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: AppColors.gray400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              SizedBox(height: AppSpacing.space8),
+
+              // Close button
+              OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: BorderSide(color: AppColors.error),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                ),
+                child: Text('Zamknij'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    Color? iconColor,
+    required String label,
+    required String value,
+    TextStyle? valueStyle,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.space4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (iconColor ?? AppColors.gray600).withValues(alpha: 0.1),
+              borderRadius: AppRadius.radiusSM,
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: iconColor ?? AppColors.gray600,
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  value,
+                  style: valueStyle ?? AppTypography.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatScheduledTime(DateTime dateTime) {
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final year = dateTime.year;
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$day.$month.$year o $hour:$minute';
+  }
+
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray900.withValues(alpha: 0.7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, color: AppColors.white),
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
           ],
         ),
@@ -1066,6 +1480,379 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 }
 
+/// Contractor profile bottom sheet that fetches full profile data
+class _ContractorProfileSheet extends ConsumerStatefulWidget {
+  final String contractorId;
+  final Contractor initialContractor;
+
+  const _ContractorProfileSheet({
+    required this.contractorId,
+    required this.initialContractor,
+  });
+
+  @override
+  ConsumerState<_ContractorProfileSheet> createState() =>
+      _ContractorProfileSheetState();
+}
+
+class _ContractorProfileSheetState
+    extends ConsumerState<_ContractorProfileSheet> {
+  Contractor? _fullProfile;
+  bool _isLoading = true;
+  bool _isReviewsLoading = true;
+  String? _error;
+  double _ratingAvg = 0.0;
+  int _ratingCount = 0;
+  List<_ContractorPublicReview> _reviews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFullProfile();
+  }
+
+  Future<void> _fetchFullProfile() async {
+    final api = ref.read(apiClientProvider);
+    Contractor? fullProfile;
+    String? profileError;
+    var ratingAvg = widget.initialContractor.rating;
+    var ratingCount = widget.initialContractor.reviewCount;
+    List<_ContractorPublicReview> reviews = const [];
+
+    try {
+      final response = await api.get('/contractor/${widget.contractorId}/public');
+      final data = response as Map<String, dynamic>;
+      fullProfile = Contractor.fromJson(data);
+    } catch (e) {
+      profileError = e.toString();
+    }
+
+    try {
+      final reviewsResponse =
+          await api.get('/contractor/${widget.contractorId}/reviews');
+      final reviewsData = reviewsResponse as Map<String, dynamic>;
+
+      final ratingAvgValue = reviewsData['ratingAvg'];
+      final ratingCountValue = reviewsData['ratingCount'];
+
+      ratingAvg = ratingAvgValue != null
+          ? (double.tryParse(ratingAvgValue.toString()) ?? 0.0)
+          : 0.0;
+      ratingCount = ratingCountValue is int
+          ? ratingCountValue
+          : (int.tryParse(ratingCountValue?.toString() ?? '') ?? 0);
+
+      reviews = (reviewsData['reviews'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(_ContractorPublicReview.fromJson)
+          .toList();
+    } catch (_) {
+      // Keep fallback values from initial contractor card if reviews endpoint fails.
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _fullProfile = fullProfile;
+      _error = profileError;
+      _ratingAvg = ratingAvg;
+      _ratingCount = ratingCount;
+      _reviews = reviews;
+      _isLoading = false;
+      _isReviewsLoading = false;
+    });
+  }
+
+  String _formatDate(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day.$month.$year';
+  }
+
+  Widget _buildReviewCard(_ContractorPublicReview review) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, color: AppColors.warning, size: 18),
+              SizedBox(width: 4),
+              Text(
+                review.rating.toString(),
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDate(review.createdAt),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.gray500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            review.comment?.trim().isNotEmpty == true
+                ? review.comment!.trim()
+                : 'Brak komentarza.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    if (_isReviewsLoading) {
+      return SizedBox(
+        height: 16,
+        width: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.star, size: 18, color: AppColors.warning),
+            SizedBox(width: 4),
+            Text(
+              _ratingAvg.toStringAsFixed(1),
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(width: 8),
+            Text(
+              'na podstawie $_ratingCount opinii',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.gapSM),
+        if (_reviews.isEmpty)
+          Text(
+            'Brak opinii do wyświetlenia.',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray500,
+            ),
+          )
+        else
+          ..._reviews.take(5).map(
+                (review) => Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
+                  child: _buildReviewCard(review),
+                ),
+              ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contractor = _fullProfile ?? widget.initialContractor;
+
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.paddingMD,
+              AppSpacing.paddingSM,
+              AppSpacing.paddingMD,
+              0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Profil wykonawcy', style: AppTypography.h4),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingMD,
+                0,
+                AppSpacing.paddingMD,
+                AppSpacing.paddingMD,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: AppSpacing.gapMD),
+
+                  // Avatar and name row
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: AppColors.gray200,
+                        backgroundImage: contractor.avatarUrl != null
+                            ? NetworkImage(contractor.avatarUrl!)
+                            : null,
+                        child: contractor.avatarUrl == null
+                            ? Text(
+                                contractor.name.isNotEmpty
+                                    ? contractor.name[0].toUpperCase()
+                                    : '?',
+                                style: AppTypography.h4.copyWith(
+                                  color: AppColors.gray600,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              contractor.name,
+                              style: AppTypography.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  size: 18,
+                                  color: AppColors.warning,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  contractor.formattedRating,
+                                  style: AppTypography.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '${contractor.reviewCount} opinii',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.gapMD),
+
+                  // Bio section
+                  Text(
+                    'Opis',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  _isLoading
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : _error != null
+                          ? Text(
+                              'Nie udało się pobrać pełnego profilu',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.gray400,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          : Text(
+                              contractor.bio?.isNotEmpty == true
+                                  ? contractor.bio!
+                                  : 'Brak opisu wykonawcy.',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: contractor.bio?.isNotEmpty == true
+                                    ? AppColors.gray600
+                                    : AppColors.gray400,
+                                fontStyle: contractor.bio?.isNotEmpty == true
+                                    ? FontStyle.normal
+                                    : FontStyle.italic,
+                              ),
+                            ),
+                  SizedBox(height: AppSpacing.gapMD),
+
+                  Text(
+                    'Opinie',
+                    style: AppTypography.labelLarge.copyWith(
+                      color: AppColors.gray700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  _buildReviewsSection(),
+                  SizedBox(height: AppSpacing.gapMD),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContractorPublicReview {
+  final int rating;
+  final String? comment;
+  final DateTime createdAt;
+
+  const _ContractorPublicReview({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory _ContractorPublicReview.fromJson(Map<String, dynamic> json) {
+    final createdAtRaw = json['createdAt']?.toString();
+    return _ContractorPublicReview(
+      rating: int.tryParse(json['rating']?.toString() ?? '') ?? 0,
+      comment: json['comment']?.toString(),
+      createdAt: createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+}
+
 /// Custom painter for map grid pattern
 class _MapGridPainter extends CustomPainter {
   @override
@@ -1074,7 +1861,7 @@ class _MapGridPainter extends CustomPainter {
       ..color = AppColors.gray200
       ..strokeWidth = 1;
 
-    const spacing = 50.0;
+    const spacing = 20.0;
 
     // Vertical lines
     for (double x = 0; x < size.width; x += spacing) {

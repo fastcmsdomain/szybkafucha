@@ -7,7 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { APP_GUARD } from '@nestjs/core';
+import { join } from 'path';
 import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ContractorModule } from './contractor/contractor.module';
+import { ClientModule } from './client/client.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -29,6 +32,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 // Entities
 import { User } from './users/entities/user.entity';
 import { ContractorProfile } from './contractor/entities/contractor-profile.entity';
+import { ClientProfile } from './client/entities/client-profile.entity';
 import { Task } from './tasks/entities/task.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
@@ -60,6 +64,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
         entities: [
           User,
           ContractorProfile,
+          ClientProfile,
           Task,
           Rating,
           Message,
@@ -69,6 +74,18 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
         ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',
+        // Connection pool configuration to prevent "too many clients" errors
+        extra: {
+          max: 10, // Maximum number of clients in the pool
+          min: 2, // Minimum number of clients in the pool
+          idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+          connectionTimeoutMillis: 10000, // Wait 10 seconds for connection
+        },
+        // Additional connection settings
+        retryAttempts: 3,
+        retryDelay: 3000,
+        autoLoadEntities: false, // Explicit entity loading for better control
+        keepConnectionAlive: true, // Prevent connection drops
       }),
       inject: [ConfigService],
     }),
@@ -88,15 +105,17 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => [
         {
-          ttl: parseInt(
-            configService.get<string>('THROTTLE_TTL_MS', '60000'),
-          ), // default: 60s
-          limit: parseInt(
-            configService.get<string>('THROTTLE_LIMIT', '50'),
-          ), // default: 10 reqs/window
+          ttl: parseInt(configService.get<string>('THROTTLE_TTL_MS', '60000')), // default: 60s
+          limit: parseInt(configService.get<string>('THROTTLE_LIMIT', '50')), // default: 10 reqs/window
         },
       ],
       inject: [ConfigService],
+    }),
+
+    // Serve static files (uploads)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
     }),
 
     // Feature modules
@@ -104,6 +123,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     UsersModule,
     TasksModule,
     ContractorModule,
+    ClientModule,
     PaymentsModule,
     AdminModule,
     RealtimeModule,

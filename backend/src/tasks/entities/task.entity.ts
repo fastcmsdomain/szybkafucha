@@ -18,6 +18,7 @@ export enum TaskStatus {
   ACCEPTED = 'accepted',
   CONFIRMED = 'confirmed', // Client confirmed the contractor
   IN_PROGRESS = 'in_progress',
+  PENDING_COMPLETE = 'pending_complete', // Client confirmed completion, waiting for contractor to finalize
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   DISPUTED = 'disputed',
@@ -80,6 +81,10 @@ export class Task {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   tipAmount: number;
 
+  // Estimated duration in hours (e.g., 1.5 = 1h 30min)
+  @Column({ type: 'decimal', precision: 4, scale: 1, nullable: true })
+  estimatedDurationHours: number | null;
+
   // Task status
   @Column({
     type: 'enum',
@@ -111,6 +116,13 @@ export class Task {
 
   @Column({ type: 'timestamp', nullable: true })
   completedAt: Date | null;
+
+  // Dual-rating tracking - status changes to COMPLETED only when both have rated
+  @Column({ type: 'boolean', default: false })
+  clientRated: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  contractorRated: boolean;
 
   @Column({ type: 'timestamp', nullable: true })
   cancelledAt: Date | null;

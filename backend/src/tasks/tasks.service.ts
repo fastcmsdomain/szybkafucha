@@ -15,16 +15,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
 import { Rating } from './entities/rating.entity';
-import {
-  ContractorProfile,
-  KycStatus,
-} from '../contractor/entities/contractor-profile.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 import { ServerEvent } from '../realtime/realtime.gateway';
+import { ContractorService } from '../contractor/contractor.service';
 
 // Platform commission percentage
 const COMMISSION_RATE = 0.17;
@@ -66,6 +64,8 @@ export class TasksService {
     @Inject(forwardRef(() => RealtimeGateway))
     private readonly realtimeGateway: RealtimeGateway,
     private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => ContractorService))
+    private readonly contractorService: ContractorService,
   ) {}
 
   /**
@@ -137,6 +137,55 @@ export class TasksService {
   }
 
   /**
+   * Find all available tasks for public browsing (no authentication)
+   * Returns sanitized task data without sensitive client information
+   *
+   * Security measures:
+   * - No client personal information (name, email, phone)
+   * - Address sanitized to city/district level only
+   * - Coordinates rounded to ~1km precision for privacy
+   * - Description truncated to 200 characters
+   * - No task images included
+   *
+   * @param options - Query options (categories, limit)
+   * @returns Array of sanitized public task objects
+   */
+  async findAllAvailablePublic(options: {
+    categories?: string[];
+    limit: number;
+  }): Promise<any[]> {
+    const queryBuilder = this.tasksRepository
+      .createQueryBuilder('task')
+      .where('task.status = :status', { status: TaskStatus.CREATED })
+      .orderBy('task.createdAt', 'DESC')
+      .limit(options.limit);
+
+    if (options.categories && options.categories.length > 0) {
+      queryBuilder.andWhere('task.category IN (:...categories)', {
+        categories: options.categories,
+      });
+    }
+
+    const tasks = await queryBuilder.getMany();
+
+    // Sanitize data - remove sensitive information
+    return tasks.map((task) => ({
+      id: task.id,
+      category: task.category,
+      title: task.title,
+      description: task.description?.substring(0, 200), // Truncate to 200 chars
+      address: this.sanitizeAddress(task.address),
+      budgetAmount: task.budgetAmount,
+      // Round coordinates to ~1km precision for privacy
+      locationLat: Math.round(Number(task.locationLat) * 100) / 100,
+      locationLng: Math.round(Number(task.locationLng) * 100) / 100,
+      createdAt: task.createdAt,
+      estimatedDurationHours: task.estimatedDurationHours,
+      scheduledAt: task.scheduledAt,
+    }));
+  }
+
+  /**
    * Find available tasks for contractors
    * Filters by category and location (within radius)
    */
@@ -176,12 +225,22 @@ export class TasksService {
 
   /**
    * Contractor accepts a task
+   * Validates that contractor profile is complete before allowing acceptance
    */
   async acceptTask(taskId: string, contractorId: string): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.status !== TaskStatus.CREATED) {
       throw new BadRequestException('Task is no longer available');
+    }
+
+    // NEW: Check if contractor profile is complete
+    const isComplete =
+      await this.contractorService.isProfileComplete(contractorId);
+    if (!isComplete) {
+      throw new BadRequestException(
+        'Complete your contractor profile before accepting tasks',
+      );
     }
 
     task.contractorId = contractorId;
@@ -208,6 +267,7 @@ export class TasksService {
         avatarUrl: contractorProfile?.user?.avatarUrl || null,
         rating: contractorProfile?.ratingAvg || 0,
         completedTasks: contractorProfile?.completedTasksCount || 0,
+        bio: contractorProfile?.bio || null,
       },
     );
 
@@ -374,7 +434,9 @@ export class TasksService {
   }
 
   /**
-   * Contractor marks task as complete
+   * Contractor acknowledges task completion
+   * Task must be in PENDING_COMPLETE status (client already confirmed)
+   * Status stays PENDING_COMPLETE until both parties rate - then changes to COMPLETED
    */
   async completeTask(
     taskId: string,
@@ -387,59 +449,64 @@ export class TasksService {
       throw new ForbiddenException('You are not assigned to this task');
     }
 
-    if (task.status !== TaskStatus.IN_PROGRESS) {
-      throw new BadRequestException('Task must be in progress to complete');
+    // Task must be in PENDING_COMPLETE (client confirmed) to complete
+    if (task.status !== TaskStatus.PENDING_COMPLETE) {
+      throw new BadRequestException(
+        'Client must confirm completion first before contractor can finalize',
+      );
     }
 
-    // Calculate final amounts
+    // Calculate final amounts (for earnings display)
     const finalAmount = task.budgetAmount;
     const commissionAmount = Number(
       (Number(finalAmount) * COMMISSION_RATE).toFixed(2),
     );
 
-    task.status = TaskStatus.COMPLETED;
-    task.completedAt = new Date();
+    // Status stays PENDING_COMPLETE - will change to COMPLETED when both rate
     task.finalAmount = finalAmount;
     task.commissionAmount = commissionAmount;
     task.completionPhotos = completionPhotos || null;
 
     const savedTask = await this.tasksRepository.save(task);
 
-    // Broadcast via WebSocket to client
-    this.realtimeGateway.broadcastTaskStatus(
-      taskId,
-      TaskStatus.COMPLETED,
-      contractorId,
-      task.clientId,
+    this.logger.log(
+      `Contractor ${contractorId} acknowledged completion of task ${taskId}. Awaiting ratings from both parties.`,
     );
-
-    // Notify client that task was completed (push notification as backup)
-    this.notificationsService
-      .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
-        taskTitle: task.title,
-      })
-      .catch((err) =>
-        this.logger.error(`Failed to send TASK_COMPLETED notification: ${err}`),
-      );
 
     return savedTask;
   }
 
   /**
-   * Client confirms task completion (triggers payment)
+   * Client confirms task completion
+   * Changes status from IN_PROGRESS to PENDING_COMPLETE
+   * Contractor must then call completeTask to finalize
    */
-  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+  async confirmCompletion(taskId: string, clientId: string): Promise<Task> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.clientId !== clientId) {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Task must be completed first');
+    if (task.status !== TaskStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'Task must be in progress for client to confirm completion',
+      );
     }
 
-    // Notify contractor that task was confirmed
+    task.status = TaskStatus.PENDING_COMPLETE;
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Broadcast via WebSocket to contractor
+    this.realtimeGateway.broadcastTaskStatus(
+      taskId,
+      TaskStatus.PENDING_COMPLETE,
+      clientId,
+      task.contractorId!,
+    );
+
+    // Notify contractor that client confirmed - they can now complete the task
     if (task.contractorId) {
       this.notificationsService
         .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
@@ -447,14 +514,21 @@ export class TasksService {
         })
         .catch((err) =>
           this.logger.error(
-            `Failed to send TASK_CONFIRMED notification: ${err}`,
+            `Failed to send completion confirmation notification: ${err}`,
           ),
         );
     }
 
-    // Task is confirmed - payment will be released
-    // Payment logic handled by PaymentsService
-    return task;
+    return savedTask;
+  }
+
+  /**
+   * Client confirms task completion (triggers payment)
+   * @deprecated Use confirmCompletion instead
+   */
+  async confirmTask(taskId: string, clientId: string): Promise<Task> {
+    // Redirect to new confirmCompletion method for backward compatibility
+    return this.confirmCompletion(taskId, clientId);
   }
 
   /**
@@ -474,7 +548,9 @@ export class TasksService {
       task.status === TaskStatus.COMPLETED ||
       task.status === TaskStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot cancel completed or already cancelled task');
+      throw new BadRequestException(
+        'Cannot cancel completed or already cancelled task',
+      );
     }
 
     const isContractorCancelling = task.contractorId === userId;
@@ -489,7 +565,9 @@ export class TasksService {
 
     if (isContractorCancelling) {
       // CONTRACTOR is cancelling - return task to 'posted' status so other contractors can accept it
-      this.logger.log(`Contractor ${userId} releasing task ${taskId} - returning to posted status`);
+      this.logger.log(
+        `Contractor ${userId} releasing task ${taskId} - returning to posted status`,
+      );
 
       task.status = TaskStatus.CREATED;
       task.contractorId = null;
@@ -512,7 +590,9 @@ export class TasksService {
       this.notificationsService
         .sendToUser(task.clientId, NotificationType.TASK_CANCELLED, {
           taskTitle: task.title,
-          reason: reason || 'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
+          reason:
+            reason ||
+            'Wykonawca zrezygnował ze zlecenia. Zlecenie jest ponownie dostępne.',
         })
         .catch((err) =>
           this.logger.error(
@@ -523,7 +603,9 @@ export class TasksService {
       return savedTask;
     } else {
       // CLIENT is cancelling - truly cancel the task
-      this.logger.log(`Client ${userId} cancelling task ${taskId} in status ${task.status}`);
+      this.logger.log(
+        `Client ${userId} cancelling task ${taskId} in status ${task.status}`,
+      );
 
       task.status = TaskStatus.CANCELLED;
       task.cancelledAt = new Date();
@@ -541,12 +623,16 @@ export class TasksService {
 
       // Also notify contractor directly (they might not be in the task room)
       if (previousContractorId) {
-        this.realtimeGateway.sendToUser(previousContractorId, ServerEvent.TASK_STATUS, {
-          taskId,
-          status: TaskStatus.CANCELLED,
-          updatedAt: new Date(),
-          updatedBy: userId,
-        });
+        this.realtimeGateway.sendToUser(
+          previousContractorId,
+          ServerEvent.TASK_STATUS,
+          {
+            taskId,
+            status: TaskStatus.CANCELLED,
+            updatedAt: new Date(),
+            updatedBy: userId,
+          },
+        );
       }
 
       // Notify contractor if there was one assigned
@@ -568,7 +654,9 @@ export class TasksService {
   }
 
   /**
-   * Rate a completed task
+   * Rate a completed or pending_complete task
+   * Client can rate when confirming completion (PENDING_COMPLETE)
+   * Contractor can rate after completing (COMPLETED)
    */
   async rateTask(
     taskId: string,
@@ -578,8 +666,13 @@ export class TasksService {
   ): Promise<Rating> {
     const task = await this.findByIdOrFail(taskId);
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only rate completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only rate tasks that are completed or pending completion',
+      );
     }
 
     // Check if already rated
@@ -591,15 +684,69 @@ export class TasksService {
       throw new BadRequestException('You have already rated this task');
     }
 
+    // Determine the role of the person being rated
+    // If toUserId is the client, they're being rated as a client
+    // If toUserId is the contractor, they're being rated as a contractor
+    const role = toUserId === task.clientId ? 'client' : 'contractor';
+
     const rating = this.ratingsRepository.create({
       taskId,
       fromUserId,
       toUserId,
       rating: dto.rating,
       comment: dto.comment,
+      role, // NEW: Add role field
     });
 
     const savedRating = await this.ratingsRepository.save(rating);
+
+    // Track who has rated
+    if (fromUserId === task.clientId) {
+      task.clientRated = true;
+      this.logger.log(`Client ${fromUserId} rated task ${taskId}`);
+    } else if (fromUserId === task.contractorId) {
+      task.contractorRated = true;
+      this.logger.log(`Contractor ${fromUserId} rated task ${taskId}`);
+    }
+
+    // Check if both parties have now rated - if so, mark as COMPLETED
+    if (task.clientRated && task.contractorRated && task.contractorId) {
+      task.status = TaskStatus.COMPLETED;
+      task.completedAt = new Date();
+      this.logger.log(
+        `Both parties rated task ${taskId}. Status changed to COMPLETED.`,
+      );
+
+      // Broadcast COMPLETED status via WebSocket
+      this.realtimeGateway.broadcastTaskStatus(
+        taskId,
+        TaskStatus.COMPLETED,
+        task.contractorId,
+        task.clientId,
+      );
+
+      // Notify both parties that task is fully completed
+      this.notificationsService
+        .sendToUser(task.clientId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to client: ${err}`,
+          ),
+        );
+      this.notificationsService
+        .sendToUser(task.contractorId, NotificationType.TASK_COMPLETED, {
+          taskTitle: task.title,
+        })
+        .catch((err) =>
+          this.logger.error(
+            `Failed to send TASK_COMPLETED notification to contractor: ${err}`,
+          ),
+        );
+    }
+
+    await this.tasksRepository.save(task);
 
     // Notify the rated user
     this.notificationsService
@@ -616,6 +763,7 @@ export class TasksService {
 
   /**
    * Add tip to a task
+   * Client can tip when confirming completion (PENDING_COMPLETE) or after (COMPLETED)
    */
   async addTip(
     taskId: string,
@@ -628,8 +776,13 @@ export class TasksService {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.COMPLETED) {
-      throw new BadRequestException('Can only tip completed tasks');
+    if (
+      task.status !== TaskStatus.COMPLETED &&
+      task.status !== TaskStatus.PENDING_COMPLETE
+    ) {
+      throw new BadRequestException(
+        'Can only tip tasks that are completed or pending completion',
+      );
     }
 
     task.tipAmount = tipAmount;
@@ -848,5 +1001,23 @@ export class TasksService {
         );
       }
     }
+  }
+
+  /**
+   * Sanitize address to show only city/district (privacy protection)
+   * Returns first 2 parts of comma-separated address
+   *
+   * Example: "ul. Marszałkowska 1, Warszawa, Śródmieście, 00-001"
+   *          -> "Warszawa, Śródmieście"
+   *
+   * @param fullAddress - Full address string
+   * @returns Sanitized address with only city/district
+   */
+  private sanitizeAddress(fullAddress: string): string {
+    if (!fullAddress) return '';
+
+    const parts = fullAddress.split(',').map((p) => p.trim());
+    // Return only first 2 parts (e.g., "Warszawa, Śródmieście")
+    return parts.slice(0, 2).join(', ');
   }
 }

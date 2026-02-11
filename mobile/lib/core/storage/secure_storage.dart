@@ -123,6 +123,11 @@ class SecureStorageService {
     return value == 'true';
   }
 
+  /// Delete onboarding complete flag (for testing)
+  Future<void> deleteOnboardingComplete() async {
+    await _storage.delete(key: StorageKeys.onboardingComplete);
+  }
+
   // ============ FCM Token ============
 
   /// Save FCM token for push notifications

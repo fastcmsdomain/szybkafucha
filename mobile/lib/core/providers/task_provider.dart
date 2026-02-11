@@ -21,7 +21,9 @@ class CreateTaskDto {
   final double locationLng;
   final String address;
   final double budgetAmount;
+  final double? estimatedDurationHours;
   final DateTime? scheduledAt;
+  final List<String>? imageUrls;
 
   const CreateTaskDto({
     required this.category,
@@ -31,7 +33,9 @@ class CreateTaskDto {
     required this.locationLng,
     required this.address,
     required this.budgetAmount,
+    this.estimatedDurationHours,
     this.scheduledAt,
+    this.imageUrls,
   });
 
   Map<String, dynamic> toJson() => {
@@ -42,7 +46,9 @@ class CreateTaskDto {
         'locationLng': locationLng,
         'address': address,
         'budgetAmount': budgetAmount,
+        if (estimatedDurationHours != null) 'estimatedDurationHours': estimatedDurationHours,
         if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
+        if (imageUrls != null && imageUrls!.isNotEmpty) 'imageUrls': imageUrls,
       };
 }
 
@@ -151,6 +157,9 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
         return TaskStatus.accepted;
       case 'in_progress':
         return TaskStatus.inProgress;
+      case 'pending_complete':
+      case 'pendingcomplete':
+        return TaskStatus.pendingComplete;
       case 'completed':
         return TaskStatus.completed;
       case 'cancelled':
@@ -165,7 +174,10 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response = await _api.get<List<dynamic>>('/tasks');
+      final response = await _api.get<List<dynamic>>(
+        '/tasks',
+        queryParameters: {'role': 'client'},
+      );
       final tasks = response
           .map((json) => Task.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -223,13 +235,27 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     }
   }
 
-  /// Confirm task completion
+  /// Client confirms task completion (awaiting contractor's closure)
   Future<void> confirmTask(String taskId) async {
     try {
-      await _api.put<Map<String, dynamic>>('/tasks/$taskId/confirm');
+      try {
+        await _api.put<Map<String, dynamic>>(
+          '/tasks/$taskId/confirm-completion',
+        );
+      } catch (_) {
+        // Fallback for backends that still use /confirm
+        await _api.put<Map<String, dynamic>>('/tasks/$taskId/confirm');
+      }
 
-      // Refresh tasks to get updated state
-      await loadTasks();
+      // Update local state to pending_complete without full reload
+      state = state.copyWith(
+        tasks: state.tasks.map((t) {
+          if (t.id == taskId) {
+            return t.copyWith(status: TaskStatus.pendingComplete);
+          }
+          return t;
+        }).toList(),
+      );
     } catch (e) {
       rethrow;
     }
@@ -365,7 +391,10 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
     try {
       // For MVP, we don't filter by location
       // Just get all tasks with status 'created'
-      final response = await _api.get<List<dynamic>>('/tasks');
+      final response = await _api.get<List<dynamic>>(
+        '/tasks',
+        queryParameters: {'role': 'contractor'},
+      );
 
       final tasks = response
           .map((json) => _mapToContractorTask(json as Map<String, dynamic>))
@@ -380,8 +409,23 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   }
 
   /// Accept a task
+  /// Checks if contractor profile is complete before allowing acceptance
   Future<ContractorTask> acceptTask(String taskId) async {
     try {
+      // Check if contractor profile is complete
+      final profileCheckResponse = await _api.get<Map<String, dynamic>>(
+        '/contractor/profile/complete',
+      );
+
+      final isComplete = profileCheckResponse['complete'] as bool? ?? false;
+
+      if (!isComplete) {
+        throw Exception(
+          'Dokończ swój profil wykonawcy, aby zaakceptować zlecenie',
+        );
+      }
+
+      // Profile is complete, proceed with accepting the task
       final response = await _api.put<Map<String, dynamic>>(
         '/tasks/$taskId/accept',
       );
@@ -492,7 +536,14 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 
     if (shouldClearTask) {
       clearTask();
+      return;
     }
+
+    // Otherwise update local status to keep UI in sync
+    final newStatus = _mapContractorStatus(status);
+    state = state.copyWith(
+      task: state.task?.copyWith(status: newStatus),
+    );
   }
 
   /// Set the active task (after accepting)
@@ -532,6 +583,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
             id: state.task!.id,
             category: state.task!.category,
             description: state.task!.description,
+            clientId: state.task!.clientId,
             clientName: state.task!.clientName,
             clientAvatarUrl: state.task!.clientAvatarUrl,
             clientRating: state.task!.clientRating,
@@ -565,6 +617,26 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
       case 'complete':
         return ContractorTaskStatus.completed;
       case 'cancel':
+        return ContractorTaskStatus.cancelled;
+      default:
+        return state.task?.status ?? ContractorTaskStatus.accepted;
+    }
+  }
+
+  ContractorTaskStatus _mapContractorStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return ContractorTaskStatus.accepted;
+      case 'confirmed':
+        return ContractorTaskStatus.confirmed;
+      case 'in_progress':
+        return ContractorTaskStatus.inProgress;
+      case 'pending_complete':
+      case 'pendingcomplete':
+        return ContractorTaskStatus.pendingComplete;
+      case 'completed':
+        return ContractorTaskStatus.completed;
+      case 'cancelled':
         return ContractorTaskStatus.cancelled;
       default:
         return state.task?.status ?? ContractorTaskStatus.accepted;
@@ -610,6 +682,7 @@ extension ContractorTaskCopyWith on ContractorTask {
     String? id,
     TaskCategory? category,
     String? description,
+    String? clientId,
     String? clientName,
     String? clientAvatarUrl,
     double? clientRating,
@@ -624,12 +697,15 @@ extension ContractorTaskCopyWith on ContractorTask {
     DateTime? acceptedAt,
     DateTime? startedAt,
     DateTime? completedAt,
+    DateTime? scheduledAt,
+    List<String>? imageUrls,
     bool? isUrgent,
   }) {
     return ContractorTask(
       id: id ?? this.id,
       category: category ?? this.category,
       description: description ?? this.description,
+      clientId: clientId ?? this.clientId,
       clientName: clientName ?? this.clientName,
       clientAvatarUrl: clientAvatarUrl ?? this.clientAvatarUrl,
       clientRating: clientRating ?? this.clientRating,
@@ -644,6 +720,8 @@ extension ContractorTaskCopyWith on ContractorTask {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      imageUrls: imageUrls ?? this.imageUrls,
       isUrgent: isUrgent ?? this.isUrgent,
     );
   }

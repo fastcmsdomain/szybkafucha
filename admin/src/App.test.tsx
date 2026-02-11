@@ -23,10 +23,34 @@ jest.mock('@chakra-ui/react', () => ({
   Input: (props: any) => <input {...props} />,
   VStack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   HStack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
+  Spinner: ({ ...props }: any) => <div {...props} />,
+  Textarea: (props: any) => <textarea {...props} />,
   Container: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   Stack: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   ChakraProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useColorModeValue: (light: any, dark: any) => light,
+}));
+
+// Mock @ark-ui/react (ESM package causing Jest parse issues in CRA setup)
+jest.mock('@ark-ui/react', () => ({
+  Dialog: {
+    Root: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    Backdrop: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Positioner: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Content: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    Title: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
+    CloseTrigger: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <button {...props}>{children}</button>
+    ),
+  },
 }));
 
 describe('App', () => {

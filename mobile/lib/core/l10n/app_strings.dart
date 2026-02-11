@@ -2,7 +2,7 @@
 /// All user-facing strings should be defined here for easy localization
 abstract class AppStrings {
   // ============ App ============
-  static const String appName = 'Szybka Fucha';
+  static const String appName = 'SzybkaFucha';
   static const String appTagline = 'Pomoc jest bliżej niż myślisz';
 
   // ============ Common ============
@@ -163,6 +163,11 @@ abstract class AppStrings {
   static const String pendingBalance = 'Oczekujące';
   static const String transactionHistory = 'Historia transakcji';
 
+  // ============ Navigation Menu ============
+  static const String menuHome = 'Główna';
+  static const String menuTasks = 'Zlecenia';
+  static const String menuProfile = 'Profil';
+
   // ============ Profile ============
   static const String profile = 'Profil';
   static const String editProfile = 'Edytuj profil';
@@ -243,4 +248,33 @@ abstract class AppStrings {
   // ============ Currency ============
   static const String currency = 'PLN';
   static const String currencySymbol = 'zł';
+
+  // ============ Onboarding ============
+  static const String onboardingTitle1 = 'Potrzebujesz pomocy?';
+  static const String onboardingSubtitle1 = 'Znajdź ją w 5 minut';
+  static const String onboardingDescription1 =
+      'Szybka Fucha łączy Cię z pomocnikami w Twojej okolicy';
+
+  static const String onboardingTitle2 = 'Szybko, prosto, bezpiecznie';
+  static const String onboardingSubtitle2 = 'Zweryfikowani wykonawcy';
+  static const String onboardingDescription2 =
+      'System ocen i bezpieczne płatności';
+
+  static const String onboardingTitle3 = 'Zarabiaj lub zlecaj';
+  static const String onboardingSubtitle3 = 'Wybór należy do Ciebie';
+  static const String onboardingDescription3 =
+      'Przeglądaj dostępne zlecenia i zacznij działać już teraz';
+
+  static const String onboardingSkip = 'Pomiń';
+  static const String onboardingNext = 'Dalej';
+  static const String onboardingStart = 'Zobacz zlecenia';
+
+  // ============ Public Browse ============
+  static const String publicBrowseTitle = 'Dostępne zlecenia';
+  static const String publicBrowseAddTask = 'Dodaj zlecenie';
+  static const String publicBrowseLoginPromptTitle = 'Zaloguj się';
+  static const String publicBrowseLoginPromptMessage =
+      'Aby dodać zlecenie, musisz się najpierw zalogować.';
+  static const String publicBrowseLoginPromptCancel = 'Anuluj';
+  static const String publicBrowseLoginPromptConfirm = 'Zaloguj się';
 }

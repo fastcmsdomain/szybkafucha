@@ -54,14 +54,14 @@ export class AuthService {
   generateToken(user: User): { accessToken: string; user: Partial<User> } {
     const payload = {
       sub: user.id,
-      type: user.type,
+      types: user.types,
     };
 
     return {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user.id,
-        type: user.type,
+        types: user.types,
         name: user.name,
         email: user.email,
         phone: user.phone,
@@ -149,12 +149,12 @@ export class AuthService {
       isNewUser = true;
       user = await this.usersService.create({
         phone: normalizedPhone,
-        type: userType || UserType.CLIENT,
+        types: [userType || UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
-    } else if (userType && user.type !== userType) {
-      // User wants to switch roles - update their type
-      user = await this.usersService.update(user.id, { type: userType });
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
+      user = await this.usersService.addRole(user.id, userType);
     }
 
     const token = this.generateToken(user);
@@ -191,13 +191,13 @@ export class AuthService {
           email,
           name,
           avatarUrl,
-          type: userType || UserType.CLIENT,
+          types: [userType || UserType.CLIENT],
           status: UserStatus.ACTIVE,
         });
       }
-    } else if (userType && user.type !== userType) {
-      // User wants to switch roles - update their type
-      user = await this.usersService.update(user.id, { type: userType });
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
+      user = await this.usersService.addRole(user.id, userType);
     }
 
     const token = this.generateToken(user);
@@ -236,13 +236,13 @@ export class AuthService {
           appleId,
           email,
           name,
-          type: userType || UserType.CLIENT,
+          types: [userType || UserType.CLIENT],
           status: UserStatus.ACTIVE,
         });
       }
-    } else if (userType && user.type !== userType) {
-      // User wants to switch roles - update their type
-      user = await this.usersService.update(user.id, { type: userType });
+    } else if (userType && user.types.length === 0) {
+      // MVP: Only add role if user has no roles yet (prevents role switching)
+      user = await this.usersService.addRole(user.id, userType);
     }
 
     const token = this.generateToken(user);

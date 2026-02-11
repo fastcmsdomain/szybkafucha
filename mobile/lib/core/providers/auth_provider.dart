@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_config.dart';
@@ -30,33 +31,55 @@ class User {
   final String? email;
   final String? name;
   final String? phone;
-  final String userType; // 'client' or 'contractor'
+  final List<String> userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
   final String? avatarUrl;
   final bool isVerified;
+  final String? address;
+  final String? bio;
 
   const User({
     required this.id,
     this.email,
     this.name,
     this.phone,
-    required this.userType,
+    required this.userTypes,
     this.avatarUrl,
     this.isVerified = false,
+    this.address,
+    this.bio,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Get raw avatar URL and convert to full URL if relative
+    final rawAvatarUrl = (json['avatarUrl'] ?? json['avatar_url']) as String?;
+
+    // Parse types array from backend (backend returns 'types' as string array or comma-separated)
+    final types = json['types'];
+    List<String> userTypes;
+    if (types is List) {
+      userTypes = types.map((e) => e.toString()).toList();
+    } else if (types is String) {
+      // Backend may return comma-separated string
+      userTypes = types.split(',').map((e) => e.trim()).toList();
+    } else {
+      // Fallback to single type field for backward compatibility
+      final singleType = (json['type'] ?? json['user_type']) as String?;
+      userTypes = singleType != null ? [singleType] : ['client'];
+    }
+
     return User(
       id: json['id'] as String,
       email: json['email'] as String?,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
-      // Backend returns 'type', but some endpoints may return 'user_type'
-      userType: (json['type'] ?? json['user_type']) as String? ?? 'client',
-      // Backend returns 'avatarUrl' (camelCase)
-      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
+      userTypes: userTypes,
+      // Convert relative avatar URL to full URL
+      avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
       isVerified: json['is_verified'] as bool? ??
                   (json['status'] == 'active'),
+      address: json['address'] as String?,
+      bio: json['bio'] as String?,
     );
   }
 
@@ -65,31 +88,38 @@ class User {
         'email': email,
         'name': name,
         'phone': phone,
-        'user_type': userType,
+        'types': userTypes,
         'avatar_url': avatarUrl,
         'is_verified': isVerified,
+        'address': address,
+        'bio': bio,
       };
 
-  bool get isClient => userType == 'client';
-  bool get isContractor => userType == 'contractor';
+  bool get isClient => userTypes.contains('client');
+  bool get isContractor => userTypes.contains('contractor');
+  bool get hasBothRoles => userTypes.length == 2;
 
   User copyWith({
     String? id,
     String? email,
     String? name,
     String? phone,
-    String? userType,
+    List<String>? userTypes,
     String? avatarUrl,
     bool? isVerified,
+    String? address,
+    String? bio,
   }) {
     return User(
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
       phone: phone ?? this.phone,
-      userType: userType ?? this.userType,
+      userTypes: userTypes ?? this.userTypes,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
+      address: address ?? this.address,
+      bio: bio ?? this.bio,
     );
   }
 }
@@ -101,6 +131,8 @@ class AuthState {
   final String? token;
   final String? refreshToken;
   final String? error;
+  final String activeRole; // 'client' or 'contractor' - current active role
+  final bool onboardingComplete; // Track if user completed onboarding
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -108,6 +140,8 @@ class AuthState {
     this.token,
     this.refreshToken,
     this.error,
+    this.activeRole = 'client', // Default to client
+    this.onboardingComplete = false, // Default to not completed
   });
 
   AuthState copyWith({
@@ -116,6 +150,8 @@ class AuthState {
     String? token,
     String? refreshToken,
     String? error,
+    String? activeRole,
+    bool? onboardingComplete,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -125,6 +161,8 @@ class AuthState {
       token: token ?? this.token,
       refreshToken: refreshToken ?? this.refreshToken,
       error: clearError ? null : (error ?? this.error),
+      activeRole: activeRole ?? this.activeRole,
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
 
@@ -149,7 +187,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'client@test.pl',
     name: 'Jan Kowalski',
     phone: '+48123456789',
-    userType: 'client',
+    userTypes: ['client'],
     isVerified: true,
   );
 
@@ -158,7 +196,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'contractor@test.pl',
     name: 'Anna Nowak',
     phone: '+48987654321',
-    userType: 'contractor',
+    userTypes: ['contractor'],
     isVerified: true,
   );
 
@@ -185,7 +223,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveToken(mockToken);
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
-    await _storage.saveUserType(user.userType);
+    await _storage.saveUserType(user.userTypes.first);
 
     state = state.copyWith(
       status: AuthStatus.authenticated,
@@ -200,13 +238,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // Check for stored tokens
+      // Check for stored tokens and onboarding completion
       final token = await _storage.getToken();
       final refreshToken = await _storage.getRefreshToken();
+      final onboardingComplete = await _storage.isOnboardingComplete();
 
       if (token == null) {
         // No stored credentials - user must login
-        state = state.copyWith(status: AuthStatus.unauthenticated);
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          onboardingComplete: onboardingComplete,
+        );
         return;
       }
 
@@ -231,6 +273,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           token: token,
           refreshToken: refreshToken,
           user: cachedUser,
+          onboardingComplete: onboardingComplete,
         );
 
         // In dev mode with mock token, skip server validation
@@ -342,7 +385,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
-    await _storage.saveUserType(user.userType);
+    await _storage.saveUserType(user.userTypes.first);
     _ref.read(apiClientProvider).setAuthToken(token);
   }
 
@@ -365,6 +408,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+
+      // DEBUG: Print JWT token for backend API testing
+      debugPrint('=== JWT TOKEN FOR API TESTING ===');
+      debugPrint('Token: $token');
+      debugPrint('User: ${user.email}');
+      debugPrint('=================================');
 
       await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
 
@@ -629,6 +678,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Add a role to the current user (client or contractor)
+  /// Creates empty profile when role is added
+  Future<void> addRole(String role) async {
+    if (!state.isAuthenticated) return;
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/users/me/add-role',
+        data: {'role': role},
+      );
+
+      // Refresh user data to get updated roles
+      await refreshUser();
+    } catch (e) {
+      // Error adding role
+      state = state.copyWith(
+        error: 'Failed to add role: $e',
+      );
+      rethrow;
+    }
+  }
+
+  /// Set the active role for the current session
+  /// Only works if user has this role
+  void setActiveRole(String role) {
+    if (state.user?.userTypes.contains(role) == true) {
+      state = state.copyWith(activeRole: role);
+    }
+  }
+
   /// Logout user
   Future<void> logout() async {
     // Set contractor offline before logout
@@ -697,6 +777,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       rethrow;
     }
   }
+
+  /// Mark onboarding as complete
+  /// Updates both storage and state
+  Future<void> markOnboardingComplete() async {
+    print('🔧 AuthProvider: Marking onboarding as complete');
+    print('  - Before: onboardingComplete = ${state.onboardingComplete}');
+    await _storage.setOnboardingComplete();
+    state = state.copyWith(onboardingComplete: true);
+    print('  - After: onboardingComplete = ${state.onboardingComplete}');
+  }
+
+  /// Reset onboarding flag (dev/testing only)
+  /// Use this to test onboarding flow again
+  Future<void> resetOnboarding() async {
+    await _storage.deleteOnboardingComplete();
+    state = state.copyWith(onboardingComplete: false);
+  }
 }
 
 /// Auth state provider
@@ -728,4 +825,9 @@ final isClientProvider = Provider<bool>((ref) {
 /// Convenience provider for checking if user is a contractor
 final isContractorProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).user?.isContractor ?? false;
+});
+
+/// Convenience provider for checking if user has completed onboarding
+final onboardingCompleteProvider = Provider<bool>((ref) {
+  return ref.watch(authProvider).onboardingComplete;
 });

@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Szybka Fucha** is a mobile marketplace platform connecting busy professionals with local helpers for immediate small tasks (micro-gigs). The platform consists of three main components:
+**Szybka Fucha** is a mobile marketplace platform connecting busy professionals with local helpers for immediate small tasks (micro-gigs). The platform consists of four main components:
 
 1. **Landing Page** - Static HTML/CSS/JS for pre-launch newsletter collection
 2. **Backend** - NestJS REST API with TypeORM and PostgreSQL
 3. **Admin Panel** - React + Chakra UI dashboard for user management
-4. **Mobile App** (Future) - Flutter application (not yet in repo)
+4. **Mobile App** - Flutter application with Riverpod state management
 
 ## Tech Stack
 
@@ -29,6 +29,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **State/Data**: TanStack Query (React Query)
 - **Routing**: React Router v7
 - **HTTP Client**: Axios
+
+### Mobile App (Flutter)
+- **Framework**: Flutter 3.x with Dart
+- **State Management**: Riverpod (flutter_riverpod)
+- **Routing**: Go Router (go_router)
+- **HTTP Client**: Dio with interceptors
+- **Real-time**: Socket.io client for WebSocket
+- **Maps**: Google Maps Flutter
+- **Storage**: Shared Preferences, Flutter Secure Storage
 
 ### Landing Page
 - **Pure**: Vanilla HTML5, CSS3, JavaScript
@@ -54,6 +63,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │   │   ├── admin/           # Admin-only endpoints
 │   │   └── database/seeds/  # Database seeding scripts
 │   └── DEPLOYMENT.md        # Production deployment guide
+├── mobile/           # Flutter mobile app
+│   └── lib/
+│       ├── core/            # Shared code (providers, theme, widgets, router)
+│       │   ├── providers/   # Riverpod providers (auth, tasks, api)
+│       │   ├── theme/       # App colors, typography, spacing
+│       │   ├── widgets/     # Reusable UI components (sf_*)
+│       │   ├── router/      # Go Router configuration
+│       │   └── services/    # WebSocket, notifications
+│       └── features/        # Feature modules
+│           ├── auth/        # Login, registration screens
+│           ├── client/      # Client-specific screens (task creation, tracking)
+│           └── contractor/  # Contractor-specific screens (task list, active task)
 ├── admin/            # React admin dashboard
 │   └── src/
 │       ├── pages/           # Dashboard, Users, Tasks, Disputes
@@ -62,7 +83,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── assets/           # Landing page images & videos
 ├── tasks/            # Project documentation
 │   ├── prd-szybka-fucha.md            # Product Requirements Document
-│   └── tasks-prd-szybka-fucha.md      # Development progress tracker
+│   ├── tasks-prd-szybka-fucha.md      # Development progress tracker
+│   └── job_flow.md                    # Task lifecycle flow documentation
 ├── currentupdate.md  # Change log for Claude's tasks (see "Change Tracking with currentupdate.md")
 ├── index.html        # Landing page (Polish)
 ├── index-en.html     # Landing page (English/British)
@@ -123,6 +145,38 @@ npm run build
 
 # Testing
 npm test
+```
+
+### Mobile App Development (Flutter)
+
+```bash
+cd mobile
+
+# Install dependencies
+flutter pub get
+
+# Run on iOS simulator
+flutter run -d ios
+
+# Run on Android emulator
+flutter run -d android
+
+# Run with specific device
+flutter devices              # List available devices
+flutter run -d <device_id>
+
+# Build release
+flutter build ios --release
+flutter build apk --release
+
+# Code generation (if using build_runner)
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Analyze code
+flutter analyze
+
+# Run tests
+flutter test
 ```
 
 ### Landing Page Development
@@ -194,9 +248,54 @@ User (1) ──< (n) Payment
 User (1) ──< (1) KycCheck
 ```
 
+**Key Task Entity Fields:**
+```typescript
+// Status tracking
+status: TaskStatus;           // CREATED, ACCEPTED, CONFIRMED, IN_PROGRESS, PENDING_COMPLETE, COMPLETED, CANCELLED, DISPUTED
+clientRated: boolean;         // True when client has submitted rating
+contractorRated: boolean;     // True when contractor has submitted rating
+
+// Timestamps
+createdAt, acceptedAt, confirmedAt, startedAt, completedAt, cancelledAt
+
+// Financial
+budgetAmount, finalAmount, commissionAmount, tipAmount
+```
+
+### Mobile App Architecture (Flutter)
+
+**State Management (Riverpod):**
+- `authProvider` - User authentication state
+- `clientTasksProvider` - Client's task list and operations
+- `activeTaskProvider` - Contractor's current active task
+- `availableTasksProvider` - Tasks available for contractors
+- `apiClientProvider` - Dio HTTP client instance
+
+**Key Providers in `mobile/lib/core/providers/`:**
+```dart
+// Auth state with JWT token management
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>
+
+// Client tasks with CRUD operations
+final clientTasksProvider = StateNotifierProvider<ClientTasksNotifier, ClientTasksState>
+
+// Active task for contractor (single task at a time)
+final activeTaskProvider = StateNotifierProvider<ActiveTaskNotifier, ActiveTaskState>
+```
+
+**Routing (Go Router):**
+- Routes defined in `mobile/lib/core/router/routes.dart`
+- Guarded routes based on auth state and user type (client/contractor)
+- Deep linking support for task-specific screens
+
+**Feature Modules:**
+- Each feature has its own `screens/`, `models/`, `widgets/` subdirectories
+- Client and Contractor have separate feature modules with different UX flows
+
 ### Real-time Architecture
 
-- WebSocket gateway in `realtime/` module
+- WebSocket gateway in `realtime/` module (backend)
+- Mobile app connects via `WebSocketService` in `mobile/lib/core/services/`
 - Events: task updates, new messages, location tracking
 - Rooms: per-task chat rooms, user notification rooms
 - All socket events require JWT authentication
@@ -374,6 +473,8 @@ The landing page includes a comprehensive signup form that serves dual purposes:
    - Display name in Polish UI: **pracownik**
 3. **Admin**: Platform operator, dispute resolution
 
+**MVP Restriction**: Dual-role functionality is disabled for MVP. Users select their role during registration and cannot switch roles afterward. The backend still supports `types` array for future dual-role support, but role switching endpoints are protected and UI is removed. See `currentupdate.md` entry [2026-02-09] for details.
+
 **Note**: See "User Type Naming Convention" in Important Conventions section for naming rules.
 
 ### Task Categories
@@ -389,10 +490,22 @@ Six core categories defined in PRD:
 ### Task Lifecycle
 
 ```
-POSTED → ACCEPTED → IN_PROGRESS → COMPLETED → RATED
-           ↓
-       DISPUTED → RESOLVED
+CREATED → ACCEPTED → CONFIRMED → IN_PROGRESS → PENDING_COMPLETE → COMPLETED
+                                                      ↓
+                                                  DISPUTED → RESOLVED
 ```
+
+**Status Descriptions:**
+- `CREATED` - Task posted by client, waiting for contractor
+- `ACCEPTED` - Contractor accepted, waiting for client confirmation
+- `CONFIRMED` - Client confirmed contractor, work can begin
+- `IN_PROGRESS` - Contractor is working on the task
+- `PENDING_COMPLETE` - Client confirmed job done, awaiting ratings
+- `COMPLETED` - Both client and contractor have rated (dual-rating requirement)
+
+**Dual-Rating System:**
+- Task status changes to `COMPLETED` only when BOTH `clientRated` AND `contractorRated` flags are true
+- Ratings are stored in the `ratings` table with `fromUserId`, `toUserId`, `rating` (1-5), `comment`
 
 ### Commission Model
 
@@ -418,8 +531,14 @@ npm run seed:fresh  # Drop everything and recreate
 
 1. Start database: `docker-compose up -d postgres redis`
 2. Start backend: `cd backend && npm run start:dev`
-3. Start admin panel: `cd admin && npm start`
-4. Serve landing page: `python3 -m http.server 8000` (from root)
+3. Start mobile app: `cd mobile && flutter run`
+4. Start admin panel: `cd admin && npm start`
+5. Serve landing page: `python3 -m http.server 8000` (from root)
+
+**Mobile App Configuration:**
+- API URL configured in `mobile/lib/core/api/api_config.dart`
+- For iOS simulator: `http://localhost:3000`
+- For Android emulator: `http://10.0.2.2:3000`
 
 ### API Endpoints Overview
 
@@ -440,6 +559,21 @@ npm run seed:fresh  # Drop everything and recreate
 - `/messages/*` - In-app messaging
 - `/kyc/*` - Identity verification
 
+**Task Lifecycle Endpoints:**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/tasks` | POST | Create new task (client) |
+| `/tasks` | GET | List tasks (filtered by user type) |
+| `/tasks/:id/accept` | PUT | Contractor accepts task |
+| `/tasks/:id/confirm-contractor` | PUT | Client confirms contractor |
+| `/tasks/:id/reject-contractor` | PUT | Client rejects, task returns to CREATED |
+| `/tasks/:id/start` | PUT | Contractor starts work |
+| `/tasks/:id/confirm-completion` | PUT | Client confirms job done → PENDING_COMPLETE |
+| `/tasks/:id/complete` | PUT | Contractor acknowledges completion |
+| `/tasks/:id/rate` | POST | Submit rating (1-5) + optional comment |
+| `/tasks/:id/tip` | POST | Client adds tip |
+| `/tasks/:id/cancel` | PUT | Cancel task (behavior differs by user type) |
+
 **Admin Only**:
 - `/admin/*` - Admin operations
 - `/newsletter/subscribers` - View all newsletter subscribers
@@ -455,12 +589,14 @@ Refer to `/tasks/tasks-prd-szybka-fucha.md` for current progress and remaining t
 - Backend API structure with all core modules
 - Admin panel with user management dashboard
 - Database schema and relationships
+- Flutter mobile app with full task lifecycle
+- Dual-rating system (both parties must rate for completion)
+- Real-time WebSocket integration
+- Contractor profile with bio, ratings, avatar
 
 **In Progress/Planned**:
-- Flutter mobile app
-- Real-time location tracking
-- Payment integration testing
-- KYC verification flow
+- Payment integration testing (Stripe)
+- KYC verification flow (Onfido)
 - Production deployment
 
 ## Additional Resources
@@ -524,6 +660,42 @@ When syncing changes across language versions:
 - Check database: Connect to pgAdmin at `localhost:5050`
 - Check API responses: Use Postman or `curl` commands
 - Enable TypeORM logging: Set `logging: true` in `app.module.ts`
+
+### Test Contractor Profile Integration
+
+The contractor profile system links mobile app profile screens to the database. Full documentation: `docs/task-summaries/contractor-profile-integration-2026-01-31.md`
+
+**Quick Test Steps:**
+
+1. **Backend endpoint test** (requires JWT token):
+```bash
+curl -X GET http://localhost:3000/api/v1/contractor/{contractorUserId}/public \
+  -H "Authorization: Bearer {jwt_token}" \
+  -H "Content-Type: application/json"
+```
+
+2. **Contractor bio persistence**:
+   - Login as contractor → Profile → "Edytuj profil"
+   - Edit bio → Save → Exit → Re-enter
+   - Verify bio persists (not empty)
+
+3. **Client "Profil" popup**:
+   - Login as client → Create task → Wait for contractor accept
+   - Task tracking screen → Tap "Profil" on contractor card
+   - Verify: Loading spinner → Real bio displayed (or placeholder if empty)
+
+4. **Contractor ratings**:
+   - Login as contractor → Profile → "Edytuj profil"
+   - Scroll to ratings section
+   - Verify: Real values from database (not hardcoded 4.7/32)
+
+**API Endpoint Reference:**
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/contractor/:userId/public` | GET | JWT | Public contractor profile for clients |
+| `/contractor/profile` | GET | JWT | Current contractor's own profile |
+| `/users/me` | PUT | JWT | Update user profile (name, bio, address) |
 
 ## Documentation Standards
 After completing any significant task:

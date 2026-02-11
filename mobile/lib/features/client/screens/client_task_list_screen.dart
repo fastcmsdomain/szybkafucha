@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/router/routes.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
@@ -99,10 +101,22 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endContained,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openCreateTask,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Nowe zlecenie'),
+      ),
     );
   }
 
   Widget _buildMapTab(AvailableTasksState tasksState, List<ContractorTask> tasks) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    const fabHeightWithMargin = 72.0; // approx. extended FAB height + default margin
+    final overlayBottom = AppSpacing.paddingMD + fabHeightWithMargin + bottomInset;
+
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -226,7 +240,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         // Zoom controls
         Positioned(
           right: AppSpacing.paddingMD,
-          bottom: AppSpacing.paddingMD,
+          bottom: overlayBottom,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -282,7 +296,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         return NearbyTaskCard(
           task: task,
           showActions: false,
-          onTap: () => _showTaskDetails(task),
+          onTap: null,
         );
       },
     );
@@ -333,6 +347,10 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
     final newZoom = (_currentZoom + 2).clamp(5.0, 15.0);
     _mapController.move(cluster.center, newZoom);
     setState(() => _currentZoom = newZoom);
+  }
+
+  void _openCreateTask() {
+    context.go(Routes.clientCreateTask);
   }
 
   Widget _buildLoadingState() {
@@ -503,6 +521,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
     return task.status == ContractorTaskStatus.available ||
         task.status == ContractorTaskStatus.accepted ||
         task.status == ContractorTaskStatus.confirmed ||
-        task.status == ContractorTaskStatus.inProgress;
+        task.status == ContractorTaskStatus.inProgress ||
+        task.status == ContractorTaskStatus.pendingComplete;
   }
 }

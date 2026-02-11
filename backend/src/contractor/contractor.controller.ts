@@ -10,6 +10,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Param,
 } from '@nestjs/common';
 import { ContractorService } from './contractor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,6 +22,25 @@ import type { AuthenticatedRequest } from '../auth/types/authenticated-request.t
 @UseGuards(JwtAuthGuard)
 export class ContractorController {
   constructor(private readonly contractorService: ContractorService) {}
+
+  /**
+   * GET /contractor/:userId/public
+   * Get public contractor profile for clients viewing contractor
+   * Returns safe public fields: name, avatar, bio, ratings, categories
+   */
+  @Get(':userId/public')
+  async getPublicProfile(@Param('userId') userId: string) {
+    return this.contractorService.getPublicProfile(userId);
+  }
+
+  /**
+   * GET /contractor/:userId/reviews
+   * Get public contractor reviews for client-facing views
+   */
+  @Get(':userId/reviews')
+  async getPublicReviews(@Param('userId') userId: string) {
+    return this.contractorService.getPublicContractorReviews(userId);
+  }
 
   /**
    * GET /contractor/profile
@@ -37,23 +57,37 @@ export class ContractorController {
   }
 
   /**
+   * GET /contractor/reviews
+   * Get current contractor's reviews list with rating summary
+   */
+  @Get('reviews')
+  async getReviews(@Request() req: AuthenticatedRequest) {
+    return this.contractorService.getContractorReviews(req.user.id);
+  }
+
+  /**
    * PUT /contractor/profile
    * Update contractor profile (bio, categories, radius)
+   * Automatically creates profile if it doesn't exist (lazy creation)
    */
   @Put('profile')
   async updateProfile(
     @Request() req: AuthenticatedRequest,
     @Body() dto: UpdateContractorProfileDto,
   ) {
-    // Create profile if doesn't exist
-    const existingProfile = await this.contractorService.findByUserId(
-      req.user.id,
-    );
-    if (!existingProfile) {
-      await this.contractorService.create(req.user.id);
-    }
-
     return this.contractorService.update(req.user.id, dto);
+  }
+
+  /**
+   * GET /contractor/profile/complete
+   * Check if contractor profile is complete
+   * Returns: { complete: boolean }
+   */
+  @Get('profile/complete')
+  async checkProfileComplete(@Request() req: AuthenticatedRequest) {
+    return {
+      complete: await this.contractorService.isProfileComplete(req.user.id),
+    };
   }
 
   /**

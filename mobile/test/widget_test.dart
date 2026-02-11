@@ -34,6 +34,6 @@ void main() {
 
     // Find MaterialApp.router and check title
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
-    expect(app.title, 'Szybka Fucha');
+    expect(app.title, 'SzybkaFucha');
   });
 }

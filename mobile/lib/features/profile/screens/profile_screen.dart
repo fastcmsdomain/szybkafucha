@@ -24,12 +24,6 @@ class ProfileScreen extends ConsumerWidget {
           style: AppTypography.h4,
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(Routes.settings),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppSpacing.paddingLG),
@@ -49,8 +43,22 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.person_outline,
                   title: 'Edytuj profil',
                   onTap: () {
-                    // TODO: Navigate to edit profile
-                    _showComingSoon(context, 'Edycja profilu');
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorProfileEdit);
+                    } else {
+                      context.push(Routes.clientProfileEdit);
+                    }
+                  },
+                ),
+                _buildMenuItem(
+                  icon: Icons.reviews_outlined,
+                  title: 'Opinie',
+                  onTap: () {
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorReviews);
+                    } else {
+                      context.push(Routes.clientReviews);
+                    }
                   },
                 ),
                 _buildMenuItem(
@@ -84,15 +92,7 @@ class ProfileScreen extends ConsumerWidget {
                     _showComingSoon(context, 'Wybór języka');
                   },
                 ),
-                _buildMenuItem(
-                  icon: Icons.dark_mode_outlined,
-                  title: 'Tryb ciemny',
-                  subtitle: 'Wyłączony',
-                  onTap: () {
-                    // TODO: Dark mode toggle
-                    _showComingSoon(context, 'Tryb ciemny');
-                  },
-                ),
+                // MVP: Dark mode hidden - not needed for MVP
               ],
             ),
 

@@ -16,6 +16,7 @@ import {
   ArrayMaxSize,
   IsUrl,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TaskCategory } from '../../contractor/entities/contractor-profile.entity';
 
 export class CreateTaskDto {
@@ -44,9 +45,16 @@ export class CreateTaskDto {
   @IsNotEmpty()
   address: string;
 
+  @Type(() => Number)
   @IsNumber()
-  @Min(30) // Minimum 30 PLN per PRD
+  @Min(35) // Minimum 35 PLN per job flow requirements
   budgetAmount: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.5) // Minimum 0.5 hour (30 minutes)
+  estimatedDurationHours?: number;
 
   @IsOptional()
   @IsDateString()
@@ -55,6 +63,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(5)
-  @IsUrl({}, { each: true })
+  @IsUrl(
+    {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+      require_tld: false,
+    },
+    { each: true },
+  )
   imageUrls?: string[];
 }

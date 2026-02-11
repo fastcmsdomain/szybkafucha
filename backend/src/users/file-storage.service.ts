@@ -23,8 +23,17 @@ export class FileStorageService {
   private readonly logger = new Logger(FileStorageService.name);
   private readonly uploadDir: string;
   private readonly baseUrl: string;
+  private readonly taskImagesDir: string;
+  private readonly taskImagesBaseUrl: string;
+  private readonly serverUrl: string;
 
   constructor(private readonly configService: ConfigService) {
+    // Server base URL for constructing full URLs
+    this.serverUrl = this.configService.get<string>(
+      'SERVER_URL',
+      'http://localhost:3000',
+    );
+
     // Default to local uploads directory
     this.uploadDir = this.configService.get<string>(
       'UPLOAD_DIR',
@@ -35,8 +44,19 @@ export class FileStorageService {
       '/uploads/avatars',
     );
 
-    // Ensure upload directory exists
+    // Task images directory
+    this.taskImagesDir = this.configService.get<string>(
+      'TASK_IMAGES_DIR',
+      './uploads/tasks',
+    );
+    this.taskImagesBaseUrl = this.configService.get<string>(
+      'TASK_IMAGES_BASE_URL',
+      '/uploads/tasks',
+    );
+
+    // Ensure upload directories exist
     this.ensureUploadDir();
+    this.ensureTaskImagesDir();
   }
 
   /**
@@ -46,6 +66,16 @@ export class FileStorageService {
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
       this.logger.log(`Created upload directory: ${this.uploadDir}`);
+    }
+  }
+
+  /**
+   * Ensure task images directory exists
+   */
+  private ensureTaskImagesDir(): void {
+    if (!fs.existsSync(this.taskImagesDir)) {
+      fs.mkdirSync(this.taskImagesDir, { recursive: true });
+      this.logger.log(`Created task images directory: ${this.taskImagesDir}`);
     }
   }
 
@@ -76,10 +106,45 @@ export class FileStorageService {
       await fs.promises.writeFile(filepath, file.buffer);
       this.logger.log(`Avatar uploaded: ${filename} for user ${userId}`);
 
-      // Return public URL
-      return `${this.baseUrl}/${filename}`;
+      // Return full public URL (not relative)
+      return `${this.serverUrl}${this.baseUrl}/${filename}`;
     } catch (error) {
       this.logger.error(`Failed to upload avatar: ${error}`);
+      throw new BadRequestException('Failed to upload file');
+    }
+  }
+
+  /**
+   * Upload task image file
+   * Returns the public URL of the uploaded file
+   */
+  async uploadTaskImage(file: UploadedFile, userId: string): Promise<string> {
+    // Validate file
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No file provided');
+    }
+
+    // Get file extension from mimetype
+    const extension = this.getExtensionFromMimetype(file.mimetype);
+    if (!extension) {
+      throw new BadRequestException(
+        'Invalid file type. Allowed: JPEG, PNG, WebP',
+      );
+    }
+
+    // Generate unique filename
+    const filename = `task-${userId}-${crypto.randomUUID()}${extension}`;
+    const filepath = path.join(this.taskImagesDir, filename);
+
+    try {
+      // Write file to disk
+      await fs.promises.writeFile(filepath, file.buffer);
+      this.logger.log(`Task image uploaded: ${filename} by user ${userId}`);
+
+      // Return full public URL (not relative) for DTO validation
+      return `${this.serverUrl}${this.taskImagesBaseUrl}/${filename}`;
+    } catch (error) {
+      this.logger.error(`Failed to upload task image: ${error}`);
       throw new BadRequestException('Failed to upload file');
     }
   }
@@ -88,11 +153,23 @@ export class FileStorageService {
    * Delete avatar file
    */
   async deleteAvatar(avatarUrl: string): Promise<void> {
-    if (!avatarUrl || !avatarUrl.startsWith(this.baseUrl)) {
-      return; // Not a local file or no avatar
+    if (!avatarUrl) {
+      return; // No avatar
     }
 
-    const filename = avatarUrl.replace(`${this.baseUrl}/`, '');
+    // Handle both full URLs and relative paths
+    let filename: string;
+    if (avatarUrl.startsWith(this.serverUrl)) {
+      // Full URL: extract filename from full URL
+      filename = avatarUrl.replace(`${this.serverUrl}${this.baseUrl}/`, '');
+    } else if (avatarUrl.startsWith(this.baseUrl)) {
+      // Relative path: extract filename
+      filename = avatarUrl.replace(`${this.baseUrl}/`, '');
+    } else {
+      // Not a local file
+      return;
+    }
+
     const filepath = path.join(this.uploadDir, filename);
 
     try {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/providers/task_provider.dart';
@@ -24,13 +25,40 @@ class ContractorHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
+  bool _isProfileComplete = true; // Assume complete until checked
+  bool _isCheckingProfile = true;
+
   @override
   void initState() {
     super.initState();
     // Load available tasks on screen open
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
+      _checkProfileCompletion();
     });
+  }
+
+  Future<void> _checkProfileCompletion() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get<Map<String, dynamic>>(
+        '/contractor/profile/complete',
+      );
+
+      if (mounted) {
+        setState(() {
+          _isProfileComplete = response['complete'] as bool? ?? false;
+          _isCheckingProfile = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking profile completion: $e');
+      if (mounted) {
+        setState(() {
+          _isCheckingProfile = false;
+        });
+      }
+    }
   }
 
   @override
@@ -98,6 +126,13 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
                     SizedBox(height: AppSpacing.space6),
 
+                    // Profile completion banner (if incomplete)
+                    if (!_isCheckingProfile && !_isProfileComplete)
+                      ...[
+                        _buildCompletionBanner(),
+                        SizedBox(height: AppSpacing.space6),
+                      ],
+
                     // Availability toggle
                     Consumer(
                       builder: (context, ref, _) {
@@ -140,6 +175,38 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
       style: AppTypography.h3.copyWith(
         color: AppColors.gray900,
         fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  Widget _buildCompletionBanner() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.warning),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: AppColors.warning, size: 28),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Text(
+              'Dokończ rejestrację, aby zacząć zarabiać',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push(Routes.contractorProfileEdit),
+            child: Text(
+              'Uzupełnij',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

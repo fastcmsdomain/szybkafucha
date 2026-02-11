@@ -142,8 +142,10 @@ export const dashboardApi = {
   getMetrics: () => apiFetch('/admin/dashboard'),
 };
 
-export default {
+const apiService = {
   tasks: tasksApi,
   disputes: disputesApi,
   dashboard: dashboardApi,
 };
+
+export default apiService;

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/providers/task_provider.dart';
 
 /// Task completion and rating screen
 class TaskCompletionScreen extends ConsumerStatefulWidget {
@@ -53,6 +54,12 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tasksState = ref.watch(clientTasksProvider);
+    final currentTask = tasksState.tasks
+        .where((task) => task.id == widget.taskId)
+        .firstOrNull;
+    final contractor = currentTask?.contractor;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -69,7 +76,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               SizedBox(height: AppSpacing.space8),
 
               // Rating section
-              _buildRatingSection(),
+              _buildRatingSection(
+                contractorName: contractor?.name,
+                contractorAvatarUrl: contractor?.avatarUrl,
+              ),
 
               SizedBox(height: AppSpacing.space6),
 
@@ -139,7 +149,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     );
   }
 
-  Widget _buildRatingSection() {
+  Widget _buildRatingSection({
+    String? contractorName,
+    String? contractorAvatarUrl,
+  }) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingLG),
       decoration: BoxDecoration(
@@ -149,6 +162,38 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
       ),
       child: Column(
         children: [
+          if (contractorName != null && contractorName.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.gray200,
+                  backgroundImage: contractorAvatarUrl != null &&
+                          contractorAvatarUrl.isNotEmpty
+                      ? NetworkImage(contractorAvatarUrl)
+                      : null,
+                  child: contractorAvatarUrl == null || contractorAvatarUrl.isEmpty
+                      ? Text(
+                          contractorName[0].toUpperCase(),
+                          style: AppTypography.h4.copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Flexible(
+                  child: Text(
+                    contractorName,
+                    style: AppTypography.labelLarge,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.space4),
+          ],
           Text(
             'Jak oceniasz usługę?',
             style: AppTypography.labelLarge,
@@ -224,12 +269,12 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
                 style: AppTypography.labelLarge,
               ),
               SizedBox(width: AppSpacing.gapSM),
-              Text(
-                '(opcjonalnie)',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
+                Text(
+                  '(opcjonalnie)',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
                 ),
-              ),
             ],
           ),
           SizedBox(height: AppSpacing.gapMD),
@@ -376,8 +421,25 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     setState(() => _isSubmitting = true);
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      final tasksNotifier = ref.read(clientTasksProvider.notifier);
+
+      // 1) Client confirms completion (moves task to pending_complete)
+      await tasksNotifier.confirmTask(widget.taskId);
+
+      // 2) Send rating + optional comment
+      await tasksNotifier.rateTask(
+        widget.taskId,
+        rating: _rating,
+        comment: _reviewController.text.isNotEmpty ? _reviewController.text : null,
+      );
+
+      // 3) Optional tip
+      if (_selectedTip != null && _selectedTip! > 0) {
+        await tasksNotifier.addTip(widget.taskId, _selectedTip!.toDouble());
+      }
+
+      // Refresh cached tasks
+      await tasksNotifier.refresh();
 
       if (mounted) {
         _showThankYouDialog();
@@ -470,8 +532,10 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
             child: Text('Zostań i oceń'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              await ref.read(clientTasksProvider.notifier).confirmTask(widget.taskId);
+              await ref.read(clientTasksProvider.notifier).refresh();
               context.go(Routes.clientHome);
             },
             child: Text(

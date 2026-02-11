@@ -238,16 +238,22 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
   Widget _buildTaskCard(Task task, {required bool isActive}) {
     final category = task.categoryData;
+    final isLocked = task.status == TaskStatus.pendingComplete;
 
     return GestureDetector(
-      onTap: () {
-        if (isActive && task.status == TaskStatus.inProgress) {
-          context.push(Routes.clientTaskTrack(task.id));
-        } else {
-          // Show task details in a bottom sheet
-          _showTaskDetails(task);
-        }
-      },
+      onTap: isLocked
+          ? null
+          : () {
+              if (isActive &&
+                  (task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.accepted ||
+                      task.status == TaskStatus.confirmed)) {
+                context.push(Routes.clientTaskTrack(task.id));
+              } else {
+                // Show task details in a bottom sheet
+                _showTaskDetails(task);
+              }
+            },
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -312,6 +318,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
             // Footer row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (task.address != null) ...[
                   Icon(
@@ -330,7 +337,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
+                  SizedBox(width: AppSpacing.gapSM),
+                ] else
+                  const Spacer(),
                 Text(
                   '${task.budget} PLN',
                   style: AppTypography.bodyMedium.copyWith(
@@ -341,15 +350,16 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
               ],
             ),
 
-            // Action buttons for active tasks
-            if (isActive) ...[
+            // Action buttons for active tasks (skip waiting-for-contractor-confirmation)
+            if (isActive && task.status != TaskStatus.pendingComplete) ...[
               SizedBox(height: AppSpacing.gapMD),
               Row(
                 children: [
                   // Track button (for in progress tasks)
                   if (task.status == TaskStatus.inProgress ||
                       task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed)
+                      task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.pendingComplete)
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
@@ -358,19 +368,18 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     ),
                   if (task.status == TaskStatus.inProgress ||
                       task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed)
+                      task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
                   // Cancel button (for all active non-completed tasks)
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: () => _showCancelConfirmation(task),
-                      icon: Icon(Icons.cancel_outlined, size: 18, color: AppColors.error),
-                      label: Text(
-                        'Anuluj',
-                        style: TextStyle(color: AppColors.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                      icon: const Icon(Icons.cancel_outlined, size: 18),
+                      label: const Text('Anuluj'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: AppColors.white,
                       ),
                     ),
                   ),
@@ -384,25 +393,18 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
   }
 
   Widget _buildStatusBadge(TaskStatus status) {
-    Color color;
-    String text = status.displayName;
+    Color color = switch (status) {
+      TaskStatus.posted => AppColors.warning,
+      TaskStatus.accepted => AppColors.info,
+      TaskStatus.confirmed => AppColors.success,
+      TaskStatus.inProgress => AppColors.primary,
+      TaskStatus.pendingComplete => AppColors.info,
+      TaskStatus.completed => AppColors.success,
+      TaskStatus.cancelled => AppColors.gray500,
+      TaskStatus.disputed => AppColors.error,
+    };
 
-    switch (status) {
-      case TaskStatus.posted:
-        color = AppColors.warning;
-      case TaskStatus.accepted:
-        color = AppColors.info;
-      case TaskStatus.confirmed:
-        color = AppColors.success;
-      case TaskStatus.inProgress:
-        color = AppColors.primary;
-      case TaskStatus.completed:
-        color = AppColors.success;
-      case TaskStatus.cancelled:
-        color = AppColors.gray500;
-      case TaskStatus.disputed:
-        color = AppColors.error;
-    }
+    String text = status.displayName;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -565,30 +567,27 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   // Action buttons row
                   Row(
                     children: [
-                      // Cancel button (for active tasks)
-                      if (task.status.isActive) ...[
+                  // More button (active tasks) -> task details (skip pendingComplete)
+                  if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: OutlinedButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              _showCancelConfirmation(task);
+                              context.push(Routes.clientTask(task.id));
                             },
-                            icon: Icon(Icons.cancel_outlined, color: AppColors.error),
-                            label: Text(
-                              'Anuluj',
-                              style: TextStyle(color: AppColors.error),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
-                            ),
+                            child: Text('Więcej'),
                           ),
                         ),
                         SizedBox(width: AppSpacing.gapMD),
                       ],
-                      // Close button
+                      // Close button (red)
                       Expanded(
-                        child: OutlinedButton(
+                        child: ElevatedButton(
                           onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.white,
+                          ),
                           child: Text(AppStrings.close),
                         ),
                       ),

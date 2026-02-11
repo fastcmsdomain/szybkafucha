@@ -21,6 +21,7 @@ import { FileStorageService } from './file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserTypeDto } from './dto/update-user-type.dto';
+import { AddRoleDto } from './dto/add-role.dto';
 import {
   UploadAvatarResponseDto,
   ALLOWED_AVATAR_MIMETYPES,
@@ -62,6 +63,7 @@ export class UsersController {
   /**
    * PATCH /users/me/type
    * Updates user type (client to contractor or vice versa)
+   * MVP: Disabled for users who already have roles
    */
   @UseGuards(JwtAuthGuard)
   @Patch('me/type')
@@ -69,9 +71,15 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() updateUserTypeDto: UpdateUserTypeDto,
   ) {
-    return this.usersService.update(req.user.id, {
-      type: updateUserTypeDto.type,
-    });
+    // MVP: Prevent role changes for users who already have roles
+    if (req.user.types && req.user.types.length > 0) {
+      throw new BadRequestException(
+        'Role changes are not allowed in MVP. Please contact support if you need to change your role.',
+      );
+    }
+
+    // In dual-role architecture, this adds a role rather than replacing it
+    return this.usersService.addRole(req.user.id, updateUserTypeDto.type);
   }
 
   /**
@@ -148,5 +156,26 @@ export class UsersController {
       avatarUrl,
       message: 'Avatar uploaded successfully',
     };
+  }
+
+  /**
+   * POST /users/me/add-role
+   * Add a role (client or contractor) to the current user
+   * MVP: Disabled for users who already have roles
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('me/add-role')
+  async addRole(
+    @Request() req: AuthenticatedRequest,
+    @Body() addRoleDto: AddRoleDto,
+  ) {
+    // MVP: Prevent adding roles for users who already have roles
+    if (req.user.types && req.user.types.length > 0) {
+      throw new BadRequestException(
+        'Adding roles is not allowed in MVP. Please contact support if you need to add a role.',
+      );
+    }
+
+    return this.usersService.addRole(req.user.id, addRoleDto.role);
   }
 }

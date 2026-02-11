@@ -47,4 +47,8 @@ abstract class AppColors {
 
   // Star rating color
   static const Color starRating = Color(0xFFFCD34D);
+
+  // Text colors (aliases for convenience)
+  static const Color textPrimary = gray900;
+  static const Color textSecondary = gray600;
 }
