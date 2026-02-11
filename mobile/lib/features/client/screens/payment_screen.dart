@@ -218,12 +218,18 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     Icon(Icons.star, size: 14, color: AppColors.warning),
                     SizedBox(width: 2),
                     Text(
-                      '${contractor.formattedRating} (${contractor.reviewCount})',
+                      contractor.formattedRating,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
                     ),
                   ],
+                ),
+                Text(
+                  '${contractor.reviewCount} opinii',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
                 ),
               ],
             ),

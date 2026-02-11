@@ -256,28 +256,27 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Wrap(
-                        spacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                      Row(
                         children: [
                           Icon(
                             Icons.star,
                             size: 12,
                             color: AppColors.warning,
                           ),
+                          SizedBox(width: 4),
                           Text(
                             rating.toStringAsFixed(1),
                             style: AppTypography.caption.copyWith(
                               color: AppColors.gray600,
                             ),
                           ),
-                          Text(
-                            '$reviewCount opinii',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray500,
-                            ),
-                          ),
                         ],
+                      ),
+                      Text(
+                        '$reviewCount opinii',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.gray500,
+                        ),
                       ),
                     ],
                   ),

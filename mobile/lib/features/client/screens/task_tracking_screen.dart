@@ -100,6 +100,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   double? _taskLng;
   String? _taskAddress;
 
+  // Track contractor whose real stats have been fetched
+  String? _fetchedStatsContractorId;
+
   // Confirmation loading state
   bool _isConfirming = false;
   bool _isRejecting = false;
@@ -133,12 +136,20 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       _task = task;
       _status = _mapTaskStatus(task.status);
       if (task.contractor != null) {
-        _contractor = task.contractor;
+        // Don't overwrite contractor if we already fetched real stats for this one
+        if (_fetchedStatsContractorId != task.contractor!.id) {
+          _contractor = task.contractor;
+        }
       }
       _taskLat = task.latitude;
       _taskLng = task.longitude;
       _taskAddress = task.address;
     });
+
+    // Fetch real stats if we haven't yet for this contractor
+    if (task.contractor != null && _fetchedStatsContractorId != task.contractor!.id) {
+      _fetchContractorStats(task.contractor!.id);
+    }
   }
 
   /// Map TaskStatus to TrackingStatus (5 states)
@@ -159,6 +170,42 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       case TaskStatus.cancelled:
       case TaskStatus.disputed:
         return TrackingStatus.searching;
+    }
+  }
+
+  /// Fetch real contractor stats (rating, reviewCount, completedTasks) from backend.
+  /// Uses both /public and /reviews endpoints because /public returns stale
+  /// cached values from contractor_profiles table (defaults to 0).
+  Future<void> _fetchContractorStats(String contractorId) async {
+    try {
+      final api = ref.read(apiClientProvider);
+
+      // Fetch profile and reviews in parallel
+      final results = await Future.wait([
+        api.get('/contractor/$contractorId/public'),
+        api.get('/contractor/$contractorId/reviews'),
+      ]);
+      if (!mounted) return;
+
+      final profileData = results[0] as Map<String, dynamic>;
+      final reviewsData = results[1] as Map<String, dynamic>;
+
+      // Override stale rating from profile with real computed values from reviews
+      final realRatingAvg = double.tryParse(reviewsData['ratingAvg']?.toString() ?? '') ?? 0.0;
+      final realRatingCount = int.tryParse(reviewsData['ratingCount']?.toString() ?? '') ?? 0;
+
+      profileData['ratingAvg'] = realRatingAvg;
+      profileData['ratingCount'] = realRatingCount;
+      profileData['rating'] = realRatingAvg;
+      profileData['review_count'] = realRatingCount;
+
+      setState(() {
+        _contractor = Contractor.fromJson(profileData);
+        _fetchedStatsContractorId = contractorId;
+      });
+      debugPrint('✅ Contractor stats fetched: rating=${_contractor?.rating}, reviews=${_contractor?.reviewCount}');
+    } catch (e) {
+      debugPrint('⚠️ Failed to fetch contractor stats: $e');
     }
   }
 
@@ -211,8 +258,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     setState(() {
       _status = _mapStringStatus(event.status);
 
-      // Update contractor info if provided
-      if (event.contractor != null) {
+      // Update contractor info if provided (only if we haven't fetched real stats yet)
+      if (event.contractor != null && _fetchedStatsContractorId != event.contractor!.id) {
         _contractor = Contractor(
           id: event.contractor!.id,
           name: event.contractor!.name,
@@ -225,6 +272,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     });
+
+    // Fetch real contractor stats from public profile endpoint
+    if (event.contractor != null && _fetchedStatsContractorId != event.contractor!.id) {
+      _fetchContractorStats(event.contractor!.id);
+    }
 
     // Refresh task data from provider to ensure consistency
     // This ensures the UI is updated with the latest data from the backend
@@ -319,8 +371,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         final task = next.tasks.where((t) => t.id == widget.taskId).firstOrNull;
         if (task != null) {
           final newStatus = _mapTaskStatus(task.status);
-          // Only update if status actually changed to avoid unnecessary rebuilds
-          if (newStatus != _status || task.contractor != _contractor) {
+          // Only update if status changed or contractor changed (compare by ID, not reference)
+          if (newStatus != _status || task.contractor?.id != _contractor?.id) {
             debugPrint('🔄 Task provider update: status=${task.status}, hasContractor=${task.contractor != null}');
             _updateFromTask(task);
           }
@@ -698,7 +750,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Nr zleceń: ${_contractor!.completedTasks}',
+                      '${_contractor!.reviewCount} opinii',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -1057,6 +1109,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       setState(() {
         _status = TrackingStatus.searching;
         _contractor = null;
+        _fetchedStatsContractorId = null;
         _isRejecting = false;
       });
 
@@ -1753,14 +1806,14 @@ class _ContractorProfileSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  '${contractor.reviewCount} opinii',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.gray500,
-                                  ),
-                                ),
                               ],
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              '${contractor.reviewCount} opinii',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
                             ),
                           ],
                         ),

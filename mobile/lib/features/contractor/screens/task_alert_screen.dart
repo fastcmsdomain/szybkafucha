@@ -406,14 +406,14 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    '$reviewCount opinii',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.gray500,
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                '$reviewCount opinii',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.gray500,
+                                ),
                               ),
                             ],
                           ),
@@ -1143,14 +1143,14 @@ class _TaskAlertClientProfileSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  '$reviewCount opinii',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.gray500,
-                                  ),
-                                ),
                               ],
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              '$reviewCount opinii',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
                             ),
                           ],
                         ),
