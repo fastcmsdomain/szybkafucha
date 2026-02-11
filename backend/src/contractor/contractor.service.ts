@@ -408,15 +408,27 @@ export class ContractorService {
       relations: ['user'],
     });
 
-    // If contractor profile exists, return full data
+    // If contractor profile exists, return full data with real computed ratings
     if (profile && profile.user) {
+      // Compute real ratings from ratings table instead of stale cached values
+      const ratingResult = await this.ratingRepository
+        .createQueryBuilder('rating')
+        .select('AVG(rating.rating)', 'avg')
+        .addSelect('COUNT(rating.id)', 'count')
+        .where('rating.toUserId = :userId', { userId })
+        .andWhere('rating.role = :role', { role: 'contractor' })
+        .getRawOne<RatingAggregateRow>();
+
+      const computedRatingAvg = ratingResult?.avg ? parseFloat(ratingResult.avg) : 0.0;
+      const computedRatingCount = ratingResult?.count ? parseInt(ratingResult.count, 10) : 0;
+
       return {
         id: profile.userId,
         name: profile.user.name || 'Wykonawca',
         avatarUrl: profile.user.avatarUrl || null,
         bio: profile.bio || null,
-        ratingAvg: Number(profile.ratingAvg) || 0,
-        ratingCount: profile.ratingCount || 0,
+        ratingAvg: computedRatingAvg,
+        ratingCount: computedRatingCount,
         completedTasksCount: profile.completedTasksCount || 0,
         categories: profile.categories || [],
         isVerified: profile.kycStatus === KycStatus.VERIFIED,

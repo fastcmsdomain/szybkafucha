@@ -12,6 +12,20 @@ Each entry documents:
 
 ---
 
+## [2026-02-11] Fix Contractor Card Showing 0.0 Rating and 0 Tasks on Task Tracking Screen
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed contractor card on task tracking screen showing default 0.0 rating and 0 completed tasks instead of real values from backend. Root cause was two-fold: (1) all data sources (WebSocket, task data, `/public` endpoint) returned stale cached values from `contractor_profiles` table, (2) provider listener overwrote fetched data via reference comparison bug.
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `_fetchContractorStats()` method that fetches BOTH `/contractor/:id/public` and `/contractor/:id/reviews` endpoints to get real computed rating data; added `_fetchedStatsContractorId` tracking to prevent provider listener from overwriting fetched data; fixed `clientTasksProvider` listener to compare contractor by ID instead of reference
+  - `backend/src/contractor/contractor.service.ts` – Fixed `getPublicProfile()` to compute real `ratingAvg` and `ratingCount` from `ratings` table using SQL AVG/COUNT instead of returning stale cached values from `contractor_profiles` table
+- **Root Cause**: Three issues combined: (1) `contractor_profiles.ratingAvg` and `ratingCount` columns default to 0 and are never updated when ratings are submitted, (2) `/contractor/:id/public` endpoint returned these stale values, (3) `clientTasksProvider` listener used reference comparison (`task.contractor != _contractor`) causing fetched real data to be overwritten
+- **System Impact**: Contractor card now shows real rating and review count. Backend `/public` endpoint now returns computed ratings for all consumers.
+- **Related Tasks/PRD**: Contractor profile display, task tracking UI
+- **Potential Conflicts/Risks**: Additional API call (reviews endpoint) per contractor assignment on mobile; mitigated by `_fetchedStatsContractorId` preventing re-fetches. Backend change adds one SQL query to `/public` endpoint.
+
+---
+
 ## [2026-02-09] Disable Dual Role Functionality for MVP
 
 - **Developer/Agent**: Claude
