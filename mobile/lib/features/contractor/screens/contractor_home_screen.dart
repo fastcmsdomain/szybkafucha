@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
 import '../../../core/router/routes.dart';
@@ -13,7 +12,6 @@ import '../../../core/services/websocket_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
 import '../models/models.dart';
-import '../widgets/availability_toggle.dart';
 
 /// Contractor home screen / dashboard
 class ContractorHomeScreen extends ConsumerStatefulWidget {
@@ -132,21 +130,6 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                         _buildCompletionBanner(),
                         SizedBox(height: AppSpacing.space6),
                       ],
-
-                    // Availability toggle
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final availabilityState =
-                            ref.watch(contractorAvailabilityProvider);
-                        return AvailabilityToggle(
-                          isOnline: availabilityState.isOnline,
-                          isLoading: availabilityState.isLoading,
-                          onToggle: _toggleAvailability,
-                        );
-                      },
-                    ),
-
-                    SizedBox(height: AppSpacing.space6),
 
                     // Active task section (shows task or placeholder)
                     _buildActiveTaskSection(),
@@ -424,44 +407,6 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
   Future<void> _refreshData() async {
     await ref.read(availableTasksProvider.notifier).refresh();
-  }
-
-  Future<void> _toggleAvailability(bool value) async {
-    try {
-      await ref
-          .read(contractorAvailabilityProvider.notifier)
-          .toggleAvailability(value);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              value
-                  ? 'Jesteś teraz dostępny dla klientów'
-                  : 'Nie będziesz otrzymywać nowych zleceń',
-            ),
-            backgroundColor: value ? AppColors.success : AppColors.gray600,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (_) {
-      // Get error from provider state
-      final errorMessage =
-          ref.read(contractorAvailabilityProvider).error ??
-              'Nie udało się zmienić statusu dostępności';
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
   }
 
   void _showNewTaskAlert(NewTaskEvent task) {
