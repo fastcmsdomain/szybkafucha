@@ -7,7 +7,6 @@ import '../api/api_config.dart';
 import '../services/google_sign_in_service.dart';
 import '../storage/secure_storage.dart';
 import 'api_provider.dart';
-import 'contractor_availability_provider.dart';
 import 'notification_provider.dart';
 import 'storage_provider.dart';
 
@@ -702,17 +701,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Logout user
   Future<void> logout() async {
-    // Set contractor offline before logout
-    if (state.user?.isContractor == true) {
-      try {
-        await _ref
-            .read(contractorAvailabilityProvider.notifier)
-            .setOffline();
-      } catch (_) {
-        // Ignore errors, proceed with logout
-      }
-    }
-
     // Clear FCM token from backend before logout
     try {
       final notificationService = _ref.read(notificationServiceProvider);
@@ -743,9 +731,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Reset notification initialized state
     _ref.read(notificationInitializedProvider.notifier).state = false;
-
-    // Reset contractor availability state
-    _ref.read(contractorAvailabilityProvider.notifier).reset();
 
     // Reset state
     state = const AuthState(status: AuthStatus.unauthenticated);

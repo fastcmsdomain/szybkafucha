@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/providers/task_provider.dart';
-import '../../../core/providers/contractor_availability_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
@@ -53,7 +52,6 @@ class _ContractorTaskListScreenState
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
-    final availabilityState = ref.watch(contractorAvailabilityProvider);
     final tasks = tasksState.tasks
         .where(_isActiveOrNew)
         .toList();
@@ -98,11 +96,11 @@ class _ContractorTaskListScreenState
         controller: _tabController,
         children: [
           // Map tab
-          _buildMapTab(tasksState, availabilityState, tasks),
+          _buildMapTab(tasksState, tasks),
           // List tab
           RefreshIndicator(
             onRefresh: _refreshTasks,
-            child: _buildListTab(tasksState, availabilityState, tasks),
+            child: _buildListTab(tasksState, tasks),
           ),
         ],
       ),
@@ -111,14 +109,8 @@ class _ContractorTaskListScreenState
 
   Widget _buildMapTab(
     AvailableTasksState tasksState,
-    dynamic availabilityState,
     List<ContractorTask> tasks,
   ) {
-    // Check if contractor is offline
-    if (!availabilityState.isOnline) {
-      return _buildOfflineMessage();
-    }
-
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -357,14 +349,8 @@ class _ContractorTaskListScreenState
 
   Widget _buildListTab(
     AvailableTasksState tasksState,
-    dynamic availabilityState,
     List<ContractorTask> tasks,
   ) {
-    // Check if contractor is offline
-    if (!availabilityState.isOnline) {
-      return _buildOfflineMessage();
-    }
-
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -494,52 +480,6 @@ class _ContractorTaskListScreenState
               onPressed: _refreshTasks,
               icon: const Icon(Icons.refresh),
               label: const Text('Odśwież'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOfflineMessage() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.paddingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.wifi_off,
-              size: 64,
-              color: AppColors.gray400,
-            ),
-            SizedBox(height: AppSpacing.gapMD),
-            Text(
-              'Jesteś offline',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
-            ),
-            SizedBox(height: AppSpacing.gapSM),
-            Text(
-              'Włącz dostępność, aby zobaczyć dostępne zlecenia i otrzymywać powiadomienia.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: AppSpacing.space6),
-            ElevatedButton.icon(
-              onPressed: () {
-                // Navigate back to home where they can toggle availability
-                context.go(Routes.contractorHome);
-              },
-              icon: const Icon(Icons.home),
-              label: const Text('Wróć do ekranu głównego'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,

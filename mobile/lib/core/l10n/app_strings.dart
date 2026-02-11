@@ -146,10 +146,6 @@ abstract class AppStrings {
   static const String availableTasks = 'Dostępne zlecenia';
   static const String myTasks = 'Moje zlecenia';
   static const String noAvailableTasks = 'Brak dostępnych zleceń w okolicy';
-  static const String goOnline = 'Przejdź online';
-  static const String goOffline = 'Przejdź offline';
-  static const String youAreOnline = 'Jesteś online';
-  static const String youAreOffline = 'Jesteś offline';
 
   // ============ Earnings ============
   static const String earnings = 'Zarobki';
