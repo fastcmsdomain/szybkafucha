@@ -362,7 +362,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   maxLength: 1,
-                  style: AppTypography.h3,
+                  style: AppTypography.h5,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],

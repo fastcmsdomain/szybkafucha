@@ -7,6 +7,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/providers/public_tasks_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../contractor/models/contractor_task.dart';
 import '../../contractor/widgets/nearby_task_card.dart';
 
 class PublicBrowseScreen extends ConsumerStatefulWidget {
@@ -33,28 +34,73 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
     super.dispose();
   }
 
-  void _promptLogin() {
-    showDialog(
+  void _showTaskBottomSheet(ContractorTask task) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppStrings.publicBrowseLoginPromptTitle),
-        content: const Text(AppStrings.publicBrowseLoginPromptMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(AppStrings.publicBrowseLoginPromptCancel),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go(Routes.welcome);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.gray300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            child: const Text(AppStrings.publicBrowseLoginPromptConfirm),
-          ),
-        ],
+            // Job card
+            NearbyTaskCard(
+              task: task,
+              showActions: false,
+              showClientInfo: false,
+            ),
+            const SizedBox(height: 16),
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: AppColors.gray300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(AppStrings.publicBrowseLoginPromptCancel),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      context.go(Routes.welcome);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(AppStrings.publicBrowseLoginPromptConfirm),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +194,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
         width: 40,
         height: 40,
         child: GestureDetector(
-          onTap: () => _promptLogin(),
+          onTap: () => _showTaskBottomSheet(task),
           child: Icon(
             Icons.location_on,
             color: AppColors.primary,
@@ -195,11 +241,9 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
             padding: const EdgeInsets.only(bottom: 12),
             child: NearbyTaskCard(
               task: task,
-              showActions: false, // Read-only for public view
-              onTap: () {
-                // Prompt login when user tries to interact
-                _promptLogin();
-              },
+              showActions: false,
+              showClientInfo: false, // Hide client info for public view
+              onTap: () => _showTaskBottomSheet(task),
             ),
           );
         },
