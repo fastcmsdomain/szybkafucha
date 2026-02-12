@@ -135,6 +135,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         },
                 ),
 
+                SizedBox(height: AppSpacing.gapMD),
+
+                // Email login button
+                SocialLoginButton(
+                  type: SocialLoginType.email,
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          context.push(Routes.emailLogin);
+                        },
+                ),
+
                 SizedBox(height: AppSpacing.space4),
 
                 // Terms agreement

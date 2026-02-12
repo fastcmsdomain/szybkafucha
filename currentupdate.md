@@ -12,6 +12,57 @@ Each entry documents:
 
 ---
 
+## [2026-02-11] Fix 3 Bugs from Manual Testing of Email Auth
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed 3 bugs found during manual testing of email + password authentication
+- **Files Changed**:
+  - `backend/src/auth/auth.service.ts` – Changed `findByEmail` to `findByEmailWithPassword` in `requestPasswordReset` method. The original `findByEmail` never loaded `passwordHash` (due to `select: false` on entity), so the `!user.passwordHash` check always returned early without storing the OTP in Redis.
+  - `backend/src/auth/auth.service.spec.ts` – Updated 2 test mocks in `requestPasswordReset` tests to use `findByEmailWithPassword` instead of `findByEmail`.
+  - `mobile/lib/core/providers/auth_provider.dart` – Modified `registerWithEmail` to NOT set state to `AuthStatus.authenticated` (was triggering GoRouter redirect to home before email verify screen could show). Added new `activateSession()` method that reads saved auth data from storage and sets authenticated state.
+  - `mobile/lib/core/router/app_router.dart` – Removed `emailVerify` from `isAuthRoute` check. Added `isEmailVerifyRoute` variable so email verification screen is accessible for both authenticated and unauthenticated users.
+  - `mobile/lib/features/auth/screens/email_verification_screen.dart` – Updated verify success and "Zweryfikuj później" (skip) to call `activateSession()` instead of `context.pop()`.
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – Added "Zaloguj się" TextButton next to duplicate email error message.
+- **System Impact**: Fixes email verification flow, password reset flow, and improves duplicate email UX
+- **Related Tasks/PRD**: Email + Password Authentication feature
+- **Potential Conflicts/Risks**: `registerWithEmail` now keeps state as `unauthenticated` until `activateSession()` is called — this is intentional but different from other auth methods (phone, Google, Apple) which set authenticated immediately.
+
+---
+
+## [2026-02-11] Add Email + Password Authentication (4th Auth Method)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added email + password as a 4th authentication method alongside existing Phone/OTP, Google OAuth, and Apple Sign-In. Full backend API + Flutter mobile integration.
+- **Files Changed**:
+  - `backend/package.json` – Added bcrypt, @types/bcrypt, nodemailer, @types/nodemailer dependencies
+  - `backend/src/users/entities/user.entity.ts` – Added passwordHash (select:false), passwordUpdatedAt, emailVerified, failedLoginAttempts, lockedUntil fields
+  - `backend/src/users/users.service.ts` – Added findByEmailWithPassword, incrementFailedLoginAttempts, resetFailedLoginAttempts, setEmailVerified, updatePassword methods
+  - `backend/src/auth/dto/register-email.dto.ts` – New DTO for email registration
+  - `backend/src/auth/dto/login-email.dto.ts` – New DTO for email login
+  - `backend/src/auth/dto/verify-email.dto.ts` – New DTO for email verification
+  - `backend/src/auth/dto/request-password-reset.dto.ts` – New DTO for password reset request
+  - `backend/src/auth/dto/reset-password.dto.ts` – New DTO for password reset
+  - `backend/src/auth/email.service.ts` – New EmailService for sending OTP emails (console log in dev, SMTP in prod)
+  - `backend/src/auth/auth.service.ts` – Added registerWithEmail, loginWithEmail, verifyEmailOtp, resendEmailVerificationOtp, requestPasswordReset, resetPassword methods
+  - `backend/src/auth/auth.controller.ts` – Added 6 new endpoints: POST /auth/email/{register,login,verify,resend-verification,request-password-reset,reset-password}
+  - `backend/src/auth/auth.module.ts` – Added EmailService to providers
+  - `backend/src/auth/auth.service.spec.ts` – Added 17 new tests for email auth (total: 315 tests passing)
+  - `mobile/lib/core/providers/auth_provider.dart` – Added registerWithEmail, loginWithEmail, verifyEmail, resendEmailVerification, requestPasswordReset, resetPassword methods
+  - `mobile/lib/features/auth/widgets/social_login_button.dart` – Added email type to SocialLoginType enum
+  - `mobile/lib/core/router/routes.dart` – Added emailLogin, emailRegister, emailVerify, forgotPassword routes
+  - `mobile/lib/core/router/app_router.dart` – Added GoRoute entries for 4 new screens + updated isAuthRoute guard
+  - `mobile/lib/features/auth/auth.dart` – Added exports for 4 new screens
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Added email login button after phone button
+  - `mobile/lib/features/auth/screens/email_login_screen.dart` – New email login screen
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – New registration screen with password strength indicator
+  - `mobile/lib/features/auth/screens/email_verification_screen.dart` – New OTP verification screen
+  - `mobile/lib/features/auth/screens/forgot_password_screen.dart` – New password reset screen (2-step: email → OTP+new password)
+- **System Impact**: New auth method added. 6 new API endpoints. 4 new Flutter screens. Welcome screen updated with email button. Security: bcrypt cost 12, account lockout (5 attempts → 15min), rate limiting on all endpoints, anti-enumeration on password reset, OTP via Redis with TTL.
+- **Related Tasks/PRD**: Authentication system expansion, PRD user registration requirements
+- **Potential Conflicts/Risks**: New User entity fields (passwordHash, emailVerified, failedLoginAttempts, lockedUntil) require DB sync. SMTP env vars needed for production email sending. No impact on existing Phone/Google/Apple auth flows.
+
+---
+
 ## [2026-02-11] Fix Contractor Card Showing 0.0 Rating and 0 Tasks on Task Tracking Screen
 
 - **Developer/Agent**: Claude

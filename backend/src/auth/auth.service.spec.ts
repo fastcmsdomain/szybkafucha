@@ -1,15 +1,24 @@
 /**
  * Auth Service Unit Tests
- * Tests for authentication logic including OTP and social login
+ * Tests for authentication logic including OTP, social login, and email+password
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+  HttpException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { EmailService } from './email.service';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt');
 
 interface MockCacheManager {
   get: jest.Mock;
@@ -22,6 +31,7 @@ describe('AuthService', () => {
   let usersService: jest.Mocked<UsersService>;
   let jwtService: jest.Mocked<JwtService>;
   let cacheManager: MockCacheManager;
+  let emailService: jest.Mocked<EmailService>;
 
   const mockUser: User = {
     id: 'user-123',
@@ -31,13 +41,26 @@ describe('AuthService', () => {
     name: 'Test User',
     address: null,
     avatarUrl: null,
-    address: null,
     status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,
     fcmToken: null,
+    passwordHash: null,
+    passwordUpdatedAt: null,
+    emailVerified: false,
+    failedLoginAttempts: 0,
+    lockedUntil: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const mockUserWithPassword: User = {
+    ...mockUser,
+    id: 'user-pw-123',
+    email: 'pw@example.com',
+    passwordHash: '$2b$12$hashedpassword',
+    passwordUpdatedAt: new Date(),
+    emailVerified: true,
   };
 
   const mockContractor: User = {
@@ -53,10 +76,16 @@ describe('AuthService', () => {
     const mockUsersService = {
       findByPhone: jest.fn(),
       findByEmail: jest.fn(),
+      findByEmailWithPassword: jest.fn(),
       findByGoogleId: jest.fn(),
       findByAppleId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      addRole: jest.fn(),
+      incrementFailedLoginAttempts: jest.fn(),
+      resetFailedLoginAttempts: jest.fn(),
+      setEmailVerified: jest.fn(),
+      updatePassword: jest.fn(),
     };
 
     const mockJwtService = {
@@ -76,6 +105,11 @@ describe('AuthService', () => {
       }),
     };
 
+    const mockEmailService = {
+      sendVerificationOtp: jest.fn(),
+      sendPasswordResetOtp: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -83,6 +117,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: CACHE_MANAGER, useValue: mockCacheManager },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 
@@ -92,6 +127,9 @@ describe('AuthService', () => {
     ) as jest.Mocked<UsersService>;
     jwtService = module.get<JwtService>(JwtService) as jest.Mocked<JwtService>;
     cacheManager = module.get<MockCacheManager>(CACHE_MANAGER);
+    emailService = module.get<EmailService>(
+      EmailService,
+    ) as jest.Mocked<EmailService>;
   });
 
   describe('generateToken', () => {
@@ -232,12 +270,12 @@ describe('AuthService', () => {
     it('should throw BadRequestException for invalid OTP code', async () => {
       cacheManager.get.mockResolvedValue(validOtp);
 
-      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
-        'Invalid OTP code',
-      );
+      await expect(
+        service.verifyPhoneOtp(phone, 'wrong-code'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.verifyPhoneOtp(phone, 'wrong-code'),
+      ).rejects.toThrow('Invalid OTP code');
     });
   });
 
@@ -397,6 +435,257 @@ describe('AuthService', () => {
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ types: [UserType.CONTRACTOR] }),
       );
+    });
+  });
+
+  // ──────────────────────────────────────────────────────
+  // Email + Password Authentication Tests
+  // ──────────────────────────────────────────────────────
+
+  describe('registerWithEmail', () => {
+    const email = 'new@example.com';
+    const password = 'Test123!@#';
+
+    beforeEach(() => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$12$hashed');
+    });
+
+    it('should register a new user with hashed password', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        email,
+        passwordHash: '$2b$12$hashed',
+      });
+
+      const result = await service.registerWithEmail(email, password);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith(password, 12);
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email,
+          passwordHash: '$2b$12$hashed',
+          emailVerified: false,
+        }),
+      );
+      expect(result.isNewUser).toBe(true);
+      expect(result.accessToken).toBe('mock-jwt-token');
+    });
+
+    it('should throw ConflictException if email already exists', async () => {
+      usersService.findByEmail.mockResolvedValue(mockUser);
+
+      await expect(
+        service.registerWithEmail(email, password),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should send email verification OTP after registration', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        email,
+      });
+
+      await service.registerWithEmail(email, password);
+
+      expect(cacheManager.set).toHaveBeenCalled();
+      expect(emailService.sendVerificationOtp).toHaveBeenCalledWith(
+        email,
+        expect.any(String),
+      );
+    });
+
+    it('should create contractor when userType specified', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        ...mockContractor,
+        email,
+      });
+
+      await service.registerWithEmail(
+        email,
+        password,
+        'Test',
+        UserType.CONTRACTOR,
+      );
+
+      expect(usersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ types: [UserType.CONTRACTOR] }),
+      );
+    });
+  });
+
+  describe('loginWithEmail', () => {
+    const email = 'pw@example.com';
+    const password = 'Test123!@#';
+
+    it('should return token for valid credentials', async () => {
+      usersService.findByEmailWithPassword.mockResolvedValue(
+        mockUserWithPassword,
+      );
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.loginWithEmail(email, password);
+
+      expect(result.accessToken).toBe('mock-jwt-token');
+      expect(result.isNewUser).toBe(false);
+      expect(usersService.resetFailedLoginAttempts).toHaveBeenCalledWith(
+        mockUserWithPassword.id,
+      );
+    });
+
+    it('should throw UnauthorizedException for wrong password', async () => {
+      usersService.findByEmailWithPassword.mockResolvedValue(
+        mockUserWithPassword,
+      );
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(
+        service.loginWithEmail(email, 'wrong-password'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(usersService.incrementFailedLoginAttempts).toHaveBeenCalledWith(
+        mockUserWithPassword.id,
+      );
+    });
+
+    it('should throw UnauthorizedException for non-existent user', async () => {
+      usersService.findByEmailWithPassword.mockResolvedValue(null);
+
+      await expect(
+        service.loginWithEmail(email, password),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw HttpException (423) for locked account', async () => {
+      const lockedUser = {
+        ...mockUserWithPassword,
+        lockedUntil: new Date(Date.now() + 10 * 60 * 1000), // 10 min from now
+      };
+      usersService.findByEmailWithPassword.mockResolvedValue(lockedUser);
+
+      await expect(
+        service.loginWithEmail(email, password),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw UnauthorizedException for suspended/banned user', async () => {
+      const bannedUser = {
+        ...mockUserWithPassword,
+        status: UserStatus.BANNED,
+      };
+      usersService.findByEmailWithPassword.mockResolvedValue(bannedUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await expect(
+        service.loginWithEmail(email, password),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyEmailOtp', () => {
+    const email = 'test@example.com';
+    const code = '123456';
+    const cacheKey = `email-verify:${email}`;
+    const validOtp = { code, expiresAt: new Date(Date.now() + 60000) };
+
+    it('should verify email successfully with valid code', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
+      usersService.findByEmail.mockResolvedValue(mockUser);
+      usersService.setEmailVerified.mockResolvedValue({
+        ...mockUser,
+        emailVerified: true,
+      });
+
+      const result = await service.verifyEmailOtp(email, code);
+
+      expect(result.message).toContain('zweryfikowany');
+      expect(cacheManager.del).toHaveBeenCalledWith(cacheKey);
+      expect(usersService.setEmailVerified).toHaveBeenCalledWith(mockUser.id);
+    });
+
+    it('should throw BadRequestException for expired code', async () => {
+      const expiredOtp = { code, expiresAt: new Date(Date.now() - 60000) };
+      cacheManager.get.mockResolvedValue(expiredOtp);
+
+      await expect(service.verifyEmailOtp(email, code)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for wrong code', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
+
+      await expect(service.verifyEmailOtp(email, '000000')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('requestPasswordReset', () => {
+    it('should send reset OTP when user exists', async () => {
+      usersService.findByEmailWithPassword.mockResolvedValue(mockUserWithPassword);
+
+      const result = await service.requestPasswordReset('pw@example.com');
+
+      expect(cacheManager.set).toHaveBeenCalled();
+      expect(emailService.sendPasswordResetOtp).toHaveBeenCalled();
+      expect(result.message).toBeDefined();
+    });
+
+    it('should return same response when user does not exist (anti-enumeration)', async () => {
+      usersService.findByEmailWithPassword.mockResolvedValue(null);
+
+      const result = await service.requestPasswordReset(
+        'nonexistent@example.com',
+      );
+
+      expect(emailService.sendPasswordResetOtp).not.toHaveBeenCalled();
+      expect(result.message).toBeDefined();
+    });
+  });
+
+  describe('resetPassword', () => {
+    const email = 'pw@example.com';
+    const code = '123456';
+    const newPassword = 'NewPass123!@#';
+    const cacheKey = `password-reset:${email}`;
+    const validOtp = { code, expiresAt: new Date(Date.now() + 60000) };
+
+    beforeEach(() => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$12$newhash');
+    });
+
+    it('should reset password with valid OTP', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
+      usersService.findByEmail.mockResolvedValue(mockUserWithPassword);
+
+      const result = await service.resetPassword(email, code, newPassword);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith(newPassword, 12);
+      expect(usersService.updatePassword).toHaveBeenCalledWith(
+        mockUserWithPassword.id,
+        '$2b$12$newhash',
+      );
+      expect(cacheManager.del).toHaveBeenCalledWith(cacheKey);
+      expect(result.message).toContain('zmienione');
+    });
+
+    it('should throw BadRequestException for invalid OTP', async () => {
+      cacheManager.get.mockResolvedValue(validOtp);
+
+      await expect(
+        service.resetPassword(email, 'wrong', newPassword),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for expired OTP', async () => {
+      const expiredOtp = { code, expiresAt: new Date(Date.now() - 60000) };
+      cacheManager.get.mockResolvedValue(expiredOtp);
+
+      await expect(
+        service.resetPassword(email, code, newPassword),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

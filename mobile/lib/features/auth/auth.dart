@@ -7,4 +7,8 @@ export 'screens/public_browse_screen.dart';
 export 'screens/phone_login_screen.dart';
 export 'screens/otp_screen.dart';
 export 'screens/register_screen.dart';
+export 'screens/email_login_screen.dart';
+export 'screens/email_register_screen.dart';
+export 'screens/email_verification_screen.dart';
+export 'screens/forgot_password_screen.dart';
 export 'widgets/social_login_button.dart';
