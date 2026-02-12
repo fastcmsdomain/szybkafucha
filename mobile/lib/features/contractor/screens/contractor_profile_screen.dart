@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// Contractor-only editable profile screen
 class ContractorProfileScreen extends ConsumerStatefulWidget {
@@ -335,7 +336,7 @@ class _ContractorProfileScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mój profil'),
+        title: SFRainbowText('Mój profil'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -524,7 +525,7 @@ class _ContractorProfileScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Kompletność profilu',
+                'Weryfikacja',
                 style: AppTypography.h4,
               ),
               Text(

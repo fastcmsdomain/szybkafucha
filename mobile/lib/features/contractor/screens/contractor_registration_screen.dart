@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../client/models/task_category.dart';
 import '../../client/widgets/category_card.dart';
 
@@ -48,10 +49,7 @@ class _ContractorRegistrationScreenState
           icon: const Icon(Icons.close),
           onPressed: () => _showExitConfirmation(),
         ),
-        title: Text(
-          'Rejestracja wykonawcy',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Rejestracja wykonawcy'),
         centerTitle: true,
       ),
       body: Column(

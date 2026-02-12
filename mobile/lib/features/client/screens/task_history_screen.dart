@@ -7,6 +7,7 @@ import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task.dart';
 
 /// Task history screen showing past tasks
@@ -50,10 +51,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Historia zleceń',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Historia zleceń'),
         centerTitle: true,
         actions: [
           IconButton(

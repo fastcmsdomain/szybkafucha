@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/contractor.dart';
 import '../models/task_category.dart';
 
@@ -107,10 +108,7 @@ class _ContractorSelectionScreenState
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Wybierz pomocnika',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Wybierz pomocnika'),
         centerTitle: true,
       ),
       body: Column(

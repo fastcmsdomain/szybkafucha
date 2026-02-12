@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../contractor/models/contractor_task.dart';
@@ -57,10 +58,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Zlecenia',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Zlecenia'),
         centerTitle: true,
         actions: [
           IconButton(

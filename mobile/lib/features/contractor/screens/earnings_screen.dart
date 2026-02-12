@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/earnings.dart';
 
 /// Earnings screen for contractors - view earnings summary and transaction history
@@ -66,10 +67,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Zarobki',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Zarobki'),
         centerTitle: true,
         actions: [
           IconButton(

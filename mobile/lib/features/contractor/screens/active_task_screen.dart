@@ -9,6 +9,7 @@ import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -238,10 +239,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => _navigateBack(context),
         ),
-        title: Text(
-          'Aktywne zlecenie',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Aktywne zlecenie'),
         centerTitle: true,
         actions: [
           IconButton(

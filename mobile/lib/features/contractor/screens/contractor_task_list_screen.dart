@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../models/contractor_task.dart';
@@ -58,10 +59,7 @@ class _ContractorTaskListScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Dostępne zlecenia',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Dostępne zlecenia'),
         centerTitle: true,
         actions: [
           IconButton(

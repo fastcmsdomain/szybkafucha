@@ -11,6 +11,7 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
@@ -84,10 +85,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          AppStrings.createTask,
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText(AppStrings.createTask),
         centerTitle: true,
       ),
       body: SafeArea(

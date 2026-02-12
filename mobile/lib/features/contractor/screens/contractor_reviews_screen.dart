@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// Contractor reviews screen shown from profile menu.
 class ContractorReviewsScreen extends ConsumerStatefulWidget {
@@ -65,10 +66,7 @@ class _ContractorReviewsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Opinie zleceniodawców',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Opinie zleceniodawców'),
         centerTitle: true,
       ),
       body: SafeArea(

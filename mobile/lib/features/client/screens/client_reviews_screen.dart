@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// Client reviews screen shown from profile menu.
 class ClientReviewsScreen extends ConsumerStatefulWidget {
@@ -60,10 +61,7 @@ class _ClientReviewsScreenState extends ConsumerState<ClientReviewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Opinie wykonawców',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Opinie wykonawców'),
         centerTitle: true,
       ),
       body: SafeArea(

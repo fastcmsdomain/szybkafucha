@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// Client-only editable profile screen
 class ClientProfileScreen extends ConsumerStatefulWidget {
@@ -273,7 +274,7 @@ class _ClientProfileScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mój profil'),
+        title: SFRainbowText('Mój profil'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

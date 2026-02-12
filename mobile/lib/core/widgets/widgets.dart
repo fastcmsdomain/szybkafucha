@@ -9,4 +9,5 @@ export 'sf_rating_stars.dart';
 export 'sf_status_badge.dart';
 export 'sf_bottom_nav.dart';
 export 'sf_rainbow_progress.dart';
+export 'sf_rainbow_text.dart';
 export 'notification_initializer.dart';

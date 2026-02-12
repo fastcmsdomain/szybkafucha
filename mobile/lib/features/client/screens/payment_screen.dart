@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task_category.dart';
 import 'contractor_selection_screen.dart';
 
@@ -55,10 +56,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Podsumowanie',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Podsumowanie'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
