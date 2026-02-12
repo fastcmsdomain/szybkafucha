@@ -64,6 +64,23 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   appleId: string | null;
 
+  // Password authentication
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  passwordHash: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  passwordUpdatedAt: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  emailVerified: boolean;
+
+  // Account lockout
+  @Column({ type: 'int', default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lockedUntil: Date | null;
+
   // Push notification token
   @Column({ type: 'text', nullable: true })
   fcmToken: string | null;

@@ -98,6 +98,62 @@ export class UsersService {
   }
 
   /**
+   * Find user by email with password hash (for authentication)
+   * Explicitly selects passwordHash which is excluded by default
+   */
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
+  /**
+   * Increment failed login attempts, lock account after 5 failures
+   */
+  async incrementFailedLoginAttempts(userId: string): Promise<void> {
+    const user = await this.findByIdOrFail(userId);
+    user.failedLoginAttempts += 1;
+
+    if (user.failedLoginAttempts >= 5) {
+      user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    }
+
+    await this.usersRepository.save(user);
+  }
+
+  /**
+   * Reset failed login attempts after successful login
+   */
+  async resetFailedLoginAttempts(userId: string): Promise<void> {
+    await this.usersRepository.update(userId, {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    });
+  }
+
+  /**
+   * Mark email as verified
+   */
+  async setEmailVerified(userId: string): Promise<User> {
+    await this.usersRepository.update(userId, { emailVerified: true });
+    return this.findByIdOrFail(userId);
+  }
+
+  /**
+   * Update password hash and timestamp
+   */
+  async updatePassword(userId: string, passwordHash: string): Promise<void> {
+    await this.usersRepository.update(userId, {
+      passwordHash,
+      passwordUpdatedAt: new Date(),
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+    });
+  }
+
+  /**
    * Add a role to user (client or contractor)
    * Creates empty profile when role is added
    * Profiles are created lazy - they'll be populated when user edits their profile

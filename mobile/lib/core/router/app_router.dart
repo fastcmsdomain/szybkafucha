@@ -43,7 +43,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = state.matchedLocation == Routes.welcome ||
           state.matchedLocation == Routes.login ||
           state.matchedLocation.startsWith('/login') ||
-          state.matchedLocation == Routes.register;
+          state.matchedLocation == Routes.register ||
+          state.matchedLocation.startsWith('/register') ||
+          state.matchedLocation == Routes.forgotPassword;
+
+      // emailVerify is NOT an auth route — it must stay accessible
+      // after registration (before activateSession is called)
+      final isEmailVerifyRoute =
+          state.matchedLocation == Routes.emailVerify;
 
       final isOnboardingRoute = state.matchedLocation == Routes.onboarding;
       final isBrowseRoute = state.matchedLocation == Routes.browse;
@@ -61,6 +68,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // === AUTHENTICATED USERS ===
       // Always redirect to home (skip onboarding/browse)
       if (isAuthenticated) {
+        // Allow email verification screen for authenticated users
+        if (isEmailVerifyRoute) return null;
+
         // If on auth, onboarding, or browse route → redirect to home
         if (isAuthRoute || isOnboardingRoute || isBrowseRoute) {
           final user = authNotifier.user;
@@ -88,8 +98,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Onboarding complete but not logged in
-      // Allow /browse and auth routes (so users can log in)
-      if (isBrowseRoute || isAuthRoute) {
+      // Allow /browse, auth routes, and email verify (so users can log in / verify)
+      if (isBrowseRoute || isAuthRoute || isEmailVerifyRoute) {
         print('  ✅ On browse or auth route, allow');
         return null;
       }
@@ -145,6 +155,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.register,
         name: 'register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: Routes.emailLogin,
+        name: 'emailLogin',
+        builder: (context, state) => const EmailLoginScreen(),
+      ),
+      GoRoute(
+        path: Routes.emailRegister,
+        name: 'emailRegister',
+        builder: (context, state) => const EmailRegisterScreen(),
+      ),
+      GoRoute(
+        path: Routes.emailVerify,
+        name: 'emailVerify',
+        builder: (context, state) {
+          final email = state.extra as String? ?? '';
+          return EmailVerificationScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: Routes.forgotPassword,
+        name: 'forgotPassword',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
       // Client routes with shell for bottom navigation

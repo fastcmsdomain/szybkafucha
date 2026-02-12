@@ -7,6 +7,10 @@ abstract class Routes {
   static const String login = '/login';
   static const String phoneLogin = '/login/phone';
   static const String phoneOtp = '/login/phone/otp';
+  static const String emailLogin = '/login/email';
+  static const String emailRegister = '/register/email';
+  static const String emailVerify = '/verify-email';
+  static const String forgotPassword = '/forgot-password';
   static const String register = '/register';
 
   // Client routes

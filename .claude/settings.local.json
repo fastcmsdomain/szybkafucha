@@ -81,7 +81,10 @@
       "Bash(npm run start:dev:*)",
       "Bash(xargs kill:*)",
       "Bash(npm run seed:fresh:*)",
-      "Bash(python3 -m json.tool:*)"
+      "Bash(python3 -m json.tool:*)",
+      "Bash(export:*)",
+      "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
+      "Bash(. \"$NVM_DIR/nvm.sh\")"
     ]
   }
 }

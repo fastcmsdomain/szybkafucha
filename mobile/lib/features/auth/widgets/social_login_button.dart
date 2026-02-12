@@ -7,6 +7,7 @@ enum SocialLoginType {
   google,
   apple,
   phone,
+  email,
 }
 
 /// Social login button widget
@@ -81,6 +82,12 @@ class SocialLoginButton extends StatelessWidget {
           size: 24,
           color: AppColors.gray700,
         );
+      case SocialLoginType.email:
+        return Icon(
+          Icons.email_outlined,
+          size: 24,
+          color: AppColors.gray700,
+        );
     }
   }
 
@@ -92,6 +99,8 @@ class SocialLoginButton extends StatelessWidget {
         return 'Kontynuuj z Apple';
       case SocialLoginType.phone:
         return 'Kontynuuj z numerem telefonu';
+      case SocialLoginType.email:
+        return 'Kontynuuj z e-mailem';
     }
   }
 
@@ -102,6 +111,8 @@ class SocialLoginButton extends StatelessWidget {
       case SocialLoginType.apple:
         return AppColors.secondary;
       case SocialLoginType.phone:
+        return AppColors.white;
+      case SocialLoginType.email:
         return AppColors.white;
     }
   }
@@ -114,6 +125,8 @@ class SocialLoginButton extends StatelessWidget {
         return AppColors.secondary;
       case SocialLoginType.phone:
         return AppColors.gray300;
+      case SocialLoginType.email:
+        return AppColors.gray300;
     }
   }
 
@@ -124,6 +137,8 @@ class SocialLoginButton extends StatelessWidget {
       case SocialLoginType.apple:
         return AppColors.white;
       case SocialLoginType.phone:
+        return AppColors.gray700;
+      case SocialLoginType.email:
         return AppColors.gray700;
     }
   }

@@ -16,6 +16,11 @@ import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { GoogleAuthDto } from './dto/google-auth.dto';
 import { AppleAuthDto } from './dto/apple-auth.dto';
+import { RegisterEmailDto } from './dto/register-email.dto';
+import { LoginEmailDto } from './dto/login-email.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -76,6 +81,95 @@ export class AuthController {
       dto.userType,
     );
   }
+
+  // ──────────────────────────────────────────────────────
+  // Email + Password Authentication
+  // ──────────────────────────────────────────────────────
+
+  /**
+   * POST /auth/email/register
+   * Register with email and password
+   * Rate limit: 3 requests per 60 seconds
+   */
+  @Post('email/register')
+  @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async registerWithEmail(@Body() dto: RegisterEmailDto) {
+    return this.authService.registerWithEmail(
+      dto.email,
+      dto.password,
+      dto.name,
+      dto.userType,
+    );
+  }
+
+  /**
+   * POST /auth/email/login
+   * Login with email and password
+   * Rate limit: 5 attempts per 60 seconds
+   */
+  @Post('email/login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async loginWithEmail(@Body() dto: LoginEmailDto) {
+    return this.authService.loginWithEmail(dto.email, dto.password);
+  }
+
+  /**
+   * POST /auth/email/verify
+   * Verify email with OTP code
+   * Rate limit: 5 attempts per 60 seconds
+   */
+  @Post('email/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmailOtp(dto.email, dto.code);
+  }
+
+  /**
+   * POST /auth/email/resend-verification
+   * Resend email verification OTP
+   * Rate limit: 3 requests per 60 seconds
+   */
+  @Post('email/resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async resendVerification(@Body() dto: RequestPasswordResetDto) {
+    return this.authService.resendEmailVerificationOtp(dto.email);
+  }
+
+  /**
+   * POST /auth/email/request-password-reset
+   * Request password reset OTP via email
+   * Rate limit: 3 requests per 60 seconds
+   */
+  @Post('email/request-password-reset')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  /**
+   * POST /auth/email/reset-password
+   * Reset password with OTP code and new password
+   * Rate limit: 3 requests per 60 seconds
+   */
+  @Post('email/reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(
+      dto.email,
+      dto.code,
+      dto.newPassword,
+    );
+  }
+
+  // ──────────────────────────────────────────────────────
+  // Session Management
+  // ──────────────────────────────────────────────────────
 
   /**
    * POST /auth/logout
