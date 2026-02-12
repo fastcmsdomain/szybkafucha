@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// KYC Verification screen for contractors - ID document, selfie, and bank account
 class KycVerificationScreen extends ConsumerStatefulWidget {
@@ -41,10 +42,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          'Weryfikacja tożsamości',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Weryfikacja tożsamości'),
         centerTitle: true,
       ),
       body: Column(

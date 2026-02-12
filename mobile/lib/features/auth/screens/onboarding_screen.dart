@@ -60,6 +60,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: TextButton(
+          onPressed: () async {
+            await ref.read(authProvider.notifier).markOnboardingComplete();
+            if (mounted) {
+              context.go(Routes.welcome);
+            }
+          },
+          child: Text(
+            'Zaloguj się',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        leadingWidth: 110,
         actions: [
           if (_currentPage < 2)
             TextButton(

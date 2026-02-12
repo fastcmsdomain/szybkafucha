@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task_category.dart';
 import '../widgets/category_card.dart';
 
@@ -26,10 +27,7 @@ class _CategorySelectionScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppStrings.selectCategory,
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText(AppStrings.selectCategory),
         centerTitle: true,
       ),
       body: SafeArea(

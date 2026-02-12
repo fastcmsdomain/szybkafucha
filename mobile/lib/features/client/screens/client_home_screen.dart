@@ -8,6 +8,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task.dart';
 // import '../models/task_category.dart';
 // import '../widgets/category_card.dart';
@@ -108,7 +109,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               SizedBox(height: AppSpacing.gapXS),
               Text(
                 name,
-                style: AppTypography.h2,
+                style: AppTypography.h2.copyWith(fontSize: 24),
               ),
             ],
           ),
@@ -241,10 +242,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              AppStrings.activeTasks,
-              style: AppTypography.h5,
-            ),
+            SFRainbowText(AppStrings.activeTasks, style: AppTypography.h5),
             TextButton(
               onPressed: () => context.go(Routes.clientHistory),
               child: Text(
@@ -565,28 +563,39 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Jak to działa?',
-          style: AppTypography.h5,
-        ),
+        SFRainbowText('Jak to działa?', style: AppTypography.h5),
         SizedBox(height: AppSpacing.gapMD),
         _buildStepItem(
           number: '1',
           title: 'Opisz zadanie',
-          description: 'Wybierz kategorię i opisz, czego potrzebujesz',
+          description:
+              'Wybierz kategorię, dodaj opis i ustal budżet — to zajmie chwilę',
           icon: Icons.edit_note_outlined,
+          color: AppColors.primary,
         ),
         _buildStepItem(
           number: '2',
-          title: 'Znajdź pomocnika',
-          description: 'Przeglądaj profile i wybierz najlepszą osobę',
+          title: 'Zatwierdź pracownika',
+          description:
+              'Dopasujemy najlepszą osobę — sprawdź profil i potwierdź',
           icon: Icons.person_search_outlined,
+          color: AppColors.warning,
         ),
         _buildStepItem(
           number: '3',
-          title: 'Gotowe!',
-          description: 'Śledź postęp i oceń po zakończeniu',
-          icon: Icons.check_circle_outline,
+          title: 'Śledź postęp',
+          description:
+              'Obserwuj realizację na żywo i bądź w kontakcie przez czat',
+          icon: Icons.location_on_outlined,
+          color: AppColors.success,
+        ),
+        _buildStepItem(
+          number: '4',
+          title: 'Oceń i zapłać',
+          description:
+              'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
+          icon: Icons.star_outline,
+          color: AppColors.info,
           isLast: true,
         ),
       ],
@@ -598,6 +607,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     required String title,
     required String description,
     required IconData icon,
+    required Color color,
     bool isLast = false,
   }) {
     return IntrinsicHeight(
@@ -610,7 +620,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: color,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -660,7 +670,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   ),
                   Icon(
                     icon,
-                    color: AppColors.gray400,
+                    color: color,
                     size: 24,
                   ),
                 ],
