@@ -12,6 +12,26 @@ Each entry documents:
 
 ---
 
+## [2026-02-13] Add Flutter Development Skills & Commands
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Created 7 Claude Code slash commands and 2 autonomous skills for Flutter code quality, testing, performance, accessibility, security, and iOS/Android platform compliance
+- **Files Changed**:
+  - `.claude/commands/flutter-analyze.md` – Command: Run flutter analyze + enhanced lint checks (naming, const, theme tokens, file size)
+  - `.claude/commands/flutter-test.md` – Command: Run tests with coverage and report untested files by priority
+  - `.claude/commands/audit-performance.md` – Command: Detect performance anti-patterns (ListView, Container, Opacity, saveLayer, missing const)
+  - `.claude/commands/audit-accessibility.md` – Command: Check WCAG 2.1 AA, iOS HIG, Material accessibility compliance (Semantics, touch targets, contrast, dark mode)
+  - `.claude/commands/audit-security.md` – Command: Scan for hardcoded secrets, insecure URLs, improper storage, debug prints
+  - `.claude/commands/audit-platform.md` – Command: Check iOS HIG and Material Design 3 compliance (typography, spacing, navigation, M3 components)
+  - `.claude/commands/audit-all.md` – Command: Run all audits and produce unified summary report with scores
+  - `.claude/commands/flutter-quality-gate/SKILL.md` – Skill: Auto-triggers when modifying Flutter code to enforce naming, widget patterns, theme tokens, performance
+  - `.claude/commands/platform-compliance/SKILL.md` – Skill: Auto-triggers when modifying screen files to enforce touch targets, typography, accessibility, spacing
+- **System Impact**: New development workflow tools. Commands invoked via `/flutter-analyze`, `/flutter-test`, `/audit-performance`, `/audit-accessibility`, `/audit-security`, `/audit-platform`, `/audit-all`. Skills auto-apply when editing Flutter files.
+- **Related Tasks/PRD**: Based on `tasks/development-guidelines-ios-android-flutter (1).md` guidelines document
+- **Potential Conflicts/Risks**: None — these are read-only audit tools that don't modify code. Skills provide guidance when writing new code.
+
+---
+
 ## [2026-02-11] Fix 3 Bugs from Manual Testing of Email Auth
 
 - **Developer/Agent**: Claude
