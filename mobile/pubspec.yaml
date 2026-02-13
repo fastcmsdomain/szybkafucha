@@ -80,5 +80,6 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/videos/
+    - assets/legal/
 
   # Fonts are loaded via google_fonts package

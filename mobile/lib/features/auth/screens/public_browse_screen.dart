@@ -21,6 +21,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedBottomNavIndex = 1; // Start on "Zlecenia"
+  static const String _profileLoginRoute = '${Routes.welcome}?tab=profile';
 
   @override
   void initState() {
@@ -287,19 +288,14 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
       selectedIndex: _selectedBottomNavIndex,
       onDestinationSelected: (index) {
         if (index == 0) {
-          // Główna - placeholder
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Strona główna - wkrótce'),
-              duration: Duration(seconds: 1),
-            ),
-          );
+          setState(() => _selectedBottomNavIndex = 0);
+          context.go(Routes.publicHome);
         } else if (index == 1) {
           // Zlecenia - already here
           setState(() => _selectedBottomNavIndex = 1);
         } else if (index == 2) {
           // Profil - go to login
-          context.go(Routes.welcome);
+          context.go(_profileLoginRoute);
         }
       },
       destinations: const [

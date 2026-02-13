@@ -58,6 +58,7 @@ class SocialLoginButton extends StatelessWidget {
                     _getLabel(),
                     style: AppTypography.buttonMedium.copyWith(
                       color: _getTextColor(),
+                      height: 1.2,
                     ),
                   ),
                 ],
@@ -148,35 +149,81 @@ class SocialLoginButton extends StatelessWidget {
 class _GoogleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Using a simple G icon since we don't have the actual Google logo
-    // In production, use google_fonts or an actual SVG/PNG
-    return Container(
+    return SizedBox(
       width: 24,
       height: 24,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Center(
-        child: Text(
-          'G',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            foreground: Paint()
-              ..shader = const LinearGradient(
-                colors: [
-                  Color(0xFF4285F4), // Blue
-                  Color(0xFFEA4335), // Red
-                  Color(0xFFFBBC05), // Yellow
-                  Color(0xFF34A853), // Green
-                ],
-              ).createShader(
-                const Rect.fromLTWH(0, 0, 24, 24),
-              ),
-          ),
-        ),
+      child: CustomPaint(
+        painter: _GoogleLogoPainter(),
       ),
     );
   }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: size.width * 0.36);
+    final stroke = size.width * 0.16;
+
+    Paint segment(Color color) => Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
+
+    // Red (top-left)
+    canvas.drawArc(
+      rect,
+      _degToRad(200),
+      _degToRad(95),
+      false,
+      segment(const Color(0xFFEA4335)),
+    );
+
+    // White (bottom-left)
+    canvas.drawArc(
+      rect,
+      _degToRad(295),
+      _degToRad(70),
+      false,
+      segment(Colors.white),
+    );
+
+    // Green (bottom-right)
+    canvas.drawArc(
+      rect,
+      _degToRad(5),
+      _degToRad(88),
+      false,
+      segment(const Color(0xFF34A853)),
+    );
+
+    // Blue (top-right)
+    canvas.drawArc(
+      rect,
+      _degToRad(95),
+      _degToRad(105),
+      false,
+      segment(const Color(0xFF4285F4)),
+    );
+
+    // Horizontal blue bar to form the "G" opening.
+    final barPaint = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
+    final y = center.dy;
+    canvas.drawLine(
+      Offset(size.width * 0.52, y),
+      Offset(size.width * 0.86, y),
+      barPaint,
+    );
+  }
+
+  double _degToRad(double deg) => deg * (3.141592653589793 / 180.0);
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

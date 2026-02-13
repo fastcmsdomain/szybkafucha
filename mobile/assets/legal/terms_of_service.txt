@@ -1,0 +1,117 @@
+Regulamin Serwisu
+Ostatnia aktualizacja: 6 stycznia 2026
+Informacja: Serwis Szybka Fucha znajduje się obecnie w fazie rozwoju (pre-launch). Niniejszy Regulamin określa zasady korzystania ze strony internetowej oraz zapisu na listę oczekujących i newsletter.
+§1. Definicje
+Na potrzeby niniejszego Regulaminu przyjmuje się następujące definicje:
+• Usługodawca – właściciel projektu Szybka Fucha, dostępny pod adresem e-mail: kontakt@szybkafucha.app
+• Serwis – strona internetowa dostępna pod adresem szybkafucha.app oraz powiązanymi domenami (szybkafucha.eu, szybkafucha.com)
+• Użytkownik – osoba korzystająca z Serwisu
+• Lista oczekujących (Waitlist) – lista osób zainteresowanych uruchomieniem Aplikacji
+• Newsletter – usługa wysyłki informacji drogą elektroniczną
+• Aplikacja – planowana aplikacja mobilna "Szybka Fucha" (w przygotowaniu)
+§2. Postanowienia Ogólne
+• Niniejszy Regulamin określa zasady korzystania z Serwisu, zapisu na listę oczekujących oraz usługi newslettera.
+• Korzystanie z Serwisu jest całkowicie bezpłatne.
+• Serwis ma charakter informacyjny i służy zbieraniu zgłoszeń osób zainteresowanych przyszłą Aplikacją.
+• Użytkownik zobowiązany jest do korzystania z Serwisu zgodnie z jego przeznaczeniem oraz obowiązującymi przepisami prawa.
+• Regulamin jest dostępny nieodpłatnie na stronie Serwisu w formie umożliwiającej jego pobranie, utrwalenie i wydrukowanie.
+§3. Zakres Usług
+W ramach Serwisu Usługodawca oferuje następujące bezpłatne usługi:
+• Dostęp do informacji o planowanej Aplikacji Szybka Fucha
+• Zapis na listę oczekujących – możliwość otrzymania powiadomienia o starcie Aplikacji
+• Newsletter – regularne informacje o postępach w rozwoju projektu
+§4. Lista Oczekujących i Newsletter
+• Zapis na listę oczekujących i newsletter polega na podaniu adresu e-mail oraz opcjonalnie wyboru typu użytkownika (zleceniodawca/wykonawca).
+• Zapisując się, Użytkownik wyraża zgodę na otrzymywanie:
+• Powiadomienia o uruchomieniu Aplikacji
+• Informacji o postępach w rozwoju projektu
+• Informacji o funkcjonalnościach Aplikacji
+• Ewentualnych ofert specjalnych dla pierwszych użytkowników
+• Zapis jest dobrowolny i bezpłatny.
+• Użytkownik może w każdej chwili zrezygnować z subskrypcji poprzez:
+• Kliknięcie linku "Wypisz się" w otrzymanej wiadomości e-mail
+• Wysłanie e-maila na adres: kontakt@szybkafucha.app z prośbą o usunięcie z listy
+• Rezygnacja z newslettera jest realizowana niezwłocznie, nie później niż w ciągu 48 godzin.
+§5. Wymagania Techniczne
+Do korzystania z Serwisu wymagane są:
+• Urządzenie z dostępem do internetu (komputer, tablet, smartfon)
+• Przeglądarka internetowa obsługująca HTML5, CSS3 i JavaScript (np. Chrome, Firefox, Safari, Edge w aktualnej wersji)
+• Aktywne konto poczty elektronicznej (do zapisu na listę oczekujących)
+§6. Prawa i Obowiązki Użytkownika
+Użytkownik ma prawo do:
+• Bezpłatnego przeglądania zawartości Serwisu
+• Bezpłatnego zapisu na listę oczekujących i newsletter
+• Rezygnacji z newslettera w dowolnym momencie
+• Żądania usunięcia swoich danych (zgodnie z RODO)
+• Uzyskania informacji o przetwarzanych danych osobowych
+Użytkownik zobowiązuje się do:
+• Podawania prawdziwego adresu e-mail
+• Niepodejmowania działań naruszających prawo polskie i międzynarodowe
+• Nienaruszania praw osób trzecich
+• Niezakłócania działania Serwisu (np. poprzez ataki DDoS, spam)
+• Niekorzystania z Serwisu w sposób sprzeczny z jego przeznaczeniem
+§7. Obowiązki Usługodawcy
+• Usługodawca zobowiązuje się do:
+• Zapewnienia dostępności Serwisu w miarę możliwości technicznych
+• Ochrony danych osobowych Użytkowników zgodnie z RODO
+• Wysyłania newslettera wyłącznie osobom, które wyraziły na to zgodę
+• Umożliwienia łatwej rezygnacji z newslettera
+• Odpowiadania na zapytania Użytkowników w rozsądnym terminie
+• Usługodawca zastrzega sobie prawo do:
+• Czasowego zawieszenia działania Serwisu (np. prace konserwacyjne, aktualizacje)
+• Zmiany wyglądu i funkcjonalności Serwisu
+• Zmiany treści i częstotliwości wysyłki newslettera
+• Zakończenia projektu lub zmiany jego zakresu
+§8. Własność Intelektualna
+• Wszelkie prawa do Serwisu, w tym:
+• Nazwa i logo "Szybka Fucha"
+• Układ graficzny strony
+• Teksty, grafiki i multimedia
+• Kod źródłowy strony
+należą do Usługodawcy lub są wykorzystywane na podstawie odpowiednich licencji.
+• Kopiowanie, rozpowszechnianie lub wykorzystywanie materiałów z Serwisu bez pisemnej zgody Usługodawcy jest zabronione.
+• Użytkownik może udostępniać linki do Serwisu w mediach społecznościowych i innych serwisach.
+§9. Wyłączenie Odpowiedzialności
+• Serwis ma charakter informacyjny. Usługodawca nie ponosi odpowiedzialności za:
+• Przerwy w dostępie do Serwisu wynikające z przyczyn technicznych lub niezależnych od Usługodawcy
+• Działania osób trzecich (np. ataki hakerskie)
+• Skutki nieprawidłowego korzystania z Serwisu przez Użytkownika
+• Treści zewnętrznych stron, do których prowadzą linki z Serwisu
+• Usługodawca nie gwarantuje:
+• Konkretnej daty uruchomienia Aplikacji
+• Ostatecznego zakresu funkcjonalności Aplikacji
+• Dostępności Aplikacji w określonych regionach
+• Informacje prezentowane w Serwisie mają charakter poglądowy i mogą ulec zmianie.
+§10. Ochrona Danych Osobowych
+• Administratorem danych osobowych jest Usługodawca.
+• Dane osobowe przetwarzane są zgodnie z Rozporządzeniem RODO oraz polskimi przepisami o ochronie danych osobowych.
+• Szczegółowe informacje o przetwarzaniu danych osobowych znajdują się w Polityce Prywatności.
+• Informacje o wykorzystywanych plikach cookies znajdują się w Polityce Cookies.
+§11. Reklamacje
+• Reklamacje dotyczące działania Serwisu można zgłaszać drogą elektroniczną na adres: kontakt@szybkafucha.app
+• Reklamacja powinna zawierać:
+• Opis problemu
+• Datę wystąpienia problemu
+• Adres e-mail do kontaktu
+• Usługodawca rozpatrzy reklamację w terminie 14 dni roboczych od jej otrzymania.
+• Odpowiedź na reklamację zostanie wysłana na adres e-mail podany w zgłoszeniu.
+§12. Zmiany Regulaminu
+• Usługodawca zastrzega sobie prawo do zmiany niniejszego Regulaminu w dowolnym czasie.
+• O istotnych zmianach Użytkownicy zapisani na newsletter zostaną poinformowani drogą e-mailową.
+• Aktualna wersja Regulaminu jest zawsze dostępna na stronie Serwisu.
+• Korzystanie z Serwisu po wprowadzeniu zmian oznacza akceptację nowego Regulaminu.
+• Data ostatniej aktualizacji jest widoczna na początku dokumentu.
+§13. Postanowienia Końcowe
+• W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego, w szczególności:
+• Kodeks cywilny
+• Ustawa o świadczeniu usług drogą elektroniczną
+• Rozporządzenie RODO
+• Ewentualne spory będą rozstrzygane polubownie. W przypadku braku porozumienia, spory rozstrzyga sąd właściwy według przepisów prawa polskiego.
+• Jeśli którekolwiek z postanowień Regulaminu okaże się nieważne, pozostałe postanowienia pozostają w mocy.
+• Regulamin wchodzi w życie z dniem publikacji na stronie Serwisu.
+§14. Kontakt
+W przypadku pytań dotyczących Regulaminu lub działania Serwisu, prosimy o kontakt:
+E-mail: kontakt@szybkafucha.app
+Postaramy się odpowiedzieć na Twoje pytania jak najszybciej.
+💡 Masz pytania?
+Jeśli cokolwiek jest niejasne lub masz wątpliwości, napisz do nas na kontakt@szybkafucha.app – chętnie pomożemy!

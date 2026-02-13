@@ -31,7 +31,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = _AuthStateNotifier(ref);
 
   return GoRouter(
-    initialLocation: Routes.welcome,
+    initialLocation: Routes.publicHome,
     debugLogDiagnostics: true,
     refreshListenable: authNotifier,
     redirect: (context, state) {
@@ -46,6 +46,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == Routes.register ||
           state.matchedLocation.startsWith('/register') ||
           state.matchedLocation == Routes.forgotPassword;
+      final isProfileTabRoute = state.matchedLocation == Routes.welcome &&
+          state.uri.queryParameters['tab'] == 'profile';
 
       // emailVerify is NOT an auth route — it must stay accessible
       // after registration (before activateSession is called)
@@ -54,6 +56,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final isOnboardingRoute = state.matchedLocation == Routes.onboarding;
       final isBrowseRoute = state.matchedLocation == Routes.browse;
+      final isPublicHomeRoute = state.matchedLocation == Routes.publicHome;
+      final isLegalRoute = state.matchedLocation == Routes.termsOfService ||
+          state.matchedLocation == Routes.privacyPolicy;
 
       // Debug logging
       print('🔍 Router redirect check:');
@@ -72,7 +77,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isEmailVerifyRoute) return null;
 
         // If on auth, onboarding, or browse route → redirect to home
-        if (isAuthRoute || isOnboardingRoute || isBrowseRoute) {
+        if (isAuthRoute || isOnboardingRoute || isBrowseRoute || isPublicHomeRoute) {
           final user = authNotifier.user;
           final destination = user?.isContractor == true
               ? Routes.contractorHome
@@ -98,8 +103,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Onboarding complete but not logged in
+      // Plain "/" should behave as Home tab, not login/profile view.
+      if (state.matchedLocation == Routes.welcome && !isProfileTabRoute) {
+        print('  ✅ Root without profile tab → redirecting to public home');
+        return Routes.publicHome;
+      }
+
       // Allow /browse, auth routes, and email verify (so users can log in / verify)
-      if (isBrowseRoute || isAuthRoute || isEmailVerifyRoute) {
+      if (isBrowseRoute ||
+          isAuthRoute ||
+          isEmailVerifyRoute ||
+          isPublicHomeRoute ||
+          isLegalRoute) {
         print('  ✅ On browse or auth route, allow');
         return null;
       }
@@ -124,6 +139,27 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.browse,
         name: 'browse',
         builder: (context, state) => const PublicBrowseScreen(),
+      ),
+      GoRoute(
+        path: Routes.publicHome,
+        name: 'publicHome',
+        builder: (context, state) => const PublicHomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.termsOfService,
+        name: 'termsOfService',
+        builder: (context, state) => const LegalDocumentScreen(
+          title: 'Regulamin',
+          assetPath: 'assets/legal/terms_of_service.txt',
+        ),
+      ),
+      GoRoute(
+        path: Routes.privacyPolicy,
+        name: 'privacyPolicy',
+        builder: (context, state) => const LegalDocumentScreen(
+          title: 'Polityka prywatności',
+          assetPath: 'assets/legal/privacy_policy.txt',
+        ),
       ),
       GoRoute(
         path: Routes.login,
