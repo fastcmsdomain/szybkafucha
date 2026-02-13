@@ -2,6 +2,8 @@
 // Export all auth-related screens and widgets
 
 export 'screens/welcome_screen.dart';
+export 'screens/public_home_screen.dart';
+export 'screens/legal_document_screen.dart';
 export 'screens/onboarding_screen.dart';
 export 'screens/public_browse_screen.dart';
 export 'screens/phone_login_screen.dart';

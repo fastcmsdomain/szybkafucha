@@ -1,0 +1,87 @@
+Polityka Prywatności
+Ostatnia aktualizacja: 6 stycznia 2026
+Twoja prywatność jest dla nas priorytetem. Niniejsza Polityka Prywatności wyjaśnia, jak zbieramy, wykorzystujemy i chronimy Twoje dane osobowe zgodnie z Rozporządzeniem o Ochronie Danych Osobowych (RODO) oraz polskimi przepisami o ochronie danych.
+1. Administrator Danych
+Administratorem Twoich danych osobowych jest:
+Szybka Fucha
+Projekt w fazie rozwoju (pre-launch)
+E-mail: kontakt@szybkafucha.app
+W przypadku pytań dotyczących przetwarzania danych osobowych, prosimy o kontakt pod powyższym adresem e-mail.
+2. Jakie Dane Zbieramy
+W ramach zapisu na listę oczekujących (waitlist) oraz newsletter zbieramy wyłącznie następujące dane:
+• Adres e-mail — niezbędny do wysyłania powiadomień o starcie aplikacji i newslettera
+• Typ użytkownika (opcjonalnie: zleceniodawca/wykonawca) — w celu dostosowania treści komunikacji
+• Data i czas zapisu — w celach administracyjnych
+Nie zbieramy danych wrażliwych, numerów dokumentów, danych finansowych ani innych danych osobowych wykraczających poza powyższy zakres.
+3. Cel i Podstawa Prawna Przetwarzania
+Twoje dane przetwarzamy wyłącznie w następujących celach:
+Cel przetwarzania
+Podstawa prawna (RODO)
+Wysyłka informacji o starcie aplikacji
+Art. 6 ust. 1 lit. a — Twoja zgoda
+Wysyłka newslettera z aktualnościami
+Art. 6 ust. 1 lit. a — Twoja zgoda
+Odpowiadanie na Twoje zapytania
+Art. 6 ust. 1 lit. b — wykonanie umowy
+Anonimowa analiza statystyczna
+Art. 6 ust. 1 lit. f — prawnie uzasadniony interes
+4. Dobrowolność Podania Danych
+Podanie danych osobowych jest całkowicie dobrowolne. Brak podania adresu e-mail uniemożliwi jedynie zapis na listę oczekujących i otrzymywanie powiadomień o starcie aplikacji.
+5. Okres Przechowywania Danych
+Twoje dane będziemy przechowywać:
+• Do momentu wycofania zgody — możesz to zrobić w każdej chwili
+• Do momentu wypisania się z newslettera — link do wypisania znajduje się w każdej wiadomości
+• Maksymalnie 3 lata od ostatniej aktywności, jeśli nie wycofasz zgody wcześniej
+Po upływie tego okresu dane zostaną trwale usunięte.
+6. Twoje Prawa
+Zgodnie z RODO przysługują Ci następujące prawa:
+• Prawo dostępu (art. 15) — możesz uzyskać informację, jakie dane o Tobie przetwarzamy
+• Prawo do sprostowania (art. 16) — możesz żądać poprawienia nieprawidłowych danych
+• Prawo do usunięcia (art. 17) — możesz żądać usunięcia swoich danych („prawo do bycia zapomnianym")
+• Prawo do ograniczenia przetwarzania (art. 18) — możesz żądać ograniczenia przetwarzania danych
+• Prawo do przenoszenia danych (art. 20) — możesz otrzymać swoje dane w formacie elektronicznym (CSV/JSON)
+• Prawo do sprzeciwu (art. 21) — możesz sprzeciwić się przetwarzaniu danych w celach marketingowych
+• Prawo do wycofania zgody (art. 7) — możesz w każdej chwili wycofać zgodę na przetwarzanie danych
+Aby skorzystać z powyższych praw, wyślij e-mail na adres: kontakt@szybkafucha.app
+Na Twoje żądanie odpowiemy w ciągu 30 dni od jego otrzymania.
+7. Udostępnianie Danych Podmiotom Trzecim
+Twoje dane mogą być udostępniane wyłącznie następującym kategoriom odbiorców:
+• Dostawcy usług e-mail marketingu (np. Mailchimp, MailerLite) — w celu wysyłki newslettera
+• Dostawcy usług hostingowych — w celu przechowywania danych na serwerach
+• Organy publiczne — wyłącznie jeśli wymagają tego obowiązujące przepisy prawa
+Gwarantujemy, że:
+• Nie sprzedajemy Twoich danych osobowych
+• Nie udostępniamy ich podmiotom trzecim w celach marketingowych bez Twojej zgody
+• Wszyscy nasi dostawcy usług są zobowiązani do przestrzegania RODO
+8. Przekazywanie Danych Poza EOG
+Niektórzy z naszych dostawców usług (np. dostawcy e-mail marketingu) mogą przetwarzać dane poza Europejskim Obszarem Gospodarczym (EOG). W takich przypadkach:
+• Zapewniamy odpowiedni poziom ochrony danych poprzez standardowe klauzule umowne zatwierdzone przez Komisję Europejską
+• Współpracujemy wyłącznie z dostawcami, którzy zapewniają zgodność z RODO
+9. Bezpieczeństwo Danych
+Stosujemy odpowiednie środki techniczne i organizacyjne w celu ochrony Twoich danych, w tym:
+• Szyfrowanie połączeń (SSL/TLS) — wszystkie dane przesyłane są przez bezpieczne połączenie HTTPS
+• Bezpieczne przechowywanie danych u zaufanych dostawców
+• Ograniczony dostęp do danych — tylko upoważnione osoby mają dostęp
+• Regularne przeglądy bezpieczeństwa
+10. Pliki Cookies
+Nasza strona może wykorzystywać pliki cookies w celu:
+• Zapewnienia prawidłowego działania strony (cookies niezbędne)
+• Analizy ruchu na stronie (cookies analityczne — za Twoją zgodą)
+Szczegółowe informacje znajdziesz w Polityce Cookies.
+11. Prawo do Skargi
+Jeśli uważasz, że przetwarzamy Twoje dane niezgodnie z prawem, masz prawo złożyć skargę do:
+Prezes Urzędu Ochrony Danych Osobowych (PUODO)
+ul. Stawki 2
+00-193 Warszawa
+Strona internetowa: uodo.gov.pl
+12. Zmiany w Polityce Prywatności
+Zastrzegamy sobie prawo do wprowadzania zmian w niniejszej Polityce Prywatności. O istotnych zmianach poinformujemy Cię:
+• Drogą e-mailową (na adres podany przy zapisie)
+• Poprzez stosowne ogłoszenie na stronie internetowej
+Data ostatniej aktualizacji jest zawsze widoczna na początku dokumentu.
+13. Kontakt
+W sprawach związanych z ochroną danych osobowych możesz się z nami skontaktować:
+E-mail: kontakt@szybkafucha.app
+Postaramy się odpowiedzieć na Twoje pytania jak najszybciej, nie później niż w ciągu 7 dni roboczych.
+📧 Chcesz usunąć swoje dane?
+Wyślij e-mail na adres kontakt@szybkafucha.app z tematem "Usunięcie danych" — zrealizujemy Twoje żądanie w ciągu 7 dni.
