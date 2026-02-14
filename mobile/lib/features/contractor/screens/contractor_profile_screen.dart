@@ -573,7 +573,13 @@ class _ContractorProfileScreenState
               final categoryKey = data.category.name;
               final selected = _selectedCategories.contains(categoryKey);
               return FilterChip(
-                label: Text(data.name),
+                label: Text(
+                  data.name,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.gray900,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 selected: selected,
                 onSelected: (value) {
                   setState(() {
@@ -584,8 +590,8 @@ class _ContractorProfileScreenState
                     }
                   });
                 },
-                selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                checkmarkColor: AppColors.primary,
+                selectedColor: AppColors.success.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.gray900,
               );
             }).toList(),
           ),
