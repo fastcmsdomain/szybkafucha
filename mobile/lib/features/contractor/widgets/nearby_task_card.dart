@@ -68,7 +68,7 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.only(
+          border: Border.all(
             color: task.isUrgent ? AppColors.primary : AppColors.gray200,
             width: task.isUrgent ? 2 : 1,
           ),
