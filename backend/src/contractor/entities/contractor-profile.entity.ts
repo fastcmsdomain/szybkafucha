@@ -28,6 +28,17 @@ export enum TaskCategory {
   MONTAZ = 'montaz',
   PRZEPROWADZKI = 'przeprowadzki',
   SPRZATANIE = 'sprzatanie',
+  NAPRAWY = 'naprawy',
+  OGROD = 'ogrod',
+  TRANSPORT = 'transport',
+  ZWIERZETA = 'zwierzeta',
+  ELEKTRYK = 'elektryk',
+  HYDRAULIK = 'hydraulik',
+  MALOWANIE = 'malowanie',
+  ZLOTA_RACZKA = 'zlota_raczka',
+  KOMPUTERY = 'komputery',
+  SPORT = 'sport',
+  INNE = 'inne',
 }
 
 @Entity('contractor_profiles')

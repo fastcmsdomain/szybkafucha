@@ -10,7 +10,7 @@ import '../models/task_category.dart';
 import '../widgets/category_card.dart';
 
 /// Category selection screen - first step in task creation
-/// Shows 6 categories in a grid layout
+/// Shows all available categories in a scrollable 2-column grid layout
 class CategorySelectionScreen extends ConsumerStatefulWidget {
   const CategorySelectionScreen({super.key});
 

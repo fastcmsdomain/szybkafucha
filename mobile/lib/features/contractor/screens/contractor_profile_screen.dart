@@ -9,6 +9,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../client/models/task_category.dart';
 
 /// Contractor-only editable profile screen
 class ContractorProfileScreen extends ConsumerStatefulWidget {
@@ -550,15 +551,6 @@ class _ContractorProfileScreenState
   }
 
   Widget _buildCategoriesSection() {
-    const allCategories = [
-      'paczki',
-      'zakupy',
-      'kolejki',
-      'montaz',
-      'przeprowadzki',
-      'sprzatanie',
-    ];
-
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -577,17 +569,18 @@ class _ContractorProfileScreenState
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: allCategories.map((cat) {
-              final selected = _selectedCategories.contains(cat);
+            children: TaskCategoryData.all.map((data) {
+              final categoryKey = data.category.name;
+              final selected = _selectedCategories.contains(categoryKey);
               return FilterChip(
-                label: Text(cat),
+                label: Text(data.name),
                 selected: selected,
                 onSelected: (value) {
                   setState(() {
                     if (value) {
-                      _selectedCategories.add(cat);
+                      _selectedCategories.add(categoryKey);
                     } else {
-                      _selectedCategories.remove(cat);
+                      _selectedCategories.remove(categoryKey);
                     }
                   });
                 },
