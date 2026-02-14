@@ -91,9 +91,16 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
         controller: _tabController,
         children: [
           _buildMapTab(state, filteredTasks),
-          RefreshIndicator(
-            onRefresh: _refreshTasks,
-            child: _buildListTab(state, filteredTasks),
+          Column(
+            children: [
+              _buildListCategoryFilterBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _refreshTasks,
+                  child: _buildListTab(state, filteredTasks),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -169,6 +176,57 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListCategoryFilterBar() {
+    return Container(
+      color: AppColors.white,
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
+      child: SizedBox(
+        height: 42,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+          itemCount: TaskCategoryData.all.length,
+          separatorBuilder: (context, index) => SizedBox(width: AppSpacing.gapSM),
+          itemBuilder: (context, index) {
+            final data = TaskCategoryData.all[index];
+            final isSelected = _selectedCategoryFilters.contains(data.category);
+            return FilterChip(
+              showCheckmark: true,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              avatar: Icon(
+                data.icon,
+                size: 14,
+                color: data.color,
+              ),
+              label: Text(
+                data.name,
+                style: AppTypography.caption.copyWith(
+                  color: isSelected ? data.color : AppColors.gray700,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: data.color.withValues(alpha: 0.12),
+              checkmarkColor: data.color,
+              side: BorderSide(
+                color: isSelected ? data.color : AppColors.gray300,
+              ),
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedCategoryFilters.add(data.category);
+                  } else {
+                    _selectedCategoryFilters.remove(data.category);
+                  }
+                });
+              },
+            );
+          },
         ),
       ),
     );
@@ -397,6 +455,15 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           ],
         ),
 
+        // Empty state overlay (kept below controls/badges)
+        if (tasks.isEmpty)
+          Positioned.fill(
+            child: Container(
+              color: AppColors.white.withValues(alpha: 0.8),
+              child: _buildEmptyMapState(),
+            ),
+          ),
+
         Positioned(
           top: AppSpacing.paddingMD,
           left: AppSpacing.paddingMD,
@@ -464,14 +531,6 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
             ],
           ),
         ),
-
-        if (tasks.isEmpty)
-          Positioned.fill(
-            child: Container(
-              color: AppColors.white.withValues(alpha: 0.8),
-              child: _buildEmptyMapState(),
-            ),
-          ),
       ],
     );
   }
