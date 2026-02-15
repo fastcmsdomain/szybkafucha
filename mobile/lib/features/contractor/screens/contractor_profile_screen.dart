@@ -562,7 +562,7 @@ class _ContractorProfileScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Kategorie usług *',
+            'Kategorie usług:',
             style: AppTypography.h4,
           ),
           SizedBox(height: AppSpacing.gapMD),

@@ -40,12 +40,214 @@
 
   <title>Szybka Fucha - Zleć lub Zarabiaj. Lokalnie. Natychmiast.</title>
 
-  <!-- Defer CSS loading to eliminate render blocking -->
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@800&display=swap"></noscript>
+  <!-- Critical CSS - Inline for above-the-fold content to prevent FOUC -->
+  <style>
+    /* Critical CSS Variables */
+    :root {
+      --color-primary: #E94560;
+      --color-primary-dark: #D13A54;
+      --color-secondary: #1A1A2E;
+      --color-white: #FFFFFF;
+      --color-gray-50: #F9FAFB;
+      --color-gray-100: #F3F4F6;
+      --color-gray-200: #E5E7EB;
+      --color-gray-600: #4B5563;
+      --color-gray-700: #374151;
+      --color-gray-800: #1F2937;
+      --color-gray-900: #111827;
+      --font-family-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      --font-family-heading: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --font-size-3xl: 1.875rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-12: 3rem;
+      --radius-lg: 0.75rem;
+      --radius-full: 9999px;
+      --z-header: 100;
+      --z-mobile-nav: 90;
+    }
 
-  <link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="styles.css"></noscript>
+    /* Base Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-base);
+      line-height: 1.5;
+      color: var(--color-gray-800);
+      background-color: var(--color-white);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Header - Critical */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: var(--z-header);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--color-gray-100);
+    }
+
+    .header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+
+    .header__logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .logo-icon {
+      flex-shrink: 0;
+      font-size: 1.3rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      border-radius: 0.5rem;
+    }
+
+    .logo-text {
+      font-family: var(--font-family-heading);
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      color: var(--color-gray-900);
+    }
+
+    .logo-text b {
+      color: var(--color-primary);
+    }
+
+    .mobile-menu-btn {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .mobile-menu-btn span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--color-gray-700);
+      border-radius: 2px;
+    }
+
+    /* Hero - Critical */
+    .hero {
+      position: relative;
+      padding: calc(64px + var(--space-12)) 0 var(--space-12);
+      overflow: hidden;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero .container {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+
+    .hero__content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-8);
+    }
+
+    .hero__text {
+      text-align: center;
+      min-width: 65%;
+    }
+
+    .hero__badge {
+      display: inline-block;
+      padding: var(--space-2) var(--space-4);
+      background: var(--color-secondary);
+      color: var(--color-white);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-6);
+    }
+
+    .hero__title {
+      font-family: var(--font-family-heading);
+      font-size: var(--font-size-3xl);
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: var(--space-6);
+      color: var(--color-gray-900);
+    }
+
+    .hero__subtitle {
+      font-size: var(--font-size-lg);
+      color: var(--color-gray-600);
+      margin-bottom: var(--space-8);
+      max-width: 740px;
+    }
+
+    /* Container utility */
+    .container {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+
+    /* Prevent FOUC - hide content until CSS loads */
+    html:not(.css-loaded) body {
+      visibility: hidden;
+    }
+  </style>
+
+  <!-- Load fonts with display=swap to prevent invisible text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@800&display=swap">
+
+  <!-- Load main CSS - blocking for better UX (prevents FOUC) -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Mark CSS as loaded to show content -->
+  <script>
+    // Remove visibility hidden once CSS is loaded
+    document.documentElement.classList.add('css-loaded');
+  </script>
   
   <!-- Structured Data for SEO -->
   <script type="application/ld+json">
@@ -150,8 +352,8 @@
       <a href="#zapisz-sie" class="mobile-nav__link mobile-nav__link--cta">Zapisz się</a>
       <div class="mobile-nav__lang-switcher">
         <a href="index.html" class="lang-switcher__link lang-switcher__link--active" aria-label="Polski" lang="pl">PL</a>
-        <!-- <span class="lang-switcher__separator">|</span> -->
-        <!-- <a href="https://szybkafucha.app/ua/index.html" class="lang-switcher__link" aria-label="Українська" lang="uk">UA</a> -->
+        <span class="lang-switcher__separator">|</span>
+        <a href="https://szybkafucha.app/ua/index.html" class="lang-switcher__link" aria-label="Українська" lang="ue">UA</a>
         <span class="lang-switcher__separator">|</span>
         <a href="https://szybkafucha.app/en/index.html" class="lang-switcher__link" aria-label="English" lang="en">EN</a>
       </div>
@@ -1750,6 +1952,6 @@
     </div>
   </footer>
   
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
