@@ -479,13 +479,24 @@ The landing page includes a comprehensive signup form that serves dual purposes:
 
 ### Task Categories
 
-Six core categories defined in PRD:
-- Paczki (Packages)
+Seventeen task categories supported in the platform:
+- Paczki (Parcels)
 - Zakupy (Shopping)
 - Kolejki (Queues/Waiting)
 - Montaż (Assembly)
 - Przeprowadzki (Moving)
 - Sprzątanie (Cleaning)
+- Naprawy (Repairs)
+- Ogród (Garden)
+- Transport (Transport)
+- Zwierzęta (Pets)
+- Elektryk (Electrician)
+- Hydraulik (Plumber)
+- Malowanie (Painting)
+- Złota rączka (Handyman)
+- Komputery (Computers/IT)
+- Sport (Sport/Fitness)
+- Inne (Other)
 
 ### Task Lifecycle
 
