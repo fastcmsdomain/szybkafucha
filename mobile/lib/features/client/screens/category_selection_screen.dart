@@ -108,8 +108,7 @@ class _CategorySelectionScreenState
                 ),
                 child: Text(
                   AppStrings.continueText,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -160,7 +159,7 @@ class _CategorySelectionScreenState
                     color: category.color,
                   ),
                 ),
-                SizedBox(height: 2),
+                SizedBox(height: AppSpacing.gapXS),
                 Text(
                   category.description,
                   style: AppTypography.bodySmall.copyWith(

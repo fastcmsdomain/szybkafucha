@@ -116,6 +116,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nowe zlecenie'),
+        tooltip: 'Utwórz nowe zlecenie',
       ),
     );
   }
@@ -141,48 +142,52 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   }
 
   Widget _buildMapFiltersButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _openCategoryFilterDropdown,
-        borderRadius: AppRadius.radiusMD,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.paddingMD,
-            vertical: AppSpacing.paddingSM,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: AppRadius.radiusMD,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.gray900.withValues(alpha: 0.1),
-                blurRadius: 8,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.filter_list,
-                size: 18,
-                color: AppColors.primary,
-              ),
-              SizedBox(width: AppSpacing.gapSM),
-              Text(
-                _getSelectedFiltersLabel(),
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.gray700,
+    return Semantics(
+      label: 'Filtruj kategorie',
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openCategoryFilterDropdown,
+          borderRadius: AppRadius.radiusMD,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.paddingMD,
+              vertical: AppSpacing.paddingSM,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: AppRadius.radiusMD,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gray900.withValues(alpha: 0.1),
+                  blurRadius: 8,
                 ),
-              ),
-              SizedBox(width: AppSpacing.gapXS),
-              Icon(
-                Icons.arrow_drop_down,
-                color: AppColors.gray600,
-              ),
-            ],
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.filter_list,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: AppSpacing.gapSM),
+                Text(
+                  _getSelectedFiltersLabel(),
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray700,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.gapXS),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: AppColors.gray600,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -294,18 +299,21 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                         itemBuilder: (context, index) {
                           final data = TaskCategoryData.all[index];
                           final isSelected = draft.contains(data.category);
-                          return InkWell(
-                            onTap: () {
-                              setModalState(() {
-                                if (isSelected) {
-                                  draft.remove(data.category);
-                                } else {
-                                  draft.add(data.category);
-                                }
-                              });
-                            },
-                            borderRadius: AppRadius.radiusSM,
-                            child: Padding(
+                          return Semantics(
+                            label: 'Filtr kategorii ${data.name}',
+                            button: true,
+                            child: InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    draft.remove(data.category);
+                                  } else {
+                                    draft.add(data.category);
+                                  }
+                                });
+                              },
+                              borderRadius: AppRadius.radiusSM,
+                              child: Padding(
                               padding: EdgeInsets.symmetric(
                                 vertical: AppSpacing.gapXS,
                                 horizontal: AppSpacing.paddingXS,
@@ -342,6 +350,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                                 ],
                               ),
                             ),
+                            ),
                           );
                         },
                       ),
@@ -351,7 +360,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => context.pop(),
                             child: const Text('Anuluj'),
                           ),
                         ),
@@ -362,7 +371,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                               setState(() {
                                 _selectedCategoryFilters = draft;
                               });
-                              Navigator.pop(context);
+                              context.pop();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
@@ -446,9 +455,13 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                     point: cluster.center,
                     width: 44,
                     height: 54,
-                    child: GestureDetector(
-                      onTap: () => _showTaskDetails(task),
-                      child: TaskMarker(position: cluster.center).build(context),
+                    child: Semantics(
+                      label: 'Otwórz szczegóły zlecenia',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () => _showTaskDetails(task),
+                        child: TaskMarker(position: cluster.center).build(context),
+                      ),
                     ),
                   );
                 } else {
@@ -592,8 +605,8 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         onTap: onPressed,
         borderRadius: AppRadius.radiusSM,
         child: SizedBox(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           child: Icon(
             icon,
             size: 22,

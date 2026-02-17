@@ -84,8 +84,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     SizedBox(width: AppSpacing.gapSM),
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                        horizontal: AppSpacing.paddingXS,
+                        vertical: AppSpacing.gapXS,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
@@ -238,21 +238,27 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     final category = task.categoryData;
     final isLocked = task.status == TaskStatus.pendingComplete;
 
-    return GestureDetector(
-      onTap: isLocked
-          ? null
-          : () {
-              if (isActive &&
-                  (task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed)) {
-                context.push(Routes.clientTaskTrack(task.id));
-              } else {
-                // Show task details in a bottom sheet
-                _showTaskDetails(task);
-              }
-            },
-      child: Container(
+    return Semantics(
+      label: isLocked
+          ? 'Zlecenie ${category.name}, ${task.status.displayName}, obecnie niedostępne'
+          : 'Otwórz szczegóły zlecenia ${category.name}',
+      button: true,
+      enabled: !isLocked,
+      child: GestureDetector(
+        onTap: isLocked
+            ? null
+            : () {
+                if (isActive &&
+                    (task.status == TaskStatus.inProgress ||
+                        task.status == TaskStatus.accepted ||
+                        task.status == TaskStatus.confirmed)) {
+                  context.push(Routes.clientTaskTrack(task.id));
+                } else {
+                  // Show task details in a bottom sheet
+                  _showTaskDetails(task);
+                }
+              },
+        child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -324,7 +330,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     size: 14,
                     color: AppColors.gray500,
                   ),
-                  SizedBox(width: 4),
+                  SizedBox(width: AppSpacing.gapXS),
                   Expanded(
                     child: Text(
                       task.address!,
@@ -384,7 +390,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                 ],
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -570,7 +577,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              context.pop();
                               context.push(Routes.clientTask(task.id));
                             },
                             child: Text('Więcej'),
@@ -581,7 +588,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                       // Close button (red)
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => context.pop(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.error,
                             foregroundColor: AppColors.white,
@@ -611,17 +618,17 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text('Nie'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               _cancelTask(task);
             },
             child: Text(
               'Tak, anuluj',
-              style: TextStyle(color: AppColors.error),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
         ],

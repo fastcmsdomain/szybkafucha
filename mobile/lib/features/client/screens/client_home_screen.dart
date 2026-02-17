@@ -85,6 +85,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nowe zlecenie'),
+        tooltip: 'Utwórz nowe zlecenie',
       ),
     );
   }
@@ -153,80 +154,84 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   }
 
   Widget _buildQuickActionCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push(Routes.clientCategories),
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingLG),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: AppRadius.radiusXL,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
+    return Semantics(
+      label: 'Utwórz nowe zlecenie',
+      button: true,
+      child: GestureDetector(
+        onTap: () => context.push(Routes.clientCategories),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Potrzebujesz pomocy?',
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.white,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapSM),
-                  Text(
-                    'Znajdź kogoś, kto pomoże Ci w codziennych zadaniach',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapMD),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.paddingMD,
-                      vertical: AppSpacing.paddingSM,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.radiusFull,
-                    ),
-                    child: Text(
-                      'Utwórz zlecenie',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
+            borderRadius: AppRadius.radiusXL,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Potrzebujesz pomocy?',
+                      style: AppTypography.h4.copyWith(
+                        color: AppColors.white,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: AppSpacing.gapSM),
+                    Text(
+                      'Znajdź kogoś, kto pomoże Ci w codziennych zadaniach',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.gapMD),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.paddingMD,
+                        vertical: AppSpacing.paddingSM,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: AppRadius.radiusFull,
+                      ),
+                      child: Text(
+                        'Utwórz zlecenie',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: AppSpacing.gapMD),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.2),
-                borderRadius: AppRadius.radiusMD,
+              SizedBox(width: AppSpacing.gapMD),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.radiusMD,
+                ),
+                child: Icon(
+                  Icons.handshake_outlined,
+                  size: 48,
+                  color: AppColors.white,
+                ),
               ),
-              child: Icon(
-                Icons.handshake_outlined,
-                size: 48,
-                color: AppColors.white,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -318,128 +323,137 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
     final isLocked = task.status == TaskStatus.pendingComplete;
 
-    return GestureDetector(
-      onTap: isLocked
-          ? null
-          : () {
-              if (task.status.isActive) {
-                context.push(Routes.clientTaskTrack(task.id));
-              } else {
-                context.go(Routes.clientHistory);
-              }
-            },
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.paddingSM),
-                  decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.radiusMD,
+    return Semantics(
+      label: isLocked
+          ? 'Zlecenie ${category.name}, ${task.status.displayName}, obecnie niedostępne'
+          : 'Otwórz szczegóły zlecenia ${category.name}',
+      button: true,
+      enabled: !isLocked,
+      child: GestureDetector(
+        onTap: isLocked
+            ? null
+            : () {
+                if (task.status.isActive) {
+                  context.push(Routes.clientTaskTrack(task.id));
+                } else {
+                  context.go(Routes.clientHistory);
+                }
+              },
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(color: AppColors.gray200),
+            boxShadow: AppShadows.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.paddingSM),
+                    decoration: BoxDecoration(
+                      color: category.color.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    child: Icon(
+                      category.icon,
+                      color: category.color,
+                      size: 24,
+                    ),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: category.color,
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: category.color,
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: AppTypography.labelMedium.copyWith(
+                            color: category.color,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _formatDate(task.createdAt),
+                        Text(
+                          _formatDate(task.createdAt),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildStatusBadge(task.status),
+                ],
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Description
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Footer row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (task.address != null) ...[
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
+                    Expanded(
+                      child: Text(
+                        task.address!,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.gray500,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(task.status),
-              ],
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Description
-            Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Footer row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (task.address != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      task.address!,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                ] else
-                  const Spacer(),
-                Text(
-                  '${task.budget} PLN',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-
-            // Action button for active tasks (skip waiting-for-contractor-confirmation)
-            if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
-              SizedBox(height: AppSpacing.gapMD),
-              Row(
-                children: [
-                  // Track button
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                      child: Text('Więcej'),
+                    SizedBox(width: AppSpacing.gapSM),
+                  ] else
+                    const Spacer(),
+                  Text(
+                    '${task.budget} PLN',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
+
+              // Action button for active tasks (skip waiting-for-contractor-confirmation)
+              if (task.status.isActive &&
+                  task.status != TaskStatus.pendingComplete) ...[
+                SizedBox(height: AppSpacing.gapMD),
+                Row(
+                  children: [
+                    // Track button
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () =>
+                            context.push(Routes.clientTaskTrack(task.id)),
+                        child: Text('Więcej'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -513,17 +527,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text('Nie'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               _cancelTask(task);
             },
             child: Text(
               'Tak, anuluj',
-              style: TextStyle(color: AppColors.error),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
             ),
           ),
         ],
@@ -658,7 +674,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        SizedBox(height: AppSpacing.gapXS),
                         Text(
                           description,
                           style: AppTypography.bodySmall.copyWith(
