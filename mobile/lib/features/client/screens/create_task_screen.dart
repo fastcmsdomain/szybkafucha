@@ -16,7 +16,6 @@ import '../../../core/widgets/sf_address_autocomplete.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../models/task_category.dart';
-import '../widgets/category_card.dart';
 
 /// Task creation screen - collect task details
 /// Includes: description, location, budget, schedule
@@ -96,14 +95,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category selection (if not pre-selected)
-                if (_selectedCategory == null) ...[
-                  _buildCategorySection(),
-                  SizedBox(height: AppSpacing.space8),
-                ] else ...[
-                  _buildSelectedCategoryBadge(),
-                  SizedBox(height: AppSpacing.space4),
-                ],
+                // Category selection
+                _buildCategorySection(),
+                SizedBox(height: AppSpacing.space8),
 
                 // Description
                 _buildDescriptionSection(),
@@ -173,63 +167,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
-  Widget _buildSelectedCategoryBadge() {
-    final category = TaskCategoryData.fromCategory(_selectedCategory!);
-
-    return GestureDetector(
-      onTap: () {
-        // Allow changing category
-        setState(() => _selectedCategory = null);
-      },
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: category.color.withValues(alpha: 0.1),
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: category.color.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              category.icon,
-              color: category.color,
-              size: 24,
-            ),
-            SizedBox(width: AppSpacing.gapMD),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: category.color,
-                    ),
-                  ),
-                  Text(
-                    category.description,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.edit_outlined,
-              color: AppColors.gray400,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCategorySection() {
+    final selectedCategoryData = _selectedCategory != null
+        ? TaskCategoryData.fromCategory(_selectedCategory!)
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -237,23 +179,52 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.selectCategory,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapMD),
-        Wrap(
-          spacing: AppSpacing.gapSM,
-          runSpacing: AppSpacing.gapSM,
-          children: TaskCategoryData.all.map((category) {
-            return CategoryChip(
-              category: category,
-              isSelected: _selectedCategory == category.category,
-              onTap: () {
-                setState(() {
-                  _selectedCategory = category.category;
-                  _budgetController.text = category.suggestedPrice.toString();
-                });
-              },
+        SizedBox(height: AppSpacing.gapSM),
+        DropdownButtonFormField<TaskCategory>(
+          initialValue: _selectedCategory,
+          isExpanded: true,
+          decoration: InputDecoration(
+            hintText: 'Wybierz kategorię',
+          ),
+          items: TaskCategoryData.all.map((category) {
+            return DropdownMenuItem<TaskCategory>(
+              value: category.category,
+              child: Row(
+                children: [
+                  Icon(
+                    category.icon,
+                    size: 18,
+                    color: category.color,
+                  ),
+                  SizedBox(width: AppSpacing.gapSM),
+                  Expanded(
+                    child: Text(
+                      category.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             );
           }).toList(),
+          onChanged: (category) {
+            if (category == null) return;
+            final selectedData = TaskCategoryData.fromCategory(category);
+            setState(() {
+              _selectedCategory = category;
+              _budgetController.text = selectedData.suggestedPrice.toString();
+            });
+          },
         ),
+        if (selectedCategoryData != null) ...[
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            selectedCategoryData.description,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+        ],
       ],
     );
   }

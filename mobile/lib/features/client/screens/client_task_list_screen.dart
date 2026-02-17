@@ -10,6 +10,7 @@ import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../models/task_category.dart';
 import '../../contractor/models/contractor_task.dart';
 import '../../contractor/widgets/nearby_task_card.dart';
 
@@ -27,6 +28,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   late TabController _tabController;
   final MapController _mapController = MapController();
   double _currentZoom = 6.0; // Start zoomed out to show the whole country
+  Set<TaskCategory> _selectedCategoryFilters = {};
 
   @override
   void initState() {
@@ -52,9 +54,10 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
-    final tasks = tasksState.tasks
+    final baseTasks = tasksState.tasks
         .where(_isActiveOrNew)
         .toList();
+    final filteredTasks = _getFilteredTasks(baseTasks);
 
     return Scaffold(
       appBar: AppBar(
@@ -92,10 +95,17 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildMapTab(tasksState, tasks),
-          RefreshIndicator(
-            onRefresh: _refreshTasks,
-            child: _buildListTab(tasksState, tasks),
+          _buildMapTab(tasksState, filteredTasks),
+          Column(
+            children: [
+              _buildListCategoryFilterBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _refreshTasks,
+                  child: _buildListTab(tasksState, filteredTasks),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -106,6 +116,269 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nowe zlecenie'),
+      ),
+    );
+  }
+
+  List<ContractorTask> _getFilteredTasks(List<ContractorTask> tasks) {
+    if (_selectedCategoryFilters.isEmpty) {
+      return tasks;
+    }
+    return tasks
+        .where((task) => _selectedCategoryFilters.contains(task.category))
+        .toList();
+  }
+
+  String _getSelectedFiltersLabel() {
+    if (_selectedCategoryFilters.isEmpty) {
+      return 'Filtry';
+    }
+    if (_selectedCategoryFilters.length == 1) {
+      final category = _selectedCategoryFilters.first;
+      return TaskCategoryData.fromCategory(category).name;
+    }
+    return '${_selectedCategoryFilters.length} wybrane';
+  }
+
+  Widget _buildMapFiltersButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _openCategoryFilterDropdown,
+        borderRadius: AppRadius.radiusMD,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.paddingMD,
+            vertical: AppSpacing.paddingSM,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusMD,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.gray900.withValues(alpha: 0.1),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.filter_list,
+                size: 18,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: AppSpacing.gapSM),
+              Text(
+                _getSelectedFiltersLabel(),
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gray700,
+                ),
+              ),
+              SizedBox(width: AppSpacing.gapXS),
+              Icon(
+                Icons.arrow_drop_down,
+                color: AppColors.gray600,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListCategoryFilterBar() {
+    return Container(
+      color: AppColors.white,
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
+      child: SizedBox(
+        height: 42,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+          itemCount: TaskCategoryData.all.length,
+          separatorBuilder: (context, index) => SizedBox(width: AppSpacing.gapSM),
+          itemBuilder: (context, index) {
+            final data = TaskCategoryData.all[index];
+            final isSelected = _selectedCategoryFilters.contains(data.category);
+            return FilterChip(
+              showCheckmark: true,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              avatar: Icon(
+                data.icon,
+                size: 14,
+                color: data.color,
+              ),
+              label: Text(
+                data.name,
+                style: AppTypography.caption.copyWith(
+                  color: isSelected ? data.color : AppColors.gray700,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: data.color.withValues(alpha: 0.12),
+              checkmarkColor: data.color,
+              side: BorderSide(
+                color: isSelected ? data.color : AppColors.gray300,
+              ),
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedCategoryFilters.add(data.category);
+                  } else {
+                    _selectedCategoryFilters.remove(data.category);
+                  }
+                });
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openCategoryFilterDropdown() async {
+    final draft = Set<TaskCategory>.from(_selectedCategoryFilters);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.72;
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.paddingMD),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Wybierz kategorie',
+                            style: AppTypography.h4,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: draft.isEmpty
+                              ? null
+                              : () {
+                                  setModalState(() {
+                                    draft.clear();
+                                  });
+                                },
+                          child: const Text('Wyczyść'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.gapSM),
+                    Text(
+                      'Możesz zaznaczyć wiele kategorii',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.gray600,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.gapMD),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: TaskCategoryData.all.length,
+                        itemBuilder: (context, index) {
+                          final data = TaskCategoryData.all[index];
+                          final isSelected = draft.contains(data.category);
+                          return InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                if (isSelected) {
+                                  draft.remove(data.category);
+                                } else {
+                                  draft.add(data.category);
+                                }
+                              });
+                            },
+                            borderRadius: AppRadius.radiusSM,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.gapXS,
+                                horizontal: AppSpacing.paddingXS,
+                              ),
+                              child: Row(
+                                children: [
+                                  Checkbox(
+                                    value: isSelected,
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    onChanged: (value) {
+                                      setModalState(() {
+                                        if (value == true) {
+                                          draft.add(data.category);
+                                        } else {
+                                          draft.remove(data.category);
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(width: AppSpacing.gapSM),
+                                  Icon(
+                                    data.icon,
+                                    color: data.color,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: AppSpacing.gapSM),
+                                  Expanded(
+                                    child: Text(
+                                      data.name,
+                                      style: AppTypography.bodyMedium,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.gapMD),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Anuluj'),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedCategoryFilters = draft;
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                            ),
+                            child: const Text('Zatwierdź'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -196,6 +469,15 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ],
         ),
 
+        // Empty state overlay (kept below controls/badges)
+        if (tasks.isEmpty)
+          Positioned.fill(
+            child: Container(
+              color: AppColors.white.withValues(alpha: 0.8),
+              child: _buildEmptyMapState(),
+            ),
+          ),
+
         // Task count badge
         Positioned(
           top: AppSpacing.paddingMD,
@@ -235,6 +517,13 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ),
         ),
 
+        // Filters button (floating, below task count badge)
+        Positioned(
+          top: AppSpacing.paddingMD + 56,
+          left: AppSpacing.paddingMD,
+          child: _buildMapFiltersButton(),
+        ),
+
         // Zoom controls
         Positioned(
           right: AppSpacing.paddingMD,
@@ -259,15 +548,6 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
             ],
           ),
         ),
-
-        // Empty state overlay
-        if (tasks.isEmpty)
-          Positioned.fill(
-            child: Container(
-              color: AppColors.white.withValues(alpha: 0.8),
-              child: _buildEmptyMapState(),
-            ),
-          ),
       ],
     );
   }
@@ -416,6 +696,8 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   }
 
   Widget _buildEmptyState() {
+    final hasActiveFilter = _selectedCategoryFilters.isNotEmpty;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.paddingXL),
@@ -436,8 +718,10 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              'Obecnie nie ma żadnych dostępnych zleceń. '
-              'Sprawdź ponownie później.',
+              hasActiveFilter
+                  ? 'Brak zleceń dla wybranych kategorii.'
+                  : 'Obecnie nie ma żadnych dostępnych zleceń. '
+                      'Sprawdź ponownie później.',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.gray500,
               ),
@@ -460,6 +744,8 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   }
 
   Widget _buildEmptyMapState() {
+    final hasActiveFilter = _selectedCategoryFilters.isNotEmpty;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -478,7 +764,9 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ),
           SizedBox(height: AppSpacing.gapSM),
           Text(
-            'Na mapie pojawią się zlecenia, gdy będą dostępne.',
+            hasActiveFilter
+                ? 'Brak zleceń dla wybranych kategorii.'
+                : 'Na mapie pojawią się zlecenia, gdy będą dostępne.',
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.gray500,
             ),

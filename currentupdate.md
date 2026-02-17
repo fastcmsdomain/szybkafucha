@@ -12,6 +12,37 @@ Each entry documents:
 
 ---
 
+## [2026-02-14] Expand Task Categories from 6 to 17 Across Backend, Mobile, Admin, Landing, and Docs
+
+- **Developer/Agent**: Codex
+- **Scope of Changes**: Extended task category support from 6 to 17 categories with synchronized updates across backend enums and seeds, Flutter category model and contractor profile UI, admin category labels, PL/EN/UA landing filters, and documentation
+- **Files Changed**:
+  - `backend/src/contractor/entities/contractor-profile.entity.ts` – Added 11 new enum values in `TaskCategory` (`naprawy`, `ogrod`, `transport`, `zwierzeta`, `elektryk`, `hydraulik`, `malowanie`, `zlota_raczka`, `komputery`, `sport`, `inne`)
+  - `backend/src/tasks/entities/task.entity.ts` – Updated `category` field comment to reflect generic `TaskCategory` string storage instead of old 6-category list
+  - `backend/src/database/seeds/seed.data.ts` – Expanded contractor category profiles and added sample tasks covering all 11 newly added categories (full category coverage in seeded tasks)
+  - `mobile/lib/features/client/models/task_category.dart` – Added 11 enum values and 11 new `TaskCategoryData` entries (name, description, icon, color, price range, unit, estimated duration)
+  - `mobile/lib/features/client/screens/category_selection_screen.dart` – Updated screen comment to neutral wording for full category set
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Replaced hardcoded 6-category list with dynamic chips generated from `TaskCategoryData.all`; uses enum key for backend payload and localized display name for UI
+  - `admin/src/pages/Tasks.tsx` – Added 11 new entries to `CATEGORY_LABELS` including emoji labels for admin task list
+  - `index.html` – Updated app preview category filter bar to 17 Polish category buttons
+  - `en/index.html` – Updated app preview category filter bar to 17 British English category buttons
+  - `ua/index.html` – Updated app preview category filter bar to 17 Ukrainian category buttons
+  - `CLAUDE.md` – Updated "Task Categories" section from 6 to full list of 17
+  - `currentupdate.md` – Added this changelog entry
+- **System Impact**:
+  - Backend DTO validation based on `@IsEnum(TaskCategory)` now accepts the 11 new category values automatically
+  - Seed dataset now includes realistic examples for every new category, improving local testing and demo coverage
+  - Mobile and contractor profile UI now share a single source of truth for category definitions, reducing future drift risk
+  - Admin task category rendering now shows friendly labels for all supported categories (no raw key fallback for new ones)
+  - Landing pages now present the complete category universe consistently across PL/EN/UA variants
+- **Related Tasks/PRD**: `tasks/dodatkowe-kategorie.md` (Fixly-inspired category expansion)
+- **Potential Conflicts/Risks**:
+  - Existing production content/marketing screenshots may still reference old 6-category set and should be refreshed
+  - If any external integration hardcodes old category allowlists, it must be updated to include new keys
+  - Ukrainian labels were translated in-page; wording can be refined later by native-language review if needed
+
+---
+
 ## [2026-02-13] Add Flutter Development Skills & Commands
 
 - **Developer/Agent**: Claude
