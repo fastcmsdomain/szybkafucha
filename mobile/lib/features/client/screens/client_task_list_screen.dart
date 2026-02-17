@@ -10,6 +10,7 @@ import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../models/task_category.dart';
 import '../../contractor/models/contractor_task.dart';
 import '../../contractor/widgets/nearby_task_card.dart';
 
@@ -27,6 +28,7 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   late TabController _tabController;
   final MapController _mapController = MapController();
   double _currentZoom = 6.0; // Start zoomed out to show the whole country
+  Set<TaskCategory> _selectedCategoryFilters = <TaskCategory>{};
 
   @override
   void initState() {
@@ -52,9 +54,10 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
-    final tasks = tasksState.tasks
+    final activeTasks = tasksState.tasks
         .where(_isActiveOrNew)
         .toList();
+    final filteredTasks = _getFilteredTasks(activeTasks);
 
     return Scaffold(
       appBar: AppBar(
@@ -92,10 +95,10 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildMapTab(tasksState, tasks),
+          _buildMapTab(tasksState, filteredTasks),
           RefreshIndicator(
             onRefresh: _refreshTasks,
-            child: _buildListTab(tasksState, tasks),
+            child: _buildListTab(tasksState, filteredTasks),
           ),
         ],
       ),
@@ -511,6 +514,12 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ),
         ),
 
+        Positioned(
+          top: AppSpacing.paddingMD,
+          right: AppSpacing.paddingMD,
+          child: _buildMapFiltersButton(),
+        ),
+
         // Zoom controls
         Positioned(
           right: AppSpacing.paddingMD,
@@ -557,22 +566,27 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
       return _buildErrorState(tasksState.error!);
     }
 
-    if (tasks.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return ListView.separated(
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      itemCount: tasks.length,
-      separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        return NearbyTaskCard(
-          task: task,
-          showActions: false,
-          onTap: null,
-        );
-      },
+    return Column(
+      children: [
+        _buildListCategoryFilterBar(),
+        Expanded(
+          child: tasks.isEmpty
+              ? _buildEmptyState()
+              : ListView.separated(
+                  padding: EdgeInsets.all(AppSpacing.paddingMD),
+                  itemCount: tasks.length,
+                  separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
+                  itemBuilder: (context, index) {
+                    final task = tasks[index];
+                    return NearbyTaskCard(
+                      task: task,
+                      showActions: false,
+                      onTap: null,
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
