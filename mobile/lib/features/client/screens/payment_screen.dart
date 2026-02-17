@@ -55,6 +55,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
+          tooltip: 'Wróć',
         ),
         title: SFRainbowText('Podsumowanie'),
         centerTitle: true,
@@ -214,7 +215,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 Row(
                   children: [
                     Icon(Icons.star, size: 14, color: AppColors.warning),
-                    SizedBox(width: 2),
+                    SizedBox(width: AppSpacing.gapXS),
                     Text(
                       contractor.formattedRating,
                       style: AppTypography.caption.copyWith(
@@ -243,7 +244,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     size: 14,
                     color: AppColors.gray500,
                   ),
-                  SizedBox(width: 4),
+                  SizedBox(width: AppSpacing.gapXS),
                   Text(
                     contractor.formattedEta,
                     style: AppTypography.bodySmall.copyWith(
@@ -256,7 +257,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 'Szacowany czas',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.gray400,
-                  fontSize: 10,
                 ),
               ),
             ],
@@ -404,9 +404,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
           SizedBox(height: AppSpacing.gapMD),
 
           // Save card checkbox
-          GestureDetector(
-            onTap: () => setState(() => _saveCard = !_saveCard),
-            child: Row(
+          Semantics(
+            label: 'Zapamiętaj metodę płatności',
+            button: true,
+            child: GestureDetector(
+              onTap: () => setState(() => _saveCard = !_saveCard),
+              child: Row(
               children: [
                 Container(
                   width: 20,
@@ -433,6 +436,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                 ),
               ],
             ),
+            ),
           ),
         ],
       ),
@@ -443,9 +447,12 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       String value, IconData icon, String title, String subtitle) {
     final isSelected = _selectedPaymentMethod == value;
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPaymentMethod = value),
-      child: Container(
+    return Semantics(
+      label: 'Wybierz metodę płatności: $title',
+      button: true,
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedPaymentMethod = value),
+        child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
           color: isSelected
@@ -485,6 +492,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             ),
             _buildRadioIndicator(isSelected),
           ],
+        ),
         ),
       ),
     );
@@ -566,8 +574,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                       )
                     : Text(
                         'Zapłać ${_totalAmount.toStringAsFixed(2)} PLN',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTypography.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),

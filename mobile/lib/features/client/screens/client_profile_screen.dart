@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
@@ -99,7 +100,7 @@ class _ClientProfileScreenState
                 title: const Text('Zrób zdjęcie'),
                 subtitle: const Text('Użyj aparatu'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _pickImage(ImageSource.camera);
                 },
               ),
@@ -115,7 +116,7 @@ class _ClientProfileScreenState
                 title: const Text('Wybierz z galerii'),
                 subtitle: const Text('Wybierz istniejące zdjęcie'),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _pickImage(ImageSource.gallery);
                 },
               ),
@@ -314,12 +315,17 @@ class _ClientProfileScreenState
                     child: Material(
                       color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
                       shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                      child: Semantics(
+                        label: 'Zmień zdjęcie profilowe',
+                        button: true,
+                        enabled: !_isUploadingAvatar,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacing.paddingSM),
+                            child: const Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                          ),
                         ),
                       ),
                     ),

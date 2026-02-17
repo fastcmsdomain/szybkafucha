@@ -203,19 +203,23 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (index) {
               final starNumber = index + 1;
-              return GestureDetector(
-                onTap: () => setState(() => _rating = starNumber),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: AnimatedScale(
-                    scale: _rating >= starNumber ? 1.1 : 1.0,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(
-                      _rating >= starNumber ? Icons.star : Icons.star_border,
-                      color: _rating >= starNumber
-                          ? AppColors.warning
-                          : AppColors.gray300,
-                      size: 48,
+              return Semantics(
+                label: 'Oceń na $starNumber gwiazdek',
+                button: true,
+                child: GestureDetector(
+                  onTap: () => setState(() => _rating = starNumber),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.gapXS),
+                    child: AnimatedScale(
+                      scale: _rating >= starNumber ? 1.1 : 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Icon(
+                        _rating >= starNumber ? Icons.star : Icons.star_border,
+                        color: _rating >= starNumber
+                            ? AppColors.warning
+                            : AppColors.gray300,
+                        size: 48,
+                      ),
                     ),
                   ),
                 ),
@@ -341,37 +345,41 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               final isSelected = _selectedTip == tip;
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedTip = tip),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.symmetric(
-                        vertical: AppSpacing.paddingMD,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.gray50,
-                        borderRadius: AppRadius.radiusMD,
-                        border: Border.all(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.gapXS),
+                  child: Semantics(
+                    label: tip == 0 ? 'Bez napiwku' : 'Napiwek $tip zł',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTip = tip),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.paddingMD,
+                        ),
+                        decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : AppColors.gray200,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            tip == 0 ? 'Bez' : '$tip zł',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: isSelected
-                                  ? AppColors.white
-                                  : AppColors.gray700,
-                              fontWeight: FontWeight.w600,
-                            ),
+                              : AppColors.gray50,
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.gray200,
                           ),
-                        ],
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              tip == 0 ? 'Bez' : '$tip zł',
+                              style: AppTypography.bodySmall.copyWith(
+                                color: isSelected
+                                    ? AppColors.white
+                                    : AppColors.gray700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -409,8 +417,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               _selectedTip != null && _selectedTip! > 0
                   ? 'Wyślij ocenę i napiwek'
                   : 'Wyślij ocenę',
-              style: TextStyle(
-                fontSize: 16,
+              style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -503,7 +510,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                context.pop();
                 context.go(Routes.clientHome);
               },
               style: ElevatedButton.styleFrom(
@@ -528,19 +535,19 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text('Zostań i oceń'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              context.pop();
               await ref.read(clientTasksProvider.notifier).confirmTask(widget.taskId);
               await ref.read(clientTasksProvider.notifier).refresh();
               context.go(Routes.clientHome);
             },
             child: Text(
               'Pomiń',
-              style: TextStyle(color: AppColors.gray500),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             ),
           ),
         ],

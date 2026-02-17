@@ -107,6 +107,7 @@ class _ContractorSelectionScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
+          tooltip: 'Wróć',
         ),
         title: SFRainbowText('Wybierz pomocnika'),
         centerTitle: true,
@@ -217,34 +218,38 @@ class _ContractorSelectionScreenState
 
   Widget _buildSortChip(String value, String label, IconData icon) {
     final isSelected = _sortBy == value;
-    return GestureDetector(
-      onTap: () => _sortContractors(value),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.paddingMD,
-          vertical: AppSpacing.paddingSM,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.gray100,
-          borderRadius: AppRadius.radiusFull,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? AppColors.white : AppColors.gray600,
-            ),
-            SizedBox(width: AppSpacing.gapXS),
-            Text(
-              label,
-              style: AppTypography.bodySmall.copyWith(
-                color: isSelected ? AppColors.white : AppColors.gray700,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return Semantics(
+      label: 'Sortuj: $label',
+      button: true,
+      child: GestureDetector(
+        onTap: () => _sortContractors(value),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.paddingMD,
+            vertical: AppSpacing.paddingSM,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.gray100,
+            borderRadius: AppRadius.radiusFull,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? AppColors.white : AppColors.gray600,
               ),
-            ),
-          ],
+              SizedBox(width: AppSpacing.gapXS),
+              Text(
+                label,
+                style: AppTypography.bodySmall.copyWith(
+                  color: isSelected ? AppColors.white : AppColors.gray700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -308,27 +313,30 @@ class _ContractorSelectionScreenState
   Widget _buildContractorCard(Contractor contractor) {
     final isSelected = _selectedContractor?.id == contractor.id;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedContractor = isSelected ? null : contractor;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.05)
-              : AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.gray200,
-            width: isSelected ? 2 : 1,
+    return Semantics(
+      label: 'Wybierz wykonawcę ${contractor.name}',
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedContractor = isSelected ? null : contractor;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.05)
+                : AppColors.white,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.gray200,
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: isSelected ? AppShadows.md : AppShadows.sm,
           ),
-          boxShadow: isSelected ? AppShadows.md : AppShadows.sm,
-        ),
-        child: Column(
+          child: Column(
           children: [
             Row(
               children: [
@@ -402,7 +410,7 @@ class _ContractorSelectionScreenState
                             size: 16,
                             color: AppColors.warning,
                           ),
-                          SizedBox(width: 2),
+                          SizedBox(width: AppSpacing.gapXS),
                           Text(
                             contractor.formattedRating,
                             style: AppTypography.bodySmall.copyWith(
@@ -421,7 +429,7 @@ class _ContractorSelectionScreenState
                             size: 14,
                             color: AppColors.gray500,
                           ),
-                          SizedBox(width: 2),
+                          SizedBox(width: AppSpacing.gapXS),
                           Text(
                             '${contractor.completedTasks} zleceń',
                             style: AppTypography.caption.copyWith(
@@ -466,7 +474,7 @@ class _ContractorSelectionScreenState
                     size: 14,
                     color: AppColors.gray500,
                   ),
-                  SizedBox(width: 2),
+                  SizedBox(width: AppSpacing.gapXS),
                   Text(
                     contractor.formattedDistance,
                     style: AppTypography.caption.copyWith(
@@ -481,7 +489,7 @@ class _ContractorSelectionScreenState
                     size: 14,
                     color: AppColors.gray500,
                   ),
-                  SizedBox(width: 2),
+                  SizedBox(width: AppSpacing.gapXS),
                   Text(
                     'Dotrze za ${contractor.formattedEta}',
                     style: AppTypography.caption.copyWith(
@@ -507,6 +515,7 @@ class _ContractorSelectionScreenState
               ],
             ),
           ],
+          ),
         ),
       ),
     );
@@ -573,7 +582,7 @@ class _ContractorSelectionScreenState
               ),
               child: Text(
                 'Wybierz',
-                style: TextStyle(
+                style: AppTypography.bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -737,7 +746,7 @@ class _ContractorProfileSheet extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     child: Text(AppStrings.close),
                   ),
                 ),

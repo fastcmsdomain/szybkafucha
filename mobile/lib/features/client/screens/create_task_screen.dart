@@ -84,6 +84,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
+          tooltip: 'Zamknij',
         ),
         title: SFRainbowText(AppStrings.createTask),
         centerTitle: true,
@@ -157,8 +158,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                         )
                       : Text(
                           'Znajdź pomocnika',
-                          style: TextStyle(
-                            fontSize: 16,
+                          style: AppTypography.bodyMedium.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -336,36 +336,40 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             children: [
               // Add image button
               if (_selectedImages.length < _maxImages)
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    margin: EdgeInsets.only(right: AppSpacing.gapSM),
-                    decoration: BoxDecoration(
-                      color: AppColors.gray100,
-                      borderRadius: AppRadius.radiusMD,
-                      border: Border.all(
-                        color: AppColors.gray300,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_outlined,
-                          size: 32,
-                          color: AppColors.gray500,
+                Semantics(
+                  label: 'Dodaj zdjęcie do zlecenia',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray100,
+                        borderRadius: AppRadius.radiusMD,
+                        border: Border.all(
+                          color: AppColors.gray300,
+                          style: BorderStyle.solid,
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Dodaj',
-                          style: AppTypography.caption.copyWith(
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 32,
                             color: AppColors.gray500,
                           ),
-                        ),
-                      ],
+                          SizedBox(height: AppSpacing.gapXS),
+                          Text(
+                            'Dodaj',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -392,18 +396,22 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       Positioned(
                         top: 4,
                         right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray900.withValues(alpha: 0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              size: 16,
-                              color: AppColors.white,
+                        child: Semantics(
+                          label: 'Usuń zdjęcie',
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () => _removeImage(index),
+                            child: Container(
+                              padding: EdgeInsets.all(AppSpacing.paddingXS),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray900.withValues(alpha: 0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: AppColors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -433,12 +441,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             ListTile(
               leading: Icon(Icons.photo_library),
               title: Text('Wybierz z galerii'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+              onTap: () => context.pop(ImageSource.gallery),
             ),
             ListTile(
               leading: Icon(Icons.camera_alt),
               title: Text('Zrób zdjęcie'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+              onTap: () => context.pop(ImageSource.camera),
             ),
           ],
         ),
@@ -695,7 +703,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               size: 14,
               color: AppColors.gray500,
             ),
-            SizedBox(width: 4),
+            SizedBox(width: AppSpacing.gapXS),
             Expanded(
               child: Text(
                 'Cena za całość zlecenia. Minimalna stawka za godzine: 35 PLN',
@@ -731,9 +739,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         SizedBox(height: AppSpacing.gapMD),
 
         // Now option
-        GestureDetector(
-          onTap: () => setState(() => _isNow = true),
-          child: Container(
+        Semantics(
+          label: 'Wybierz realizację teraz',
+          button: true,
+          child: GestureDetector(
+            onTap: () => setState(() => _isNow = true),
+            child: Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
               color: _isNow
@@ -773,15 +784,19 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                 _buildRadioIndicator(_isNow),
               ],
             ),
+            ),
           ),
         ),
 
         SizedBox(height: AppSpacing.gapMD),
 
         // Schedule for later
-        GestureDetector(
-          onTap: () => setState(() => _isNow = false),
-          child: Container(
+        Semantics(
+          label: 'Wybierz realizację na później',
+          button: true,
+          child: GestureDetector(
+            onTap: () => setState(() => _isNow = false),
+            child: Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
               color: !_isNow
@@ -826,7 +841,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     ],
                   ),
                 ],
-              ],
+                ],
+              ),
             ),
           ),
         ),
