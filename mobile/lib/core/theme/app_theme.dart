@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_radius.dart';
 import 'app_spacing.dart';
 
 /// Szybka Fucha Material 3 theme configuration
-///
-/// Note: Uses system fonts (Roboto on Android) when Google Fonts unavailable.
-/// Google Fonts will be loaded when bundled in assets or network is available.
 class AppTheme {
   AppTheme._();
-
-  // System font family for consistent fallback
-  static const String _fontFamily = 'Roboto';
 
   /// Light theme (primary theme for MVP)
   static ThemeData get light {
@@ -40,78 +35,65 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.white,
-      fontFamily: _fontFamily,
 
-      // Typography - using system fonts
-      textTheme: TextTheme(
-        displayLarge: TextStyle(
-          fontFamily: _fontFamily,
+      // Typography
+      textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
+        displayLarge: GoogleFonts.nunito(
           fontSize: 48,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        displayMedium: TextStyle(
-          fontFamily: _fontFamily,
+        displayMedium: GoogleFonts.nunito(
           fontSize: 36,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        displaySmall: TextStyle(
-          fontFamily: _fontFamily,
+        displaySmall: GoogleFonts.nunito(
           fontSize: 30,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        headlineLarge: TextStyle(
-          fontFamily: _fontFamily,
+        headlineLarge: GoogleFonts.nunito(
           fontSize: 24,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        headlineMedium: TextStyle(
-          fontFamily: _fontFamily,
+        headlineMedium: GoogleFonts.nunito(
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        headlineSmall: TextStyle(
-          fontFamily: _fontFamily,
+        headlineSmall: GoogleFonts.nunito(
           fontSize: 18,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
         ),
-        bodyLarge: TextStyle(
-          fontFamily: _fontFamily,
+        bodyLarge: GoogleFonts.plusJakartaSans(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: AppColors.gray800,
         ),
-        bodyMedium: TextStyle(
-          fontFamily: _fontFamily,
+        bodyMedium: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: AppColors.gray700,
         ),
-        bodySmall: TextStyle(
-          fontFamily: _fontFamily,
+        bodySmall: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           color: AppColors.gray600,
         ),
-        labelLarge: TextStyle(
-          fontFamily: _fontFamily,
+        labelLarge: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: AppColors.gray700,
         ),
-        labelMedium: TextStyle(
-          fontFamily: _fontFamily,
+        labelMedium: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: AppColors.gray600,
         ),
-        labelSmall: TextStyle(
-          fontFamily: _fontFamily,
+        labelSmall: GoogleFonts.plusJakartaSans(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: AppColors.gray500,
@@ -124,8 +106,7 @@ class AppTheme {
         foregroundColor: AppColors.gray900,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
-          fontFamily: _fontFamily,
+        titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
@@ -145,8 +126,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.button,
           ),
-          textStyle: TextStyle(
-            fontFamily: _fontFamily,
+          textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -166,8 +146,7 @@ class AppTheme {
             borderRadius: AppRadius.button,
           ),
           side: BorderSide(color: AppColors.gray200, width: 2),
-          textStyle: TextStyle(
-            fontFamily: _fontFamily,
+          textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -178,8 +157,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
-          textStyle: TextStyle(
-            fontFamily: _fontFamily,
+          textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -211,19 +189,16 @@ class AppTheme {
           borderRadius: AppRadius.input,
           borderSide: BorderSide(color: AppColors.error, width: 2),
         ),
-        hintStyle: TextStyle(
-          fontFamily: _fontFamily,
+        hintStyle: GoogleFonts.plusJakartaSans(
           fontSize: 16,
           color: AppColors.gray400,
         ),
-        labelStyle: TextStyle(
-          fontFamily: _fontFamily,
+        labelStyle: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: AppColors.gray700,
         ),
-        errorStyle: TextStyle(
-          fontFamily: _fontFamily,
+        errorStyle: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           color: AppColors.error,
         ),
@@ -244,8 +219,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.gray100,
         selectedColor: AppColors.primary.withValues(alpha: 0.1),
-        labelStyle: TextStyle(
-          fontFamily: _fontFamily,
+        labelStyle: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -262,13 +236,11 @@ class AppTheme {
         unselectedItemColor: AppColors.gray400,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: TextStyle(
-          fontFamily: _fontFamily,
+        selectedLabelStyle: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: TextStyle(
-          fontFamily: _fontFamily,
+        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
@@ -294,8 +266,7 @@ class AppTheme {
       // Snackbar
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.gray900,
-        contentTextStyle: TextStyle(
-          fontFamily: _fontFamily,
+        contentTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           color: AppColors.white,
         ),
@@ -319,8 +290,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.radiusXL,
         ),
-        titleTextStyle: TextStyle(
-          fontFamily: _fontFamily,
+        titleTextStyle: GoogleFonts.nunito(
           fontSize: 20,
           fontWeight: FontWeight.w800,
           color: AppColors.gray900,
