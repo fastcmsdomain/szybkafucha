@@ -8,6 +8,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/services/services.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../widgets/social_login_button.dart';
 import '../widgets/user_type_selector.dart';
 
@@ -24,15 +25,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _isLoading = false;
   String? _loadingProvider; // 'google', 'apple', or null
   String _selectedUserType = 'client'; // User role selection (client or contractor)
-  int _selectedBottomNavIndex = 2;
 
   @override
   Widget build(BuildContext context) {
     // Check if Apple Sign-In is available
     final appleAvailable = ref.watch(appleSignInAvailableProvider);
+    final isProfileMode =
+        GoRouterState.of(context).uri.queryParameters['tab'] == 'profile';
 
     return Scaffold(
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: _buildBottomNavigation(isProfileMode),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingLG),
@@ -47,40 +49,46 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               children: [
                 SizedBox(height: AppSpacing.space12),
 
-                // Logo and branding
-                _buildLogo(),
+                if (!isProfileMode) ...[
+                  // Logo and branding
+                  _buildLogo(),
+                  SizedBox(height: AppSpacing.space8),
 
-                SizedBox(height: AppSpacing.space8),
-
-                // Headline
-                Text(
-                  AppStrings.welcomeTitle,
-                  style: AppTypography.h2,
-                  textAlign: TextAlign.center,
-                ),
-
-                SizedBox(height: AppSpacing.space4),
-
-                Text(
-                  AppStrings.welcomeSubtitle,
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.gray600,
+                  // Headline
+                  Text(
+                    AppStrings.welcomeTitle,
+                    style: AppTypography.h4,
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
+                  SizedBox(height: AppSpacing.space3),
+                  Text(
+                    AppStrings.welcomeSubtitle,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppColors.gray600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: AppSpacing.space8),
 
-                SizedBox(height: AppSpacing.space8),
-
-                // Role selection (client or contractor)
-                UserTypeSelector(
-                  initialType: _selectedUserType,
-                  onTypeSelected: (type) {
-                    setState(() => _selectedUserType = type);
-                  },
-                  compact: true,
-                ),
-
-                SizedBox(height: AppSpacing.space8),
+                  // Role selection (client or contractor)
+                  UserTypeSelector(
+                    initialType: _selectedUserType,
+                    onTypeSelected: (type) {
+                      setState(() => _selectedUserType = type);
+                    },
+                    compact: true,
+                  ),
+                  SizedBox(height: AppSpacing.space8),
+                ],
+                if (isProfileMode) ...[
+                  Center(
+                    child: SFRainbowText(
+                      AppStrings.login,
+                      style: AppTypography.h2,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.space8),
+                ],
 
                 // Google login button
                 SocialLoginButton(
@@ -135,36 +143,60 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         },
                 ),
 
+                SizedBox(height: AppSpacing.gapMD),
+
+                // Email login button
+                SocialLoginButton(
+                  type: SocialLoginType.email,
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          context.push(Routes.emailLogin);
+                        },
+                ),
+
                 SizedBox(height: AppSpacing.space4),
 
                 // Terms agreement
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Dołączając, akceptujesz ',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'Dołączając, akceptujesz ',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.gray500,
+                        ),
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'Regulamin',
+                      GestureDetector(
+                        onTap: () => context.push(Routes.termsOfService),
+                        child: Text(
+                          'Regulamin',
                           style: AppTypography.caption.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const TextSpan(text: ' i '),
-                        TextSpan(
-                          text: 'Politykę Prywatności',
+                      ),
+                      Text(
+                        ' i ',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.gray500,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.push(Routes.privacyPolicy),
+                        child: Text(
+                          'Politykę Prywatności',
                           style: AppTypography.caption.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-                    textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
 
@@ -329,23 +361,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildBottomNavigation(bool isProfileMode) {
     return NavigationBar(
-      selectedIndex: _selectedBottomNavIndex,
+      selectedIndex: isProfileMode ? 2 : 0,
       onDestinationSelected: (index) {
         if (index == 0) {
-          setState(() => _selectedBottomNavIndex = 0);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Strona główna - wkrótce'),
-              duration: Duration(seconds: 1),
-            ),
-          );
+          context.go(Routes.publicHome);
         } else if (index == 1) {
           context.go(Routes.browse);
         } else if (index == 2) {
-          setState(() => _selectedBottomNavIndex = 2);
-          context.go(Routes.welcome);
+          context.go('${Routes.welcome}?tab=profile');
         }
       },
       destinations: const [

@@ -45,7 +45,7 @@ export class Task {
   @JoinColumn({ name: 'contractorId' })
   contractor: User | null;
 
-  // Task category (paczki, zakupy, kolejki, montaz, przeprowadzki, sprzatanie)
+  // Task category (stored as TaskCategory string key, e.g. paczki, hydraulik)
   @Column({ type: 'varchar', length: 50 })
   category: string;
 

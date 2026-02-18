@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 
 /// Client reviews screen shown from profile menu.
 class ClientReviewsScreen extends ConsumerStatefulWidget {
@@ -60,10 +62,7 @@ class _ClientReviewsScreenState extends ConsumerState<ClientReviewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Opinie wykonawców',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Opinie wykonawców'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -80,8 +79,8 @@ class _ClientReviewsScreenState extends ConsumerState<ClientReviewsScreen> {
               SizedBox(height: AppSpacing.space4),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
+                  child: ElevatedButton.icon(
+                  onPressed: () => context.pop(),
                   icon: const Icon(Icons.close),
                   label: const Text('Zamknij'),
                   style: ElevatedButton.styleFrom(
@@ -128,12 +127,12 @@ class _ClientReviewsScreenState extends ConsumerState<ClientReviewsScreen> {
             Row(
               children: [
                 Icon(Icons.star, color: AppColors.warning, size: 22),
-                SizedBox(width: 6),
+                SizedBox(width: AppSpacing.gapSM),
                 Text(
                   _ratingAvg.toStringAsFixed(1),
                   style: AppTypography.h4,
                 ),
-                SizedBox(width: 6),
+                SizedBox(width: AppSpacing.gapSM),
                 Text(
                   'na podstawie $_ratingCount opinii',
                   style: AppTypography.caption.copyWith(
@@ -190,7 +189,7 @@ class _ClientReviewsScreenState extends ConsumerState<ClientReviewsScreen> {
               Row(
                 children: [
                   Icon(Icons.star, color: AppColors.warning, size: 18),
-                  SizedBox(width: 4),
+                  SizedBox(width: AppSpacing.gapXS),
                   Text(
                     review.rating.toString(),
                     style: AppTypography.bodyLarge.copyWith(

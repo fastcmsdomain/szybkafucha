@@ -12,6 +12,122 @@ Each entry documents:
 
 ---
 
+## [2026-02-14] Expand Task Categories from 6 to 17 Across Backend, Mobile, Admin, Landing, and Docs
+
+- **Developer/Agent**: Codex
+- **Scope of Changes**: Extended task category support from 6 to 17 categories with synchronized updates across backend enums and seeds, Flutter category model and contractor profile UI, admin category labels, PL/EN/UA landing filters, and documentation
+- **Files Changed**:
+  - `backend/src/contractor/entities/contractor-profile.entity.ts` – Added 11 new enum values in `TaskCategory` (`naprawy`, `ogrod`, `transport`, `zwierzeta`, `elektryk`, `hydraulik`, `malowanie`, `zlota_raczka`, `komputery`, `sport`, `inne`)
+  - `backend/src/tasks/entities/task.entity.ts` – Updated `category` field comment to reflect generic `TaskCategory` string storage instead of old 6-category list
+  - `backend/src/database/seeds/seed.data.ts` – Expanded contractor category profiles and added sample tasks covering all 11 newly added categories (full category coverage in seeded tasks)
+  - `mobile/lib/features/client/models/task_category.dart` – Added 11 enum values and 11 new `TaskCategoryData` entries (name, description, icon, color, price range, unit, estimated duration)
+  - `mobile/lib/features/client/screens/category_selection_screen.dart` – Updated screen comment to neutral wording for full category set
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Replaced hardcoded 6-category list with dynamic chips generated from `TaskCategoryData.all`; uses enum key for backend payload and localized display name for UI
+  - `admin/src/pages/Tasks.tsx` – Added 11 new entries to `CATEGORY_LABELS` including emoji labels for admin task list
+  - `index.html` – Updated app preview category filter bar to 17 Polish category buttons
+  - `en/index.html` – Updated app preview category filter bar to 17 British English category buttons
+  - `ua/index.html` – Updated app preview category filter bar to 17 Ukrainian category buttons
+  - `CLAUDE.md` – Updated "Task Categories" section from 6 to full list of 17
+  - `currentupdate.md` – Added this changelog entry
+- **System Impact**:
+  - Backend DTO validation based on `@IsEnum(TaskCategory)` now accepts the 11 new category values automatically
+  - Seed dataset now includes realistic examples for every new category, improving local testing and demo coverage
+  - Mobile and contractor profile UI now share a single source of truth for category definitions, reducing future drift risk
+  - Admin task category rendering now shows friendly labels for all supported categories (no raw key fallback for new ones)
+  - Landing pages now present the complete category universe consistently across PL/EN/UA variants
+- **Related Tasks/PRD**: `tasks/dodatkowe-kategorie.md` (Fixly-inspired category expansion)
+- **Potential Conflicts/Risks**:
+  - Existing production content/marketing screenshots may still reference old 6-category set and should be refreshed
+  - If any external integration hardcodes old category allowlists, it must be updated to include new keys
+  - Ukrainian labels were translated in-page; wording can be refined later by native-language review if needed
+
+---
+
+## [2026-02-13] Add Flutter Development Skills & Commands
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Created 7 Claude Code slash commands and 2 autonomous skills for Flutter code quality, testing, performance, accessibility, security, and iOS/Android platform compliance
+- **Files Changed**:
+  - `.claude/commands/flutter-analyze.md` – Command: Run flutter analyze + enhanced lint checks (naming, const, theme tokens, file size)
+  - `.claude/commands/flutter-test.md` – Command: Run tests with coverage and report untested files by priority
+  - `.claude/commands/audit-performance.md` – Command: Detect performance anti-patterns (ListView, Container, Opacity, saveLayer, missing const)
+  - `.claude/commands/audit-accessibility.md` – Command: Check WCAG 2.1 AA, iOS HIG, Material accessibility compliance (Semantics, touch targets, contrast, dark mode)
+  - `.claude/commands/audit-security.md` – Command: Scan for hardcoded secrets, insecure URLs, improper storage, debug prints
+  - `.claude/commands/audit-platform.md` – Command: Check iOS HIG and Material Design 3 compliance (typography, spacing, navigation, M3 components)
+  - `.claude/commands/audit-all.md` – Command: Run all audits and produce unified summary report with scores
+  - `.claude/commands/flutter-quality-gate/SKILL.md` – Skill: Auto-triggers when modifying Flutter code to enforce naming, widget patterns, theme tokens, performance
+  - `.claude/commands/platform-compliance/SKILL.md` – Skill: Auto-triggers when modifying screen files to enforce touch targets, typography, accessibility, spacing
+- **System Impact**: New development workflow tools. Commands invoked via `/flutter-analyze`, `/flutter-test`, `/audit-performance`, `/audit-accessibility`, `/audit-security`, `/audit-platform`, `/audit-all`. Skills auto-apply when editing Flutter files.
+- **Related Tasks/PRD**: Based on `tasks/development-guidelines-ios-android-flutter (1).md` guidelines document
+- **Potential Conflicts/Risks**: None — these are read-only audit tools that don't modify code. Skills provide guidance when writing new code.
+
+---
+
+## [2026-02-11] Fix 3 Bugs from Manual Testing of Email Auth
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed 3 bugs found during manual testing of email + password authentication
+- **Files Changed**:
+  - `backend/src/auth/auth.service.ts` – Changed `findByEmail` to `findByEmailWithPassword` in `requestPasswordReset` method. The original `findByEmail` never loaded `passwordHash` (due to `select: false` on entity), so the `!user.passwordHash` check always returned early without storing the OTP in Redis.
+  - `backend/src/auth/auth.service.spec.ts` – Updated 2 test mocks in `requestPasswordReset` tests to use `findByEmailWithPassword` instead of `findByEmail`.
+  - `mobile/lib/core/providers/auth_provider.dart` – Modified `registerWithEmail` to NOT set state to `AuthStatus.authenticated` (was triggering GoRouter redirect to home before email verify screen could show). Added new `activateSession()` method that reads saved auth data from storage and sets authenticated state.
+  - `mobile/lib/core/router/app_router.dart` – Removed `emailVerify` from `isAuthRoute` check. Added `isEmailVerifyRoute` variable so email verification screen is accessible for both authenticated and unauthenticated users.
+  - `mobile/lib/features/auth/screens/email_verification_screen.dart` – Updated verify success and "Zweryfikuj później" (skip) to call `activateSession()` instead of `context.pop()`.
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – Added "Zaloguj się" TextButton next to duplicate email error message.
+- **System Impact**: Fixes email verification flow, password reset flow, and improves duplicate email UX
+- **Related Tasks/PRD**: Email + Password Authentication feature
+- **Potential Conflicts/Risks**: `registerWithEmail` now keeps state as `unauthenticated` until `activateSession()` is called — this is intentional but different from other auth methods (phone, Google, Apple) which set authenticated immediately.
+
+---
+
+## [2026-02-11] Add Email + Password Authentication (4th Auth Method)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added email + password as a 4th authentication method alongside existing Phone/OTP, Google OAuth, and Apple Sign-In. Full backend API + Flutter mobile integration.
+- **Files Changed**:
+  - `backend/package.json` – Added bcrypt, @types/bcrypt, nodemailer, @types/nodemailer dependencies
+  - `backend/src/users/entities/user.entity.ts` – Added passwordHash (select:false), passwordUpdatedAt, emailVerified, failedLoginAttempts, lockedUntil fields
+  - `backend/src/users/users.service.ts` – Added findByEmailWithPassword, incrementFailedLoginAttempts, resetFailedLoginAttempts, setEmailVerified, updatePassword methods
+  - `backend/src/auth/dto/register-email.dto.ts` – New DTO for email registration
+  - `backend/src/auth/dto/login-email.dto.ts` – New DTO for email login
+  - `backend/src/auth/dto/verify-email.dto.ts` – New DTO for email verification
+  - `backend/src/auth/dto/request-password-reset.dto.ts` – New DTO for password reset request
+  - `backend/src/auth/dto/reset-password.dto.ts` – New DTO for password reset
+  - `backend/src/auth/email.service.ts` – New EmailService for sending OTP emails (console log in dev, SMTP in prod)
+  - `backend/src/auth/auth.service.ts` – Added registerWithEmail, loginWithEmail, verifyEmailOtp, resendEmailVerificationOtp, requestPasswordReset, resetPassword methods
+  - `backend/src/auth/auth.controller.ts` – Added 6 new endpoints: POST /auth/email/{register,login,verify,resend-verification,request-password-reset,reset-password}
+  - `backend/src/auth/auth.module.ts` – Added EmailService to providers
+  - `backend/src/auth/auth.service.spec.ts` – Added 17 new tests for email auth (total: 315 tests passing)
+  - `mobile/lib/core/providers/auth_provider.dart` – Added registerWithEmail, loginWithEmail, verifyEmail, resendEmailVerification, requestPasswordReset, resetPassword methods
+  - `mobile/lib/features/auth/widgets/social_login_button.dart` – Added email type to SocialLoginType enum
+  - `mobile/lib/core/router/routes.dart` – Added emailLogin, emailRegister, emailVerify, forgotPassword routes
+  - `mobile/lib/core/router/app_router.dart` – Added GoRoute entries for 4 new screens + updated isAuthRoute guard
+  - `mobile/lib/features/auth/auth.dart` – Added exports for 4 new screens
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Added email login button after phone button
+  - `mobile/lib/features/auth/screens/email_login_screen.dart` – New email login screen
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – New registration screen with password strength indicator
+  - `mobile/lib/features/auth/screens/email_verification_screen.dart` – New OTP verification screen
+  - `mobile/lib/features/auth/screens/forgot_password_screen.dart` – New password reset screen (2-step: email → OTP+new password)
+- **System Impact**: New auth method added. 6 new API endpoints. 4 new Flutter screens. Welcome screen updated with email button. Security: bcrypt cost 12, account lockout (5 attempts → 15min), rate limiting on all endpoints, anti-enumeration on password reset, OTP via Redis with TTL.
+- **Related Tasks/PRD**: Authentication system expansion, PRD user registration requirements
+- **Potential Conflicts/Risks**: New User entity fields (passwordHash, emailVerified, failedLoginAttempts, lockedUntil) require DB sync. SMTP env vars needed for production email sending. No impact on existing Phone/Google/Apple auth flows.
+
+---
+
+## [2026-02-11] Fix Contractor Card Showing 0.0 Rating and 0 Tasks on Task Tracking Screen
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed contractor card on task tracking screen showing default 0.0 rating and 0 completed tasks instead of real values from backend. Root cause was two-fold: (1) all data sources (WebSocket, task data, `/public` endpoint) returned stale cached values from `contractor_profiles` table, (2) provider listener overwrote fetched data via reference comparison bug.
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `_fetchContractorStats()` method that fetches BOTH `/contractor/:id/public` and `/contractor/:id/reviews` endpoints to get real computed rating data; added `_fetchedStatsContractorId` tracking to prevent provider listener from overwriting fetched data; fixed `clientTasksProvider` listener to compare contractor by ID instead of reference
+  - `backend/src/contractor/contractor.service.ts` – Fixed `getPublicProfile()` to compute real `ratingAvg` and `ratingCount` from `ratings` table using SQL AVG/COUNT instead of returning stale cached values from `contractor_profiles` table
+- **Root Cause**: Three issues combined: (1) `contractor_profiles.ratingAvg` and `ratingCount` columns default to 0 and are never updated when ratings are submitted, (2) `/contractor/:id/public` endpoint returned these stale values, (3) `clientTasksProvider` listener used reference comparison (`task.contractor != _contractor`) causing fetched real data to be overwritten
+- **System Impact**: Contractor card now shows real rating and review count. Backend `/public` endpoint now returns computed ratings for all consumers.
+- **Related Tasks/PRD**: Contractor profile display, task tracking UI
+- **Potential Conflicts/Risks**: Additional API call (reviews endpoint) per contractor assignment on mobile; mitigated by `_fetchedStatsContractorId` preventing re-fetches. Backend change adds one SQL query to `/public` endpoint.
+
+---
+
 ## [2026-02-09] Disable Dual Role Functionality for MVP
 
 - **Developer/Agent**: Claude

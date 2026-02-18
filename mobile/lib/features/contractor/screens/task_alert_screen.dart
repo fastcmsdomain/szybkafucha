@@ -9,6 +9,7 @@ import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../client/models/task_category.dart';
@@ -68,10 +69,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.gray700),
           onPressed: () => _navigateBack(context),
         ),
-        title: Text(
-          'Szczegóły zlecenia',
-          style: AppTypography.h4.copyWith(color: AppColors.gray900),
-        ),
+        title: SFRainbowText('Szczegóły zlecenia'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -406,14 +404,14 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    '$reviewCount opinii',
-                                    style: AppTypography.caption.copyWith(
-                                      color: AppColors.gray500,
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                '$reviewCount opinii',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.gray500,
+                                ),
                               ),
                             ],
                           ),
@@ -1143,14 +1141,14 @@ class _TaskAlertClientProfileSheetState
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  '$reviewCount opinii',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.gray500,
-                                  ),
-                                ),
                               ],
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              '$reviewCount opinii',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
                             ),
                           ],
                         ),

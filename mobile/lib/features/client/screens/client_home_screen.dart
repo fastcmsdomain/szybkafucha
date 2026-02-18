@@ -8,6 +8,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task.dart';
 // import '../models/task_category.dart';
 // import '../widgets/category_card.dart';
@@ -84,6 +85,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         foregroundColor: AppColors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nowe zlecenie'),
+        tooltip: 'Utwórz nowe zlecenie',
       ),
     );
   }
@@ -108,7 +110,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               SizedBox(height: AppSpacing.gapXS),
               Text(
                 name,
-                style: AppTypography.h2,
+                style: AppTypography.h2.copyWith(fontSize: 24),
               ),
             ],
           ),
@@ -152,80 +154,84 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   }
 
   Widget _buildQuickActionCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push(Routes.clientCategories),
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingLG),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: AppRadius.radiusXL,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
+    return Semantics(
+      label: 'Utwórz nowe zlecenie',
+      button: true,
+      child: GestureDetector(
+        onTap: () => context.push(Routes.clientCategories),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.paddingLG),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Potrzebujesz pomocy?',
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.white,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapSM),
-                  Text(
-                    'Znajdź kogoś, kto pomoże Ci w codziennych zadaniach',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapMD),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.paddingMD,
-                      vertical: AppSpacing.paddingSM,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: AppRadius.radiusFull,
-                    ),
-                    child: Text(
-                      'Utwórz zlecenie',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
+            borderRadius: AppRadius.radiusXL,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Potrzebujesz pomocy?',
+                      style: AppTypography.h4.copyWith(
+                        color: AppColors.white,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: AppSpacing.gapSM),
+                    Text(
+                      'Znajdź kogoś, kto pomoże Ci w codziennych zadaniach',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.gapMD),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.paddingMD,
+                        vertical: AppSpacing.paddingSM,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: AppRadius.radiusFull,
+                      ),
+                      child: Text(
+                        'Utwórz zlecenie',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: AppSpacing.gapMD),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.2),
-                borderRadius: AppRadius.radiusMD,
+              SizedBox(width: AppSpacing.gapMD),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.radiusMD,
+                ),
+                child: Icon(
+                  Icons.handshake_outlined,
+                  size: 48,
+                  color: AppColors.white,
+                ),
               ),
-              child: Icon(
-                Icons.handshake_outlined,
-                size: 48,
-                color: AppColors.white,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -241,10 +247,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              AppStrings.activeTasks,
-              style: AppTypography.h5,
-            ),
+            SFRainbowText(AppStrings.activeTasks, style: AppTypography.h5),
             TextButton(
               onPressed: () => context.go(Routes.clientHistory),
               child: Text(
@@ -320,128 +323,137 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
     final isLocked = task.status == TaskStatus.pendingComplete;
 
-    return GestureDetector(
-      onTap: isLocked
-          ? null
-          : () {
-              if (task.status.isActive) {
-                context.push(Routes.clientTaskTrack(task.id));
-              } else {
-                context.go(Routes.clientHistory);
-              }
-            },
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.paddingSM),
-                  decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.radiusMD,
+    return Semantics(
+      label: isLocked
+          ? 'Zlecenie ${category.name}, ${task.status.displayName}, obecnie niedostępne'
+          : 'Otwórz szczegóły zlecenia ${category.name}',
+      button: true,
+      enabled: !isLocked,
+      child: GestureDetector(
+        onTap: isLocked
+            ? null
+            : () {
+                if (task.status.isActive) {
+                  context.push(Routes.clientTaskTrack(task.id));
+                } else {
+                  context.go(Routes.clientHistory);
+                }
+              },
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(color: AppColors.gray200),
+            boxShadow: AppShadows.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.paddingSM),
+                    decoration: BoxDecoration(
+                      color: category.color.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    child: Icon(
+                      category.icon,
+                      color: category.color,
+                      size: 24,
+                    ),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: category.color,
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: category.color,
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: AppTypography.labelMedium.copyWith(
+                            color: category.color,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _formatDate(task.createdAt),
+                        Text(
+                          _formatDate(task.createdAt),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildStatusBadge(task.status),
+                ],
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Description
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Footer row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (task.address != null) ...[
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
+                    Expanded(
+                      child: Text(
+                        task.address!,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.gray500,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(task.status),
-              ],
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Description
-            Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Footer row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (task.address != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      task.address!,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                ] else
-                  const Spacer(),
-                Text(
-                  '${task.budget} PLN',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-
-            // Action button for active tasks (skip waiting-for-contractor-confirmation)
-            if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
-              SizedBox(height: AppSpacing.gapMD),
-              Row(
-                children: [
-                  // Track button
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                      child: Text('Więcej'),
+                    SizedBox(width: AppSpacing.gapSM),
+                  ] else
+                    const Spacer(),
+                  Text(
+                    '${task.budget} PLN',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
+
+              // Action button for active tasks (skip waiting-for-contractor-confirmation)
+              if (task.status.isActive &&
+                  task.status != TaskStatus.pendingComplete) ...[
+                SizedBox(height: AppSpacing.gapMD),
+                Row(
+                  children: [
+                    // Track button
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () =>
+                            context.push(Routes.clientTaskTrack(task.id)),
+                        child: Text('Więcej'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -515,17 +527,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text('Nie'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              context.pop();
               _cancelTask(task);
             },
             child: Text(
               'Tak, anuluj',
-              style: TextStyle(color: AppColors.error),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
             ),
           ),
         ],
@@ -565,28 +579,39 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Jak to działa?',
-          style: AppTypography.h5,
-        ),
+        SFRainbowText('Jak to działa?', style: AppTypography.h5),
         SizedBox(height: AppSpacing.gapMD),
         _buildStepItem(
           number: '1',
           title: 'Opisz zadanie',
-          description: 'Wybierz kategorię i opisz, czego potrzebujesz',
+          description:
+              'Wybierz kategorię, dodaj opis i ustal budżet — to zajmie chwilę',
           icon: Icons.edit_note_outlined,
+          color: AppColors.primary,
         ),
         _buildStepItem(
           number: '2',
-          title: 'Znajdź pomocnika',
-          description: 'Przeglądaj profile i wybierz najlepszą osobę',
+          title: 'Zatwierdź pracownika',
+          description:
+              'Dopasujemy najlepszą osobę — sprawdź profil i potwierdź',
           icon: Icons.person_search_outlined,
+          color: AppColors.warning,
         ),
         _buildStepItem(
           number: '3',
-          title: 'Gotowe!',
-          description: 'Śledź postęp i oceń po zakończeniu',
-          icon: Icons.check_circle_outline,
+          title: 'Śledź postęp',
+          description:
+              'Obserwuj realizację na żywo i bądź w kontakcie przez czat',
+          icon: Icons.location_on_outlined,
+          color: AppColors.success,
+        ),
+        _buildStepItem(
+          number: '4',
+          title: 'Oceń i zapłać',
+          description:
+              'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
+          icon: Icons.star_outline,
+          color: AppColors.info,
           isLast: true,
         ),
       ],
@@ -598,6 +623,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     required String title,
     required String description,
     required IconData icon,
+    required Color color,
     bool isLast = false,
   }) {
     return IntrinsicHeight(
@@ -610,7 +636,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: color,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -648,7 +674,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        SizedBox(height: AppSpacing.gapXS),
                         Text(
                           description,
                           style: AppTypography.bodySmall.copyWith(
@@ -660,7 +686,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   ),
                   Icon(
                     icon,
-                    color: AppColors.gray400,
+                    color: color,
                     size: 24,
                   ),
                 ],

@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Framework**: NestJS v11
 - **Database**: PostgreSQL with PostGIS extension
 - **ORM**: TypeORM with entity synchronization
-- **Authentication**: JWT + Passport (supports Google, Apple, Phone/OTP)
+- **Authentication**: JWT + Passport (supports Google, Apple, Phone/OTP, Email/Password)
 - **Real-time**: Socket.io (WebSockets)
 - **Payments**: Stripe integration
 - **KYC**: Onfido integration for identity verification
@@ -479,13 +479,24 @@ The landing page includes a comprehensive signup form that serves dual purposes:
 
 ### Task Categories
 
-Six core categories defined in PRD:
-- Paczki (Packages)
+Seventeen task categories supported in the platform:
+- Paczki (Parcels)
 - Zakupy (Shopping)
 - Kolejki (Queues/Waiting)
 - Montaż (Assembly)
 - Przeprowadzki (Moving)
 - Sprzątanie (Cleaning)
+- Naprawy (Repairs)
+- Ogród (Garden)
+- Transport (Transport)
+- Zwierzęta (Pets)
+- Elektryk (Electrician)
+- Hydraulik (Plumber)
+- Malowanie (Painting)
+- Złota rączka (Handyman)
+- Komputery (Computers/IT)
+- Sport (Sport/Fitness)
+- Inne (Other)
 
 ### Task Lifecycle
 
@@ -549,6 +560,12 @@ npm run seed:fresh  # Drop everything and recreate
 - `POST /auth/phone/verify` - Verify OTP and login
 - `POST /auth/google` - Google OAuth
 - `POST /auth/apple` - Apple Sign In
+- `POST /auth/email/register` - Register with email + password (rate: 3/60s)
+- `POST /auth/email/login` - Login with email + password (rate: 5/60s)
+- `POST /auth/email/verify` - Verify email with OTP code (rate: 5/60s)
+- `POST /auth/email/resend-verification` - Resend email verification OTP (rate: 3/60s)
+- `POST /auth/email/request-password-reset` - Request password reset OTP (rate: 3/60s)
+- `POST /auth/email/reset-password` - Reset password with OTP + new password (rate: 3/60s)
 - `POST /newsletter/subscribe` - Newsletter signup (landing page)
 
 **Protected Endpoints** (require JWT):

@@ -11,11 +11,11 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../models/task_category.dart';
-import '../widgets/category_card.dart';
 
 /// Task creation screen - collect task details
 /// Includes: description, location, budget, schedule
@@ -83,11 +83,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
+          tooltip: 'Zamknij',
         ),
-        title: Text(
-          AppStrings.createTask,
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText(AppStrings.createTask),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -98,14 +96,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category selection (if not pre-selected)
-                if (_selectedCategory == null) ...[
-                  _buildCategorySection(),
-                  SizedBox(height: AppSpacing.space8),
-                ] else ...[
-                  _buildSelectedCategoryBadge(),
-                  SizedBox(height: AppSpacing.space4),
-                ],
+                // Category selection
+                _buildCategorySection(),
+                SizedBox(height: AppSpacing.space8),
 
                 // Description
                 _buildDescriptionSection(),
@@ -159,8 +152,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                         )
                       : Text(
                           'Znajdź pomocnika',
-                          style: TextStyle(
-                            fontSize: 16,
+                          style: AppTypography.bodyMedium.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -175,63 +167,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
-  Widget _buildSelectedCategoryBadge() {
-    final category = TaskCategoryData.fromCategory(_selectedCategory!);
-
-    return GestureDetector(
-      onTap: () {
-        // Allow changing category
-        setState(() => _selectedCategory = null);
-      },
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: category.color.withValues(alpha: 0.1),
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: category.color.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              category.icon,
-              color: category.color,
-              size: 24,
-            ),
-            SizedBox(width: AppSpacing.gapMD),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.name,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: category.color,
-                    ),
-                  ),
-                  Text(
-                    category.description,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.edit_outlined,
-              color: AppColors.gray400,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCategorySection() {
+    final selectedCategoryData = _selectedCategory != null
+        ? TaskCategoryData.fromCategory(_selectedCategory!)
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -239,23 +179,52 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.selectCategory,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapMD),
-        Wrap(
-          spacing: AppSpacing.gapSM,
-          runSpacing: AppSpacing.gapSM,
-          children: TaskCategoryData.all.map((category) {
-            return CategoryChip(
-              category: category,
-              isSelected: _selectedCategory == category.category,
-              onTap: () {
-                setState(() {
-                  _selectedCategory = category.category;
-                  _budgetController.text = category.suggestedPrice.toString();
-                });
-              },
+        SizedBox(height: AppSpacing.gapSM),
+        DropdownButtonFormField<TaskCategory>(
+          initialValue: _selectedCategory,
+          isExpanded: true,
+          decoration: InputDecoration(
+            hintText: 'Wybierz kategorię',
+          ),
+          items: TaskCategoryData.all.map((category) {
+            return DropdownMenuItem<TaskCategory>(
+              value: category.category,
+              child: Row(
+                children: [
+                  Icon(
+                    category.icon,
+                    size: 18,
+                    color: category.color,
+                  ),
+                  SizedBox(width: AppSpacing.gapSM),
+                  Expanded(
+                    child: Text(
+                      category.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             );
           }).toList(),
+          onChanged: (category) {
+            if (category == null) return;
+            final selectedData = TaskCategoryData.fromCategory(category);
+            setState(() {
+              _selectedCategory = category;
+              _budgetController.text = selectedData.suggestedPrice.toString();
+            });
+          },
         ),
+        if (selectedCategoryData != null) ...[
+          SizedBox(height: AppSpacing.gapSM),
+          Text(
+            selectedCategoryData.description,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -338,36 +307,40 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             children: [
               // Add image button
               if (_selectedImages.length < _maxImages)
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    margin: EdgeInsets.only(right: AppSpacing.gapSM),
-                    decoration: BoxDecoration(
-                      color: AppColors.gray100,
-                      borderRadius: AppRadius.radiusMD,
-                      border: Border.all(
-                        color: AppColors.gray300,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_outlined,
-                          size: 32,
-                          color: AppColors.gray500,
+                Semantics(
+                  label: 'Dodaj zdjęcie do zlecenia',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                      decoration: BoxDecoration(
+                        color: AppColors.gray100,
+                        borderRadius: AppRadius.radiusMD,
+                        border: Border.all(
+                          color: AppColors.gray300,
+                          style: BorderStyle.solid,
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Dodaj',
-                          style: AppTypography.caption.copyWith(
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 32,
                             color: AppColors.gray500,
                           ),
-                        ),
-                      ],
+                          SizedBox(height: AppSpacing.gapXS),
+                          Text(
+                            'Dodaj',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -394,18 +367,22 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       Positioned(
                         top: 4,
                         right: 4,
-                        child: GestureDetector(
-                          onTap: () => _removeImage(index),
-                          child: Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.gray900.withValues(alpha: 0.7),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              size: 16,
-                              color: AppColors.white,
+                        child: Semantics(
+                          label: 'Usuń zdjęcie',
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () => _removeImage(index),
+                            child: Container(
+                              padding: EdgeInsets.all(AppSpacing.paddingXS),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray900.withValues(alpha: 0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: AppColors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -435,12 +412,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             ListTile(
               leading: Icon(Icons.photo_library),
               title: Text('Wybierz z galerii'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+              onTap: () => context.pop(ImageSource.gallery),
             ),
             ListTile(
               leading: Icon(Icons.camera_alt),
               title: Text('Zrób zdjęcie'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+              onTap: () => context.pop(ImageSource.camera),
             ),
           ],
         ),
@@ -697,7 +674,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               size: 14,
               color: AppColors.gray500,
             ),
-            SizedBox(width: 4),
+            SizedBox(width: AppSpacing.gapXS),
             Expanded(
               child: Text(
                 'Cena za całość zlecenia. Minimalna stawka za godzine: 35 PLN',
@@ -733,9 +710,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         SizedBox(height: AppSpacing.gapMD),
 
         // Now option
-        GestureDetector(
-          onTap: () => setState(() => _isNow = true),
-          child: Container(
+        Semantics(
+          label: 'Wybierz realizację teraz',
+          button: true,
+          child: GestureDetector(
+            onTap: () => setState(() => _isNow = true),
+            child: Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
               color: _isNow
@@ -775,15 +755,19 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                 _buildRadioIndicator(_isNow),
               ],
             ),
+            ),
           ),
         ),
 
         SizedBox(height: AppSpacing.gapMD),
 
         // Schedule for later
-        GestureDetector(
-          onTap: () => setState(() => _isNow = false),
-          child: Container(
+        Semantics(
+          label: 'Wybierz realizację na później',
+          button: true,
+          child: GestureDetector(
+            onTap: () => setState(() => _isNow = false),
+            child: Container(
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
               color: !_isNow
@@ -828,7 +812,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     ],
                   ),
                 ],
-              ],
+                ],
+              ),
             ),
           ),
         ),

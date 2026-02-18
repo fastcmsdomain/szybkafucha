@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/task_category.dart';
 import '../widgets/category_card.dart';
 
 /// Category selection screen - first step in task creation
-/// Shows 6 categories in a grid layout
+/// Shows all available categories in a scrollable 2-column grid layout
 class CategorySelectionScreen extends ConsumerStatefulWidget {
   const CategorySelectionScreen({super.key});
 
@@ -26,10 +27,7 @@ class _CategorySelectionScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppStrings.selectCategory,
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText(AppStrings.selectCategory),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -110,8 +108,7 @@ class _CategorySelectionScreenState
                 ),
                 child: Text(
                   AppStrings.continueText,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -162,7 +159,7 @@ class _CategorySelectionScreenState
                     color: category.color,
                   ),
                 ),
-                SizedBox(height: 2),
+                SizedBox(height: AppSpacing.gapXS),
                 Text(
                   category.description,
                   style: AppTypography.bodySmall.copyWith(

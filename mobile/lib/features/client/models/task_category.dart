@@ -8,6 +8,18 @@ enum TaskCategory {
   montaz,
   przeprowadzki,
   sprzatanie,
+  naprawy,
+  ogrod,
+  transport,
+  zwierzeta,
+  elektryk,
+  hydraulik,
+  malowanie,
+  // ignore: constant_identifier_names
+  zlota_raczka,
+  komputery,
+  sport,
+  inne,
 }
 
 /// Category data with display info and pricing
@@ -117,6 +129,119 @@ class TaskCategoryData {
       minPrice: 100,
       maxPrice: 180,
       estimatedMinutes: 120,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.naprawy,
+      name: 'Naprawy',
+      description: 'Drobne naprawy domowe',
+      icon: Icons.home_repair_service_outlined,
+      color: Color(0xFFEF4444), // Red
+      minPrice: 60,
+      maxPrice: 150,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.ogrod,
+      name: 'Ogród',
+      description: 'Prace ogrodowe i porządkowe',
+      icon: Icons.yard_outlined,
+      color: Color(0xFF22C55E), // Green
+      minPrice: 80,
+      maxPrice: 200,
+      priceUnit: 'PLN/h',
+      estimatedMinutes: 120,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.transport,
+      name: 'Transport',
+      description: 'Przewóz rzeczy i osób',
+      icon: Icons.directions_car_outlined,
+      color: Color(0xFF0EA5E9), // Sky
+      minPrice: 50,
+      maxPrice: 120,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.zwierzeta,
+      name: 'Zwierzęta',
+      description: 'Opieka nad zwierzętami',
+      icon: Icons.pets_outlined,
+      color: Color(0xFFF97316), // Orange
+      minPrice: 40,
+      maxPrice: 80,
+      priceUnit: 'PLN/h',
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.elektryk,
+      name: 'Elektryk',
+      description: 'Drobne prace elektryczne',
+      icon: Icons.electrical_services_outlined,
+      color: Color(0xFFFACC15), // Yellow
+      minPrice: 80,
+      maxPrice: 200,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.hydraulik,
+      name: 'Hydraulik',
+      description: 'Drobne prace hydrauliczne',
+      icon: Icons.plumbing_outlined,
+      color: Color(0xFF06B6D4), // Cyan
+      minPrice: 80,
+      maxPrice: 200,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.malowanie,
+      name: 'Malowanie',
+      description: 'Malowanie ścian i pomieszczeń',
+      icon: Icons.format_paint_outlined,
+      color: Color(0xFFA855F7), // Purple
+      minPrice: 100,
+      maxPrice: 250,
+      estimatedMinutes: 180,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.zlota_raczka,
+      name: 'Złota rączka',
+      description: 'Wieszanie, mocowanie, drobne prace',
+      icon: Icons.construction_outlined,
+      color: Color(0xFFD97706), // Amber
+      minPrice: 50,
+      maxPrice: 150,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.komputery,
+      name: 'Komputery',
+      description: 'Pomoc z komputerem i elektroniką',
+      icon: Icons.computer_outlined,
+      color: Color(0xFF3B82F6), // Blue
+      minPrice: 60,
+      maxPrice: 150,
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.sport,
+      name: 'Sport',
+      description: 'Trening, aktywność fizyczna',
+      icon: Icons.fitness_center_outlined,
+      color: Color(0xFF10B981), // Emerald
+      minPrice: 60,
+      maxPrice: 120,
+      priceUnit: 'PLN/h',
+      estimatedMinutes: 60,
+    ),
+    TaskCategoryData(
+      category: TaskCategory.inne,
+      name: 'Inne',
+      description: 'Inne zadania i usługi',
+      icon: Icons.more_horiz_outlined,
+      color: Color(0xFF6B7280), // Gray
+      minPrice: 35,
+      maxPrice: 200,
+      estimatedMinutes: 60,
     ),
   ];
 

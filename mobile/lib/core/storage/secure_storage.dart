@@ -9,7 +9,6 @@ abstract class StorageKeys {
   static const String userData = 'user_data';
   static const String onboardingComplete = 'onboarding_complete';
   static const String fcmToken = 'fcm_token';
-  static const String contractorOnlineStatus = 'contractor_online_status';
 }
 
 /// Secure storage service for sensitive data
@@ -138,27 +137,6 @@ class SecureStorageService {
   /// Get FCM token
   Future<String?> getFcmToken() async {
     return await _storage.read(key: StorageKeys.fcmToken);
-  }
-
-  // ============ Contractor Online Status ============
-
-  /// Save contractor online status
-  Future<void> saveContractorOnlineStatus(bool isOnline) async {
-    await _storage.write(
-      key: StorageKeys.contractorOnlineStatus,
-      value: isOnline.toString(),
-    );
-  }
-
-  /// Get contractor online status
-  Future<bool> getContractorOnlineStatus() async {
-    final value = await _storage.read(key: StorageKeys.contractorOnlineStatus);
-    return value == 'true';
-  }
-
-  /// Delete contractor online status
-  Future<void> deleteContractorOnlineStatus() async {
-    await _storage.delete(key: StorageKeys.contractorOnlineStatus);
   }
 
   // ============ Utilities ============

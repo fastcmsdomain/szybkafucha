@@ -9,6 +9,7 @@ import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -32,6 +33,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   bool _isUpdating = false;
   bool _hasFetchedTask = false;
   bool _wasTaskCancelled = false;
+  double? _clientRatingAvg;
+  int? _clientRatingCount;
+  String? _loadedClientId;
+  bool _isClientRatingLoading = false;
 
   @override
   void initState() {
@@ -104,6 +109,63 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     }
   }
 
+  void _ensureClientReviewSummaryLoaded(ContractorTask task) {
+    if (task.clientId.isEmpty) return;
+    if (_loadedClientId == task.clientId) return;
+    if (_isClientRatingLoading) return;
+    _fetchClientReviewSummary(task);
+  }
+
+  Future<void> _fetchClientReviewSummary(
+    ContractorTask task, {
+    bool force = false,
+  }) async {
+    if (task.clientId.isEmpty) return;
+    if (!force && _loadedClientId == task.clientId) return;
+    if (_isClientRatingLoading && !force) return;
+
+    final requestedClientId = task.clientId;
+
+    if (mounted) {
+      setState(() {
+        _isClientRatingLoading = true;
+      });
+    }
+
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get('/client/$requestedClientId/reviews');
+      final data = response as Map<String, dynamic>;
+
+      final ratingAvgValue = data['ratingAvg'];
+      final ratingCountValue = data['ratingCount'];
+      final ratingAvg = ratingAvgValue != null
+          ? (double.tryParse(ratingAvgValue.toString()) ?? 0.0)
+          : 0.0;
+      final ratingCount = ratingCountValue is int
+          ? ratingCountValue
+          : (int.tryParse(ratingCountValue?.toString() ?? '') ?? 0);
+
+      if (!mounted) return;
+
+      setState(() {
+        _clientRatingAvg = ratingAvg;
+        _clientRatingCount = ratingCount;
+        _loadedClientId = requestedClientId;
+        _isClientRatingLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _clientRatingAvg = null;
+        _clientRatingCount = null;
+        _loadedClientId = requestedClientId;
+        _isClientRatingLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final taskState = ref.watch(activeTaskProvider);
@@ -169,6 +231,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     if (_currentStatus != task.status) {
       _currentStatus = task.status;
     }
+    _ensureClientReviewSummaryLoaded(task);
 
     return Scaffold(
       appBar: AppBar(
@@ -176,10 +239,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => _navigateBack(context),
         ),
-        title: Text(
-          'Aktywne zlecenie',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Aktywne zlecenie'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -512,7 +572,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                         child: Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (context, error, stackTrace) => Container(
                             color: AppColors.gray100,
                             child: Icon(
                               Icons.image_not_supported,
@@ -578,6 +638,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
 
   Widget _buildClientCard(ContractorTask task) {
     final canContact = _currentStatus != ContractorTaskStatus.accepted;
+    final hasFetchedRating = _loadedClientId == task.clientId;
+    final rating = hasFetchedRating ? (_clientRatingAvg ?? task.clientRating) : task.clientRating;
+    final reviewCount = hasFetchedRating
+        ? (_clientRatingCount ?? task.clientReviewCount)
+        : task.clientReviewCount;
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
@@ -612,12 +677,19 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
                     Icon(Icons.star, size: 14, color: AppColors.warning),
                     SizedBox(width: 2),
                     Text(
-                      task.clientRating.toStringAsFixed(1),
+                      rating.toStringAsFixed(1),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray600,
                       ),
                     ),
                   ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '$reviewCount opinii',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray600,
+                  ),
                 ),
               ],
             ),
@@ -812,18 +884,21 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   Future<void> _refreshTask() async {
     await ref.read(activeTaskProvider.notifier).fetchTask(widget.taskId);
     final task = ref.read(activeTaskProvider).task;
-    if (task != null && mounted) {
-      setState(() {
-        _currentStatus = task.status;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Zlecenie odświeżone'),
-          duration: const Duration(seconds: 1),
-          backgroundColor: AppColors.success,
-        ),
-      );
-    }
+    if (task == null || !mounted) return;
+
+    await _fetchClientReviewSummary(task, force: true);
+    if (!mounted) return;
+
+    setState(() {
+      _currentStatus = task.status;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Zlecenie odświeżone'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: AppColors.success,
+      ),
+    );
   }
 
   /// Start the task - transitions from accepted to in_progress
@@ -876,6 +951,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   void _showClientProfile(ContractorTask task) {
+    final hasFetchedRating = _loadedClientId == task.clientId;
+    final profileRating =
+        hasFetchedRating ? (_clientRatingAvg ?? task.clientRating) : task.clientRating;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -890,7 +969,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         child: _ClientProfileSheet(
           clientId: task.clientId,
           clientName: task.clientName,
-          clientRating: task.clientRating,
+          clientRating: profileRating,
           clientAvatarUrl: task.clientAvatarUrl,
         ),
       ),

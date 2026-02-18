@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../client/models/task_category.dart';
 
 /// Contractor-only editable profile screen
 class ContractorProfileScreen extends ConsumerStatefulWidget {
@@ -335,7 +337,7 @@ class _ContractorProfileScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mój profil'),
+        title: SFRainbowText('Mój profil'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -524,7 +526,7 @@ class _ContractorProfileScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Kompletność profilu',
+                'Weryfikacja',
                 style: AppTypography.h4,
               ),
               Text(
@@ -549,15 +551,6 @@ class _ContractorProfileScreenState
   }
 
   Widget _buildCategoriesSection() {
-    const allCategories = [
-      'paczki',
-      'zakupy',
-      'kolejki',
-      'montaz',
-      'przeprowadzki',
-      'sprzatanie',
-    ];
-
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -569,29 +562,36 @@ class _ContractorProfileScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Kategorie usług *',
+            'Kategorie usług:',
             style: AppTypography.h4,
           ),
           SizedBox(height: AppSpacing.gapMD),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: allCategories.map((cat) {
-              final selected = _selectedCategories.contains(cat);
+            children: TaskCategoryData.all.map((data) {
+              final categoryKey = data.category.name;
+              final selected = _selectedCategories.contains(categoryKey);
               return FilterChip(
-                label: Text(cat),
+                label: Text(
+                  data.name,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.gray900,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 selected: selected,
                 onSelected: (value) {
                   setState(() {
                     if (value) {
-                      _selectedCategories.add(cat);
+                      _selectedCategories.add(categoryKey);
                     } else {
-                      _selectedCategories.remove(cat);
+                      _selectedCategories.remove(categoryKey);
                     }
                   });
                 },
-                selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                checkmarkColor: AppColors.primary,
+                selectedColor: AppColors.success.withValues(alpha: 0.2),
+                checkmarkColor: AppColors.gray900,
               );
             }).toList(),
           ),

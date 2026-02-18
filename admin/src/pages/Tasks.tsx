@@ -15,6 +15,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   montaz: '🔧 Montaż',
   przeprowadzki: '📦 Przeprowadzki',
   sprzatanie: '🧹 Sprzątanie',
+  naprawy: '🔨 Naprawy',
+  ogrod: '🌿 Ogród',
+  transport: '🚗 Transport',
+  zwierzeta: '🐾 Zwierzęta',
+  elektryk: '⚡ Elektryk',
+  hydraulik: '🔧 Hydraulik',
+  malowanie: '🎨 Malowanie',
+  zlota_raczka: '🛠️ Złota rączka',
+  komputery: '💻 Komputery',
+  sport: '🏋️ Sport',
+  inne: '📋 Inne',
 };
 
 const Tasks: React.FC = () => {

@@ -7,7 +7,6 @@ import '../api/api_config.dart';
 import '../services/google_sign_in_service.dart';
 import '../storage/secure_storage.dart';
 import 'api_provider.dart';
-import 'contractor_availability_provider.dart';
 import 'notification_provider.dart';
 import 'storage_provider.dart';
 
@@ -574,6 +573,177 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // ──────────────────────────────────────────────────────
+  // Email + Password Authentication
+  // ──────────────────────────────────────────────────────
+
+  /// Register with email and password.
+  /// Does NOT set state to authenticated — the caller must navigate to
+  /// the email verification screen first, then call [activateSession].
+  Future<void> registerWithEmail({
+    required String email,
+    required String password,
+    String? name,
+    String userType = 'client',
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      final response = await api.post<Map<String, dynamic>>(
+        '/auth/email/register',
+        data: {
+          'email': email,
+          'password': password,
+          if (name != null) 'name': name,
+          'userType': userType,
+        },
+      );
+
+      final token = response['accessToken'] as String;
+      final refreshToken = response['refreshToken'] as String?;
+      final userData = response['user'] as Map<String, dynamic>;
+      final user = User.fromJson(userData);
+
+      // Save auth data to storage but do NOT set state to authenticated.
+      // This prevents the router from redirecting to home before the
+      // register screen can navigate to the email verification screen.
+      await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
+
+      // Reset to unauthenticated so the router stays on the current route.
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  /// Activate a previously saved session (after email registration).
+  /// Call this after email verification or when the user chooses to skip.
+  Future<void> activateSession() async {
+    final token = await _storage.getToken();
+    final userJson = await _storage.getUserData();
+    final refreshToken = await _storage.getRefreshToken();
+
+    if (token != null && userJson != null) {
+      final user = User.fromJson(jsonDecode(userJson) as Map<String, dynamic>);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        token: token,
+        refreshToken: refreshToken,
+        user: user,
+      );
+    }
+  }
+
+  /// Login with email and password
+  Future<void> loginWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      final response = await api.post<Map<String, dynamic>>(
+        '/auth/email/login',
+        data: {'email': email, 'password': password},
+      );
+
+      final token = response['accessToken'] as String;
+      final refreshToken = response['refreshToken'] as String?;
+      final userData = response['user'] as Map<String, dynamic>;
+      final user = User.fromJson(userData);
+
+      await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
+
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        token: token,
+        refreshToken: refreshToken,
+        user: user,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  /// Verify email address with OTP code
+  Future<void> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/email/verify',
+        data: {'email': email, 'code': code},
+      );
+
+      // Refresh user data to update emailVerified status
+      await refreshUser();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Resend email verification OTP
+  Future<void> resendEmailVerification(String email) async {
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/email/resend-verification',
+        data: {'email': email},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Request password reset - send OTP to email
+  Future<void> requestPasswordReset(String email) async {
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/email/request-password-reset',
+        data: {'email': email},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Reset password with OTP code and new password
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/email/reset-password',
+        data: {
+          'email': email,
+          'code': code,
+          'newPassword': newPassword,
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Complete registration with user details
   Future<void> completeRegistration({
     required String name,
@@ -711,17 +881,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Logout user
   Future<void> logout() async {
-    // Set contractor offline before logout
-    if (state.user?.isContractor == true) {
-      try {
-        await _ref
-            .read(contractorAvailabilityProvider.notifier)
-            .setOffline();
-      } catch (_) {
-        // Ignore errors, proceed with logout
-      }
-    }
-
     // Clear FCM token from backend before logout
     try {
       final notificationService = _ref.read(notificationServiceProvider);
@@ -752,9 +911,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Reset notification initialized state
     _ref.read(notificationInitializedProvider.notifier).state = false;
-
-    // Reset contractor availability state
-    _ref.read(contractorAvailabilityProvider.notifier).reset();
 
     // Reset state
     state = const AuthState(status: AuthStatus.unauthenticated);

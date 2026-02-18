@@ -14,6 +14,8 @@ class NearbyTaskCard extends ConsumerStatefulWidget {
   final VoidCallback? onDetails;
   /// Show action buttons (accept/details). For client list view we hide them.
   final bool showActions;
+  /// Show client info row (avatar, name, rating, reviews).
+  final bool showClientInfo;
 
   const NearbyTaskCard({
     super.key,
@@ -22,6 +24,7 @@ class NearbyTaskCard extends ConsumerStatefulWidget {
     this.onAccept,
     this.onDetails,
     this.showActions = true,
+    this.showClientInfo = true,
   });
 
   @override
@@ -66,7 +69,7 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
           border: Border.all(
-            color: task.isUrgent ? AppColors.warning : AppColors.gray200,
+            color: task.isUrgent ? AppColors.primary : AppColors.gray200,
             width: task.isUrgent ? 2 : 1,
           ),
           boxShadow: [
@@ -228,48 +231,51 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
               ],
             ),
 
-            SizedBox(height: AppSpacing.gapMD),
+            if (widget.showClientInfo || widget.showActions) ...[
+              SizedBox(height: AppSpacing.gapMD),
 
-            // Client info and accept button
-            Row(
-              children: [
-                // Client info
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.gray200,
-                  child: Text(
-                    task.clientName[0],
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: AppSpacing.gapSM),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.clientName,
-                        style: AppTypography.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
+              // Client info and accept button
+              Row(
+                children: [
+                  if (widget.showClientInfo) ...[
+                    // Client info
+                    CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppColors.gray200,
+                      child: Text(
+                        task.clientName[0],
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.gray600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Wrap(
-                        spacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                    ),
+                    SizedBox(width: AppSpacing.gapSM),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.star,
-                            size: 12,
-                            color: AppColors.warning,
-                          ),
                           Text(
-                            rating.toStringAsFixed(1),
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray600,
+                            task.clientName,
+                            style: AppTypography.bodySmall.copyWith(
+                              fontWeight: FontWeight.w500,
                             ),
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                size: 12,
+                                color: AppColors.warning,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                rating.toStringAsFixed(1),
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.gray600,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             '$reviewCount opinii',
@@ -279,47 +285,49 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  ],
 
-                if (widget.showActions) ...[
-                  // More info button
-                  OutlinedButton(
-                    onPressed: widget.onDetails,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.gray700,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.paddingSM,
-                        vertical: AppSpacing.paddingSM,
+                  if (!widget.showClientInfo) const Spacer(),
+
+                  if (widget.showActions) ...[
+                    // More info button
+                    OutlinedButton(
+                      onPressed: widget.onDetails,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.gray700,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.paddingSM,
+                          vertical: AppSpacing.paddingSM,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
+                        ),
+                        side: BorderSide(color: AppColors.gray300),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
-                      side: BorderSide(color: AppColors.gray300),
+                      child: const Text('Więcej'),
                     ),
-                    child: const Text('Więcej'),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                  // Accept button
-                  ElevatedButton(
-                    onPressed: widget.onAccept,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.paddingMD,
-                        vertical: AppSpacing.paddingSM,
+                    SizedBox(width: AppSpacing.gapSM),
+                    // Accept button
+                    ElevatedButton(
+                      onPressed: widget.onAccept,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.paddingMD,
+                          vertical: AppSpacing.paddingSM,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
+                      child: const Text('Przyjmij'),
                     ),
-                    child: const Text('Przyjmij'),
-                  ),
+                  ],
                 ],
-              ],
-            ),
+              ),
+            ],
           ],
         ),
       ),

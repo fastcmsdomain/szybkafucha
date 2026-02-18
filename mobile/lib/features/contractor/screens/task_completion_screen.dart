@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
 
@@ -66,10 +67,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => _showExitConfirmation(),
         ),
-        title: Text(
-          'Zakończ zlecenie',
-          style: AppTypography.h4,
-        ),
+        title: SFRainbowText('Zakończ zlecenie'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
