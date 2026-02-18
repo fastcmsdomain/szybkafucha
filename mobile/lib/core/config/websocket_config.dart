@@ -1,26 +1,12 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 /// WebSocket Configuration
 /// Centralized WebSocket connection settings with environment support
 
 abstract class WebSocketConfig {
-  /// Resolve host so that simulators map to the correct machine address.
-  /// - Android emulator uses 10.0.2.2 to reach the host.
-  /// - iOS simulator and Flutter web can reach localhost directly.
-  /// - Physical devices should point to the host LAN IP (override if needed).
-  static String get _localHost {
-    if (kIsWeb) return 'localhost';
-    if (Platform.isAndroid) return '10.0.2.2';
-    return '127.0.0.1';
-  }
-
   /// WebSocket server URL
-  /// - Dev: ws://<resolved-host>:3000/realtime
+  /// - Dev: ws://localhost:3000/realtime
   /// - Staging: wss://staging-api.szybkafucha.pl/realtime
   /// - Production: wss://api.szybkafucha.pl/realtime
-  static String get webSocketUrl => 'ws://$_localHost:3000';
+  static const String webSocketUrl = 'ws://localhost:3000';
 
   /// WebSocket namespace
   static const String namespace = '/realtime';
