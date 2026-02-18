@@ -1,3 +1,7 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// API configuration for Szybka Fucha
 abstract class ApiConfig {
   /// Enable dev mode to bypass backend and use mock data
@@ -16,8 +20,18 @@ abstract class ApiConfig {
   /// Current server base URL (change based on build flavor)
   static const String serverUrl = devServerUrl;
 
-  /// Base URL for development
-  static const String devBaseUrl = '$devServerUrl/api/v1';
+  /// Resolve host so that simulators map to the correct machine address.
+  /// - Android emulator uses 10.0.2.2 to reach the host.
+  /// - iOS simulator and Flutter web can reach localhost directly.
+  /// - Physical devices should point to the host LAN IP (override if needed).
+  static String get _localHost {
+    if (kIsWeb) return 'localhost';
+    if (Platform.isAndroid) return '10.0.2.2';
+    return '127.0.0.1';
+  }
+
+  /// Base URL for development (adjusts per platform)
+  static String get devBaseUrl => 'http://$_localHost:3000/api/v1';
 
   /// Base URL for staging
   static const String stagingBaseUrl = '$stagingServerUrl/api/v1';
@@ -26,7 +40,7 @@ abstract class ApiConfig {
   static const String prodBaseUrl = '$prodServerUrl/api/v1';
 
   /// Current base URL (change based on build flavor)
-  static const String baseUrl = devBaseUrl;
+  static String get baseUrl => devBaseUrl;
 
   /// Get full URL for avatar/media paths
   /// Converts relative paths like /uploads/avatars/file.jpg to full URLs
