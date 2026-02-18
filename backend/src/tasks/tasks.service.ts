@@ -14,9 +14,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from './entities/task.entity';
+import {
+  TaskApplication,
+  ApplicationStatus,
+} from './entities/task-application.entity';
 import { Rating } from './entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { ApplyTaskDto } from './dto/apply-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -57,6 +62,8 @@ export class TasksService {
   constructor(
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>,
+    @InjectRepository(TaskApplication)
+    private readonly taskApplicationRepository: Repository<TaskApplication>,
     @InjectRepository(Rating)
     private readonly ratingsRepository: Repository<Rating>,
     @InjectRepository(ContractorProfile)
@@ -224,45 +231,319 @@ export class TasksService {
   }
 
   /**
-   * Contractor accepts a task
-   * Validates that contractor profile is complete before allowing acceptance
+   * @deprecated Use applyForTask instead. Old direct-accept flow replaced by bidding system.
    */
-  async acceptTask(taskId: string, contractorId: string): Promise<Task> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  acceptTask(taskId: string, contractorId: string): never {
+    throw new BadRequestException(
+      'Direct accept is no longer supported. Use POST /tasks/:id/apply to apply for tasks.',
+    );
+  }
+
+  /**
+   * @deprecated Use acceptApplication instead. Old confirm flow replaced by bidding system.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  confirmContractor(taskId: string, clientId: string): never {
+    throw new BadRequestException(
+      'Direct confirm is no longer supported. Use PUT /tasks/:id/applications/:appId/accept instead.',
+    );
+  }
+
+  /**
+   * @deprecated Use rejectApplication instead. Old reject flow replaced by bidding system.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  rejectContractor(taskId: string, clientId: string, reason?: string): never {
+    throw new BadRequestException(
+      'Direct reject is no longer supported. Use PUT /tasks/:id/applications/:appId/reject instead.',
+    );
+  }
+
+  // ─── Bidding System Methods ────────────────────────────────────────
+
+  /**
+   * Contractor applies for a task with a proposed price and optional message
+   */
+  async applyForTask(
+    taskId: string,
+    contractorId: string,
+    dto: ApplyTaskDto,
+  ): Promise<TaskApplication> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.status !== TaskStatus.CREATED) {
-      throw new BadRequestException('Task is no longer available');
+      throw new BadRequestException('Task is no longer accepting applications');
     }
 
-    // NEW: Check if contractor profile is complete
+    // Check if contractor profile is complete
     const isComplete =
       await this.contractorService.isProfileComplete(contractorId);
     if (!isComplete) {
       throw new BadRequestException(
-        'Complete your contractor profile before accepting tasks',
+        'Complete your contractor profile before applying for tasks',
       );
     }
 
-    task.contractorId = contractorId;
-    task.status = TaskStatus.ACCEPTED;
-    task.acceptedAt = new Date();
+    // Check if contractor already applied
+    const existing = await this.taskApplicationRepository.findOne({
+      where: { taskId, contractorId },
+    });
+    if (existing) {
+      throw new BadRequestException('You have already applied for this task');
+    }
 
-    const savedTask = await this.tasksRepository.save(task);
+    // Check application limit
+    const currentCount = await this.taskApplicationRepository.count({
+      where: { taskId, status: ApplicationStatus.PENDING },
+    });
+    if (currentCount >= task.maxApplications) {
+      throw new BadRequestException(
+        `Application limit reached (${task.maxApplications}/${task.maxApplications})`,
+      );
+    }
 
-    // Get contractor profile for name
+    const application = this.taskApplicationRepository.create({
+      taskId,
+      contractorId,
+      proposedPrice: dto.proposedPrice,
+      message: dto.message || null,
+    });
+
+    const savedApplication =
+      await this.taskApplicationRepository.save(application);
+
+    // Get contractor profile for notification details
     const contractorProfile = await this.contractorProfileRepository.findOne({
       where: { userId: contractorId },
       relations: ['user'],
     });
 
-    // Broadcast via WebSocket to client with contractor details
+    // Notify client via WebSocket about new application
+    const applicationSummary = {
+      applicationId: savedApplication.id,
+      taskId,
+      contractor: {
+        id: contractorId,
+        name: contractorProfile?.user?.name || 'Wykonawca',
+        avatarUrl: contractorProfile?.user?.avatarUrl || null,
+        rating: contractorProfile?.ratingAvg || 0,
+        completedTasks: contractorProfile?.completedTasksCount || 0,
+        bio: contractorProfile?.bio || null,
+      },
+      proposedPrice: dto.proposedPrice,
+      message: dto.message || null,
+      createdAt: savedApplication.createdAt,
+      applicationCount: currentCount + 1,
+      maxApplications: task.maxApplications,
+    };
+
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_NEW,
+      applicationSummary,
+    );
+
+    // Also send application count update
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_COUNT,
+      {
+        taskId,
+        count: currentCount + 1,
+        max: task.maxApplications,
+      },
+    );
+
+    // Push notification to client
+    this.notificationsService
+      .sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
+        taskTitle: task.title,
+        contractorName: contractorProfile?.user?.name || 'Wykonawca',
+      })
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send new application notification: ${err}`,
+        ),
+      );
+
+    this.logger.log(
+      `Contractor ${contractorId} applied for task ${taskId} with price ${dto.proposedPrice} PLN`,
+    );
+
+    return savedApplication;
+  }
+
+  /**
+   * Get all applications for a task (client only)
+   * Returns applications with contractor profile details
+   */
+  async getApplications(taskId: string, clientId: string): Promise<any[]> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    const applications = await this.taskApplicationRepository.find({
+      where: { taskId },
+      relations: ['contractor'],
+      order: { createdAt: 'ASC' },
+    });
+
+    // Enrich with contractor profile details
+    const enriched = await Promise.all(
+      applications.map(async (app) => {
+        const profile = await this.contractorProfileRepository.findOne({
+          where: { userId: app.contractorId },
+          relations: ['user'],
+        });
+
+        // Calculate distance from task
+        let distanceKm: number | null = null;
+        if (profile?.lastLocationLat && profile?.lastLocationLng) {
+          distanceKm = Number(
+            this.calculateDistance(
+              Number(task.locationLat),
+              Number(task.locationLng),
+              Number(profile.lastLocationLat),
+              Number(profile.lastLocationLng),
+            ).toFixed(1),
+          );
+        }
+
+        return {
+          id: app.id,
+          taskId: app.taskId,
+          contractorId: app.contractorId,
+          contractorName: profile?.user?.name || 'Wykonawca',
+          contractorAvatarUrl: profile?.user?.avatarUrl || null,
+          contractorRating: profile?.ratingAvg || 0,
+          contractorReviewCount: profile?.ratingCount || 0,
+          contractorCompletedTasks: profile?.completedTasksCount || 0,
+          contractorBio: profile?.bio || null,
+          distanceKm,
+          proposedPrice: app.proposedPrice,
+          message: app.message,
+          status: app.status,
+          createdAt: app.createdAt,
+        };
+      }),
+    );
+
+    return enriched;
+  }
+
+  /**
+   * Client accepts an application - assigns contractor to task
+   * Auto-rejects all other pending applications
+   */
+  async acceptApplication(
+    taskId: string,
+    applicationId: string,
+    clientId: string,
+  ): Promise<Task> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    if (task.status !== TaskStatus.CREATED) {
+      throw new BadRequestException(
+        'Task must be in created state to accept applications',
+      );
+    }
+
+    const application = await this.taskApplicationRepository.findOne({
+      where: { id: applicationId, taskId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    if (application.status !== ApplicationStatus.PENDING) {
+      throw new BadRequestException('Application is no longer pending');
+    }
+
+    // Accept this application
+    application.status = ApplicationStatus.ACCEPTED;
+    application.respondedAt = new Date();
+    await this.taskApplicationRepository.save(application);
+
+    // Assign contractor to task and move to CONFIRMED
+    task.contractorId = application.contractorId;
+    task.status = TaskStatus.CONFIRMED;
+    task.confirmedAt = new Date();
+    task.finalAmount = application.proposedPrice;
+
+    const savedTask = await this.tasksRepository.save(task);
+
+    // Auto-reject all other pending applications
+    const otherApplications = await this.taskApplicationRepository.find({
+      where: { taskId, status: ApplicationStatus.PENDING },
+    });
+
+    for (const otherApp of otherApplications) {
+      otherApp.status = ApplicationStatus.REJECTED;
+      otherApp.respondedAt = new Date();
+      await this.taskApplicationRepository.save(otherApp);
+
+      // Notify rejected contractor
+      this.realtimeGateway.sendToUser(
+        otherApp.contractorId,
+        ServerEvent.APPLICATION_REJECTED,
+        {
+          taskId,
+          applicationId: otherApp.id,
+          status: 'rejected',
+          reason: 'Klient wybrał innego wykonawcę',
+        },
+      );
+
+      this.notificationsService
+        .sendToUser(otherApp.contractorId, NotificationType.TASK_CANCELLED, {
+          taskTitle: task.title,
+          reason: 'Klient wybrał innego wykonawcę',
+        })
+        .catch((err) =>
+          this.logger.error(`Failed to send rejection notification: ${err}`),
+        );
+    }
+
+    // Get contractor profile for WebSocket broadcast
+    const contractorProfile = await this.contractorProfileRepository.findOne({
+      where: { userId: application.contractorId },
+      relations: ['user'],
+    });
+
+    // Notify accepted contractor via WebSocket
+    this.realtimeGateway.sendToUser(
+      application.contractorId,
+      ServerEvent.APPLICATION_ACCEPTED,
+      {
+        taskId,
+        applicationId: application.id,
+        status: 'accepted',
+        task: {
+          id: task.id,
+          title: task.title,
+          category: task.category,
+          address: task.address,
+          finalAmount: application.proposedPrice,
+        },
+      },
+    );
+
+    // Broadcast task status update to client
     this.realtimeGateway.broadcastTaskStatusWithContractor(
       taskId,
-      TaskStatus.ACCEPTED,
-      contractorId,
+      TaskStatus.CONFIRMED,
+      clientId,
       task.clientId,
       {
-        id: contractorId,
+        id: application.contractorId,
         name: contractorProfile?.user?.name || 'Wykonawca',
         avatarUrl: contractorProfile?.user?.avatarUrl || null,
         rating: contractorProfile?.ratingAvg || 0,
@@ -271,114 +552,172 @@ export class TasksService {
       },
     );
 
-    // Notify client that task was accepted (push notification as backup)
+    // Push notification to accepted contractor
     this.notificationsService
-      .sendToUser(task.clientId, NotificationType.TASK_ACCEPTED, {
+      .sendToUser(application.contractorId, NotificationType.TASK_CONFIRMED, {
         taskTitle: task.title,
-        contractorName: contractorProfile?.user?.name || 'Wykonawca',
       })
       .catch((err) =>
-        this.logger.error(`Failed to send TASK_ACCEPTED notification: ${err}`),
+        this.logger.error(`Failed to send acceptance notification: ${err}`),
       );
 
-    return savedTask;
-  }
-
-  /**
-   * Client confirms the contractor after they accept
-   * Changes status from ACCEPTED to CONFIRMED, triggers payment
-   */
-  async confirmContractor(taskId: string, clientId: string): Promise<Task> {
-    const task = await this.findByIdOrFail(taskId);
-
-    if (task.clientId !== clientId) {
-      throw new ForbiddenException('You are not the owner of this task');
-    }
-
-    if (task.status !== TaskStatus.ACCEPTED) {
-      throw new BadRequestException(
-        'Task must be in accepted state to confirm contractor',
-      );
-    }
-
-    task.status = TaskStatus.CONFIRMED;
-    task.confirmedAt = new Date();
-
-    const savedTask = await this.tasksRepository.save(task);
-
-    // Broadcast via WebSocket to contractor
-    this.realtimeGateway.broadcastTaskStatus(
-      taskId,
-      TaskStatus.CONFIRMED,
-      clientId,
-      task.contractorId!,
+    this.logger.log(
+      `Client ${clientId} accepted application ${applicationId} for task ${taskId}. Contractor: ${application.contractorId}`,
     );
 
-    // Notify contractor that client confirmed them
-    if (task.contractorId) {
-      this.notificationsService
-        .sendToUser(task.contractorId, NotificationType.TASK_CONFIRMED, {
-          taskTitle: task.title,
-        })
-        .catch((err) =>
-          this.logger.error(
-            `Failed to send contractor confirmation notification: ${err}`,
-          ),
-        );
-    }
-
     return savedTask;
   }
 
   /**
-   * Client rejects the contractor - task goes back to searching
+   * Client rejects a specific application
    */
-  async rejectContractor(
+  async rejectApplication(
     taskId: string,
+    applicationId: string,
     clientId: string,
-    reason?: string,
-  ): Promise<Task> {
+  ): Promise<TaskApplication> {
     const task = await this.findByIdOrFail(taskId);
 
     if (task.clientId !== clientId) {
       throw new ForbiddenException('You are not the owner of this task');
     }
 
-    if (task.status !== TaskStatus.ACCEPTED) {
-      throw new BadRequestException(
-        'Task must be in accepted state to reject contractor',
-      );
-    }
-
-    // Reset task to created state
-    const rejectedContractorId = task.contractorId;
-    task.contractorId = null;
-    task.status = TaskStatus.CREATED;
-    task.acceptedAt = null;
-
-    const savedTask = await this.tasksRepository.save(task);
-
-    // Notify rejected contractor
-    if (rejectedContractorId) {
-      this.notificationsService
-        .sendToUser(rejectedContractorId, NotificationType.TASK_CANCELLED, {
-          taskTitle: task.title,
-          reason: reason || 'Klient odrzucił zlecenie',
-        })
-        .catch((err) =>
-          this.logger.error(`Failed to send rejection notification: ${err}`),
-        );
-    }
-
-    // Re-notify available contractors
-    this.notifyAvailableContractors(savedTask).catch((error) => {
-      this.logger.error(
-        `Failed to re-notify contractors for task ${savedTask.id}`,
-        error,
-      );
+    const application = await this.taskApplicationRepository.findOne({
+      where: { id: applicationId, taskId },
     });
 
-    return savedTask;
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    if (application.status !== ApplicationStatus.PENDING) {
+      throw new BadRequestException('Application is no longer pending');
+    }
+
+    application.status = ApplicationStatus.REJECTED;
+    application.respondedAt = new Date();
+    const savedApplication =
+      await this.taskApplicationRepository.save(application);
+
+    // Notify contractor
+    this.realtimeGateway.sendToUser(
+      application.contractorId,
+      ServerEvent.APPLICATION_REJECTED,
+      {
+        taskId,
+        applicationId: application.id,
+        status: 'rejected',
+      },
+    );
+
+    // Update application count for client
+    const pendingCount = await this.taskApplicationRepository.count({
+      where: { taskId, status: ApplicationStatus.PENDING },
+    });
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_COUNT,
+      {
+        taskId,
+        count: pendingCount,
+        max: task.maxApplications,
+      },
+    );
+
+    // Push notification
+    this.notificationsService
+      .sendToUser(application.contractorId, NotificationType.TASK_CANCELLED, {
+        taskTitle: task.title,
+        reason: 'Twoje zgłoszenie zostało odrzucone',
+      })
+      .catch((err) =>
+        this.logger.error(`Failed to send rejection notification: ${err}`),
+      );
+
+    this.logger.log(
+      `Client ${clientId} rejected application ${applicationId} for task ${taskId}`,
+    );
+
+    return savedApplication;
+  }
+
+  /**
+   * Contractor withdraws their application
+   */
+  async withdrawApplication(
+    taskId: string,
+    contractorId: string,
+  ): Promise<TaskApplication> {
+    const application = await this.taskApplicationRepository.findOne({
+      where: { taskId, contractorId, status: ApplicationStatus.PENDING },
+    });
+
+    if (!application) {
+      throw new NotFoundException('No pending application found for this task');
+    }
+
+    application.status = ApplicationStatus.WITHDRAWN;
+    application.respondedAt = new Date();
+    const savedApplication =
+      await this.taskApplicationRepository.save(application);
+
+    const task = await this.findByIdOrFail(taskId);
+
+    // Notify client that contractor withdrew
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_WITHDRAWN,
+      {
+        taskId,
+        applicationId: application.id,
+        contractorId,
+      },
+    );
+
+    // Update application count
+    const pendingCount = await this.taskApplicationRepository.count({
+      where: { taskId, status: ApplicationStatus.PENDING },
+    });
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_COUNT,
+      {
+        taskId,
+        count: pendingCount,
+        max: task.maxApplications,
+      },
+    );
+
+    this.logger.log(
+      `Contractor ${contractorId} withdrew application for task ${taskId}`,
+    );
+
+    return savedApplication;
+  }
+
+  /**
+   * Get all applications for a contractor (their application history)
+   */
+  async getMyApplications(contractorId: string): Promise<any[]> {
+    const applications = await this.taskApplicationRepository.find({
+      where: { contractorId },
+      relations: ['task'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return applications.map((app) => ({
+      id: app.id,
+      taskId: app.taskId,
+      taskTitle: app.task?.title || '',
+      taskCategory: app.task?.category || '',
+      taskAddress: app.task?.address || '',
+      taskBudgetAmount: app.task?.budgetAmount || 0,
+      proposedPrice: app.proposedPrice,
+      message: app.message,
+      status: app.status,
+      createdAt: app.createdAt,
+      respondedAt: app.respondedAt,
+    }));
   }
 
   /**
@@ -612,6 +951,39 @@ export class TasksService {
       task.cancellationReason = reason || null;
 
       const savedTask = await this.tasksRepository.save(task);
+
+      // Auto-reject all pending applications
+      const pendingApplications = await this.taskApplicationRepository.find({
+        where: { taskId, status: ApplicationStatus.PENDING },
+      });
+
+      for (const app of pendingApplications) {
+        app.status = ApplicationStatus.REJECTED;
+        app.respondedAt = new Date();
+        await this.taskApplicationRepository.save(app);
+
+        this.realtimeGateway.sendToUser(
+          app.contractorId,
+          ServerEvent.APPLICATION_REJECTED,
+          {
+            taskId,
+            applicationId: app.id,
+            status: 'rejected',
+            reason: 'Zlecenie zostało anulowane',
+          },
+        );
+
+        this.notificationsService
+          .sendToUser(app.contractorId, NotificationType.TASK_CANCELLED, {
+            taskTitle: task.title,
+            reason: 'Zlecenie zostało anulowane',
+          })
+          .catch((err) =>
+            this.logger.error(
+              `Failed to send cancellation notification to applicant: ${err}`,
+            ),
+          );
+      }
 
       // Broadcast via WebSocket to both parties
       this.realtimeGateway.broadcastTaskStatus(

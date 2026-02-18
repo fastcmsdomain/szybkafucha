@@ -53,6 +53,9 @@ abstract class AppTypography {
         color: AppColors.gray900,
       );
 
+  // Backward-compatible alias used by newer UI components
+  static TextStyle get headingSmall => h5;
+
   // Text Styles - Body (Plus Jakarta Sans)
   static TextStyle get bodyLarge => GoogleFonts.plusJakartaSans(
         fontSize: 18,

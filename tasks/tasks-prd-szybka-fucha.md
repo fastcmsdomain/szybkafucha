@@ -780,6 +780,25 @@ Then press `y` to accept each license.
   - [ ] 22.5 Fix critical bugs
   - [ ] 22.6 Prepare for full launch
 
+### Phase 7: Multi-Contractor Bidding System
+
+#### 23.0 Multi-Contractor Bidding System
+- [x] 23.1 Backend: Create TaskApplication entity with ApplicationStatus enum
+- [x] 23.2 Backend: Add maxApplications field to Task entity
+- [x] 23.3 Backend: Create ApplyTaskDto with validation
+- [x] 23.4 Backend: Implement application methods in TasksService (apply, accept, reject, withdraw, getApplications, getMyApplications)
+- [x] 23.5 Backend: Add bidding endpoints to TasksController (6 new endpoints)
+- [x] 23.6 Backend: Deprecate old accept/confirm/reject endpoints (410 Gone)
+- [x] 23.7 Backend: Add WebSocket events for application lifecycle
+- [x] 23.8 Mobile: Create TaskApplication and MyApplication models
+- [x] 23.9 Mobile: Add taskApplicationsProvider and myApplicationsProvider
+- [x] 23.10 Mobile: Update TaskTrackingScreen with 4-step flow and applications list
+- [x] 23.11 Mobile: Create ApplicationCard widget
+- [x] 23.12 Mobile: Update NearbyTaskCard and ContractorTaskListScreen with apply dialog
+- [x] 23.13 Mobile: Create MyApplicationsScreen for contractor
+- [x] 23.14 Mobile: Add WebSocket stream providers for application events
+- [x] 23.15 Mobile: Add application event listeners in WebSocketService
+
 ---
 
 ## Task Dependencies

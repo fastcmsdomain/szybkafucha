@@ -419,8 +419,12 @@ export class ContractorService {
         .andWhere('rating.role = :role', { role: 'contractor' })
         .getRawOne<RatingAggregateRow>();
 
-      const computedRatingAvg = ratingResult?.avg ? parseFloat(ratingResult.avg) : 0.0;
-      const computedRatingCount = ratingResult?.count ? parseInt(ratingResult.count, 10) : 0;
+      const computedRatingAvg = ratingResult?.avg
+        ? parseFloat(ratingResult.avg)
+        : 0.0;
+      const computedRatingCount = ratingResult?.count
+        ? parseInt(ratingResult.count, 10)
+        : 0;
 
       return {
         id: profile.userId,

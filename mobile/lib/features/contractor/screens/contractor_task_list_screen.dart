@@ -659,7 +659,7 @@ class _ContractorTaskListScreenState
           task: task,
           onTap: () => _showTaskDetails(task),
           onDetails: () => _showTaskDetails(task),
-          onAccept: () => _acceptTask(task),
+          onAccept: () => _showApplyDialog(task),
         );
       },
     );
@@ -792,24 +792,99 @@ class _ContractorTaskListScreenState
         task.status == ContractorTaskStatus.pendingComplete;
   }
 
-  Future<void> _acceptTask(ContractorTask task) async {
-    try {
-      final acceptedTask =
-          await ref.read(availableTasksProvider.notifier).acceptTask(task.id);
+  /// Show apply dialog with price and optional message
+  Future<void> _showApplyDialog(ContractorTask task) async {
+    final priceController = TextEditingController(
+      text: task.price.toString(),
+    );
+    final messageController = TextEditingController();
 
-      // Set as active task in provider
-      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Zgłoś się do zlecenia'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Budżet klienta: ${task.price} zł',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+            ),
+            SizedBox(height: AppSpacing.paddingSM),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Twoja cena (zł)',
+                hintText: 'Min. 35 zł',
+                border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+                suffixText: 'zł',
+              ),
+            ),
+            SizedBox(height: AppSpacing.paddingSM),
+            TextField(
+              controller: messageController,
+              maxLines: 3,
+              maxLength: 500,
+              decoration: InputDecoration(
+                labelText: 'Wiadomość (opcjonalnie)',
+                hintText: 'Opisz swoje doświadczenie...',
+                border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Anuluj'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Wyślij zgłoszenie'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != true) return;
+
+    final price = double.tryParse(priceController.text);
+    if (price == null || price < 35) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Minimalna cena to 35 zł'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      await ref.read(availableTasksProvider.notifier).applyForTask(
+            task.id,
+            proposedPrice: price,
+            message: messageController.text.isNotEmpty
+                ? messageController.text
+                : null,
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Zaakceptowano zlecenie: ${task.category.name}'),
+            content: const Text('Zgłoszenie wysłane! Czekaj na decyzję klienta.'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        // Navigate to active task screen
-        context.push(Routes.contractorTask(task.id));
       }
     } catch (e) {
       if (mounted) {

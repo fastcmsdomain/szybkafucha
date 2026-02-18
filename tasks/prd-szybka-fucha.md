@@ -265,6 +265,11 @@ ACCEPTANCE CRITERIA:
 | MATCH-04 | New task notification MUST timeout after 45 seconds | Must |
 | MATCH-05 | If declined, task MUST go to next available contractor | Must |
 | MATCH-06 | Premium contractors get notifications 30 seconds earlier | Could |
+| MATCH-07 | System MUST allow multiple contractors to apply for a task with a proposed price and optional message | Must |
+| MATCH-08 | Client MUST see list of applicants with profiles (avatar, rating, bio, completed tasks, proposed price) and choose one | Must |
+| MATCH-09 | System MUST limit applications per task (configurable, default 5) | Must |
+| MATCH-10 | Contractor MUST propose price when applying (minimum 35 PLN) | Must |
+| MATCH-11 | When client accepts an application, all other pending applications are auto-rejected with notifications | Must |
 
 ### 4.4 Payment Module
 
@@ -442,6 +447,21 @@ CREATE TABLE messages (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Task Applications (contractor applies for task with proposed price)
+CREATE TABLE task_applications (
+  id UUID PRIMARY KEY,
+  task_id UUID REFERENCES tasks(id) NOT NULL,
+  contractor_id UUID REFERENCES users(id) NOT NULL,
+  proposed_price DECIMAL(10,2) NOT NULL,
+  message TEXT,
+  status ENUM('pending', 'accepted', 'rejected', 'withdrawn') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT NOW(),
+  responded_at TIMESTAMP,
+  UNIQUE(task_id, contractor_id)
+);
+CREATE INDEX idx_task_applications_task_status ON task_applications(task_id, status);
+CREATE INDEX idx_task_applications_contractor_status ON task_applications(contractor_id, status);
+
 -- Payments
 CREATE TABLE payments (
   id UUID PRIMARY KEY,
@@ -487,6 +507,14 @@ PUT  /tasks/:id/complete         # Contractor completes
 PUT  /tasks/:id/confirm          # Client confirms
 PUT  /tasks/:id/cancel           # Cancel task
 POST /tasks/:id/rate             # Submit rating
+
+# Task Applications
+POST   /tasks/:id/apply                      # Contractor applies for task (proposedPrice, message?)
+GET    /tasks/:id/applications               # Get applications for task (client only)
+PUT    /tasks/:id/applications/:appId/accept # Accept application
+PUT    /tasks/:id/applications/:appId/reject # Reject application
+DELETE /tasks/:id/apply                      # Withdraw application (contractor)
+GET    /tasks/contractor/applications        # Get contractor's own applications
 
 # Messages
 GET  /tasks/:id/messages         # Get chat history

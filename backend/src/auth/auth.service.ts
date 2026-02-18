@@ -331,8 +331,7 @@ export class AuthService {
     if (!isPasswordValid) {
       await this.usersService.incrementFailedLoginAttempts(user.id);
 
-      const attemptsLeft =
-        LOCKOUT_THRESHOLD - (user.failedLoginAttempts + 1);
+      const attemptsLeft = LOCKOUT_THRESHOLD - (user.failedLoginAttempts + 1);
       if (attemptsLeft <= 0) {
         throw new HttpException(
           `Konto zablokowane na ${LOCKOUT_DURATION_MINUTES} minut z powodu zbyt wielu nieudanych prób logowania.`,

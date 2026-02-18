@@ -34,6 +34,7 @@ import { User } from './users/entities/user.entity';
 import { ContractorProfile } from './contractor/entities/contractor-profile.entity';
 import { ClientProfile } from './client/entities/client-profile.entity';
 import { Task } from './tasks/entities/task.entity';
+import { TaskApplication } from './tasks/entities/task-application.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
@@ -66,6 +67,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
           ContractorProfile,
           ClientProfile,
           Task,
+          TaskApplication,
           Rating,
           Message,
           Payment,

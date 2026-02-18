@@ -8,6 +8,8 @@ import {
   IsNumber,
   IsOptional,
   IsEnum,
+  IsInt,
+  Max,
   MaxLength,
   MinLength,
   Min,
@@ -59,6 +61,13 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  maxApplications?: number;
 
   @IsOptional()
   @IsArray()

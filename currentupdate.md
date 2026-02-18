@@ -12,6 +12,40 @@ Each entry documents:
 
 ---
 
+## [2026-02-13] Multi-Contractor Bidding System (Licytacja Zleceń)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Replaced the old "first-come-first-served" task acceptance model with a bidding system where multiple contractors (configurable max, default 5) can apply for a task with proposed prices and optional messages. Client sees a list of applicants with profiles (avatar, rating, bio, completed tasks, proposed price) and can accept or reject each. Old `ACCEPTED` status flow replaced: `CREATED → contractors apply → client picks one → CONFIRMED`. Full backend + mobile implementation with WebSocket real-time updates.
+- **Files Changed**:
+  - `backend/src/tasks/entities/task-application.entity.ts` – NEW: TaskApplication entity with ApplicationStatus enum, unique constraint, indexes
+  - `backend/src/tasks/dto/apply-task.dto.ts` – NEW: DTO for contractor applications (proposedPrice min 35, optional message max 500)
+  - `backend/src/tasks/entities/task.entity.ts` – Added maxApplications field (default 5)
+  - `backend/src/tasks/tasks.module.ts` – Registered TaskApplication entity
+  - `backend/src/tasks/dto/create-task.dto.ts` – Added optional maxApplications field (1-20)
+  - `backend/src/tasks/tasks.service.ts` – Major: added applyForTask, getApplications, acceptApplication, rejectApplication, withdrawApplication, getMyApplications; deprecated old acceptTask/confirmContractor/rejectContractor; updated cancelTask to auto-reject pending applications
+  - `backend/src/tasks/tasks.controller.ts` – New endpoints: POST :id/apply, GET :id/applications, PUT :id/applications/:appId/accept, PUT :id/applications/:appId/reject, DELETE :id/apply, GET contractor/applications; old endpoints return 410 Gone
+  - `backend/src/realtime/realtime.gateway.ts` – Added APPLICATION_NEW, APPLICATION_ACCEPTED, APPLICATION_REJECTED, APPLICATION_WITHDRAWN, APPLICATION_COUNT events
+  - `mobile/lib/features/client/models/task_application.dart` – NEW: TaskApplication and MyApplication models with ApplicationStatus enum
+  - `mobile/lib/features/client/models/task.dart` – Added applicationCount and maxApplications fields
+  - `mobile/lib/features/client/widgets/application_card.dart` – NEW: Widget showing contractor bid with accept/reject buttons
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Major: 4-step flow (applications→confirmed→inProgress→completed), WebSocket listener for application events, error display, removed old confirm/reject flow
+  - `mobile/lib/features/contractor/widgets/nearby_task_card.dart` – Changed button from "Przyjmij" to "Zgłoś się"
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Replaced _acceptTask with _showApplyDialog (price + message fields)
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – NEW: Contractor's application history with statuses
+  - `mobile/lib/core/providers/task_provider.dart` – Added taskApplicationsProvider, myApplicationsProvider; replaced acceptTask with applyForTask
+  - `mobile/lib/core/providers/websocket_provider.dart` – Added applicationUpdatesProvider and applicationResultProvider streams
+  - `mobile/lib/core/services/websocket_service.dart` – Added 5 application event listeners
+  - `mobile/lib/core/config/websocket_config.dart` – Added 5 application event name constants
+  - `mobile/lib/core/router/routes.dart` – Added contractorMyApplications route
+- **System Impact**: Major flow change - task acceptance now goes through bidding system. Old direct-accept endpoints return 410 Gone for backward compatibility. WebSocket events notify both clients and contractors in real-time.
+- **Related Tasks/PRD**: Multi-Contractor Bidding System (tasks/Multi-Contractor-Bidding.md), PRD Section 4.3 Matching Module
+- **Potential Conflicts/Risks**:
+  - Old mobile clients hitting deprecated endpoints will get 410 Gone errors
+  - Test spec files need updating for new maxApplications field on Task entity
+  - ACCEPTED status still in Task entity enum for DB backward compat but not used in new flow
+
+---
+
 ## [2026-02-14] Expand Task Categories from 6 to 17 Across Backend, Mobile, Admin, Landing, and Docs
 
 - **Developer/Agent**: Codex

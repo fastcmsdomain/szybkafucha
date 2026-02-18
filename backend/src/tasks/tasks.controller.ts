@@ -7,6 +7,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -17,12 +18,14 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  GoneException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { TasksService } from './tasks.service';
 import { FileStorageService } from '../users/file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { ApplyTaskDto } from './dto/apply-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { UserType } from '../users/entities/user.entity';
 import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
@@ -98,6 +101,16 @@ export class TasksController {
   }
 
   /**
+   * GET /tasks/contractor/applications
+   * Get all applications for the current contractor
+   * NOTE: Must be before :id route to avoid "contractor" being parsed as UUID
+   */
+  @Get('contractor/applications')
+  async getMyApplications(@Request() req: AuthenticatedRequest) {
+    return this.tasksService.getMyApplications(req.user.id);
+  }
+
+  /**
    * GET /tasks/:id
    * Get task details
    */
@@ -108,14 +121,100 @@ export class TasksController {
 
   /**
    * PUT /tasks/:id/accept
-   * Contractor accepts a task
+   * @deprecated Use POST /tasks/:id/apply instead (bidding system)
    */
   @Put(':id/accept')
-  async accept(
+  accept(): never {
+    throw new GoneException(
+      'Direct accept is no longer supported. Use POST /tasks/:id/apply to apply for tasks.',
+    );
+  }
+
+  /**
+   * PUT /tasks/:id/confirm-contractor
+   * @deprecated Use PUT /tasks/:id/applications/:appId/accept instead
+   */
+  @Put(':id/confirm-contractor')
+  confirmContractor(): never {
+    throw new GoneException(
+      'Use PUT /tasks/:id/applications/:appId/accept instead.',
+    );
+  }
+
+  /**
+   * PUT /tasks/:id/reject-contractor
+   * @deprecated Use PUT /tasks/:id/applications/:appId/reject instead
+   */
+  @Put(':id/reject-contractor')
+  rejectContractor(): never {
+    throw new GoneException(
+      'Use PUT /tasks/:id/applications/:appId/reject instead.',
+    );
+  }
+
+  // ─── Bidding System Endpoints ──────────────────────────────────────
+
+  /**
+   * POST /tasks/:id/apply
+   * Contractor applies for a task with proposed price and optional message
+   */
+  @Post(':id/apply')
+  async applyForTask(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() applyTaskDto: ApplyTaskDto,
+  ) {
+    return this.tasksService.applyForTask(id, req.user.id, applyTaskDto);
+  }
+
+  /**
+   * GET /tasks/:id/applications
+   * Get all applications for a task (client only)
+   */
+  @Get(':id/applications')
+  async getApplications(
     @Request() req: AuthenticatedRequest,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.tasksService.acceptTask(id, req.user.id);
+    return this.tasksService.getApplications(id, req.user.id);
+  }
+
+  /**
+   * PUT /tasks/:id/applications/:appId/accept
+   * Client accepts a specific application
+   */
+  @Put(':id/applications/:appId/accept')
+  async acceptApplication(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('appId', ParseUUIDPipe) appId: string,
+  ) {
+    return this.tasksService.acceptApplication(id, appId, req.user.id);
+  }
+
+  /**
+   * PUT /tasks/:id/applications/:appId/reject
+   * Client rejects a specific application
+   */
+  @Put(':id/applications/:appId/reject')
+  async rejectApplication(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('appId', ParseUUIDPipe) appId: string,
+  ) {
+    return this.tasksService.rejectApplication(id, appId, req.user.id);
+  }
+
+  /**
+   * DELETE /tasks/:id/apply
+   * Contractor withdraws their application
+   */
+  @Delete(':id/apply')
+  async withdrawApplication(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.tasksService.withdrawApplication(id, req.user.id);
   }
 
   /**
@@ -141,32 +240,6 @@ export class TasksController {
     @Body('completionPhotos') completionPhotos?: string[],
   ) {
     return this.tasksService.completeTask(id, req.user.id, completionPhotos);
-  }
-
-  /**
-   * PUT /tasks/:id/confirm-contractor
-   * Client confirms the contractor after they accept (before work starts)
-   * This triggers payment and allows contractor to start
-   */
-  @Put(':id/confirm-contractor')
-  async confirmContractor(
-    @Request() req: AuthenticatedRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    return this.tasksService.confirmContractor(id, req.user.id);
-  }
-
-  /**
-   * PUT /tasks/:id/reject-contractor
-   * Client rejects the contractor - task goes back to searching
-   */
-  @Put(':id/reject-contractor')
-  async rejectContractor(
-    @Request() req: AuthenticatedRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body('reason') reason?: string,
-  ) {
-    return this.tasksService.rejectContractor(id, req.user.id, reason);
   }
 
   /**

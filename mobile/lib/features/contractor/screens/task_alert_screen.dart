@@ -663,10 +663,10 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle, size: 24),
+                      Icon(Icons.send, size: 24),
                       SizedBox(width: AppSpacing.gapMD),
                       Text(
-                        'PRZYJMIJ ZLECENIE',
+                        'ZGŁOŚ SIĘ DO ZLECENIA',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -685,17 +685,21 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     setState(() => _isAccepting = true);
 
     try {
-      final acceptedTask = await ref
-          .read(availableTasksProvider.notifier)
-          .acceptTask(_task.id);
-
-      // Set as active task
-      ref.read(activeTaskProvider.notifier).setTask(acceptedTask);
+      await ref.read(availableTasksProvider.notifier).applyForTask(
+            _task.id,
+            proposedPrice: _task.price.toDouble(),
+          );
 
       if (mounted) {
+        setState(() => _isAccepting = false);
         HapticFeedback.mediumImpact();
-        // Navigate to active task screen - success feedback shown there
-        context.go(Routes.contractorTask(_task.id));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Zgłoszenie zostało wysłane'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _navigateBack(context);
       }
     } catch (e) {
       setState(() => _isAccepting = false);

@@ -386,7 +386,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.NAPRAWY,
     title: 'Naprawa obluzowanej klamki',
-    description: 'Klamka w drzwiach wejściowych rusza się i odpada. Potrzebna szybka naprawa.',
+    description:
+      'Klamka w drzwiach wejściowych rusza się i odpada. Potrzebna szybka naprawa.',
     locationLat: 52.233,
     locationLng: 21.02,
     address: 'ul. Chmielna 12, 00-021 Warszawa',
@@ -400,7 +401,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.OGROD,
     title: 'Przycięcie żywopłotu i grabienie liści',
-    description: 'Mały ogród przy domu. Około 2 godziny pracy i wyniesienie odpadów zielonych.',
+    description:
+      'Mały ogród przy domu. Około 2 godziny pracy i wyniesienie odpadów zielonych.',
     locationLat: 52.19,
     locationLng: 21.06,
     address: 'ul. Rosoła 44, 02-786 Warszawa',
@@ -414,7 +416,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.TRANSPORT,
     title: 'Transport komody na drugi koniec miasta',
-    description: 'Komoda 120x90, potrzebny przewóz z Woli na Pragę i wniesienie na 2 piętro.',
+    description:
+      'Komoda 120x90, potrzebny przewóz z Woli na Pragę i wniesienie na 2 piętro.',
     locationLat: 52.228,
     locationLng: 21.001,
     address: 'ul. Kasprzaka 31, 01-234 Warszawa',
@@ -442,7 +445,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.ELEKTRYK,
     title: 'Wymiana gniazdka w kuchni',
-    description: 'Jedno gniazdko przestało działać, potrzebna szybka diagnoza i wymiana.',
+    description:
+      'Jedno gniazdko przestało działać, potrzebna szybka diagnoza i wymiana.',
     locationLat: 52.206,
     locationLng: 21.018,
     address: 'ul. Wołoska 9, 02-675 Warszawa',
@@ -456,7 +460,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.HYDRAULIK,
     title: 'Nieszczelny syfon pod zlewem',
-    description: 'Podczas zmywania kapie woda pod zlewem. Potrzebna naprawa dziś.',
+    description:
+      'Podczas zmywania kapie woda pod zlewem. Potrzebna naprawa dziś.',
     locationLat: 52.222,
     locationLng: 21.046,
     address: 'ul. Grochowska 222, 04-357 Warszawa',
@@ -470,7 +475,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.MALOWANIE,
     title: 'Odświeżenie ściany po zalaniu',
-    description: 'Do pomalowania fragment ściany w sypialni, powierzchnia około 8m2.',
+    description:
+      'Do pomalowania fragment ściany w sypialni, powierzchnia około 8m2.',
     locationLat: 52.214,
     locationLng: 21.011,
     address: 'ul. Litewska 6, 00-581 Warszawa',
@@ -498,7 +504,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.KOMPUTERY,
     title: 'Konfiguracja nowej drukarki Wi-Fi',
-    description: 'Podłączenie drukarki do laptopa i telefonu, instalacja sterowników.',
+    description:
+      'Podłączenie drukarki do laptopa i telefonu, instalacja sterowników.',
     locationLat: 52.227,
     locationLng: 21.073,
     address: 'ul. Ostrobramska 73, 04-175 Warszawa',
@@ -512,7 +519,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.SPORT,
     title: 'Trening biegowy dla początkującego',
-    description: 'Godzinny trening w parku i rozpiska podstawowego planu na 2 tygodnie.',
+    description:
+      'Godzinny trening w parku i rozpiska podstawowego planu na 2 tygodnie.',
     locationLat: 52.257,
     locationLng: 21.02,
     address: 'ul. Gwiaździsta 7, 01-651 Warszawa',
@@ -526,7 +534,8 @@ export const seedTasks = [
     contractorId: null,
     category: TaskCategory.INNE,
     title: 'Pomoc przy organizacji urodzin dziecka',
-    description: 'Potrzebna pomoc przez 2 godziny: dekoracje, ustawienie stołów i logistyka.',
+    description:
+      'Potrzebna pomoc przez 2 godziny: dekoracje, ustawienie stołów i logistyka.',
     locationLat: 52.218,
     locationLng: 20.989,
     address: 'ul. Grójecka 130, 02-383 Warszawa',
