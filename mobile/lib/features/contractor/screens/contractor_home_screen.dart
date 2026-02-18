@@ -33,6 +33,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     // Load available tasks on screen open
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
+      ref.read(activeTaskProvider.notifier).refreshActiveTask();
       _checkProfileCompletion();
     });
   }
@@ -393,10 +394,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => context.push(Routes.contractorTask(task.id)),
-                    icon: const Icon(Icons.navigation, size: 18),
-                    label: const Text('Nawiguj'),
+                    icon: const Icon(Icons.info_outline, size: 18),
+                    label: const Text('Więcej'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: AppColors.success,
                       foregroundColor: AppColors.white,
                     ),
                   ),
@@ -423,7 +424,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Future<void> _refreshData() async {
-    await ref.read(availableTasksProvider.notifier).refresh();
+    await Future.wait([
+      ref.read(availableTasksProvider.notifier).refresh(),
+      ref.read(activeTaskProvider.notifier).refreshActiveTask(),
+    ]);
   }
 
   Widget _buildHowItWorksSection() {

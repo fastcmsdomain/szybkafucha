@@ -41,6 +41,13 @@ abstract class WebSocketConfig {
   static const String userOffline = 'user:offline';
   static const String error = 'error';
 
+  // Application/bidding events
+  static const String applicationNew = 'application:new';
+  static const String applicationAccepted = 'application:accepted';
+  static const String applicationRejected = 'application:rejected';
+  static const String applicationWithdrawn = 'application:withdrawn';
+  static const String applicationCount = 'application:count';
+
   /// Event names for client → server
   static const String sendLocation = 'location:update';
   static const String taskJoin = 'task:join';

@@ -48,6 +48,7 @@ abstract class Routes {
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
   static const String contractorReviews = '/contractor/reviews';
+  static const String contractorMyApplications = '/contractor/applications';
 
   // Common routes
   static const String settings = '/settings';

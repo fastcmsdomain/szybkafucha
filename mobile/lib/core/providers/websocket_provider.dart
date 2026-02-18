@@ -142,5 +142,58 @@ final userPresenceProvider = StreamProvider<UserOnlineEvent>((ref) async* {
   }
 });
 
+/// Application events stream (for clients - new applications, withdrawals)
+/// Emits the raw event data as a Map containing taskId
+final applicationUpdatesProvider = StreamProvider<Map<String, dynamic>>((ref) async* {
+  final service = ref.watch(webSocketServiceProvider);
+  final controller = StreamController<Map<String, dynamic>>();
+
+  void onEvent(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      controller.add(data);
+    } else if (data is Map) {
+      controller.add(Map<String, dynamic>.from(data));
+    }
+  }
+
+  service.on(WebSocketConfig.applicationNew, onEvent);
+  service.on(WebSocketConfig.applicationWithdrawn, onEvent);
+  service.on(WebSocketConfig.applicationCount, onEvent);
+
+  try {
+    yield* controller.stream;
+  } finally {
+    service.off(WebSocketConfig.applicationNew, onEvent);
+    service.off(WebSocketConfig.applicationWithdrawn, onEvent);
+    service.off(WebSocketConfig.applicationCount, onEvent);
+    controller.close();
+  }
+});
+
+/// Application result events stream (for contractors - accepted/rejected)
+final applicationResultProvider = StreamProvider<Map<String, dynamic>>((ref) async* {
+  final service = ref.watch(webSocketServiceProvider);
+  final controller = StreamController<Map<String, dynamic>>();
+
+  void onEvent(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      controller.add(data);
+    } else if (data is Map) {
+      controller.add(Map<String, dynamic>.from(data));
+    }
+  }
+
+  service.on(WebSocketConfig.applicationAccepted, onEvent);
+  service.on(WebSocketConfig.applicationRejected, onEvent);
+
+  try {
+    yield* controller.stream;
+  } finally {
+    service.off(WebSocketConfig.applicationAccepted, onEvent);
+    service.off(WebSocketConfig.applicationRejected, onEvent);
+    controller.close();
+  }
+});
+
 // Note: WebSocket initialization is now handled by WebSocketInitializer widget
 // which automatically connects/disconnects based on auth state

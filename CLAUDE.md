@@ -616,6 +616,221 @@ Refer to `/tasks/tasks-prd-szybka-fucha.md` for current progress and remaining t
 - KYC verification flow (Onfido)
 - Production deployment
 
+## Quality Assurance & Best Practices
+
+The project includes comprehensive quality assurance skills located in `.claude/commands/` that ensure code quality, accessibility, performance, security, and platform compliance. These skills should be applied during development and before code review.
+
+### Quality Skills Overview
+
+#### 1. Flutter Quality Gate (`flutter-quality-gate/SKILL.md`)
+
+**When to use**: When creating or modifying any Dart files in `mobile/lib/`
+
+**Purpose**: Ensures code follows project conventions for:
+- Naming conventions (snake_case files, UpperCamelCase classes)
+- Widget organization (small widgets, const constructors, no business logic in build())
+- Theme token usage (use `AppColors`, `AppSpacing`, `AppTypography` instead of hardcoded values)
+- Performance patterns (ListView.builder, SizedBox vs Container, CachedNetworkImage)
+
+**Key Rules**:
+- Files: `snake_case.dart`
+- Classes: `UpperCamelCase`
+- Reusable widgets: `sf_` prefix for files, `SF` prefix for classes
+- Always use `const` constructors when possible
+- Never put API calls or async operations in `build()` methods
+- Use theme tokens from `core/theme/` instead of hardcoded values
+
+#### 2. Platform Compliance (`platform-compliance/SKILL.md`)
+
+**When to use**: When creating or modifying screen files in `mobile/lib/features/*/screens/`
+
+**Purpose**: Ensures UI follows iOS Human Interface Guidelines and Material Design 3 standards
+
+**Key Requirements**:
+- **Touch Targets**: Minimum 44x44pt (iOS) / 48x48dp (Android)
+- **Typography**: Body text minimum 16pt, captions minimum 11pt
+- **Accessibility**: All interactive elements need screen reader labels (tooltip for IconButton, Semantics for GestureDetector)
+- **Navigation**: 3-5 tabs in bottom navigation, support back swipe gesture
+- **Spacing**: Follow 8dp grid system using `AppSpacing` constants
+- **Colors**: Use semantic colors from `AppColors`, never hardcode colors
+
+#### 3. Flutter Analyze (`flutter-analyze.md`)
+
+**When to use**: Before committing code changes, during code review
+
+**Purpose**: Runs `flutter analyze` plus enhanced code quality checks
+
+**Checks**:
+- Static analysis errors and warnings
+- Naming convention violations
+- Large files (>300 lines) that need splitting
+- Business logic in build() methods
+- Missing const constructors
+- Hardcoded values that should use theme tokens
+
+**Usage**: Run this skill to get a comprehensive code quality report before submitting code.
+
+#### 4. Flutter Test (`flutter-test.md`)
+
+**When to use**: After implementing features, before code review
+
+**Purpose**: Runs all Flutter tests with coverage and identifies untested files
+
+**Checks**:
+- Test execution results (pass/fail counts)
+- Coverage gaps by priority:
+  - Priority 1: Providers (business logic)
+  - Priority 2: Services (external integrations)
+  - Priority 3: Models (data classes)
+  - Priority 4: Widgets (UI components)
+  - Priority 5: Screens (integration-level)
+
+**Usage**: Run `flutter test --coverage` and use this skill to analyze coverage gaps and generate test suggestions.
+
+#### 5. Accessibility Audit (`audit-accessibility.md`)
+
+**When to use**: When creating new UI components or screens, before release
+
+**Purpose**: Scans for accessibility issues based on WCAG 2.1 Level AA, Apple HIG, and Material Design guidelines
+
+**Checks**:
+- Semantics labels on interactive widgets
+- Touch target sizes (minimum 44x44pt)
+- Color contrast ratios (minimum 4.5:1)
+- Color-only indicators (must include text/icon)
+- Image accessibility (semantic labels)
+- Text scaling support
+- Dark mode readiness
+- Screen reader navigation order
+
+**Compliance Standards**:
+- WCAG 2.1 Level AA
+- iOS HIG Accessibility
+- Material Design Accessibility
+
+#### 6. Performance Audit (`audit-performance.md`)
+
+**When to use**: When optimizing app performance, before release
+
+**Purpose**: Detects Flutter performance anti-patterns
+
+**Checks**:
+- ListView without `.builder` (should use ListView.builder for dynamic content)
+- Container used only for sizing (should use SizedBox)
+- Opacity widget usage (triggers expensive saveLayer)
+- IntrinsicHeight/IntrinsicWidth in scrollable contexts
+- Broad setState calls (should use Riverpod for granular rebuilds)
+- Expensive operations in build() methods
+- Image performance (should use CachedNetworkImage)
+- Missing const on literal widgets
+
+#### 7. Security Audit (`audit-security.md`)
+
+**When to use**: Before every release, when adding new features with sensitive data
+
+**Purpose**: Scans for security vulnerabilities and hardcoded secrets
+
+**Checks**:
+- Hardcoded secrets (API keys, tokens, passwords, Stripe keys, Google API keys)
+- Insecure HTTP URLs (excluding localhost/emulator)
+- Secure storage usage (tokens must use flutter_secure_storage, not SharedPreferences)
+- Debug/print statements that might leak sensitive data
+- .gitignore coverage (ensure sensitive files are ignored)
+- Certificate pinning for critical endpoints
+- Input validation and sanitization
+- Dependency vulnerabilities
+
+**Critical**: Never commit hardcoded secrets or use SharedPreferences for tokens/passwords.
+
+#### 8. Platform Compliance Audit (`audit-platform.md`)
+
+**When to use**: When creating new screens or major UI changes, before release
+
+**Purpose**: Checks iOS HIG and Material Design 3 compliance
+
+**Checks**:
+- Material 3 enabled (`useMaterial3: true`)
+- Deprecated Material 2 widgets (RaisedButton → ElevatedButton)
+- Typography standards (minimum 16pt body text)
+- Touch target sizes (44x44pt iOS, 48x48dp Android)
+- Navigation patterns (3-5 tabs, back swipe support)
+- 8dp grid system compliance
+- Dark mode support status
+- Platform-adaptive widgets usage
+
+#### 9. Full Audit (`audit-all.md`)
+
+**When to use**: Before major releases, during sprint reviews, for comprehensive quality gate
+
+**Purpose**: Runs all audit commands in sequence and produces a unified summary report
+
+**Includes**:
+- Static Analysis (flutter analyze)
+- Performance Audit
+- Accessibility Audit
+- Security Audit
+- Platform Compliance Audit
+
+**Output**: Unified dashboard with scores per category, critical issues, warnings, and top priority fixes.
+
+### Quality Assurance Workflow
+
+**During Development**:
+1. Apply **Flutter Quality Gate** skills when writing Dart code
+2. Apply **Platform Compliance** skills when creating screens
+3. Run **Flutter Analyze** before committing changes
+
+**Before Code Review**:
+1. Run **Flutter Test** to ensure test coverage
+2. Run **Accessibility Audit** for UI changes
+3. Run **Security Audit** for features with sensitive data
+4. Run **Performance Audit** if performance is a concern
+
+**Before Release**:
+1. Run **Full Audit** (`audit-all.md`) for comprehensive quality gate
+2. Address all critical issues
+3. Review warnings and prioritize fixes
+4. Verify all tests pass with adequate coverage
+
+### Skill File Locations
+
+All quality assurance skills are located in `.claude/commands/`:
+
+```
+.claude/commands/
+├── flutter-quality-gate/
+│   └── SKILL.md              # Quality gate for Flutter code
+├── platform-compliance/
+│   └── SKILL.md              # Platform compliance for screens
+├── flutter-analyze.md        # Static analysis + code quality
+├── flutter-test.md           # Test coverage analysis
+├── audit-accessibility.md    # Accessibility compliance
+├── audit-performance.md      # Performance anti-patterns
+├── audit-security.md         # Security vulnerabilities
+├── audit-platform.md         # iOS HIG + Material Design
+└── audit-all.md              # Comprehensive full audit
+```
+
+### Integration with Development Workflow
+
+These skills integrate with the standard development workflow:
+
+1. **Before Task**: Review relevant quality skills to understand requirements
+2. **During Development**: Apply quality gate and platform compliance skills automatically
+3. **After Implementation**: Run appropriate audits (test, accessibility, security, performance)
+4. **Before Commit**: Run Flutter Analyze to catch issues early
+5. **Before Release**: Run Full Audit for comprehensive quality gate
+
+### Best Practices Summary
+
+- **Code Quality**: Follow Flutter Quality Gate rules for naming, organization, and performance
+- **Accessibility**: Ensure all interactive elements are accessible (WCAG 2.1 AA)
+- **Performance**: Use ListView.builder, SizedBox, CachedNetworkImage, const widgets
+- **Security**: Never hardcode secrets, use flutter_secure_storage for sensitive data
+- **Platform Compliance**: Follow iOS HIG and Material Design 3 guidelines
+- **Testing**: Maintain test coverage, especially for providers and services
+- **Theme Usage**: Always use design tokens (AppColors, AppSpacing, AppTypography)
+
 ## Additional Resources
 
 - **PRD**: `/tasks/prd-szybka-fucha.md` - Complete product requirements

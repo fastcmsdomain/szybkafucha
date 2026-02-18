@@ -33,6 +33,12 @@ export enum ServerEvent {
   USER_ONLINE = 'user:online',
   USER_OFFLINE = 'user:offline',
   ERROR = 'error',
+  // Bidding system events
+  APPLICATION_NEW = 'application:new',
+  APPLICATION_ACCEPTED = 'application:accepted',
+  APPLICATION_REJECTED = 'application:rejected',
+  APPLICATION_WITHDRAWN = 'application:withdrawn',
+  APPLICATION_COUNT = 'application:count',
 }
 
 // Events received from client

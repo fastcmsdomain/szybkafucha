@@ -404,6 +404,32 @@ class WebSocketService {
           _notifyListeners('error', {'message': 'Failed to parse new task: $e'});
         }
       });
+
+      // Application/bidding events
+      _socket.on(WebSocketConfig.applicationNew, (data) {
+        _notifyListeners(WebSocketConfig.applicationNew, data);
+        debugPrint('📩 New application received');
+      });
+
+      _socket.on(WebSocketConfig.applicationAccepted, (data) {
+        _notifyListeners(WebSocketConfig.applicationAccepted, data);
+        debugPrint('✅ Application accepted');
+      });
+
+      _socket.on(WebSocketConfig.applicationRejected, (data) {
+        _notifyListeners(WebSocketConfig.applicationRejected, data);
+        debugPrint('❌ Application rejected');
+      });
+
+      _socket.on(WebSocketConfig.applicationWithdrawn, (data) {
+        _notifyListeners(WebSocketConfig.applicationWithdrawn, data);
+        debugPrint('↩️ Application withdrawn');
+      });
+
+      _socket.on(WebSocketConfig.applicationCount, (data) {
+        _notifyListeners(WebSocketConfig.applicationCount, data);
+        debugPrint('📊 Application count updated');
+      });
     } catch (e) {
       _updateState(WebSocketState.error);
       _notifyListeners('error', {'message': 'Connection failed: $e'});

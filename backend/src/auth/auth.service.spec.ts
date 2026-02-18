@@ -270,12 +270,12 @@ describe('AuthService', () => {
     it('should throw BadRequestException for invalid OTP code', async () => {
       cacheManager.get.mockResolvedValue(validOtp);
 
-      await expect(
-        service.verifyPhoneOtp(phone, 'wrong-code'),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.verifyPhoneOtp(phone, 'wrong-code'),
-      ).rejects.toThrow('Invalid OTP code');
+      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
+        'Invalid OTP code',
+      );
     });
   });
 
@@ -475,9 +475,9 @@ describe('AuthService', () => {
     it('should throw ConflictException if email already exists', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
 
-      await expect(
-        service.registerWithEmail(email, password),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.registerWithEmail(email, password)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should send email verification OTP after registration', async () => {
@@ -552,9 +552,9 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException for non-existent user', async () => {
       usersService.findByEmailWithPassword.mockResolvedValue(null);
 
-      await expect(
-        service.loginWithEmail(email, password),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginWithEmail(email, password)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw HttpException (423) for locked account', async () => {
@@ -564,9 +564,9 @@ describe('AuthService', () => {
       };
       usersService.findByEmailWithPassword.mockResolvedValue(lockedUser);
 
-      await expect(
-        service.loginWithEmail(email, password),
-      ).rejects.toThrow(HttpException);
+      await expect(service.loginWithEmail(email, password)).rejects.toThrow(
+        HttpException,
+      );
     });
 
     it('should throw UnauthorizedException for suspended/banned user', async () => {
@@ -577,9 +577,9 @@ describe('AuthService', () => {
       usersService.findByEmailWithPassword.mockResolvedValue(bannedUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      await expect(
-        service.loginWithEmail(email, password),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.loginWithEmail(email, password)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -624,7 +624,9 @@ describe('AuthService', () => {
 
   describe('requestPasswordReset', () => {
     it('should send reset OTP when user exists', async () => {
-      usersService.findByEmailWithPassword.mockResolvedValue(mockUserWithPassword);
+      usersService.findByEmailWithPassword.mockResolvedValue(
+        mockUserWithPassword,
+      );
 
       const result = await service.requestPasswordReset('pw@example.com');
 

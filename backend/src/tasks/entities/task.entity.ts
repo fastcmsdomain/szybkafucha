@@ -85,6 +85,10 @@ export class Task {
   @Column({ type: 'decimal', precision: 4, scale: 1, nullable: true })
   estimatedDurationHours: number | null;
 
+  // Maximum number of contractor applications allowed (bidding system)
+  @Column({ type: 'int', default: 5 })
+  maxApplications: number;
+
   // Task status
   @Column({
     type: 'enum',

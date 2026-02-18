@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
@@ -62,7 +63,10 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       _budgetController.text = category.suggestedPrice.toString();
     }
 
-    // Add listener to update summary when duration changes
+    // Add listeners to update summary when inputs change
+    _budgetController.addListener(() {
+      setState(() {});
+    });
     _estimatedDurationController.addListener(() {
       setState(() {});
     });
@@ -82,7 +86,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+          onPressed: _closeScreen,
           tooltip: 'Zamknij',
         ),
         title: SFRainbowText(AppStrings.createTask),
@@ -154,6 +158,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                           'Znajdź pomocnika',
                           style: AppTypography.bodyMedium.copyWith(
                             fontWeight: FontWeight.w600,
+                            color: AppColors.white,
                           ),
                         ),
                 ),
@@ -227,6 +232,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         ],
       ],
     );
+  }
+
+  void _closeScreen() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go(Routes.clientHome);
   }
 
   Widget _buildDescriptionSection() {
@@ -552,7 +565,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                 markers: [
                   TaskMarker(
                     position: _selectedLatLng!,
-                    label: 'Lokalizacja zlecenia',
                   ),
                 ],
               ),
