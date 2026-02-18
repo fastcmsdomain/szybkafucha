@@ -13,8 +13,10 @@ import '../../../core/services/websocket_service.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
+import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
+import '../models/task_application.dart';
 import '../widgets/application_card.dart';
 
 /// Task tracking status (4 states - bidding system, no separate accepted step)
@@ -92,7 +94,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   // Task location
   double? _taskLat;
   double? _taskLng;
-  String? _taskAddress;
 
   // Track contractor whose real stats have been fetched
   String? _fetchedStatsContractorId;
@@ -135,7 +136,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       }
       _taskLat = task.latitude;
       _taskLng = task.longitude;
-      _taskAddress = task.address;
     });
 
     // Fetch real stats if we haven't yet for this contractor
@@ -280,7 +280,37 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   void _showContractorProfile() {
     if (_contractor == null) return;
+    _showContractorProfileSheet(
+      contractorId: _contractor!.id,
+      initialContractor: _contractor!,
+    );
+  }
 
+  void _showApplicationContractorProfile(TaskApplication application) {
+    final initialContractor = Contractor(
+      id: application.contractorId,
+      name: application.contractorName,
+      avatarUrl: application.contractorAvatarUrl,
+      rating: application.contractorRating,
+      completedTasks: application.contractorCompletedTasks,
+      reviewCount: application.contractorReviewCount,
+      isVerified: true,
+      isOnline: true,
+      distanceKm: application.distanceKm,
+      proposedPrice: application.proposedPrice.round(),
+      bio: application.contractorBio,
+    );
+
+    _showContractorProfileSheet(
+      contractorId: application.contractorId,
+      initialContractor: initialContractor,
+    );
+  }
+
+  void _showContractorProfileSheet({
+    required String contractorId,
+    required Contractor initialContractor,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -294,8 +324,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return FractionallySizedBox(
           heightFactor: 0.7,
           child: _ContractorProfileSheet(
-            contractorId: _contractor!.id,
-            initialContractor: _contractor!,
+            contractorId: contractorId,
+            initialContractor: initialContractor,
           ),
         );
       },
@@ -392,72 +422,39 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Map / live view
-          _buildMap(),
-
-          // Top bar with back button
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.paddingMD),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.md,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () =>
-                            context.canPop() ? context.pop() : context.go(Routes.clientHome),
-                        tooltip: 'Wróć',
-                      ),
-                    ),
-                    const Spacer(),
-                    // Reload button
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.md,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Odśwież status',
-                        onPressed: _refreshTask,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.gapSM),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.md,
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.more_vert),
-                        onPressed: _showOptionsMenu,
-                        tooltip: 'Więcej opcji',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(Routes.clientHome),
+          tooltip: 'Wróć',
+        ),
+        title: SFRainbowText('Aktywne zlecenie'),
+        centerTitle: true,
+        backgroundColor: AppColors.white,
+        surfaceTintColor: AppColors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Odśwież status',
+            onPressed: _refreshTask,
           ),
-
-          // Bottom panel
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: _showOptionsMenu,
+            tooltip: 'Więcej opcji',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: _buildMap(),
+          ),
+          Expanded(
+            flex: 7,
             child: _buildBottomPanel(),
           ),
         ],
@@ -472,7 +469,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       final markers = <SFMarker>[
         TaskMarker(
           position: center,
-          label: _taskAddress ?? 'Zlecenie',
         ),
       ];
 
@@ -486,23 +482,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
 
-      // Extra padding so markers aren't hidden behind the bottom panel/FAB
-      final bottomPadding = 284.0 + MediaQuery.of(context).padding.bottom;
-
-      return SizedBox.expand(
-        child: SFMapView(
-          center: center,
-          zoom: 14,
-          markers: markers,
-          interactive: true,
-          showZoomControls: true,
-          cameraFitPadding: EdgeInsets.fromLTRB(
-            AppSpacing.paddingLG,
-            AppSpacing.paddingLG,
-            AppSpacing.paddingLG,
-            bottomPadding,
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: SFMapView(
+              center: center,
+              zoom: 15,
+              markers: markers,
+              interactive: true,
+              showZoomControls: true,
+            ),
           ),
-        ),
+        ],
       );
     }
 
@@ -517,7 +508,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildBottomPanel() {
-    final maxHeight = MediaQuery.of(context).size.height * 0.6;
     // Add bottom safe area as scroll padding instead of wrapping in SafeArea
     // to avoid layout conflicts with NavigationBar in _ClientShell
     final bottomSafe = MediaQuery.of(context).padding.bottom;
@@ -536,7 +526,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
         ],
       ),
-      constraints: BoxConstraints(maxHeight: maxHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -571,6 +560,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
                     SizedBox(height: AppSpacing.space4),
 
+                    // Task details section (same placement as contractor active task screen)
+                    _buildTaskDetailsSection(),
+
+                    SizedBox(height: AppSpacing.space4),
+
                     // Application list (when waiting for bids)
                     if (_status == TrackingStatus.applications)
                       _buildApplicationsList(),
@@ -593,6 +587,114 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ),
           ],
         ),
+    );
+  }
+
+  Widget _buildTaskDetailsSection() {
+    if (_task == null) return const SizedBox.shrink();
+
+    final task = _task!;
+    final categoryData = task.categoryData;
+
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: AppRadius.radiusLG,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Szczegóły zlecenia',
+            style: AppTypography.labelLarge,
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.paddingSM),
+                decoration: BoxDecoration(
+                  color: categoryData.color.withValues(alpha: 0.1),
+                  borderRadius: AppRadius.radiusMD,
+                ),
+                child: Icon(categoryData.icon, color: categoryData.color),
+              ),
+              SizedBox(width: AppSpacing.gapMD),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      categoryData.name,
+                      style: AppTypography.labelLarge,
+                    ),
+                    Text(
+                      task.address?.trim().isNotEmpty == true
+                          ? task.address!
+                          : 'Brak adresu',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${task.budget} PLN',
+                    style: AppTypography.h4.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    'budżet',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.gray400,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            task.description.trim().isEmpty ? 'Brak opisu' : task.description,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Row(
+            children: [
+              Icon(
+                Icons.schedule_outlined,
+                size: 16,
+                color: task.isImmediate ? AppColors.warning : AppColors.primary,
+              ),
+              SizedBox(width: AppSpacing.gapXS),
+              Expanded(
+                child: Text(
+                  task.isImmediate
+                      ? 'Termin: Teraz'
+                      : task.scheduledAt != null
+                          ? 'Termin: ${_formatScheduledTime(task.scheduledAt!)}'
+                          : 'Termin: Nie określono',
+                  style: AppTypography.caption.copyWith(
+                    color:
+                        task.isImmediate ? AppColors.warning : AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -629,7 +731,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             children: [
               Text(
                 _status.title,
-                style: AppTypography.h4,
+                style: AppTypography.h5,
               ),
               Text(
                 _status.subtitle,
@@ -785,6 +887,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           child: ApplicationCard(
             application: app,
             taskBudget: _task!.budget,
+            onViewProfile: () => _showApplicationContractorProfile(app),
             onAccept: () => _acceptApplication(app.id),
             onReject: () => _rejectApplication(app.id),
           ),
@@ -932,18 +1035,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           Semantics(
             label: 'Pokaż profil wykonawcy',
             button: true,
-            child: TextButton(
+            child: IconButton(
               onPressed: _showContractorProfile,
-              style: TextButton.styleFrom(
+              style: IconButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: AppColors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.paddingSM,
-                  vertical: AppSpacing.paddingSM,
-                ),
-                minimumSize: const Size(44, 44),
+                shape: const CircleBorder(),
+                padding: EdgeInsets.all(AppSpacing.paddingSM),
               ),
-              child: const Icon(Icons.person_outline, color: AppColors.white),
+              icon: const Icon(
+                Icons.person_outline,
+                color: AppColors.white,
+              ),
             ),
           ),
           SizedBox(width: AppSpacing.gapSM),
@@ -992,6 +1095,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             'Potwierdź zakończenie',
             style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
+              color: AppColors.white,
             ),
           ),
         ),

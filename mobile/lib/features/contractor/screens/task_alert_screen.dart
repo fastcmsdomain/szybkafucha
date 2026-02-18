@@ -32,6 +32,7 @@ class TaskAlertScreen extends ConsumerStatefulWidget {
 
 class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   bool _isAccepting = false;
+  bool _isApplyDialogOpen = false;
   double? _clientRatingAvg;
   int? _clientRatingCount;
 
@@ -682,27 +683,125 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   }
 
   Future<void> _handleAccept() async {
+    if (_isApplyDialogOpen || _isAccepting) return;
+    await _showApplyDialog();
+  }
+
+  /// Show application dialog where contractor proposes price and optional message
+  Future<void> _showApplyDialog() async {
+    if (_isApplyDialogOpen) return;
+    _isApplyDialogOpen = true;
+
+    final priceController = TextEditingController(
+      text: _task.price.toString(),
+    );
+    final messageController = TextEditingController();
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Zgłoś się do zlecenia'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Budżet klienta: ${_task.price} zł',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+              ),
+              SizedBox(height: AppSpacing.paddingSM),
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Twoja cena (zł)',
+                  hintText: 'Min. 35 zł',
+                  border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+                  suffixText: 'zł',
+                ),
+              ),
+              SizedBox(height: AppSpacing.paddingSM),
+              TextField(
+                controller: messageController,
+                maxLines: 3,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  labelText: 'Wiadomość (opcjonalnie)',
+                  hintText: 'Opisz swoje doświadczenie...',
+                  border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Anuluj'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+              child: const Text('Wyślij zgłoszenie'),
+            ),
+          ],
+        ),
+      );
+
+      if (result != true) {
+        return;
+      }
+
+      final normalizedPrice = priceController.text.trim().replaceAll(',', '.');
+      final price = double.tryParse(normalizedPrice);
+      if (price == null || price < 35) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Minimalna cena to 35 zł'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      final message = messageController.text.trim();
+      await _submitApplication(price, message.isNotEmpty ? message : null);
+    } finally {
+      priceController.dispose();
+      messageController.dispose();
+      _isApplyDialogOpen = false;
+    }
+  }
+
+  Future<void> _submitApplication(double proposedPrice, String? message) async {
+    if (_isAccepting) return;
     setState(() => _isAccepting = true);
 
     try {
       await ref.read(availableTasksProvider.notifier).applyForTask(
             _task.id,
-            proposedPrice: _task.price.toDouble(),
+            proposedPrice: proposedPrice,
+            message: message,
           );
 
-      if (mounted) {
-        setState(() => _isAccepting = false);
-        HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Zgłoszenie zostało wysłane'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _navigateBack(context);
-      }
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Zgłoszenie zostało wysłane'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _navigateBack(context);
     } catch (e) {
-      setState(() => _isAccepting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -711,6 +810,10 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAccepting = false);
       }
     }
   }

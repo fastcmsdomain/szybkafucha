@@ -516,6 +516,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 
   ActiveTaskNotifier(this._api, this._ref) : super(const ActiveTaskState()) {
     _setupWebSocketListener();
+    Future.microtask(() => _loadInitialActiveTask());
   }
 
   /// Set up WebSocket listener for task status updates (e.g., client cancels)
@@ -526,6 +527,26 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
         next.whenData((event) => _handleTaskStatusUpdate(event));
       },
     );
+
+    _ref.listen<AsyncValue<Map<String, dynamic>>>(
+      applicationResultProvider,
+      (previous, next) {
+        next.whenData((event) => _handleApplicationResult(event));
+      },
+    );
+  }
+
+  /// Handle contractor application result events (accepted/rejected)
+  void _handleApplicationResult(Map<String, dynamic> event) {
+    final status = event['status']?.toString().toLowerCase();
+    final taskId = event['taskId']?.toString();
+
+    if (taskId == null || taskId.isEmpty) return;
+
+    // When client accepts contractor's application, load full task as active
+    if (status == 'accepted') {
+      Future.microtask(() => fetchTask(taskId));
+    }
   }
 
   /// Handle incoming task status update from WebSocket
@@ -577,6 +598,55 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
     }
+  }
+
+  /// Restore active task after app restart by checking accepted applications
+  Future<void> _loadInitialActiveTask() async {
+    try {
+      final response = await _api.get<List<dynamic>>('/tasks/contractor/applications');
+
+      final acceptedApps = response
+          .whereType<Map<String, dynamic>>()
+          .where((app) =>
+              app['status']?.toString().toLowerCase() == 'accepted')
+          .toList()
+        ..sort((a, b) {
+          final aDate = DateTime.tryParse(a['createdAt']?.toString() ?? '');
+          final bDate = DateTime.tryParse(b['createdAt']?.toString() ?? '');
+          if (aDate == null && bDate == null) return 0;
+          if (aDate == null) return 1;
+          if (bDate == null) return -1;
+          return bDate.compareTo(aDate);
+        });
+
+      for (final app in acceptedApps) {
+        final taskId = app['taskId']?.toString();
+        if (taskId == null || taskId.isEmpty) continue;
+
+        try {
+          final taskResponse = await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+          final task = ContractorTask.fromJson(taskResponse);
+
+          if (task.status.isActive) {
+            state = state.copyWith(task: task, isLoading: false, error: null);
+            return;
+          }
+        } catch (_) {
+          // Ignore single-task fetch failures and continue
+        }
+      }
+    } catch (_) {
+      // Ignore restore failures; active task can still arrive via WebSocket
+    }
+  }
+
+  /// Refresh active task state manually
+  Future<void> refreshActiveTask() async {
+    if (state.task != null) {
+      await fetchTask(state.task!.id);
+      return;
+    }
+    await _loadInitialActiveTask();
   }
 
   /// Update task status

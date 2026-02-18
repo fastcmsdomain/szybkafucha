@@ -101,6 +101,16 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               // Skip button
               TextButton(
                 onPressed: () => _finishWithoutRating(),
+                style: TextButton.styleFrom(
+                  side: BorderSide(color: AppColors.gray300),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.button,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.paddingLG,
+                    vertical: AppSpacing.paddingSM,
+                  ),
+                ),
                 child: Text(
                   'Pomiń ocenę',
                   style: AppTypography.bodySmall.copyWith(
@@ -396,7 +406,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     return ElevatedButton(
       onPressed: _rating > 0 && !_isSubmitting ? _submitRating : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.success,
         foregroundColor: AppColors.white,
         padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
         shape: RoundedRectangleBorder(
@@ -419,6 +429,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
                   : 'Wyślij ocenę',
               style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
+                color: AppColors.white,
               ),
             ),
     );

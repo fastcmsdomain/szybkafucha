@@ -10,6 +10,7 @@ class ApplicationCard extends StatelessWidget {
   final int? taskBudget;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
+  final VoidCallback? onViewProfile;
   final VoidCallback? onTap;
 
   const ApplicationCard({
@@ -18,6 +19,7 @@ class ApplicationCard extends StatelessWidget {
     this.taskBudget,
     this.onAccept,
     this.onReject,
+    this.onViewProfile,
     this.onTap,
   });
 
@@ -183,6 +185,24 @@ class ApplicationCard extends StatelessWidget {
               ),
             ],
 
+            // Contractor profile button
+            if (onViewProfile != null) ...[
+              SizedBox(height: AppSpacing.paddingSM),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onViewProfile,
+                  icon: const Icon(Icons.person_outline, size: 16),
+                  label: const Text('Profil wykonawcy'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                  ),
+                ),
+              ),
+            ],
+
             // Action buttons (only for pending applications)
             if (isPending && (onAccept != null || onReject != null)) ...[
               SizedBox(height: AppSpacing.paddingSM),
@@ -193,8 +213,9 @@ class ApplicationCard extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: onReject,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.gray600,
-                          side: BorderSide(color: AppColors.gray300),
+                          backgroundColor: AppColors.error,
+                          foregroundColor: AppColors.white,
+                          side: BorderSide(color: AppColors.error),
                           padding: EdgeInsets.symmetric(
                               vertical: AppSpacing.paddingSM),
                         ),
