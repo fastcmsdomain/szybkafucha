@@ -84,9 +84,9 @@ class _ContractorTaskHistoryScreenState
                 children: [
                   const Text('Aktywne'),
                   if (activeState.tasks.isNotEmpty) ...[
-                    SizedBox(width: AppSpacing.gapSM),
+                    const SizedBox(width: AppSpacing.gapSM),
                     Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.paddingXS,
                         vertical: AppSpacing.gapXS,
                       ),
@@ -124,26 +124,34 @@ class _ContractorTaskHistoryScreenState
 
   Widget _buildTaskList(List<ContractorTask> tasks, {required bool isActive}) {
     if (tasks.isEmpty) {
-      return _buildEmptyState(isActive);
+      return _EmptyState(isActive: isActive);
     }
 
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.separated(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
+        padding: const EdgeInsets.all(AppSpacing.paddingMD),
         itemCount: tasks.length,
         separatorBuilder: (context, index) =>
-            SizedBox(height: AppSpacing.gapMD),
+            const SizedBox(height: AppSpacing.gapMD),
         itemBuilder: (context, index) =>
-            _buildTaskCard(tasks[index], isActive: isActive),
+            _ContractorTaskCard(task: tasks[index], isActive: isActive),
       ),
     );
   }
+}
 
-  Widget _buildEmptyState(bool isActive) {
+/// Empty state widget for active or history tab
+class _EmptyState extends StatelessWidget {
+  final bool isActive;
+
+  const _EmptyState({required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.paddingXL),
+        padding: const EdgeInsets.all(AppSpacing.paddingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -152,17 +160,15 @@ class _ContractorTaskHistoryScreenState
               size: 64,
               color: AppColors.gray300,
             ),
-            SizedBox(height: AppSpacing.space4),
+            const SizedBox(height: AppSpacing.space4),
             Text(
-              isActive
-                  ? 'Brak aktywnych zleceń'
-                  : 'Brak historii zleceń',
+              isActive ? 'Brak aktywnych zleceń' : 'Brak historii zleceń',
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.gray600,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppSpacing.gapSM),
+            const SizedBox(height: AppSpacing.gapSM),
             Text(
               isActive
                   ? 'Przeglądaj dostępne zlecenia, aby zacząć zarabiać'
@@ -173,7 +179,7 @@ class _ContractorTaskHistoryScreenState
               textAlign: TextAlign.center,
             ),
             if (isActive) ...[
-              SizedBox(height: AppSpacing.space6),
+              const SizedBox(height: AppSpacing.space6),
               ElevatedButton.icon(
                 onPressed: () => context.go(Routes.contractorTaskList),
                 icon: const Icon(Icons.search),
@@ -189,8 +195,17 @@ class _ContractorTaskHistoryScreenState
       ),
     );
   }
+}
 
-  Widget _buildTaskCard(ContractorTask task, {required bool isActive}) {
+/// Task card for active and history tabs
+class _ContractorTaskCard extends StatelessWidget {
+  final ContractorTask task;
+  final bool isActive;
+
+  const _ContractorTaskCard({required this.task, required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
     final categoryData = TaskCategoryData.fromCategory(task.category);
 
     return Semantics(
@@ -199,9 +214,9 @@ class _ContractorTaskHistoryScreenState
       child: GestureDetector(
         onTap: isActive
             ? () => context.push(Routes.contractorTask(task.id))
-            : () => _showTaskDetails(task),
+            : () => _showTaskDetails(context, task, categoryData),
         child: Container(
-          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          padding: const EdgeInsets.all(AppSpacing.paddingMD),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: AppRadius.radiusLG,
@@ -211,115 +226,19 @@ class _ContractorTaskHistoryScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.paddingSM),
-                    decoration: BoxDecoration(
-                      color: categoryData.color.withValues(alpha: 0.1),
-                      borderRadius: AppRadius.radiusMD,
-                    ),
-                    child: Icon(
-                      categoryData.icon,
-                      color: categoryData.color,
-                      size: 24,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapMD),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          categoryData.name,
-                          style: AppTypography.labelMedium.copyWith(
-                            color: categoryData.color,
-                          ),
-                        ),
-                        Text(
-                          _formatDate(task.createdAt),
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.gray500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildStatusBadge(task.status),
-                ],
-              ),
-
-              SizedBox(height: AppSpacing.gapMD),
-
-              // Description
+              _CardHeader(task: task, categoryData: categoryData),
+              const SizedBox(height: AppSpacing.gapMD),
               Text(
                 task.description,
                 style: AppTypography.bodySmall,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-
-              SizedBox(height: AppSpacing.gapMD),
-
-              // Footer row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Expanded(
-                    child: Text(
-                      task.address,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                  Text(
-                    '${task.price} PLN',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Action button for active tasks
+              const SizedBox(height: AppSpacing.gapMD),
+              _CardFooter(task: task),
               if (isActive) ...[
-                SizedBox(height: AppSpacing.gapMD),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () =>
-                            context.push(Routes.contractorTask(task.id)),
-                        child: const Text('Szczegóły'),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.gapSM),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => context.push(
-                            Routes.contractorTaskChatRoute(task.id)),
-                        icon: const Icon(Icons.chat_outlined, size: 18),
-                        label: const Text('Czat'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: AppSpacing.gapMD),
+                _ActiveTaskActions(task: task),
               ],
             ],
           ),
@@ -328,7 +247,137 @@ class _ContractorTaskHistoryScreenState
     );
   }
 
-  Widget _buildStatusBadge(ContractorTaskStatus status) {
+  void _showTaskDetails(
+    BuildContext context,
+    ContractorTask task,
+    TaskCategoryData categoryData,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          _TaskDetailsSheet(task: task, categoryData: categoryData),
+    );
+  }
+}
+
+class _CardHeader extends StatelessWidget {
+  final ContractorTask task;
+  final TaskCategoryData categoryData;
+
+  const _CardHeader({required this.task, required this.categoryData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.paddingSM),
+          decoration: BoxDecoration(
+            color: categoryData.color.withValues(alpha: 0.1),
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Icon(categoryData.icon, color: categoryData.color, size: 24),
+        ),
+        const SizedBox(width: AppSpacing.gapMD),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                categoryData.name,
+                style: AppTypography.labelMedium
+                    .copyWith(color: categoryData.color),
+              ),
+              Text(
+                _formatDate(task.createdAt),
+                style:
+                    AppTypography.caption.copyWith(color: AppColors.gray500),
+              ),
+            ],
+          ),
+        ),
+        _StatusBadge(status: task.status),
+      ],
+    );
+  }
+}
+
+class _CardFooter extends StatelessWidget {
+  final ContractorTask task;
+
+  const _CardFooter({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Icon(Icons.location_on_outlined, size: 14, color: AppColors.gray500),
+        const SizedBox(width: AppSpacing.gapXS),
+        Expanded(
+          child: Text(
+            task.address,
+            style: AppTypography.caption.copyWith(color: AppColors.gray500),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.gapSM),
+        Text(
+          '${task.price} PLN',
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActiveTaskActions extends StatelessWidget {
+  final ContractorTask task;
+
+  const _ActiveTaskActions({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => context.push(Routes.contractorTask(task.id)),
+            child: const Text('Szczegóły'),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.gapSM),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () =>
+                context.push(Routes.contractorTaskChatRoute(task.id)),
+            icon: const Icon(Icons.chat_outlined, size: 18),
+            label: const Text('Czat'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Status badge widget for contractor task statuses
+class _StatusBadge extends StatelessWidget {
+  final ContractorTaskStatus status;
+
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
     final color = switch (status) {
       ContractorTaskStatus.available => AppColors.gray400,
       ContractorTaskStatus.offered => AppColors.warning,
@@ -341,7 +390,7 @@ class _ContractorTaskHistoryScreenState
     };
 
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.paddingSM,
         vertical: AppSpacing.paddingXS,
       ),
@@ -358,188 +407,176 @@ class _ContractorTaskHistoryScreenState
       ),
     );
   }
+}
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+/// Bottom sheet with full task details (history tab)
+class _TaskDetailsSheet extends StatelessWidget {
+  final ContractorTask task;
+  final TaskCategoryData categoryData;
 
-    if (difference.inDays == 0) {
-      return 'Dzisiaj, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      return 'Wczoraj';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} dni temu';
-    } else {
-      return '${date.day}.${date.month}.${date.year}';
-    }
-  }
+  const _TaskDetailsSheet({required this.task, required this.categoryData});
 
-  void _showTaskDetails(ContractorTask task) {
-    final categoryData = TaskCategoryData.fromCategory(task.category);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.radiusXL.topLeft.x),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray300,
-                borderRadius: AppRadius.radiusFull,
-              ),
-            ),
-
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.paddingLG),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(AppSpacing.paddingMD),
-                        decoration: BoxDecoration(
-                          color: categoryData.color.withValues(alpha: 0.1),
-                          borderRadius: AppRadius.radiusMD,
-                        ),
-                        child: Icon(
-                          categoryData.icon,
-                          color: categoryData.color,
-                          size: 32,
-                        ),
-                      ),
-                      SizedBox(width: AppSpacing.gapMD),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              categoryData.name,
-                              style: AppTypography.h4,
-                            ),
-                            _buildStatusBadge(task.status),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${task.price} PLN',
-                        style: AppTypography.h3.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Description
-                  Text(
-                    'Opis',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  Text(
-                    task.description,
-                    style: AppTypography.bodyMedium,
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Location
-                  Text(
-                    'Lokalizacja',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 18,
-                        color: AppColors.gray600,
-                      ),
-                      SizedBox(width: AppSpacing.gapSM),
-                      Expanded(
-                        child: Text(
-                          task.address,
-                          style: AppTypography.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Dates
-                  _buildDetailRow('Zlecono', _formatDate(task.createdAt)),
-                  if (task.acceptedAt != null)
-                    _buildDetailRow(
-                        'Przyjęto', _formatDate(task.acceptedAt!)),
-                  if (task.completedAt != null)
-                    _buildDetailRow(
-                        'Zakończono', _formatDate(task.completedAt!)),
-
-                  SizedBox(height: AppSpacing.space6),
-
-                  // Close button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => context.pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.white,
-                      ),
-                      child: const Text('Zamknij'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.radiusXL.topLeft.x),
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: AppSpacing.paddingSM),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.gray300,
+              borderRadius: AppRadius.radiusFull,
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.paddingLG),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SheetHeader(task: task, categoryData: categoryData),
+                const SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Opis',
+                  style: AppTypography.labelMedium
+                      .copyWith(color: AppColors.gray500),
+                ),
+                const SizedBox(height: AppSpacing.gapXS),
+                Text(task.description, style: AppTypography.bodyMedium),
+                const SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Lokalizacja',
+                  style: AppTypography.labelMedium
+                      .copyWith(color: AppColors.gray500),
+                ),
+                const SizedBox(height: AppSpacing.gapXS),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined,
+                        size: 18, color: AppColors.gray600),
+                    const SizedBox(width: AppSpacing.gapSM),
+                    Expanded(
+                      child: Text(task.address,
+                          style: AppTypography.bodyMedium),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                _DetailRow(label: 'Zlecono', value: _formatDate(task.createdAt)),
+                if (task.acceptedAt != null)
+                  _DetailRow(
+                      label: 'Przyjęto',
+                      value: _formatDate(task.acceptedAt!)),
+                if (task.completedAt != null)
+                  _DetailRow(
+                      label: 'Zakończono',
+                      value: _formatDate(task.completedAt!)),
+                const SizedBox(height: AppSpacing.space6),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => context.pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.white,
+                    ),
+                    child: const Text('Zamknij'),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+class _SheetHeader extends StatelessWidget {
+  final ContractorTask task;
+  final TaskCategoryData categoryData;
+
+  const _SheetHeader({required this.task, required this.categoryData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: categoryData.color.withValues(alpha: 0.1),
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Icon(categoryData.icon, color: categoryData.color, size: 32),
+        ),
+        const SizedBox(width: AppSpacing.gapMD),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(categoryData.name, style: AppTypography.h4),
+              _StatusBadge(status: task.status),
+            ],
+          ),
+        ),
+        Text(
+          '${task.price} PLN',
+          style: AppTypography.h3.copyWith(color: AppColors.primary),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+          ),
+          Text(
+            value,
+            style:
+                AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatDate(DateTime date) {
+  final now = DateTime.now();
+  final difference = now.difference(date);
+
+  if (difference.inDays == 0) {
+    return 'Dzisiaj, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  } else if (difference.inDays == 1) {
+    return 'Wczoraj';
+  } else if (difference.inDays < 7) {
+    return '${difference.inDays} dni temu';
+  } else {
+    return '${date.day}.${date.month}.${date.year}';
   }
 }
