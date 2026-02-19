@@ -354,6 +354,34 @@ describe('AuthService', () => {
       expect(result.requiresRoleSelection).toBe(true);
     });
 
+    it('should clear unexpected default role for new social user', async () => {
+      usersService.findByGoogleId.mockResolvedValue(null);
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        googleId,
+        email,
+        name,
+        avatarUrl,
+        types: [UserType.CLIENT],
+      });
+      usersService.update.mockResolvedValue({
+        ...mockUser,
+        googleId,
+        email,
+        name,
+        avatarUrl,
+        types: [],
+      });
+
+      const result = await service.authenticateWithGoogle({ idToken });
+
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        types: [],
+      });
+      expect(result.requiresRoleSelection).toBe(true);
+    });
+
     it('should create contractor when userType specified', async () => {
       usersService.findByGoogleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
@@ -433,6 +461,32 @@ describe('AuthService', () => {
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(true);
+    });
+
+    it('should clear unexpected default role for new Apple user', async () => {
+      usersService.findByAppleId.mockResolvedValue(null);
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        appleId,
+        email,
+        name,
+        types: [UserType.CLIENT],
+      });
+      usersService.update.mockResolvedValue({
+        ...mockUser,
+        appleId,
+        email,
+        name,
+        types: [],
+      });
+
+      const result = await service.authenticateWithApple(appleId, email, name);
+
+      expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
+        types: [],
+      });
       expect(result.requiresRoleSelection).toBe(true);
     });
 

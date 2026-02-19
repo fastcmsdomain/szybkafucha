@@ -73,10 +73,11 @@ export class AuthService {
    * Generate JWT token for a user
    */
   generateToken(user: User): { accessToken: string; user: Partial<User> } {
-    const type = this.resolvePrimaryType(user.types);
+    const normalizedTypes = this.normalizeTypes(user.types);
+    const type = this.resolvePrimaryType(normalizedTypes);
     const payload = {
       sub: user.id,
-      types: user.types,
+      types: normalizedTypes,
       ...(type ? { type } : {}),
     };
 
@@ -84,7 +85,7 @@ export class AuthService {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user.id,
-        types: user.types,
+        types: normalizedTypes,
         name: user.name,
         email: user.email,
         phone: user.phone,
@@ -175,7 +176,7 @@ export class AuthService {
         types: [userType || UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
-    } else if (userType && user.types.length === 0) {
+    } else if (userType && !this.hasAssignedRole(user.types)) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, userType);
     }
@@ -239,8 +240,15 @@ export class AuthService {
           types: dto.userType ? [dto.userType] : [],
           status: UserStatus.ACTIVE,
         });
+        // Defensive fix: ensure truly roleless account for first-login selection.
+        if (!dto.userType && this.hasAssignedRole(user.types)) {
+          this.logger.warn(
+            `Expected roleless social user but got roles=${user.types.join(',')} for userId=${user.id}. Clearing roles.`,
+          );
+          user = await this.usersService.update(user.id, { types: [] });
+        }
       }
-    } else if (dto.userType && user.types.length === 0) {
+    } else if (dto.userType && !this.hasAssignedRole(user.types)) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, dto.userType);
     }
@@ -283,8 +291,15 @@ export class AuthService {
           types: userType ? [userType] : [],
           status: UserStatus.ACTIVE,
         });
+        // Defensive fix: ensure truly roleless account for first-login selection.
+        if (!userType && this.hasAssignedRole(user.types)) {
+          this.logger.warn(
+            `Expected roleless Apple user but got roles=${user.types.join(',')} for userId=${user.id}. Clearing roles.`,
+          );
+          user = await this.usersService.update(user.id, { types: [] });
+        }
       }
-    } else if (userType && user.types.length === 0) {
+    } else if (userType && !this.hasAssignedRole(user.types)) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
       user = await this.usersService.addRole(user.id, userType);
     }
@@ -306,7 +321,7 @@ export class AuthService {
   }> {
     const user = await this.usersService.findByIdOrFail(userId);
 
-    if (user.types.length > 0) {
+    if (this.hasAssignedRole(user.types)) {
       throw new BadRequestException(
         'Role changes are not allowed in MVP. Please contact support if you need to change your role.',
       );
@@ -590,7 +605,7 @@ export class AuthService {
   // ──────────────────────────────────────────────────────
 
   private buildAuthResponse(user: User, isNewUser: boolean): AuthResponse {
-    const requiresRoleSelection = user.types.length === 0;
+    const requiresRoleSelection = !this.hasAssignedRole(user.types);
     const token = this.generateToken(user);
 
     if (requiresRoleSelection) {
@@ -604,12 +619,25 @@ export class AuthService {
     };
   }
 
+  private normalizeTypes(types: string[] | undefined | null): UserType[] {
+    return (types ?? []).filter(
+      (type): type is UserType =>
+        type === UserType.CLIENT || type === UserType.CONTRACTOR,
+    );
+  }
+
+  private hasAssignedRole(types: string[] | undefined | null): boolean {
+    return this.normalizeTypes(types).length > 0;
+  }
+
   private resolvePrimaryType(types: string[]): UserType | undefined {
-    if (types.includes(UserType.CLIENT)) {
+    const normalizedTypes = this.normalizeTypes(types);
+
+    if (normalizedTypes.includes(UserType.CLIENT)) {
       return UserType.CLIENT;
     }
 
-    if (types.includes(UserType.CONTRACTOR)) {
+    if (normalizedTypes.includes(UserType.CONTRACTOR)) {
       return UserType.CONTRACTOR;
     }
 
@@ -619,11 +647,15 @@ export class AuthService {
   private async verifyGoogleIdToken(idToken: string): Promise<TokenPayload> {
     try {
       const audience = this.getGoogleClientIds();
-      const ticket = await this.googleOAuthClient.verifyIdToken({
-        idToken,
-        audience,
-      });
-      const payload = ticket.getPayload();
+      const payload =
+        audience.length > 0
+          ? (
+              await this.googleOAuthClient.verifyIdToken({
+                idToken,
+                audience,
+              })
+            ).getPayload()
+          : this.decodeGoogleIdTokenPayloadForDev(idToken);
 
       if (!payload?.sub) {
         throw new UnauthorizedException('Invalid Google ID token payload');
@@ -644,13 +676,44 @@ export class AuthService {
       this.configService.get<string>('GOOGLE_CLIENT_ID');
 
     if (!clientIdsRaw) {
-      throw new UnauthorizedException('Google Sign-In is not configured');
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'production') {
+        throw new UnauthorizedException('Google Sign-In is not configured');
+      }
+      return [];
     }
 
     return clientIdsRaw
       .split(',')
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
+  }
+
+  /**
+   * Development-only fallback when Google client IDs are missing.
+   * Decodes payload without signature verification.
+   */
+  private decodeGoogleIdTokenPayloadForDev(idToken: string): TokenPayload {
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    if (nodeEnv === 'production') {
+      throw new UnauthorizedException('Google Sign-In is not configured');
+    }
+
+    this.logger.warn(
+      'GOOGLE_CLIENT_ID(S) not configured. Using unverified Google token payload in non-production.',
+    );
+
+    const parts = idToken.split('.');
+    if (parts.length !== 3) {
+      throw new UnauthorizedException('Invalid Google ID token');
+    }
+
+    try {
+      const payloadJson = Buffer.from(parts[1], 'base64url').toString('utf8');
+      return JSON.parse(payloadJson) as TokenPayload;
+    } catch {
+      throw new UnauthorizedException('Invalid Google ID token');
+    }
   }
 
   /**

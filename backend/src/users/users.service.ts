@@ -160,6 +160,12 @@ export class UsersService {
    */
   async addRole(userId: string, role: 'client' | 'contractor'): Promise<User> {
     const user = await this.findByIdOrFail(userId);
+    const validRoles = user.types.filter(
+      (type): type is 'client' | 'contractor' =>
+        type === 'client' || type === 'contractor',
+    );
+
+    user.types = validRoles;
 
     // Check if user already has this role
     if (user.types.includes(role)) {
