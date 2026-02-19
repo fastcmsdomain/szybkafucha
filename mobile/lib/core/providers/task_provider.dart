@@ -861,6 +861,98 @@ final contractorActiveTasksProvider = StateNotifierProvider<
   (ref) => ContractorActiveTasksNotifier(ref.read(apiClientProvider), ref),
 );
 
+/// State for contractor's completed/cancelled task history
+class ContractorHistoryState {
+  final List<ContractorTask> tasks;
+  final bool isLoading;
+  final String? error;
+
+  const ContractorHistoryState({
+    this.tasks = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  ContractorHistoryState copyWith({
+    List<ContractorTask>? tasks,
+    bool? isLoading,
+    String? error,
+  }) {
+    return ContractorHistoryState(
+      tasks: tasks ?? this.tasks,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+/// Notifier for contractor's completed/cancelled task history
+class ContractorHistoryNotifier
+    extends StateNotifier<ContractorHistoryState> {
+  final ApiClient _api;
+  final Ref _ref;
+
+  ContractorHistoryNotifier(this._api, this._ref)
+      : super(const ContractorHistoryState()) {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadTasks());
+    }
+  }
+
+  Future<void> loadTasks() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response =
+          await _api.get<List<dynamic>>('/tasks/contractor/applications');
+
+      final acceptedApps = response
+          .whereType<Map<String, dynamic>>()
+          .where(
+              (app) => app['status']?.toString().toLowerCase() == 'accepted')
+          .toList();
+
+      final tasks = <ContractorTask>[];
+      for (final app in acceptedApps) {
+        final taskId = app['taskId']?.toString();
+        if (taskId == null || taskId.isEmpty) continue;
+        try {
+          final taskResponse =
+              await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+          final task = ContractorTask.fromJson(taskResponse);
+          if (task.status == ContractorTaskStatus.completed ||
+              task.status == ContractorTaskStatus.cancelled) {
+            tasks.add(task);
+          }
+        } catch (_) {}
+      }
+
+      tasks.sort((a, b) =>
+          (b.completedAt ?? b.createdAt)
+              .compareTo(a.completedAt ?? a.createdAt));
+
+      state = state.copyWith(tasks: tasks, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> refresh() => loadTasks();
+}
+
+/// Provider for contractor's completed/cancelled task history
+final contractorHistoryProvider = StateNotifierProvider<
+    ContractorHistoryNotifier, ContractorHistoryState>(
+  (ref) => ContractorHistoryNotifier(ref.read(apiClientProvider), ref),
+);
+
 // Extension for ContractorTask to add copyWith
 extension ContractorTaskCopyWith on ContractorTask {
   ContractorTask copyWith({

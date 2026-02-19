@@ -8,6 +8,20 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-19] Ekran historii zleceń wykonawcy + nowa zakładka w nawigacji
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dodano ekran historii zleceń dla wykonawcy (2 taby: Aktywne + Historia) oraz nową zakładkę "Historia" w dolnym menu nawigacyjnym między "Zlecenia" a "Zarobki".
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – Nowy ekran z tabami: aktywne zadania (contractorActiveTasksProvider) + historia (contractorHistoryProvider), karty zadań z nawigacją i bottom sheet ze szczegółami
+  - `mobile/lib/features/contractor/screens/screens.dart` – Dodano export nowego ekranu
+  - `mobile/lib/core/providers/task_provider.dart` – Dodano `ContractorHistoryState`, `ContractorHistoryNotifier`, `contractorHistoryProvider` (ładuje zakończone/anulowane zadania)
+  - `mobile/lib/core/router/routes.dart` – Dodano `contractorTaskHistory = '/contractor/history'`
+  - `mobile/lib/core/router/app_router.dart` – Dodano route dla historii, rozszerzono `_ContractorShell` do 5 zakładek, zaktualizowano `_calculateSelectedIndex` i `_onItemTapped`
+- **System Impact**: Nawigacja wykonawcy rozszerzona z 4 do 5 zakładek; nowy provider ładuje historię zadań z `/tasks/contractor/applications`
+- **Related Tasks/PRD**: Funkcja historii zleceń dla wykonawcy
+- **Potential Conflicts/Risks**: Indeksy zakładek nawigacji zmieniły się (Zarobki: 2→3, Profil: 3→4) — jeśli gdzieś są hardkodowane indeksy zakładek, mogą wymagać aktualizacji
+
 ## [2026-02-19] Fix: Badge — nie opuszczaj task roomu po zamknięciu czatu/ekranu
 
 - **Developer/Agent**: Claude
