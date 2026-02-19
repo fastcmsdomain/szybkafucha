@@ -8,7 +8,97 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-19] Ekran historii zleceń wykonawcy + nowa zakładka w nawigacji
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dodano ekran historii zleceń dla wykonawcy (2 taby: Aktywne + Historia) oraz nową zakładkę "Historia" w dolnym menu nawigacyjnym między "Zlecenia" a "Zarobki".
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – Nowy ekran z tabami: aktywne zadania (contractorActiveTasksProvider) + historia (contractorHistoryProvider), karty zadań z nawigacją i bottom sheet ze szczegółami
+  - `mobile/lib/features/contractor/screens/screens.dart` – Dodano export nowego ekranu
+  - `mobile/lib/core/providers/task_provider.dart` – Dodano `ContractorHistoryState`, `ContractorHistoryNotifier`, `contractorHistoryProvider` (ładuje zakończone/anulowane zadania)
+  - `mobile/lib/core/router/routes.dart` – Dodano `contractorTaskHistory = '/contractor/history'`
+  - `mobile/lib/core/router/app_router.dart` – Dodano route dla historii, rozszerzono `_ContractorShell` do 5 zakładek, zaktualizowano `_calculateSelectedIndex` i `_onItemTapped`
+- **System Impact**: Nawigacja wykonawcy rozszerzona z 4 do 5 zakładek; nowy provider ładuje historię zadań z `/tasks/contractor/applications`
+- **Related Tasks/PRD**: Funkcja historii zleceń dla wykonawcy
+- **Potential Conflicts/Risks**: Indeksy zakładek nawigacji zmieniły się (Zarobki: 2→3, Profil: 3→4) — jeśli gdzieś są hardkodowane indeksy zakładek, mogą wymagać aktualizacji
+
+## [2026-02-19] Fix: Badge — nie opuszczaj task roomu po zamknięciu czatu/ekranu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał w client_home_screen (kontraktor→klient) i w ogóle dla klienta→wykonawcy. Root cause: `leaveChat()` i `dispose()` wywoływały `leaveTask()` → użytkownik wychodził z room → przestawał otrzymywać `message:new`.
+- **Files Changed**:
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – usunięto `leaveTask()` z `leaveChat()`. Task room pozostaje aktywny po zamknięciu czatu.
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – usunięto wywołanie `_leaveTaskRoom()` z `dispose()` i usunięto nieużywaną metodę.
+- **System Impact**: Użytkownicy pozostają w task roomach przez cały czas sesji WS → badge działa na wszystkich ekranach w obu kierunkach. Cleanup rooms następuje naturalnie przy disconneccie; reconnect auto-joinuje z powrotem.
+- **Potential Conflicts/Risks**: Brak. Roomy są lightweight w Socket.io. Nie opuszczamy rooma przez nawigację — to jest poprawne zachowanie.
+
+---
+
+## [2026-02-19] Fix: Badge — auto-join task rooms on WS connect (backend)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał bo backend emituje `message:new` tylko do pokoju `task:${taskId}`, a użytkownik dołącza do tego pokoju dopiero po otwarciu czatu. Teraz backend auto-joinuje wszystkie aktywne task roomy przy połączeniu WS.
+- **Files Changed**:
+  - `backend/src/realtime/realtime.service.ts` – dodano `getActiveTaskIdsForUser(userId)` — query o aktywne taski
+  - `backend/src/realtime/realtime.gateway.ts` – `handleConnection()`: fire-and-forget auto-join do aktywnych task roomów
+- **System Impact**: Użytkownik po połączeniu WS automatycznie jest w task roomach wszystkich aktywnych zadań → badge działa bez wcześniejszego otwierania czatu.
+- **Potential Conflicts/Risks**: Jeden DB query na połączenie. Fire-and-forget — błąd jest logowany, nie przerywa połączenia.
+
+---
+
+## [2026-02-19] Fix: Unread message badge never showing count
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed `unreadMessagesProvider` so the red badge counter actually appears when a new message arrives. Root cause: `chatMessagesProvider` (the intermediary) is a `StreamProvider` that auto-disposes when no widget watches it (i.e., when no chat screen is open), removing its WS listener. Bypassed it entirely by registering directly with `WebSocketService.on()`. Also eagerly initialized the provider at app startup so it listens from the first frame.
+- **Files Changed**:
+  - `mobile/lib/core/providers/unread_messages_provider.dart` – Removed dependency on `chatMessagesProvider`; now calls `webSocketService.on(WebSocketConfig.messageNew, onNewMessage)` directly; re-registers listener on login (for logout→login cycle); `ref.onDispose` removes listener
+  - `mobile/lib/core/widgets/websocket_initializer.dart` – Added `import unread_messages_provider.dart`; added `ref.read(unreadMessagesProvider)` in `initState()` for eager initialization
+- **System Impact**: Badge count increments in real-time whenever a new message arrives from another user, on all 4 screens (client home, contractor home, task tracking, active task). Count clears when user opens the chat.
+- **Potential Conflicts/Risks**: If `WebSocketService.disconnect()` is called (on logout), its `_listeners.clear()` removes our callback. This is handled by re-registering via `ref.listen(authProvider, ...)` when user logs back in.
+
+---
+
+## [2026-02-19] Fix: Map tiles not loading on iOS (flutter_map built-in cache issue)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Disabled `flutter_map` v8.2.2's built-in tile caching provider to fix blank map on iOS. Also ran `pod install`.
+- **Files Changed**:
+  - `mobile/lib/core/widgets/sf_map_view.dart` – Added explicit `tileProvider: NetworkTileProvider(cachingProvider: const DisabledMapCachingProvider())` to `TileLayer`
+  - `mobile/ios/Podfile.lock` – Updated by `pod install`
+- **Root Cause**: `flutter_map` v8.2.2 added built-in tile caching (`BuiltInMapCachingProvider`) that depends on `path_provider`. The caching provider initializes asynchronously in a fire-and-forget function. If initialization fails or hangs, the internal `_cacheDirectoryPathReady` Completer never completes, causing `getTile()` to await indefinitely. Result: tiles never load, no console errors.
+- **System Impact**: Map tiles now load directly from OSM network (no local caching). Performance slightly reduced due to no tile caching, but maps work correctly.
+- **Related Tasks/PRD**: Map feature on client task tracking and contractor active task screens
+- **Potential Conflicts/Risks**: Tile caching disabled until properly re-enabled. To restore caching: ensure `path_provider` is properly initialized and remove the `cachingProvider` override.
+
+
 **Important**: Claude must read this file before starting any new task to avoid conflicts and regressions.
+
+---
+
+## [2026-02-19] Real-time Chat — Duplikaty wiadomości (Bug Fix)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Naprawiono dwa bugi powodujące wielokrotne wyświetlanie wysłanej wiadomości w UI
+- **Files Changed**:
+  - `mobile/lib/core/services/websocket_service.dart` – lokalny fire `message:new` w `sendMessage()` przeniesiony do bloku `devMode` (wcześniej odpalał się zawsze, tworząc duplikat przed odpowiedzią backendu)
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – `ChatNotifier` otrzymuje `_currentUserId`; `_handleIncomingMessage` ignoruje własne wiadomości (backend broadcastuje `message:new` z powrotem do nadawcy); dodany import `auth_provider.dart`
+- **System Impact**: Wysłana wiadomość pojawia się dokładnie raz; odebrana wiadomość pojawia się po właściwej stronie bańki
+- **Potential Conflicts/Risks**: `chatProvider.family` teraz czyta `currentUserProvider` — jeśli user nie jest zalogowany w momencie tworzenia providera, `currentUserId` będzie pustym stringiem (bezpieczne)
+
+---
+
+## [2026-02-18] Real-time Chat Wiring (Client ↔ Contractor)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Connected the pre-built chat UI to navigation and fixed two bugs in ChatProvider. Backend (REST + WebSocket) was already complete. Changes were purely mobile-side wiring.
+- **Files Changed**:
+  - `mobile/lib/core/router/app_router.dart` – Replaced `PlaceholderScreen` with `ChatScreen` for the client chat route, mirroring existing contractor pattern
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `auth_provider.dart` import; `_openChatWithContractor()` now passes `extra` map with taskTitle, contractor name/avatar, and current user id/name
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Added `auth_provider.dart` import; `_openChat()` now passes `extra` map with taskTitle, client name/avatar, and current user id/name
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Fixed `_handleIncomingMessage` to filter by `taskId`; fixed `leaveChat()` to call `_webSocketService.off()` to remove listener and prevent memory leak
+- **System Impact**: Chat is now fully functional end-to-end — both client and contractor can open a chat screen from their active task views, messages load from REST history and arrive in real-time via WebSocket
+- **Related Tasks/PRD**: Real-time messaging feature
+- **Potential Conflicts/Risks**: None — no backend changes, no existing UI changes
 
 ---
 

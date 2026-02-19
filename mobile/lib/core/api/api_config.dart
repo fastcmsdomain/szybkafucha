@@ -5,7 +5,10 @@ abstract class ApiConfig {
   static const bool devModeEnabled = true;
 
   /// Server base URL for development (without /api/v1)
-  static const String devServerUrl = 'http://localhost:3000';
+  /// Use 'http://localhost:3000' for iOS Simulator or Android Emulator
+  /// Use 'http://192.168.1.125:3000' (or your Mac's IP) for physical devices
+  /// Find your Mac IP: ifconfig | grep "inet " | grep -v 127.0.0.1
+  static const String devServerUrl = 'http://192.168.1.131:3000';
 
   /// Server base URL for staging (without /api/v1)
   static const String stagingServerUrl = 'https://staging-api.szybkafucha.pl';

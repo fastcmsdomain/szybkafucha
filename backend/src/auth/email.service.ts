@@ -108,7 +108,9 @@ export class EmailService {
       });
       this.logger.log(`Email sent to ${to}: ${subject}`);
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}: ${error.message}`);
+      this.logger.error(
+        `Failed to send email to ${to}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Don't throw - email delivery failure shouldn't block the auth flow
       // OTP code is still stored in Redis and logged in dev mode
     }

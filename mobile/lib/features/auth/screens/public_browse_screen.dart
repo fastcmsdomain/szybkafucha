@@ -416,10 +416,14 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
             },
           ),
           children: [
+            // Caching disabled - see sf_map_view.dart for explanation
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'pl.szybkafucha.mobile',
               maxZoom: 19,
+              tileProvider: NetworkTileProvider(
+                cachingProvider: const DisabledMapCachingProvider(),
+              ),
             ),
             MarkerLayer(
               markers: clusters.map((cluster) {

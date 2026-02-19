@@ -7,6 +7,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TasksService } from './tasks.service';
 import { Task, TaskStatus } from './entities/task.entity';
+import { TaskApplication } from './entities/task-application.entity';
 import { Rating } from './entities/rating.entity';
 import {
   ContractorProfile,
@@ -86,6 +87,14 @@ describe('TasksService', () => {
       findOne: jest.fn(),
     };
 
+    const mockTaskApplicationRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      update: jest.fn(),
+    };
+
     const mockContractorProfileRepository = {
       find: jest.fn(),
     };
@@ -111,6 +120,10 @@ describe('TasksService', () => {
       providers: [
         TasksService,
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
+        {
+          provide: getRepositoryToken(TaskApplication),
+          useValue: mockTaskApplicationRepository,
+        },
         { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
         {
           provide: getRepositoryToken(ContractorProfile),

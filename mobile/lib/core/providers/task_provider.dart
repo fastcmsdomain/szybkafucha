@@ -91,6 +91,23 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
 
   ClientTasksNotifier(this._api, this._ref) : super(const ClientTasksState()) {
     _setupWebSocketListener();
+    _setupAuthListener();
+  }
+
+  /// Load tasks when auth state becomes authenticated
+  void _setupAuthListener() {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isClient == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    // Load immediately if already authenticated
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isClient == true) {
+      Future.microtask(() => loadTasks());
+    }
   }
 
   /// Set up WebSocket listener for real-time task status updates
@@ -302,17 +319,7 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
 /// Provider for client tasks
 final clientTasksProvider =
     StateNotifierProvider<ClientTasksNotifier, ClientTasksState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = ClientTasksNotifier(api, ref);
-
-  // Auto-load tasks when provider is created and user is authenticated
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isClient == true) {
-    // Schedule loading after provider initialization
-    Future.microtask(() => notifier.loadTasks());
-  }
-
-  return notifier;
+  return ClientTasksNotifier(ref.read(apiClientProvider), ref);
 });
 
 /// State for available tasks (contractor view)
@@ -348,6 +355,23 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   AvailableTasksNotifier(this._api, this._ref)
       : super(const AvailableTasksState()) {
     _setupWebSocketListener();
+    _setupAuthListener();
+  }
+
+  /// Load tasks when auth state becomes authenticated
+  void _setupAuthListener() {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    // Load immediately if already authenticated
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadTasks());
+    }
   }
 
   /// Set up WebSocket listener for task status updates (e.g., client cancels)
@@ -471,16 +495,7 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
 /// Provider for available tasks (contractor)
 final availableTasksProvider =
     StateNotifierProvider<AvailableTasksNotifier, AvailableTasksState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = AvailableTasksNotifier(api, ref);
-
-  // Auto-load tasks when provider is created and user is a contractor
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isContractor == true) {
-    Future.microtask(() => notifier.loadTasks());
-  }
-
-  return notifier;
+  return AvailableTasksNotifier(ref.read(apiClientProvider), ref);
 });
 
 /// State for contractor's active task
@@ -755,9 +770,188 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 /// Provider for contractor's active task
 final activeTaskProvider =
     StateNotifierProvider<ActiveTaskNotifier, ActiveTaskState>((ref) {
-  final api = ref.watch(apiClientProvider);
+  final api = ref.read(apiClientProvider);
   return ActiveTaskNotifier(api, ref);
 });
+
+/// State for all contractor's active tasks (for home screen listing)
+class ContractorActiveTasksState {
+  final List<ContractorTask> tasks;
+  final bool isLoading;
+  final String? error;
+
+  const ContractorActiveTasksState({
+    this.tasks = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  ContractorActiveTasksState copyWith({
+    List<ContractorTask>? tasks,
+    bool? isLoading,
+    String? error,
+  }) {
+    return ContractorActiveTasksState(
+      tasks: tasks ?? this.tasks,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+/// Notifier for all contractor's active tasks
+class ContractorActiveTasksNotifier
+    extends StateNotifier<ContractorActiveTasksState> {
+  final ApiClient _api;
+  final Ref _ref;
+
+  ContractorActiveTasksNotifier(this._api, this._ref)
+      : super(const ContractorActiveTasksState()) {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadTasks());
+    }
+  }
+
+  Future<void> loadTasks() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response =
+          await _api.get<List<dynamic>>('/tasks/contractor/applications');
+
+      final acceptedApps = response
+          .whereType<Map<String, dynamic>>()
+          .where(
+              (app) => app['status']?.toString().toLowerCase() == 'accepted')
+          .toList();
+
+      final tasks = <ContractorTask>[];
+      for (final app in acceptedApps) {
+        final taskId = app['taskId']?.toString();
+        if (taskId == null || taskId.isEmpty) continue;
+        try {
+          final taskResponse =
+              await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+          final task = ContractorTask.fromJson(taskResponse);
+          if (task.status.isActive) {
+            tasks.add(task);
+          }
+        } catch (_) {}
+      }
+
+      state = state.copyWith(tasks: tasks, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> refresh() => loadTasks();
+}
+
+/// Provider listing all contractor's active tasks (for home screen)
+final contractorActiveTasksProvider = StateNotifierProvider<
+    ContractorActiveTasksNotifier, ContractorActiveTasksState>(
+  (ref) => ContractorActiveTasksNotifier(ref.read(apiClientProvider), ref),
+);
+
+/// State for contractor's completed/cancelled task history
+class ContractorHistoryState {
+  final List<ContractorTask> tasks;
+  final bool isLoading;
+  final String? error;
+
+  const ContractorHistoryState({
+    this.tasks = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  ContractorHistoryState copyWith({
+    List<ContractorTask>? tasks,
+    bool? isLoading,
+    String? error,
+  }) {
+    return ContractorHistoryState(
+      tasks: tasks ?? this.tasks,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+/// Notifier for contractor's completed/cancelled task history
+class ContractorHistoryNotifier
+    extends StateNotifier<ContractorHistoryState> {
+  final ApiClient _api;
+  final Ref _ref;
+
+  ContractorHistoryNotifier(this._api, this._ref)
+      : super(const ContractorHistoryState()) {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadTasks());
+    }
+  }
+
+  Future<void> loadTasks() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response =
+          await _api.get<List<dynamic>>('/tasks/contractor/applications');
+
+      final acceptedApps = response
+          .whereType<Map<String, dynamic>>()
+          .where(
+              (app) => app['status']?.toString().toLowerCase() == 'accepted')
+          .toList();
+
+      final tasks = <ContractorTask>[];
+      for (final app in acceptedApps) {
+        final taskId = app['taskId']?.toString();
+        if (taskId == null || taskId.isEmpty) continue;
+        try {
+          final taskResponse =
+              await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+          final task = ContractorTask.fromJson(taskResponse);
+          if (task.status == ContractorTaskStatus.completed ||
+              task.status == ContractorTaskStatus.cancelled) {
+            tasks.add(task);
+          }
+        } catch (_) {}
+      }
+
+      tasks.sort((a, b) =>
+          (b.completedAt ?? b.createdAt)
+              .compareTo(a.completedAt ?? a.createdAt));
+
+      state = state.copyWith(tasks: tasks, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> refresh() => loadTasks();
+}
+
+/// Provider for contractor's completed/cancelled task history
+final contractorHistoryProvider = StateNotifierProvider<
+    ContractorHistoryNotifier, ContractorHistoryState>(
+  (ref) => ContractorHistoryNotifier(ref.read(apiClientProvider), ref),
+);
 
 // Extension for ContractorTask to add copyWith
 extension ContractorTaskCopyWith on ContractorTask {
@@ -898,7 +1092,7 @@ class TaskApplicationsNotifier extends StateNotifier<TaskApplicationsState> {
 final taskApplicationsProvider = StateNotifierProvider.family<
     TaskApplicationsNotifier, TaskApplicationsState, String>(
   (ref, taskId) {
-    final api = ref.watch(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     final notifier = TaskApplicationsNotifier(api, taskId);
     Future.microtask(() => notifier.loadApplications());
     return notifier;
@@ -938,8 +1132,22 @@ class MyApplicationsState {
 /// Notifier for contractor's own applications
 class MyApplicationsNotifier extends StateNotifier<MyApplicationsState> {
   final ApiClient _api;
+  final Ref _ref;
 
-  MyApplicationsNotifier(this._api) : super(const MyApplicationsState());
+  MyApplicationsNotifier(this._api, this._ref)
+      : super(const MyApplicationsState()) {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadApplications();
+      }
+    });
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadApplications());
+    }
+  }
 
   /// Load contractor's applications
   Future<void> loadApplications() async {
@@ -976,13 +1184,5 @@ class MyApplicationsNotifier extends StateNotifier<MyApplicationsState> {
 /// Provider for contractor's own applications
 final myApplicationsProvider =
     StateNotifierProvider<MyApplicationsNotifier, MyApplicationsState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = MyApplicationsNotifier(api);
-
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isContractor == true) {
-    Future.microtask(() => notifier.loadApplications());
-  }
-
-  return notifier;
+  return MyApplicationsNotifier(ref.read(apiClientProvider), ref);
 });

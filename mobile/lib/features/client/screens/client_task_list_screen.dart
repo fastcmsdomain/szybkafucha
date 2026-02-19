@@ -437,11 +437,14 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
             },
           ),
           children: [
-            // OpenStreetMap tile layer
+            // OpenStreetMap tile layer (caching disabled - see sf_map_view.dart)
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'pl.szybkafucha.mobile',
               maxZoom: 19,
+              tileProvider: NetworkTileProvider(
+                cachingProvider: const DisabledMapCachingProvider(),
+              ),
             ),
             // Markers layer
             MarkerLayer(

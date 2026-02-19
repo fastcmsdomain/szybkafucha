@@ -24,6 +24,9 @@ import {
 import { TaskStatus } from '../tasks/entities/task.entity';
 import { UserType } from '../users/entities/user.entity';
 
+/** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
+const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
+
 // Events emitted by server
 export enum ServerEvent {
   LOCATION_UPDATE = 'location:update',
@@ -125,6 +128,27 @@ export class RealtimeGateway
 
       // Register connection
       this.realtimeService.registerConnection(client.id, userId, userType);
+
+      // Auto-join active task rooms so message:new is delivered
+      // even before the user opens the chat screen (for unread badge)
+      this.realtimeService
+        .getActiveTaskIdsForUser(userId)
+        .then(async (taskIds) => {
+          for (const taskId of taskIds) {
+            await client.join(`task:${taskId}`);
+            this.realtimeService.joinTaskRoom(client.id, taskId);
+          }
+          if (taskIds.length > 0) {
+            this.logger.debug(
+              `User ${userId} auto-joined ${taskIds.length} task room(s)`,
+            );
+          }
+        })
+        .catch((err) => {
+          this.logger.error(
+            `Failed to auto-join task rooms for ${userId}: ${err}`,
+          );
+        });
 
       // Notify others that user is online
       this.server.emit(ServerEvent.USER_ONLINE, { userId, userType });
@@ -273,6 +297,14 @@ export class RealtimeGateway
 
     if (!isAuthorized) {
       return { success: false, error: 'Not authorized for this task' };
+    }
+
+    // Block phone numbers in chat
+    if (PHONE_NUMBER_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
+      };
     }
 
     // Create and save message
