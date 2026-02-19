@@ -19,7 +19,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
-const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-\.\(\)]?){8,}\d)/;
+const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
 // DTO for message response
 export interface MessageResponse {

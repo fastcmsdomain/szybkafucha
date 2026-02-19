@@ -25,7 +25,7 @@ import { TaskStatus } from '../tasks/entities/task.entity';
 import { UserType } from '../users/entities/user.entity';
 
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
-const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-\.\(\)]?){8,}\d)/;
+const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
 // Events emitted by server
 export enum ServerEvent {
