@@ -137,7 +137,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
   }
@@ -259,10 +259,10 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
-      title,
-      body,
-      notificationDetails,
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: _encodePayload(payload),
     );
   }

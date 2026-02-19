@@ -33,6 +33,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
+    _messageController.addListener(() => setState(() {}));
   }
 
   @override

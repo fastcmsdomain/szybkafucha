@@ -84,7 +84,10 @@
       "Bash(python3 -m json.tool:*)",
       "Bash(export:*)",
       "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
-      "Bash(. \"$NVM_DIR/nvm.sh\")"
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(python3:*)",
+      "Bash(/usr/local/share/flutter/bin/flutter build:*)",
+      "Bash(/usr/local/share/flutter/bin/flutter pub:*)"
     ]
   }
 }

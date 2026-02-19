@@ -91,6 +91,23 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
 
   ClientTasksNotifier(this._api, this._ref) : super(const ClientTasksState()) {
     _setupWebSocketListener();
+    _setupAuthListener();
+  }
+
+  /// Load tasks when auth state becomes authenticated
+  void _setupAuthListener() {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isClient == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    // Load immediately if already authenticated
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isClient == true) {
+      Future.microtask(() => loadTasks());
+    }
   }
 
   /// Set up WebSocket listener for real-time task status updates
@@ -302,17 +319,7 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
 /// Provider for client tasks
 final clientTasksProvider =
     StateNotifierProvider<ClientTasksNotifier, ClientTasksState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = ClientTasksNotifier(api, ref);
-
-  // Auto-load tasks when provider is created and user is authenticated
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isClient == true) {
-    // Schedule loading after provider initialization
-    Future.microtask(() => notifier.loadTasks());
-  }
-
-  return notifier;
+  return ClientTasksNotifier(ref.read(apiClientProvider), ref);
 });
 
 /// State for available tasks (contractor view)
@@ -348,6 +355,23 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
   AvailableTasksNotifier(this._api, this._ref)
       : super(const AvailableTasksState()) {
     _setupWebSocketListener();
+    _setupAuthListener();
+  }
+
+  /// Load tasks when auth state becomes authenticated
+  void _setupAuthListener() {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadTasks();
+      }
+    });
+    // Load immediately if already authenticated
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadTasks());
+    }
   }
 
   /// Set up WebSocket listener for task status updates (e.g., client cancels)
@@ -471,16 +495,7 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
 /// Provider for available tasks (contractor)
 final availableTasksProvider =
     StateNotifierProvider<AvailableTasksNotifier, AvailableTasksState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = AvailableTasksNotifier(api, ref);
-
-  // Auto-load tasks when provider is created and user is a contractor
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isContractor == true) {
-    Future.microtask(() => notifier.loadTasks());
-  }
-
-  return notifier;
+  return AvailableTasksNotifier(ref.read(apiClientProvider), ref);
 });
 
 /// State for contractor's active task
@@ -755,7 +770,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
 /// Provider for contractor's active task
 final activeTaskProvider =
     StateNotifierProvider<ActiveTaskNotifier, ActiveTaskState>((ref) {
-  final api = ref.watch(apiClientProvider);
+  final api = ref.read(apiClientProvider);
   return ActiveTaskNotifier(api, ref);
 });
 
@@ -898,7 +913,7 @@ class TaskApplicationsNotifier extends StateNotifier<TaskApplicationsState> {
 final taskApplicationsProvider = StateNotifierProvider.family<
     TaskApplicationsNotifier, TaskApplicationsState, String>(
   (ref, taskId) {
-    final api = ref.watch(apiClientProvider);
+    final api = ref.read(apiClientProvider);
     final notifier = TaskApplicationsNotifier(api, taskId);
     Future.microtask(() => notifier.loadApplications());
     return notifier;
@@ -938,8 +953,22 @@ class MyApplicationsState {
 /// Notifier for contractor's own applications
 class MyApplicationsNotifier extends StateNotifier<MyApplicationsState> {
   final ApiClient _api;
+  final Ref _ref;
 
-  MyApplicationsNotifier(this._api) : super(const MyApplicationsState());
+  MyApplicationsNotifier(this._api, this._ref)
+      : super(const MyApplicationsState()) {
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isAuthenticated &&
+          next.user?.isContractor == true &&
+          previous?.isAuthenticated != true) {
+        loadApplications();
+      }
+    });
+    final authState = _ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user?.isContractor == true) {
+      Future.microtask(() => loadApplications());
+    }
+  }
 
   /// Load contractor's applications
   Future<void> loadApplications() async {
@@ -976,13 +1005,5 @@ class MyApplicationsNotifier extends StateNotifier<MyApplicationsState> {
 /// Provider for contractor's own applications
 final myApplicationsProvider =
     StateNotifierProvider<MyApplicationsNotifier, MyApplicationsState>((ref) {
-  final api = ref.watch(apiClientProvider);
-  final notifier = MyApplicationsNotifier(api);
-
-  final authState = ref.watch(authProvider);
-  if (authState.isAuthenticated && authState.user?.isContractor == true) {
-    Future.microtask(() => notifier.loadApplications());
-  }
-
-  return notifier;
+  return MyApplicationsNotifier(ref.read(apiClientProvider), ref);
 });

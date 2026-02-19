@@ -122,10 +122,15 @@ class _SFMapViewState extends State<SFMapView> {
       ),
       children: [
         // OpenStreetMap tile layer
+        // Caching disabled: path_provider_foundation iOS pod is not installed.
+        // To re-enable: run `cd ios && pod install` inside mobile/.
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'pl.szybkafucha.mobile',
           maxZoom: 19,
+          tileProvider: NetworkTileProvider(
+            cachingProvider: const DisabledMapCachingProvider(),
+          ),
         ),
         // Markers layer
         MarkerLayer(

@@ -4,11 +4,11 @@
 abstract class WebSocketConfig {
   /// WebSocket server URL
   /// - Dev (Simulator/Emulator): ws://localhost:3000
-  /// - Dev (Physical Device): ws://192.168.1.125:3000 (use your Mac's IP)
+  /// - Dev (Physical Device): ws://192.168.1.131:3000 (use your Mac's IP)
   /// - Staging: wss://staging-api.szybkafucha.pl/realtime
   /// - Production: wss://api.szybkafucha.pl/realtime
   /// Find your Mac IP: ifconfig | grep "inet " | grep -v 127.0.0.1
-  static const String webSocketUrl = 'ws://192.168.1.125:3000';
+  static const String webSocketUrl = 'ws://192.168.1.131:3000';
 
   /// WebSocket namespace
   static const String namespace = '/realtime';

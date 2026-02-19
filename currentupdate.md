@@ -8,7 +8,32 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-19] Fix: Map tiles not loading on iOS (flutter_map built-in cache issue)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Disabled `flutter_map` v8.2.2's built-in tile caching provider to fix blank map on iOS. Also ran `pod install`.
+- **Files Changed**:
+  - `mobile/lib/core/widgets/sf_map_view.dart` – Added explicit `tileProvider: NetworkTileProvider(cachingProvider: const DisabledMapCachingProvider())` to `TileLayer`
+  - `mobile/ios/Podfile.lock` – Updated by `pod install`
+- **Root Cause**: `flutter_map` v8.2.2 added built-in tile caching (`BuiltInMapCachingProvider`) that depends on `path_provider`. The caching provider initializes asynchronously in a fire-and-forget function. If initialization fails or hangs, the internal `_cacheDirectoryPathReady` Completer never completes, causing `getTile()` to await indefinitely. Result: tiles never load, no console errors.
+- **System Impact**: Map tiles now load directly from OSM network (no local caching). Performance slightly reduced due to no tile caching, but maps work correctly.
+- **Related Tasks/PRD**: Map feature on client task tracking and contractor active task screens
+- **Potential Conflicts/Risks**: Tile caching disabled until properly re-enabled. To restore caching: ensure `path_provider` is properly initialized and remove the `cachingProvider` override.
+
+
 **Important**: Claude must read this file before starting any new task to avoid conflicts and regressions.
+
+---
+
+## [2026-02-19] Real-time Chat — Duplikaty wiadomości (Bug Fix)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Naprawiono dwa bugi powodujące wielokrotne wyświetlanie wysłanej wiadomości w UI
+- **Files Changed**:
+  - `mobile/lib/core/services/websocket_service.dart` – lokalny fire `message:new` w `sendMessage()` przeniesiony do bloku `devMode` (wcześniej odpalał się zawsze, tworząc duplikat przed odpowiedzią backendu)
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – `ChatNotifier` otrzymuje `_currentUserId`; `_handleIncomingMessage` ignoruje własne wiadomości (backend broadcastuje `message:new` z powrotem do nadawcy); dodany import `auth_provider.dart`
+- **System Impact**: Wysłana wiadomość pojawia się dokładnie raz; odebrana wiadomość pojawia się po właściwej stronie bańki
+- **Potential Conflicts/Risks**: `chatProvider.family` teraz czyta `currentUserProvider` — jeśli user nie jest zalogowany w momencie tworzenia providera, `currentUserId` będzie pustym stringiem (bezpieczne)
 
 ---
 

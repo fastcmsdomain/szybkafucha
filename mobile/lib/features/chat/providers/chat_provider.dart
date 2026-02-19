@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/config/websocket_config.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../models/message.dart';
@@ -96,12 +97,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
     this._webSocketService,
     this._apiClient,
     String taskId,
+    this._currentUserId,
   ) : super(ChatState(taskId: taskId)) {
     _initializeChat();
   }
 
   final WebSocketService _webSocketService;
   final ApiClient _apiClient;
+  final String _currentUserId;
   StreamSubscription<ChatMessageEvent>? _messageSubscription;
 
   /// Initialize chat for a task
@@ -119,7 +122,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Handle incoming message from WebSocket
   void _handleIncomingMessage(dynamic data) {
-    if (data is ChatMessageEvent && data.taskId == state.taskId) {
+    if (data is ChatMessageEvent &&
+        data.taskId == state.taskId &&
+        data.senderId != _currentUserId) {
       final message = Message(
         id: data.id,
         taskId: data.taskId,
@@ -252,9 +257,10 @@ class ChatNotifier extends StateNotifier<ChatState> {
 /// Chat provider for specific task
 final chatProvider = StateNotifierProvider.family<ChatNotifier, ChatState, String>(
   (ref, taskId) {
-    final webSocketService = ref.watch(webSocketServiceProvider);
-    final apiClient = ref.watch(apiClientProvider);
-    return ChatNotifier(webSocketService, apiClient, taskId);
+    final webSocketService = ref.read(webSocketServiceProvider);
+    final apiClient = ref.read(apiClientProvider);
+    final currentUserId = ref.read(currentUserProvider)?.id ?? '';
+    return ChatNotifier(webSocketService, apiClient, taskId, currentUserId);
   },
 );
 
