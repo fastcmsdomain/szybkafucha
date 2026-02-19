@@ -8,6 +8,7 @@ abstract class Routes {
   static const String onboarding = '/onboarding';
   static const String browse = '/browse';
   static const String login = '/login';
+  static const String roleSelection = '/login/select-role';
   static const String phoneLogin = '/login/phone';
   static const String phoneOtp = '/login/phone/otp';
   static const String emailLogin = '/login/email';
@@ -40,9 +41,11 @@ abstract class Routes {
   static const String contractorTaskList = '/contractor/tasks';
   static const String contractorTaskAlert = '/contractor/task/:taskId/alert';
   static const String contractorTaskDetails = '/contractor/task/:taskId';
-  static const String contractorTaskNavigation = '/contractor/task/:taskId/navigation';
+  static const String contractorTaskNavigation =
+      '/contractor/task/:taskId/navigation';
   static const String contractorTaskChat = '/contractor/task/:taskId/chat';
-  static const String contractorTaskComplete = '/contractor/task/:taskId/complete';
+  static const String contractorTaskComplete =
+      '/contractor/task/:taskId/complete';
   static const String contractorTaskReview = '/contractor/task/:taskId/review';
   static const String contractorProfileEdit = '/contractor/profile/edit';
   static const String contractorEarnings = '/contractor/earnings';
@@ -56,15 +59,23 @@ abstract class Routes {
 
   // Helper methods for dynamic routes
   static String clientTask(String taskId) => '/client/task/$taskId';
-  static String clientTaskTrack(String taskId) => '/client/task/$taskId/tracking';
-  static String clientTaskChatRoute(String taskId) => '/client/task/$taskId/chat';
+  static String clientTaskTrack(String taskId) =>
+      '/client/task/$taskId/tracking';
+  static String clientTaskChatRoute(String taskId) =>
+      '/client/task/$taskId/chat';
   static String clientTaskRate(String taskId) => '/client/task/$taskId/rating';
-  static String clientTaskComplete(String taskId) => '/client/task/$taskId/complete';
+  static String clientTaskComplete(String taskId) =>
+      '/client/task/$taskId/complete';
 
   static String contractorTask(String taskId) => '/contractor/task/$taskId';
-  static String contractorTaskAlertRoute(String taskId) => '/contractor/task/$taskId/alert';
-  static String contractorTaskNav(String taskId) => '/contractor/task/$taskId/navigation';
-  static String contractorTaskChatRoute(String taskId) => '/contractor/task/$taskId/chat';
-  static String contractorTaskCompleteRoute(String taskId) => '/contractor/task/$taskId/complete';
-  static String contractorTaskReviewRoute(String taskId) => '/contractor/task/$taskId/review';
+  static String contractorTaskAlertRoute(String taskId) =>
+      '/contractor/task/$taskId/alert';
+  static String contractorTaskNav(String taskId) =>
+      '/contractor/task/$taskId/navigation';
+  static String contractorTaskChatRoute(String taskId) =>
+      '/contractor/task/$taskId/chat';
+  static String contractorTaskCompleteRoute(String taskId) =>
+      '/contractor/task/$taskId/complete';
+  static String contractorTaskReviewRoute(String taskId) =>
+      '/contractor/task/$taskId/review';
 }

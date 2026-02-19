@@ -200,6 +200,29 @@ describe('RealtimeGateway', () => {
         'client',
       );
     });
+
+    it('should derive userType from payload.types when type is missing', async () => {
+      const socket = mockSocket({
+        handshake: {
+          query: { token: 'valid-token' },
+          headers: {},
+          auth: {},
+        },
+      });
+
+      jwtService.verify.mockReturnValue({
+        sub: 'user-123',
+        types: ['contractor'],
+      });
+
+      await gateway.handleConnection(socket);
+
+      expect(realtimeService.registerConnection).toHaveBeenCalledWith(
+        'socket-123',
+        'user-123',
+        'contractor',
+      );
+    });
   });
 
   describe('handleDisconnect', () => {

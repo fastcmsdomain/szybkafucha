@@ -74,6 +74,7 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     const mockUsersService = {
+      findByIdOrFail: jest.fn(),
       findByPhone: jest.fn(),
       findByEmail: jest.fn(),
       findByEmailWithPassword: jest.fn(),
@@ -101,6 +102,7 @@ describe('AuthService', () => {
     const mockConfigService = {
       get: jest.fn().mockImplementation((key: string) => {
         if (key === 'NODE_ENV') return 'development';
+        if (key === 'GOOGLE_CLIENT_ID') return 'test-google-client-id.apps.googleusercontent.com';
         return null;
       }),
     };
@@ -139,6 +141,7 @@ describe('AuthService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: mockUser.id,
         types: mockUser.types,
+        type: UserType.CLIENT,
       });
       expect(result.accessToken).toBe('mock-jwt-token');
     });
@@ -209,6 +212,7 @@ describe('AuthService', () => {
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.user.id).toBe(mockUser.id);
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
       expect(cacheManager.del).toHaveBeenCalledWith(`otp:${phone}`);
     });
 
@@ -225,6 +229,7 @@ describe('AuthService', () => {
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
     it('should create contractor when userType is specified', async () => {
@@ -244,6 +249,7 @@ describe('AuthService', () => {
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
     it('should throw BadRequestException for missing OTP', async () => {
@@ -280,23 +286,31 @@ describe('AuthService', () => {
   });
 
   describe('authenticateWithGoogle', () => {
-    const googleId = 'google-123';
+    const googleId = 'google-sub-123';
     const email = 'user@gmail.com';
     const name = 'Google User';
     const avatarUrl = 'https://google.com/avatar.jpg';
+    const idToken = 'google-id-token';
+
+    beforeEach(() => {
+      jest
+        .spyOn(service as any, 'verifyGoogleIdToken')
+        .mockResolvedValue({
+          sub: googleId,
+          email,
+          name,
+          picture: avatarUrl,
+        });
+    });
 
     it('should return token for existing user with Google ID', async () => {
       usersService.findByGoogleId.mockResolvedValue(mockUser);
 
-      const result = await service.authenticateWithGoogle(
-        googleId,
-        email,
-        name,
-        avatarUrl,
-      );
+      const result = await service.authenticateWithGoogle({ idToken });
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
       expect(usersService.create).not.toHaveBeenCalled();
     });
 
@@ -305,40 +319,39 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue({ ...mockUser, googleId });
 
-      const result = await service.authenticateWithGoogle(
-        googleId,
-        email,
-        name,
-        avatarUrl,
-      );
+      const result = await service.authenticateWithGoogle({ idToken });
 
       expect(usersService.update).toHaveBeenCalledWith(mockUser.id, {
         googleId,
       });
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
-    it('should create new user when no existing account found', async () => {
+    it('should create roleless user for new flow when userType is not provided', async () => {
       usersService.findByGoogleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(mockUser);
-
-      const result = await service.authenticateWithGoogle(
+      usersService.create.mockResolvedValue({
+        ...mockUser,
         googleId,
         email,
         name,
         avatarUrl,
-      );
+        types: [],
+      });
+
+      const result = await service.authenticateWithGoogle({ idToken });
 
       expect(usersService.create).toHaveBeenCalledWith({
         googleId,
         email,
         name,
         avatarUrl,
-        types: [UserType.CLIENT],
+        types: [],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(true);
     });
 
     it('should create contractor when userType specified', async () => {
@@ -346,17 +359,27 @@ describe('AuthService', () => {
       usersService.findByEmail.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockContractor);
 
-      await service.authenticateWithGoogle(
-        googleId,
-        email,
-        name,
-        avatarUrl,
-        UserType.CONTRACTOR,
-      );
+      const result = await service.authenticateWithGoogle({
+        idToken,
+        userType: UserType.CONTRACTOR,
+      });
 
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ types: [UserType.CONTRACTOR] }),
       );
+      expect(result.requiresRoleSelection).toBe(false);
+    });
+
+    it('should support legacy payload with googleId and email', async () => {
+      usersService.findByGoogleId.mockResolvedValue(mockUser);
+
+      const result = await service.authenticateWithGoogle({
+        googleId,
+        email,
+      });
+
+      expect(result.isNewUser).toBe(false);
+      expect((service as any).verifyGoogleIdToken).not.toHaveBeenCalled();
     });
   });
 
@@ -372,6 +395,7 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
     it('should link Apple account to existing user with same email', async () => {
@@ -385,12 +409,19 @@ describe('AuthService', () => {
         appleId,
       });
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
-    it('should create new user when no existing account found', async () => {
+    it('should create roleless user for new flow when userType is not provided', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(mockUser);
+      usersService.create.mockResolvedValue({
+        ...mockUser,
+        appleId,
+        email,
+        name,
+        types: [],
+      });
 
       const result = await service.authenticateWithApple(appleId, email, name);
 
@@ -398,15 +429,16 @@ describe('AuthService', () => {
         appleId,
         email,
         name,
-        types: [UserType.CLIENT],
+        types: [],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(true);
     });
 
     it('should handle Apple Sign In without email (subsequent logins)', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(mockUser);
+      usersService.create.mockResolvedValue({ ...mockUser, types: [] });
 
       const result = await service.authenticateWithApple(appleId);
 
@@ -415,17 +447,18 @@ describe('AuthService', () => {
         appleId,
         email: undefined,
         name: undefined,
-        types: [UserType.CLIENT],
+        types: [],
         status: UserStatus.ACTIVE,
       });
       expect(result.isNewUser).toBe(true);
+      expect(result.requiresRoleSelection).toBe(true);
     });
 
     it('should create contractor when userType specified', async () => {
       usersService.findByAppleId.mockResolvedValue(null);
       usersService.create.mockResolvedValue(mockContractor);
 
-      await service.authenticateWithApple(
+      const result = await service.authenticateWithApple(
         appleId,
         email,
         name,
@@ -435,6 +468,37 @@ describe('AuthService', () => {
       expect(usersService.create).toHaveBeenCalledWith(
         expect.objectContaining({ types: [UserType.CONTRACTOR] }),
       );
+      expect(result.requiresRoleSelection).toBe(false);
+    });
+  });
+
+  describe('selectRole', () => {
+    it('should add role for user without roles', async () => {
+      const rolelessUser = { ...mockUser, types: [] };
+      const updatedUser = { ...mockUser, types: [UserType.CONTRACTOR] };
+      usersService.findByIdOrFail.mockResolvedValue(rolelessUser);
+      usersService.addRole.mockResolvedValue(updatedUser);
+
+      const result = await service.selectRole(
+        rolelessUser.id,
+        UserType.CONTRACTOR,
+      );
+
+      expect(usersService.addRole).toHaveBeenCalledWith(
+        rolelessUser.id,
+        UserType.CONTRACTOR,
+      );
+      expect(result.requiresRoleSelection).toBe(false);
+      expect(result.user.types).toEqual([UserType.CONTRACTOR]);
+    });
+
+    it('should reject when user already has a role', async () => {
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
+
+      await expect(
+        service.selectRole(mockUser.id, UserType.CLIENT),
+      ).rejects.toThrow(BadRequestException);
+      expect(usersService.addRole).not.toHaveBeenCalled();
     });
   });
 
@@ -470,6 +534,7 @@ describe('AuthService', () => {
       );
       expect(result.isNewUser).toBe(true);
       expect(result.accessToken).toBe('mock-jwt-token');
+      expect(result.requiresRoleSelection).toBe(false);
     });
 
     it('should throw ConflictException if email already exists', async () => {
@@ -530,6 +595,7 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.isNewUser).toBe(false);
+      expect(result.requiresRoleSelection).toBe(false);
       expect(usersService.resetFailedLoginAttempts).toHaveBeenCalledWith(
         mockUserWithPassword.id,
       );

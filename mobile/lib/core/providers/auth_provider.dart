@@ -14,12 +14,16 @@ import 'storage_provider.dart';
 enum AuthStatus {
   /// App just started, checking for stored credentials
   initial,
+
   /// Checking stored token validity with backend
   loading,
+
   /// User is logged in
   authenticated,
+
   /// User is not logged in
   unauthenticated,
+
   /// Auth error occurred
   error,
 }
@@ -30,7 +34,8 @@ class User {
   final String? email;
   final String? name;
   final String? phone;
-  final List<String> userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
+  final List<String>
+  userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
   final String? avatarUrl;
   final bool isVerified;
   final String? address;
@@ -56,10 +61,17 @@ class User {
     final types = json['types'];
     List<String> userTypes;
     if (types is List) {
-      userTypes = types.map((e) => e.toString()).toList();
+      userTypes = types
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     } else if (types is String) {
       // Backend may return comma-separated string
-      userTypes = types.split(',').map((e) => e.trim()).toList();
+      userTypes = types
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     } else {
       // Fallback to single type field for backward compatibility
       final singleType = (json['type'] ?? json['user_type']) as String?;
@@ -75,24 +87,23 @@ class User {
       // Convert relative avatar URL to full URL
       avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
-      isVerified: json['is_verified'] as bool? ??
-                  (json['status'] == 'active'),
+      isVerified: json['is_verified'] as bool? ?? (json['status'] == 'active'),
       address: json['address'] as String?,
       bio: json['bio'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'name': name,
-        'phone': phone,
-        'types': userTypes,
-        'avatar_url': avatarUrl,
-        'is_verified': isVerified,
-        'address': address,
-        'bio': bio,
-      };
+    'id': id,
+    'email': email,
+    'name': name,
+    'phone': phone,
+    'types': userTypes,
+    'avatar_url': avatarUrl,
+    'is_verified': isVerified,
+    'address': address,
+    'bio': bio,
+  };
 
   bool get isClient => userTypes.contains('client');
   bool get isContractor => userTypes.contains('contractor');
@@ -132,6 +143,7 @@ class AuthState {
   final String? error;
   final String activeRole; // 'client' or 'contractor' - current active role
   final bool onboardingComplete; // Track if user completed onboarding
+  final bool requiresRoleSelection; // First-login social users must select role
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -141,6 +153,7 @@ class AuthState {
     this.error,
     this.activeRole = 'client', // Default to client
     this.onboardingComplete = false, // Default to not completed
+    this.requiresRoleSelection = false,
   });
 
   AuthState copyWith({
@@ -151,6 +164,7 @@ class AuthState {
     String? error,
     String? activeRole,
     bool? onboardingComplete,
+    bool? requiresRoleSelection,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -162,6 +176,8 @@ class AuthState {
       error: clearError ? null : (error ?? this.error),
       activeRole: activeRole ?? this.activeRole,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      requiresRoleSelection:
+          requiresRoleSelection ?? this.requiresRoleSelection,
     );
   }
 
@@ -228,6 +244,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       status: AuthStatus.authenticated,
       token: mockToken,
       user: user,
+      requiresRoleSelection: false,
     );
   }
 
@@ -247,6 +264,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           onboardingComplete: onboardingComplete,
+          requiresRoleSelection: false,
         );
         return;
       }
@@ -273,6 +291,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           refreshToken: refreshToken,
           user: cachedUser,
           onboardingComplete: onboardingComplete,
+          requiresRoleSelection: _resolveRequiresRoleSelection(
+            user: cachedUser,
+          ),
         );
 
         // In dev mode with mock token, skip server validation
@@ -292,6 +313,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
         error: e.toString(),
+        requiresRoleSelection: false,
       );
     }
   }
@@ -309,6 +331,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(user: user),
         clearError: true,
       );
     } catch (e) {
@@ -320,6 +343,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           clearUser: true,
+          requiresRoleSelection: false,
         );
       }
     }
@@ -384,15 +408,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
-    await _storage.saveUserType(user.userTypes.first);
+    if (user.userTypes.isNotEmpty) {
+      await _storage.saveUserType(user.userTypes.first);
+    } else {
+      await _storage.deleteUserType();
+    }
     _ref.read(apiClientProvider).setAuthToken(token);
   }
 
+  bool _resolveRequiresRoleSelection({required User user, bool? fromResponse}) {
+    if (fromResponse != null) {
+      return fromResponse || user.userTypes.isEmpty;
+    }
+    return user.userTypes.isEmpty;
+  }
+
   /// Login with email and password (for testing)
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
     try {
@@ -407,6 +439,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+      final requiresRoleSelection = response['requiresRoleSelection'] as bool?;
 
       // DEBUG: Print JWT token for backend API testing
       debugPrint('=== JWT TOKEN FOR API TESTING ===');
@@ -421,12 +454,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         refreshToken: refreshToken,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(
+          user: user,
+          fromResponse: requiresRoleSelection,
+        ),
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -467,6 +501,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+      final requiresRoleSelection = response['requiresRoleSelection'] as bool?;
 
       await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
 
@@ -475,12 +510,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         refreshToken: refreshToken,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(
+          user: user,
+          fromResponse: requiresRoleSelection,
+        ),
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -489,11 +525,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Sends user info to backend for authentication
   /// If user exists but selected different role, backend will auto-switch role
   Future<void> loginWithGoogle({
-    required String googleId,
-    required String email,
+    required String idToken,
     String? name,
     String? avatarUrl,
-    String userType = 'client',
+    String? userType,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
@@ -502,17 +537,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await api.post<Map<String, dynamic>>(
         '/auth/google',
         data: {
-          'googleId': googleId,
-          'email': email,
+          'idToken': idToken,
           if (name != null) 'name': name,
           if (avatarUrl != null) 'avatarUrl': avatarUrl,
-          'userType': userType,
+          if (userType != null) 'userType': userType,
         },
       );
 
       final token = response['accessToken'] as String;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+      final requiresRoleSelection = response['requiresRoleSelection'] as bool?;
 
       await _saveAuthData(token: token, refreshToken: null, user: user);
 
@@ -520,12 +555,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.authenticated,
         token: token,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(
+          user: user,
+          fromResponse: requiresRoleSelection,
+        ),
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -537,7 +573,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String appleId,
     String? email,
     String? name,
-    String userType = 'client',
+    String? userType,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
@@ -549,13 +585,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'appleId': appleId,
           if (email != null) 'email': email,
           if (name != null) 'name': name,
-          'userType': userType,
+          if (userType != null) 'userType': userType,
         },
       );
 
       final token = response['accessToken'] as String;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+      final requiresRoleSelection = response['requiresRoleSelection'] as bool?;
 
       await _saveAuthData(token: token, refreshToken: null, user: user);
 
@@ -563,12 +600,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.authenticated,
         token: token,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(
+          user: user,
+          fromResponse: requiresRoleSelection,
+        ),
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -614,12 +652,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.unauthenticated,
         clearError: true,
+        requiresRoleSelection: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -638,6 +674,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         refreshToken: refreshToken,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(user: user),
       );
     }
   }
@@ -660,6 +697,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final refreshToken = response['refreshToken'] as String?;
       final userData = response['user'] as Map<String, dynamic>;
       final user = User.fromJson(userData);
+      final requiresRoleSelection = response['requiresRoleSelection'] as bool?;
 
       await _saveAuthData(token: token, refreshToken: refreshToken, user: user);
 
@@ -668,12 +706,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         token: token,
         refreshToken: refreshToken,
         user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(
+          user: user,
+          fromResponse: requiresRoleSelection,
+        ),
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -733,11 +772,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       await api.post<Map<String, dynamic>>(
         '/auth/email/reset-password',
-        data: {
-          'email': email,
-          'code': code,
-          'newPassword': newPassword,
-        },
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
       );
     } catch (e) {
       rethrow;
@@ -755,10 +790,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       final response = await api.patch<Map<String, dynamic>>(
         '/users/me',
-        data: {
-          'name': name,
-          'user_type': userType,
-        },
+        data: {'name': name, 'user_type': userType},
       );
 
       final user = User.fromJson(response);
@@ -794,6 +826,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: user,
+        requiresRoleSelection: false,
         clearError: true,
       );
     } catch (e) {
@@ -807,10 +840,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Update user profile
-  Future<void> updateProfile({
-    String? name,
-    String? avatarUrl,
-  }) async {
+  Future<void> updateProfile({String? name, String? avatarUrl}) async {
     if (!state.isAuthenticated) return;
 
     try {
@@ -826,7 +856,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(response);
       await _storage.saveUserData(jsonEncode(user.toJson()));
 
-      state = state.copyWith(user: user);
+      state = state.copyWith(
+        user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(user: user),
+      );
     } catch (e) {
       rethrow;
     }
@@ -842,7 +875,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(response);
 
       await _storage.saveUserData(jsonEncode(user.toJson()));
-      state = state.copyWith(user: user);
+      state = state.copyWith(
+        user: user,
+        requiresRoleSelection: _resolveRequiresRoleSelection(user: user),
+      );
     } catch (_) {
       // Silently fail - user data will be refreshed on next successful request
     }
@@ -864,8 +900,44 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await refreshUser();
     } catch (e) {
       // Error adding role
+      state = state.copyWith(error: 'Failed to add role: $e');
+      rethrow;
+    }
+  }
+
+  /// Finalize first-login role selection for social auth users.
+  Future<void> selectInitialRole(String role) async {
+    if (!state.isAuthenticated) {
+      throw Exception('User not authenticated');
+    }
+
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      final response = await api.post<Map<String, dynamic>>(
+        '/auth/role/select',
+        data: {'role': role},
+      );
+
+      final token = response['accessToken'] as String;
+      final userData = response['user'] as Map<String, dynamic>;
+      final user = User.fromJson(userData);
+
+      await _saveAuthData(token: token, refreshToken: null, user: user);
+
       state = state.copyWith(
-        error: 'Failed to add role: $e',
+        status: AuthStatus.authenticated,
+        token: token,
+        user: user,
+        activeRole: role,
+        requiresRoleSelection: false,
+        clearError: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        error: e.toString(),
       );
       rethrow;
     }

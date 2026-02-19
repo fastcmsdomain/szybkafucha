@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -21,7 +22,9 @@ import { LoginEmailDto } from './dto/login-email.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SelectRoleDto } from './dto/select-role.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from './types/authenticated-request.type';
 
 @Controller('auth')
 export class AuthController {
@@ -58,13 +61,7 @@ export class AuthController {
   @Post('google')
   @HttpCode(HttpStatus.OK)
   async googleAuth(@Body() dto: GoogleAuthDto) {
-    return this.authService.authenticateWithGoogle(
-      dto.googleId,
-      dto.email,
-      dto.name,
-      dto.avatarUrl,
-      dto.userType,
-    );
+    return this.authService.authenticateWithGoogle(dto);
   }
 
   /**
@@ -177,5 +174,19 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   logout() {
     return { message: 'Logged out successfully' };
+  }
+
+  /**
+   * POST /auth/role/select
+   * Finalize first-login role selection for social users.
+   */
+  @Post('role/select')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async selectRole(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: SelectRoleDto,
+  ) {
+    return this.authService.selectRole(req.user.id, dto.role);
   }
 }

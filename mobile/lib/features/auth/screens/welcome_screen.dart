@@ -10,7 +10,6 @@ import '../../../core/services/services.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../widgets/social_login_button.dart';
-import '../widgets/user_type_selector.dart';
 
 /// Welcome screen - first screen users see
 /// Provides options for login (Google, Apple, Phone) or signup
@@ -24,7 +23,6 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _isLoading = false;
   String? _loadingProvider; // 'google', 'apple', or null
-  String _selectedUserType = 'client'; // User role selection (client or contractor)
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +38,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingLG),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -67,16 +66,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       color: AppColors.gray600,
                     ),
                     textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: AppSpacing.space8),
-
-                  // Role selection (client or contractor)
-                  UserTypeSelector(
-                    initialType: _selectedUserType,
-                    onTypeSelected: (type) {
-                      setState(() => _selectedUserType = type);
-                    },
-                    compact: true,
                   ),
                   SizedBox(height: AppSpacing.space8),
                 ],
@@ -107,7 +96,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             SocialLoginButton(
                               type: SocialLoginType.apple,
                               isLoading: _loadingProvider == 'apple',
-                              onPressed: _isLoading ? null : () => _handleAppleSignIn(),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _handleAppleSignIn(),
                             ),
                             SizedBox(height: AppSpacing.gapMD),
                           ],
@@ -136,10 +127,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   onPressed: _isLoading
                       ? null
                       : () {
-                          context.push(
-                            Routes.phoneLogin,
-                            extra: _selectedUserType,
-                          );
+                          context.push(Routes.phoneLogin);
                         },
                 ),
 
@@ -159,7 +147,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                 // Terms agreement
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.paddingMD,
+                  ),
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -236,7 +226,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         return;
       }
 
-      if (!result.isSuccess || result.email == null) {
+      if (!result.isSuccess || result.idToken == null) {
         _showError(result.error ?? 'Błąd logowania przez Google');
         setState(() {
           _isLoading = false;
@@ -245,14 +235,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         return;
       }
 
-      // Send user info to backend for authentication
-      // Using email as googleId since it's unique per Google account
-      await ref.read(authProvider.notifier).loginWithGoogle(
-            googleId: result.email!,
-            email: result.email!,
+      // Send Google ID token to backend for verification/authentication
+      await ref
+          .read(authProvider.notifier)
+          .loginWithGoogle(
+            idToken: result.idToken!,
             name: result.displayName,
             avatarUrl: result.photoUrl,
-            userType: _selectedUserType,
           );
 
       // Router will automatically redirect to appropriate home screen
@@ -298,11 +287,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       }
 
       // Send user info to backend for authentication
-      await ref.read(authProvider.notifier).loginWithApple(
+      await ref
+          .read(authProvider.notifier)
+          .loginWithApple(
             appleId: result.userIdentifier!,
             email: result.email,
             name: result.fullName,
-            userType: _selectedUserType,
           );
 
       // Router will automatically redirect to appropriate home screen
@@ -344,15 +334,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: 'Szybka',
-                style: AppTypography.h3,
-              ),
+              TextSpan(text: 'Szybka', style: AppTypography.h3),
               TextSpan(
                 text: 'Fucha',
-                style: AppTypography.h3.copyWith(
-                  color: AppColors.primary,
-                ),
+                style: AppTypography.h3.copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -396,27 +381,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(
-          child: Divider(
-            color: AppColors.gray300,
-            thickness: 1,
-          ),
-        ),
+        Expanded(child: Divider(color: AppColors.gray300, thickness: 1)),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
           child: Text(
             AppStrings.orContinueWith,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.caption.copyWith(color: AppColors.gray500),
           ),
         ),
-        Expanded(
-          child: Divider(
-            color: AppColors.gray300,
-            thickness: 1,
-          ),
-        ),
+        Expanded(child: Divider(color: AppColors.gray300, thickness: 1)),
       ],
     );
   }
@@ -427,20 +400,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       decoration: BoxDecoration(
         color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: AppRadius.radiusLG,
-        border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.developer_mode,
-                color: AppColors.warning,
-                size: 20,
-              ),
+              Icon(Icons.developer_mode, color: AppColors.warning, size: 20),
               SizedBox(width: AppSpacing.gapSM),
               Text(
                 'Tryb deweloperski',
@@ -454,9 +421,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Zaloguj się bez backendu aby testować UI',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray600,
-            ),
+            style: AppTypography.caption.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapMD),
           Row(
@@ -510,9 +475,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.info,
               side: BorderSide(color: AppColors.info),
-              padding: EdgeInsets.symmetric(
-                vertical: AppSpacing.paddingSM,
-              ),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
             ),
           ),
         ],

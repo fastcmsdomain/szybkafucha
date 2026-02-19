@@ -13,7 +13,8 @@ import { AuthenticatedUser } from '../types/auth-user.type';
 // JWT payload interface
 export interface JwtPayload {
   sub: string; // User ID
-  type: UserType; // User type (client/contractor)
+  type?: UserType; // Backward compatibility for legacy payloads
+  types?: UserType[]; // Current role array payload
   iat?: number;
   exp?: number;
 }

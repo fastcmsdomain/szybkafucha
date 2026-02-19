@@ -17,9 +17,11 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { EmailService } from './email.service';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import twilio from 'twilio';
 
 // Configuration constants
@@ -33,10 +35,18 @@ const BCRYPT_SALT_ROUNDS = 12;
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
 
+type AuthResponse = {
+  accessToken: string;
+  user: Partial<User>;
+  isNewUser: boolean;
+  requiresRoleSelection: boolean;
+};
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private twilioClient: twilio.Twilio | null = null;
+  private readonly googleOAuthClient = new OAuth2Client();
 
   constructor(
     private readonly usersService: UsersService,
@@ -63,9 +73,11 @@ export class AuthService {
    * Generate JWT token for a user
    */
   generateToken(user: User): { accessToken: string; user: Partial<User> } {
+    const type = this.resolvePrimaryType(user.types);
     const payload = {
       sub: user.id,
       types: user.types,
+      ...(type ? { type } : {}),
     };
 
     return {
@@ -127,7 +139,7 @@ export class AuthService {
     phone: string,
     code: string,
     userType?: UserType,
-  ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
+  ): Promise<AuthResponse> {
     const normalizedPhone = this.normalizePhone(phone);
 
     // Get stored OTP from Redis
@@ -168,21 +180,43 @@ export class AuthService {
       user = await this.usersService.addRole(user.id, userType);
     }
 
-    const token = this.generateToken(user);
-    return { ...token, isNewUser };
+    return this.buildAuthResponse(user, isNewUser);
   }
 
   /**
    * Authenticate with Google
-   * Expects Google ID token from mobile app
+   * Expects Google ID token from mobile app (new flow).
+   * Supports legacy googleId + email payload for backward compatibility.
    */
   async authenticateWithGoogle(
-    googleId: string,
-    email: string,
-    name?: string,
-    avatarUrl?: string,
-    userType?: UserType,
-  ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
+    dto: GoogleAuthDto,
+  ): Promise<AuthResponse> {
+    let googleId: string;
+    let email: string | undefined;
+    let name: string | undefined = dto.name;
+    let avatarUrl: string | undefined = dto.avatarUrl;
+
+    if (dto.idToken) {
+      const payload = await this.verifyGoogleIdToken(dto.idToken);
+      googleId = payload.sub;
+      email = payload.email || undefined;
+      name = payload.name || name;
+      avatarUrl = payload.picture || avatarUrl;
+    } else {
+      // Legacy path: keep for one release window
+      googleId = dto.googleId!;
+      email = dto.email;
+      this.logger.warn(
+        `Deprecated Google auth payload used (googleId/email) for googleId=${googleId}`,
+      );
+    }
+
+    if (!email) {
+      throw new BadRequestException(
+        'Google account does not include an email address',
+      );
+    }
+
     // Check if user exists with this Google ID
     let user = await this.usersService.findByGoogleId(googleId);
     let isNewUser = false;
@@ -202,17 +236,16 @@ export class AuthService {
           email,
           name,
           avatarUrl,
-          types: [userType || UserType.CLIENT],
+          types: dto.userType ? [dto.userType] : [],
           status: UserStatus.ACTIVE,
         });
       }
-    } else if (userType && user.types.length === 0) {
+    } else if (dto.userType && user.types.length === 0) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
-      user = await this.usersService.addRole(user.id, userType);
+      user = await this.usersService.addRole(user.id, dto.userType);
     }
 
-    const token = this.generateToken(user);
-    return { ...token, isNewUser };
+    return this.buildAuthResponse(user, isNewUser);
   }
 
   /**
@@ -224,7 +257,7 @@ export class AuthService {
     email?: string,
     name?: string,
     userType?: UserType,
-  ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
+  ): Promise<AuthResponse> {
     // Check if user exists with this Apple ID
     let user = await this.usersService.findByAppleId(appleId);
     let isNewUser = false;
@@ -247,7 +280,7 @@ export class AuthService {
           appleId,
           email,
           name,
-          types: [userType || UserType.CLIENT],
+          types: userType ? [userType] : [],
           status: UserStatus.ACTIVE,
         });
       }
@@ -256,8 +289,38 @@ export class AuthService {
       user = await this.usersService.addRole(user.id, userType);
     }
 
-    const token = this.generateToken(user);
-    return { ...token, isNewUser };
+    return this.buildAuthResponse(user, isNewUser);
+  }
+
+  /**
+   * Finalize role for first-login social users.
+   * Allowed only when user does not have any role yet.
+   */
+  async selectRole(
+    userId: string,
+    role: UserType,
+  ): Promise<{
+    accessToken: string;
+    user: Partial<User>;
+    requiresRoleSelection: false;
+  }> {
+    const user = await this.usersService.findByIdOrFail(userId);
+
+    if (user.types.length > 0) {
+      throw new BadRequestException(
+        'Role changes are not allowed in MVP. Please contact support if you need to change your role.',
+      );
+    }
+
+    const updatedUser = await this.usersService.addRole(user.id, role);
+    const token = this.generateToken(updatedUser);
+
+    this.logger.log(`role_selected userId=${user.id} role=${role}`);
+
+    return {
+      ...token,
+      requiresRoleSelection: false,
+    };
   }
 
   // ──────────────────────────────────────────────────────
@@ -272,7 +335,7 @@ export class AuthService {
     password: string,
     name?: string,
     userType?: UserType,
-  ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
+  ): Promise<AuthResponse> {
     // Check if email is already taken
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
@@ -296,8 +359,7 @@ export class AuthService {
     // Send email verification OTP
     await this.sendEmailVerificationOtp(email);
 
-    const token = this.generateToken(user);
-    return { ...token, isNewUser: true };
+    return this.buildAuthResponse(user, true);
   }
 
   /**
@@ -306,7 +368,7 @@ export class AuthService {
   async loginWithEmail(
     email: string,
     password: string,
-  ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
+  ): Promise<AuthResponse> {
     // Find user with password hash
     const user = await this.usersService.findByEmailWithPassword(email);
 
@@ -353,8 +415,7 @@ export class AuthService {
     // Reset failed login attempts on success
     await this.usersService.resetFailedLoginAttempts(user.id);
 
-    const token = this.generateToken(user);
-    return { ...token, isNewUser: false };
+    return this.buildAuthResponse(user, false);
   }
 
   /**
@@ -527,6 +588,70 @@ export class AuthService {
   // ──────────────────────────────────────────────────────
   // Private Helpers
   // ──────────────────────────────────────────────────────
+
+  private buildAuthResponse(user: User, isNewUser: boolean): AuthResponse {
+    const requiresRoleSelection = user.types.length === 0;
+    const token = this.generateToken(user);
+
+    if (requiresRoleSelection) {
+      this.logger.log(`requires_role_selection userId=${user.id}`);
+    }
+
+    return {
+      ...token,
+      isNewUser,
+      requiresRoleSelection,
+    };
+  }
+
+  private resolvePrimaryType(types: string[]): UserType | undefined {
+    if (types.includes(UserType.CLIENT)) {
+      return UserType.CLIENT;
+    }
+
+    if (types.includes(UserType.CONTRACTOR)) {
+      return UserType.CONTRACTOR;
+    }
+
+    return undefined;
+  }
+
+  private async verifyGoogleIdToken(idToken: string): Promise<TokenPayload> {
+    try {
+      const audience = this.getGoogleClientIds();
+      const ticket = await this.googleOAuthClient.verifyIdToken({
+        idToken,
+        audience,
+      });
+      const payload = ticket.getPayload();
+
+      if (!payload?.sub) {
+        throw new UnauthorizedException('Invalid Google ID token payload');
+      }
+
+      return payload;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid Google ID token');
+    }
+  }
+
+  private getGoogleClientIds(): string[] {
+    const clientIdsRaw =
+      this.configService.get<string>('GOOGLE_CLIENT_IDS') ||
+      this.configService.get<string>('GOOGLE_CLIENT_ID');
+
+    if (!clientIdsRaw) {
+      throw new UnauthorizedException('Google Sign-In is not configured');
+    }
+
+    return clientIdsRaw
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0);
+  }
 
   /**
    * Generate random OTP code

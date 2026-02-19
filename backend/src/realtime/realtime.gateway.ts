@@ -55,6 +55,7 @@ interface JwtPayload {
   sub: string;
   email?: string;
   type?: UserType;
+  types?: string[];
 }
 
 type SocketData = {
@@ -117,7 +118,7 @@ export class RealtimeGateway
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
       const userId = payload.sub;
-      const userType = payload.type || UserType.CLIENT;
+      const userType = this.resolveUserType(payload);
 
       // Store user info on socket for later use
       client.data.userId = userId;
@@ -440,6 +441,23 @@ export class RealtimeGateway
     }
 
     return null;
+  }
+
+  private resolveUserType(payload: JwtPayload): UserType {
+    if (payload.type) {
+      return payload.type;
+    }
+
+    if (Array.isArray(payload.types)) {
+      if (payload.types.includes(UserType.CLIENT)) {
+        return UserType.CLIENT;
+      }
+      if (payload.types.includes(UserType.CONTRACTOR)) {
+        return UserType.CONTRACTOR;
+      }
+    }
+
+    return UserType.CLIENT;
   }
 
   /**
