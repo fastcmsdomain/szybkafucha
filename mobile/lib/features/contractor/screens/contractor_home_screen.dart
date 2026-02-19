@@ -35,6 +35,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
       ref.read(activeTaskProvider.notifier).refreshActiveTask();
+      ref.read(contractorActiveTasksProvider.notifier).loadTasks();
       _checkProfileCompletion();
     });
   }
@@ -138,9 +139,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
           userName,
           style: AppTypography.h2.copyWith(fontSize: 24),
         ),
-        SizedBox(height: AppSpacing.space4),
-        SFRainbowText('Aktywne zlecenia', style: AppTypography.h5),
-      ],
+        ],
     );
   }
 
@@ -220,16 +219,44 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
   }
 
   Widget _buildActiveTaskSection() {
-    final activeTaskState = ref.watch(activeTaskProvider);
-    final activeTask = activeTaskState.task;
+    final activeTasksState = ref.watch(contractorActiveTasksProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (activeTask != null)
-          _buildActiveTaskCard(activeTask)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SFRainbowText('Aktywne zlecenia', style: AppTypography.h5),
+            TextButton(
+              onPressed: () =>
+                  ref.read(contractorActiveTasksProvider.notifier).refresh(),
+              child: Text(
+                'Odśwież',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.gapMD),
+        if (activeTasksState.isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingXL),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (activeTasksState.tasks.isEmpty)
+          _buildNoActiveTaskPlaceholder()
         else
-          _buildNoActiveTaskPlaceholder(),
+          ...activeTasksState.tasks.map(
+            (task) => Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
+              child: _buildActiveTaskCard(task),
+            ),
+          ),
       ],
     );
   }
@@ -490,6 +517,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     await Future.wait([
       ref.read(availableTasksProvider.notifier).refresh(),
       ref.read(activeTaskProvider.notifier).refreshActiveTask(),
+      ref.read(contractorActiveTasksProvider.notifier).refresh(),
     ]);
   }
 
