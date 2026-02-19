@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/chat_input.dart';
+import '../../../core/providers/unread_messages_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String taskId;
@@ -36,8 +37,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Load initial messages
+    // Defer provider modifications until after widget tree is built
     Future.microtask(() {
+      if (!mounted) return;
+      // Mark this chat as active — stops unread counter from incrementing
+      ref.read(activeChatTaskIdProvider.notifier).state = widget.taskId;
+      ref.read(unreadMessagesProvider.notifier).clearUnread(widget.taskId);
       ref.read(chatProvider(widget.taskId).notifier).loadInitialMessages();
     });
   }
@@ -72,6 +77,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return PopScope(
       onPopInvoked: (didPop) {
         if (didPop) {
+          // Clear active chat — resume counting unread for other screens
+          ref.read(activeChatTaskIdProvider.notifier).state = null;
           ref.read(chatProvider(widget.taskId).notifier).leaveChat();
         }
       },

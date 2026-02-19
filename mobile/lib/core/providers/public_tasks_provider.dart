@@ -81,7 +81,7 @@ class PublicTasksNotifier extends StateNotifier<PublicTasksState> {
 /// Provider for public task browsing
 final publicTasksProvider =
     StateNotifierProvider<PublicTasksNotifier, PublicTasksState>((ref) {
-  final api = ref.watch(apiClientProvider);
+  final api = ref.read(apiClientProvider);
   final notifier = PublicTasksNotifier(api);
   // Auto-load on creation
   Future.microtask(() => notifier.loadTasks());

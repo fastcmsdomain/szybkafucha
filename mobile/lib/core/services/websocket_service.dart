@@ -563,17 +563,17 @@ class WebSocketService {
         'taskId': taskId,
         'content': content,
       });
+    } else {
+      // Dev mode only: simulate incoming message for UI testing
+      final event = ChatMessageEvent(
+        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+        taskId: taskId,
+        senderId: _jwtToken ?? 'unknown',
+        content: content,
+        createdAt: DateTime.now(),
+      );
+      _notifyListeners(WebSocketConfig.messageNew, event);
     }
-
-    // Emit locally for listeners
-    final event = ChatMessageEvent(
-      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      taskId: taskId,
-      senderId: _jwtToken ?? 'unknown',
-      content: content,
-      createdAt: DateTime.now(),
-    );
-    _notifyListeners(WebSocketConfig.messageNew, event);
   }
 
   /// Mark messages as read

@@ -337,7 +337,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'clientTaskChat',
             builder: (context, state) {
               final taskId = state.pathParameters['taskId']!;
-              return PlaceholderScreen(title: 'Chat $taskId');
+              final extra = state.extra as Map<String, dynamic>?;
+              return chat.ChatScreen(
+                taskId: taskId,
+                taskTitle: extra?['taskTitle'] ?? 'Czat',
+                otherUserName: extra?['otherUserName'] ?? 'Wykonawca',
+                otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
+                currentUserId: extra?['currentUserId'] ?? '',
+                currentUserName: extra?['currentUserName'] ?? '',
+              );
             },
           ),
           GoRoute(
@@ -376,6 +384,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'contractorTaskList',
             builder: (context, state) =>
                 const contractor.ContractorTaskListScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorTaskHistory,
+            name: 'contractorTaskHistory',
+            builder: (context, state) =>
+                const contractor.ContractorTaskHistoryScreen(),
           ),
           GoRoute(
             path: Routes.contractorEarnings,
@@ -601,6 +615,11 @@ class _ContractorShell extends StatelessWidget {
             label: 'Zlecenia',
           ),
           NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history),
+            label: 'Historia',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),
             label: 'Zarobki',
@@ -620,8 +639,9 @@ class _ContractorShell extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith(Routes.contractorTaskList)) return 1;
-    if (location.startsWith(Routes.contractorEarnings)) return 2;
-    if (location.startsWith(Routes.contractorProfile)) return 3;
+    if (location.startsWith(Routes.contractorTaskHistory)) return 2;
+    if (location.startsWith(Routes.contractorEarnings)) return 3;
+    if (location.startsWith(Routes.contractorProfile)) return 4;
     return 0;
   }
 
@@ -634,9 +654,12 @@ class _ContractorShell extends StatelessWidget {
         context.go(Routes.contractorTaskList);
         return;
       case 2:
-        context.go(Routes.contractorEarnings);
+        context.go(Routes.contractorTaskHistory);
         return;
       case 3:
+        context.go(Routes.contractorEarnings);
+        return;
+      case 4:
         context.go(Routes.contractorProfile);
         return;
     }

@@ -41,6 +41,7 @@ describe('RealtimeGateway', () => {
       saveMessage: jest.fn(),
       markMessagesRead: jest.fn(),
       isUserAuthorizedForTask: jest.fn(),
+      getActiveTaskIdsForUser: jest.fn().mockResolvedValue([]),
       getSocketForUser: jest.fn(),
       getActiveConnectionsCount: jest.fn(),
     };

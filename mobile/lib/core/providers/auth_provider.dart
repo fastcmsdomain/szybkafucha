@@ -239,6 +239,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
     await _storage.saveUserType(user.userTypes.first);
+    _ref.read(apiClientProvider).setAuthToken(mockToken);
 
     state = state.copyWith(
       status: AuthStatus.authenticated,
