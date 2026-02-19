@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
@@ -1015,7 +1016,18 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   void _openChat() {
-    context.push(Routes.contractorTaskChatRoute(widget.taskId));
+    final task = ref.read(activeTaskProvider).task;
+    final currentUser = ref.read(currentUserProvider);
+    context.push(
+      Routes.contractorTaskChatRoute(widget.taskId),
+      extra: {
+        'taskTitle': task?.description ?? 'Czat',
+        'otherUserName': task?.clientName ?? 'Klient',
+        'otherUserAvatarUrl': task?.clientAvatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
+    );
   }
 
   void _showClientProfile(ContractorTask task) {

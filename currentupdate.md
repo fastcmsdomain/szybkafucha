@@ -12,6 +12,21 @@ Each entry documents:
 
 ---
 
+## [2026-02-18] Real-time Chat Wiring (Client ↔ Contractor)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Connected the pre-built chat UI to navigation and fixed two bugs in ChatProvider. Backend (REST + WebSocket) was already complete. Changes were purely mobile-side wiring.
+- **Files Changed**:
+  - `mobile/lib/core/router/app_router.dart` – Replaced `PlaceholderScreen` with `ChatScreen` for the client chat route, mirroring existing contractor pattern
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `auth_provider.dart` import; `_openChatWithContractor()` now passes `extra` map with taskTitle, contractor name/avatar, and current user id/name
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Added `auth_provider.dart` import; `_openChat()` now passes `extra` map with taskTitle, client name/avatar, and current user id/name
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Fixed `_handleIncomingMessage` to filter by `taskId`; fixed `leaveChat()` to call `_webSocketService.off()` to remove listener and prevent memory leak
+- **System Impact**: Chat is now fully functional end-to-end — both client and contractor can open a chat screen from their active task views, messages load from REST history and arrive in real-time via WebSocket
+- **Related Tasks/PRD**: Real-time messaging feature
+- **Potential Conflicts/Risks**: None — no backend changes, no existing UI changes
+
+---
+
 ## [2026-02-13] Multi-Contractor Bidding System (Licytacja Zleceń)
 
 - **Developer/Agent**: Claude

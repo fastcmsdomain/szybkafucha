@@ -119,7 +119,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Handle incoming message from WebSocket
   void _handleIncomingMessage(dynamic data) {
-    if (data is ChatMessageEvent) {
+    if (data is ChatMessageEvent && data.taskId == state.taskId) {
       final message = Message(
         id: data.id,
         taskId: data.taskId,
@@ -236,6 +236,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   /// Leave task chat
   void leaveChat() {
+    _webSocketService.off(WebSocketConfig.messageNew, _handleIncomingMessage);
     _webSocketService.leaveTask(state.taskId);
     _messageSubscription?.cancel();
     state = state.copyWith(isConnected: false);

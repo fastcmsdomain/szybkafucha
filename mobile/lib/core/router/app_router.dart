@@ -304,7 +304,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'clientTaskChat',
             builder: (context, state) {
               final taskId = state.pathParameters['taskId']!;
-              return PlaceholderScreen(title: 'Chat $taskId');
+              final extra = state.extra as Map<String, dynamic>?;
+              return chat.ChatScreen(
+                taskId: taskId,
+                taskTitle: extra?['taskTitle'] ?? 'Czat',
+                otherUserName: extra?['otherUserName'] ?? 'Wykonawca',
+                otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
+                currentUserId: extra?['currentUserId'] ?? '',
+                currentUserName: extra?['currentUserName'] ?? '',
+              );
             },
           ),
           GoRoute(

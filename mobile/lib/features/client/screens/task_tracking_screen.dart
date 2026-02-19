@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/providers/task_provider.dart';
@@ -334,7 +335,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   void _openChatWithContractor() {
     if (_task == null) return;
-    context.push(Routes.clientTaskChatRoute(_task!.id));
+    final currentUser = ref.read(currentUserProvider);
+    context.push(
+      Routes.clientTaskChatRoute(_task!.id),
+      extra: {
+        'taskTitle': _task!.description,
+        'otherUserName': _contractor?.name ?? 'Wykonawca',
+        'otherUserAvatarUrl': _contractor?.avatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
+    );
   }
 
   void _callContractor() {
