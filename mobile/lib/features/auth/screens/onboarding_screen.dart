@@ -29,14 +29,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     print('🎯 Completing onboarding...');
     await ref.read(authProvider.notifier).markOnboardingComplete();
     print('✅ Onboarding marked as complete');
-    print('📍 Current auth state onboardingComplete: ${ref.read(authProvider).onboardingComplete}');
 
     // Use microtask to ensure navigation happens AFTER state update is fully processed
     if (mounted) {
       Future.microtask(() {
         if (mounted) {
-          print('🚀 Navigating to browse via microtask');
-          context.go(Routes.browse);
+          print('🚀 Navigating to role selection via microtask');
+          context.go(Routes.publicHome);
         }
       });
     }
@@ -64,7 +63,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           onPressed: () async {
             await ref.read(authProvider.notifier).markOnboardingComplete();
             if (mounted) {
-              context.go(Routes.welcome);
+              context.go(Routes.publicHome);
             }
           },
           child: Text(

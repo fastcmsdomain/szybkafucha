@@ -10,7 +10,6 @@ import '../../../core/services/services.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../widgets/social_login_button.dart';
-import '../widgets/user_type_selector.dart';
 
 /// Welcome screen - first screen users see
 /// Provides options for login (Google, Apple, Phone) or signup
@@ -24,12 +23,16 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _isLoading = false;
   String? _loadingProvider; // 'google', 'apple', or null
-  String _selectedUserType = 'client'; // User role selection (client or contractor)
+
+  /// Returns the role chosen during onboarding, defaulting to 'client'
+  String get _userType =>
+      ref.read(authProvider).selectedRole ?? 'client';
 
   @override
   Widget build(BuildContext context) {
     // Check if Apple Sign-In is available
     final appleAvailable = ref.watch(appleSignInAvailableProvider);
+    final selectedRole = ref.watch(authProvider).selectedRole ?? 'client';
     final isProfileMode =
         GoRouterState.of(context).uri.queryParameters['tab'] == 'profile';
 
@@ -69,16 +72,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: AppSpacing.space8),
-
-                  // Role selection (client or contractor)
-                  UserTypeSelector(
-                    initialType: _selectedUserType,
-                    onTypeSelected: (type) {
-                      setState(() => _selectedUserType = type);
-                    },
-                    compact: true,
-                  ),
-                  SizedBox(height: AppSpacing.space8),
                 ],
                 if (isProfileMode) ...[
                   Center(
@@ -89,6 +82,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                   SizedBox(height: AppSpacing.space8),
                 ],
+
+                // Role selector
+                _buildRoleSelector(selectedRole),
+                SizedBox(height: AppSpacing.gapMD),
 
                 // Google login button
                 SocialLoginButton(
@@ -138,7 +135,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       : () {
                           context.push(
                             Routes.phoneLogin,
-                            extra: _selectedUserType,
+                            extra: _userType,
                           );
                         },
                 ),
@@ -252,7 +249,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             email: result.email!,
             name: result.displayName,
             avatarUrl: result.photoUrl,
-            userType: _selectedUserType,
+            userType: _userType,
           );
 
       // Router will automatically redirect to appropriate home screen
@@ -302,7 +299,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             appleId: result.userIdentifier!,
             email: result.email,
             name: result.fullName,
-            userType: _selectedUserType,
+            userType: _userType,
           );
 
       // Router will automatically redirect to appropriate home screen
@@ -388,6 +385,34 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
           label: AppStrings.menuProfile,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleSelector(String selectedRole) {
+    return Row(
+      children: [
+        Expanded(
+          child: _WelcomeRoleBox(
+            selected: selectedRole == 'client',
+            icon: Icons.manage_search_outlined,
+            title: 'Pracodawca',
+            subtitle: 'Szukam pomocy',
+            onTap: () =>
+                ref.read(authProvider.notifier).setSelectedRole('client'),
+          ),
+        ),
+        SizedBox(width: AppSpacing.gapMD),
+        Expanded(
+          child: _WelcomeRoleBox(
+            selected: selectedRole == 'contractor',
+            icon: Icons.handyman_outlined,
+            title: 'Wykonawca',
+            subtitle: 'Chcę pomagać',
+            onTap: () =>
+                ref.read(authProvider.notifier).setSelectedRole('contractor'),
+          ),
         ),
       ],
     );
@@ -521,6 +546,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Future<void> _handleDevLogin({required bool isClient}) async {
+
     setState(() {
       _isLoading = true;
       _loadingProvider = isClient ? 'dev-client' : 'dev-contractor';
@@ -545,5 +571,68 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         });
       }
     }
+  }
+}
+
+class _WelcomeRoleBox extends StatelessWidget {
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _WelcomeRoleBox({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.paddingLG,
+          horizontal: AppSpacing.paddingMD,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.gray100,
+          borderRadius: AppRadius.radiusMD,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: selected ? AppColors.white : AppColors.gray700,
+            ),
+            const SizedBox(height: AppSpacing.gapSM),
+            Text(
+              title,
+              style: AppTypography.labelMedium.copyWith(
+                color: selected ? AppColors.white : AppColors.gray700,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTypography.caption.copyWith(
+                color: selected
+                    ? AppColors.white.withValues(alpha: 0.85)
+                    : AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

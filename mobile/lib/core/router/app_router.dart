@@ -76,7 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Allow email verification screen for authenticated users
         if (isEmailVerifyRoute) return null;
 
-        // If on auth, onboarding, or browse route → redirect to home
+        // If on auth, onboarding, browse, or public home route → redirect to home
         if (isAuthRoute || isOnboardingRoute || isBrowseRoute || isPublicHomeRoute) {
           final user = authNotifier.user;
           final destination = user?.isContractor == true

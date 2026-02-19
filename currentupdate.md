@@ -8,6 +8,23 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-19] Wybór roli przy pierwszej rejestracji (RoleSelectionScreen)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dodano dedykowany ekran wyboru roli (Szef / Pracownik) wyświetlany raz po onboardingu przed ekranem logowania — aby nowi użytkownicy logujący się przez Google/Apple nie byli domyślnie rejestrowani jako klienci.
+- **Files Changed**:
+  - `mobile/lib/features/auth/screens/role_selection_screen.dart` – Nowy ekran z dwoma kartami `_RoleCard` (Szef/Pracownik), przycisk Kontynuuj (nieaktywny do wyboru), animowane wskaźniki selekcji
+  - `mobile/lib/features/auth/auth.dart` – Dodano export `role_selection_screen.dart`
+  - `mobile/lib/core/storage/secure_storage.dart` – Dodano klucz `selectedRole` do `StorageKeys`, dodano `saveSelectedRole`, `getSelectedRole`, `deleteSelectedRole`
+  - `mobile/lib/core/providers/auth_provider.dart` – Dodano pole `selectedRole: String?` do `AuthState`, getter `roleSelected`, metodę `setSelectedRole()`, logikę migracji (istniejący zalogowany użytkownik → rola pobierana z `userTypes.first`), czyszczenie roli przy `resetOnboarding()`
+  - `mobile/lib/core/router/routes.dart` – Dodano `roleSelection = '/role-selection'`
+  - `mobile/lib/core/router/app_router.dart` – Dodano przekierowanie: jeśli `onboardingComplete && !roleSelected` → `/role-selection`; dodano `GoRoute` dla roleSelection; getter `roleSelected` w `_AuthStateNotifier`; zalogowany użytkownik jest przekierowywany z ekranu wyboru roli
+  - `mobile/lib/features/auth/screens/onboarding_screen.dart` – Zmieniono cel nawigacji z `Routes.browse`/`Routes.welcome` na `Routes.roleSelection` (w `_completeOnboarding` i przycisku "Zaloguj się")
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Usunięto `UserTypeSelector` i `_selectedUserType`; dodano getter `_userType` czytający `authProvider.selectedRole ?? 'client'`
+- **System Impact**: Nowy krok w onboarding flow — rola przechowywana w bezpiecznym storage i zapamiętywana między sesjami. Istniejący zalogowani użytkownicy: migracja auto-uzupełnia rolę z danych konta (transparentna aktualizacja). Wylogowani bez zapisanej roli: zobaczą wybór raz przy następnym starcie.
+- **Related Tasks/PRD**: Rejestracja Google/Apple — zapobieganie domyślnemu przypisaniu roli klienta
+- **Potential Conflicts/Risks**: `welcome_screen.dart` — usunięto `UserTypeSelector`; jeśli widget ten jest używany gdzie indziej, wymaga sprawdzenia (nie jest — widget był inline)
+
 ## [2026-02-19] Ekran historii zleceń wykonawcy + nowa zakładka w nawigacji
 
 - **Developer/Agent**: Claude
