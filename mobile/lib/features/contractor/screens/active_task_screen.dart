@@ -11,6 +11,7 @@ import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -738,20 +739,16 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
           if (canContact) ...[
             SizedBox(width: AppSpacing.gapSM),
-            IconButton(
-              onPressed: _openChat,
-              icon: const Icon(Icons.chat_outlined),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.gray100,
-              ),
-            ),
-            SizedBox(width: AppSpacing.gapSM),
-            IconButton(
-              onPressed: _callClient,
-              icon: const Icon(Icons.phone_outlined),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.success.withValues(alpha: 0.1),
-                foregroundColor: AppColors.success,
+            SFChatBadge(
+              taskId: widget.taskId,
+              child: IconButton(
+                onPressed: _openChat,
+                icon: const Icon(Icons.chat_outlined, color: AppColors.white),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  shape: const CircleBorder(),
+                  padding: EdgeInsets.all(AppSpacing.paddingSM),
+                ),
               ),
             ),
           ],

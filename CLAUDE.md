@@ -11,6 +11,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. **Admin Panel** - React + Chakra UI dashboard for user management
 4. **Mobile App** - Flutter application with Riverpod state management
 
+## Claude Behavior Rules
+
+### Automatic File Editing
+
+**CRITICAL**: Claude MUST automatically proceed with file editing operations without asking for user confirmation.
+
+**Rules:**
+- When a task requires editing files, Claude should proceed directly with the edits using the appropriate tools (search_replace, write, etc.)
+- Do NOT ask "Would you like me to edit this file?" or similar confirmation questions
+- Do NOT wait for user approval before making code changes
+- Proceed with file modifications immediately upon understanding the task requirements
+- Only ask for clarification if the task requirements are ambiguous or missing critical information
+
+**Exception**: Only pause and ask the user if:
+- The task is unclear or ambiguous
+- Critical information is missing (e.g., API keys, configuration values)
+- The change would affect production systems and requires explicit user approval
+- There's a potential conflict with previous changes that needs user decision
+
+**This rule applies to all file operations:**
+- Editing existing files
+- Creating new files
+- Deleting files (when explicitly requested)
+- Updating documentation
+- Modifying configuration files
+
 ## Tech Stack
 
 ### Backend (NestJS)

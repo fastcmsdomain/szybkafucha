@@ -106,6 +106,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   final ApiClient _apiClient;
   final String _currentUserId;
   StreamSubscription<ChatMessageEvent>? _messageSubscription;
+  StreamSubscription<WebSocketState>? _connectionSubscription;
 
   /// Initialize chat for a task
   void _initializeChat() {
@@ -117,7 +118,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
     // Join task room to receive updates
     _webSocketService.joinTask(state.taskId);
-    state = state.copyWith(isConnected: true);
+
+    // Reflect real WebSocket connection state
+    state = state.copyWith(isConnected: _webSocketService.isConnected);
+
+    // Track connection changes dynamically
+    _connectionSubscription = _webSocketService.stateStream.listen((wsState) {
+      if (!mounted) return;
+      final connected = wsState == WebSocketState.connected;
+      state = state.copyWith(isConnected: connected);
+      // Retry pending messages when reconnected
+      if (connected && state.hasPendingMessages) {
+        retrySendingPending(currentUserId: _currentUserId);
+      }
+    });
   }
 
   /// Handle incoming message from WebSocket
@@ -242,9 +256,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Leave task chat
   void leaveChat() {
     _webSocketService.off(WebSocketConfig.messageNew, _handleIncomingMessage);
-    _webSocketService.leaveTask(state.taskId);
+    // NOTE: Do NOT call leaveTask() here. The task room must remain joined
+    // so that the unread badge continues to work after the chat screen closes.
+    // Rooms are cleaned up automatically on WS disconnect and re-joined on reconnect.
     _messageSubscription?.cancel();
-    state = state.copyWith(isConnected: false);
+    _connectionSubscription?.cancel();
   }
 
   @override
@@ -254,8 +270,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 }
 
-/// Chat provider for specific task
-final chatProvider = StateNotifierProvider.family<ChatNotifier, ChatState, String>(
+/// Chat provider for specific task (autoDispose ensures fresh state on each screen entry)
+final chatProvider = StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, String>(
   (ref, taskId) {
     final webSocketService = ref.read(webSocketServiceProvider);
     final apiClient = ref.read(apiClientProvider);
@@ -265,7 +281,7 @@ final chatProvider = StateNotifierProvider.family<ChatNotifier, ChatState, Strin
 );
 
 /// Get all messages for a task (sorted)
-final taskMessagesProvider = Provider.family<List<Message>, String>(
+final taskMessagesProvider = Provider.autoDispose.family<List<Message>, String>(
   (ref, taskId) {
     final chat = ref.watch(chatProvider(taskId));
     return chat.getAllMessagesSorted();
@@ -273,7 +289,7 @@ final taskMessagesProvider = Provider.family<List<Message>, String>(
 );
 
 /// Get pending messages count
-final pendingMessagesCountProvider = Provider.family<int, String>(
+final pendingMessagesCountProvider = Provider.autoDispose.family<int, String>(
   (ref, taskId) {
     final chat = ref.watch(chatProvider(taskId));
     return chat.pendingMessages.length;
@@ -281,7 +297,7 @@ final pendingMessagesCountProvider = Provider.family<int, String>(
 );
 
 /// Check if chat has pending messages
-final hasPendingMessagesProvider = Provider.family<bool, String>(
+final hasPendingMessagesProvider = Provider.autoDispose.family<bool, String>(
   (ref, taskId) {
     final chat = ref.watch(chatProvider(taskId));
     return chat.hasPendingMessages;

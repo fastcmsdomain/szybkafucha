@@ -15,6 +15,7 @@ import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../models/contractor.dart';
 import '../models/task.dart';
 import '../models/task_application.dart';
@@ -111,7 +112,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   @override
   void dispose() {
-    _leaveTaskRoom();
+    // NOTE: Do NOT leave the task room on dispose. The room must remain joined
+    // so that the unread badge works on the home screen after navigating away.
+    // Rooms are cleaned up on WS disconnect and re-joined via auto-join on reconnect.
     super.dispose();
   }
 
@@ -225,12 +228,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   void _joinTaskRoom() {
     final wsService = ref.read(webSocketServiceProvider);
     wsService.joinTask(widget.taskId);
-  }
-
-  /// Leave WebSocket task room
-  void _leaveTaskRoom() {
-    final wsService = ref.read(webSocketServiceProvider);
-    wsService.leaveTask(widget.taskId);
   }
 
   /// Manual refresh for user-triggered reload
@@ -1061,23 +1058,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ),
           ),
           SizedBox(width: AppSpacing.gapSM),
-          IconButton(
-            onPressed: _openChatWithContractor,
-            icon: const Icon(Icons.chat_outlined),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.gray100,
+          SFChatBadge(
+            taskId: widget.taskId,
+            child: IconButton(
+              onPressed: _openChatWithContractor,
+              icon: const Icon(Icons.chat_outlined, color: AppColors.white),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.success,
+                shape: const CircleBorder(),
+                padding: EdgeInsets.all(AppSpacing.paddingSM),
+              ),
+              tooltip: 'Otwórz czat',
             ),
-            tooltip: 'Otwórz czat',
-          ),
-          SizedBox(width: AppSpacing.gapSM),
-          IconButton(
-            onPressed: _callContractor,
-            icon: const Icon(Icons.phone_outlined),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.success.withValues(alpha: 0.1),
-              foregroundColor: AppColors.success,
-            ),
-            tooltip: 'Zadzwoń do wykonawcy',
           ),
         ],
       ),

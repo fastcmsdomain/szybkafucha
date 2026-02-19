@@ -8,6 +8,42 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-19] Fix: Badge — nie opuszczaj task roomu po zamknięciu czatu/ekranu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał w client_home_screen (kontraktor→klient) i w ogóle dla klienta→wykonawcy. Root cause: `leaveChat()` i `dispose()` wywoływały `leaveTask()` → użytkownik wychodził z room → przestawał otrzymywać `message:new`.
+- **Files Changed**:
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – usunięto `leaveTask()` z `leaveChat()`. Task room pozostaje aktywny po zamknięciu czatu.
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – usunięto wywołanie `_leaveTaskRoom()` z `dispose()` i usunięto nieużywaną metodę.
+- **System Impact**: Użytkownicy pozostają w task roomach przez cały czas sesji WS → badge działa na wszystkich ekranach w obu kierunkach. Cleanup rooms następuje naturalnie przy disconneccie; reconnect auto-joinuje z powrotem.
+- **Potential Conflicts/Risks**: Brak. Roomy są lightweight w Socket.io. Nie opuszczamy rooma przez nawigację — to jest poprawne zachowanie.
+
+---
+
+## [2026-02-19] Fix: Badge — auto-join task rooms on WS connect (backend)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał bo backend emituje `message:new` tylko do pokoju `task:${taskId}`, a użytkownik dołącza do tego pokoju dopiero po otwarciu czatu. Teraz backend auto-joinuje wszystkie aktywne task roomy przy połączeniu WS.
+- **Files Changed**:
+  - `backend/src/realtime/realtime.service.ts` – dodano `getActiveTaskIdsForUser(userId)` — query o aktywne taski
+  - `backend/src/realtime/realtime.gateway.ts` – `handleConnection()`: fire-and-forget auto-join do aktywnych task roomów
+- **System Impact**: Użytkownik po połączeniu WS automatycznie jest w task roomach wszystkich aktywnych zadań → badge działa bez wcześniejszego otwierania czatu.
+- **Potential Conflicts/Risks**: Jeden DB query na połączenie. Fire-and-forget — błąd jest logowany, nie przerywa połączenia.
+
+---
+
+## [2026-02-19] Fix: Unread message badge never showing count
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed `unreadMessagesProvider` so the red badge counter actually appears when a new message arrives. Root cause: `chatMessagesProvider` (the intermediary) is a `StreamProvider` that auto-disposes when no widget watches it (i.e., when no chat screen is open), removing its WS listener. Bypassed it entirely by registering directly with `WebSocketService.on()`. Also eagerly initialized the provider at app startup so it listens from the first frame.
+- **Files Changed**:
+  - `mobile/lib/core/providers/unread_messages_provider.dart` – Removed dependency on `chatMessagesProvider`; now calls `webSocketService.on(WebSocketConfig.messageNew, onNewMessage)` directly; re-registers listener on login (for logout→login cycle); `ref.onDispose` removes listener
+  - `mobile/lib/core/widgets/websocket_initializer.dart` – Added `import unread_messages_provider.dart`; added `ref.read(unreadMessagesProvider)` in `initState()` for eager initialization
+- **System Impact**: Badge count increments in real-time whenever a new message arrives from another user, on all 4 screens (client home, contractor home, task tracking, active task). Count clears when user opens the chat.
+- **Potential Conflicts/Risks**: If `WebSocketService.disconnect()` is called (on logout), its `_listeners.clear()` removes our callback. This is handled by re-registering via `ref.listen(authProvider, ...)` when user logs back in.
+
+---
+
 ## [2026-02-19] Fix: Map tiles not loading on iOS (flutter_map built-in cache issue)
 
 - **Developer/Agent**: Claude

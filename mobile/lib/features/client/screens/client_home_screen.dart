@@ -9,6 +9,7 @@ import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../models/task.dart';
 // import '../models/task_category.dart';
 // import '../widgets/category_card.dart';
@@ -443,12 +444,47 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   children: [
                     // Track button
                     Expanded(
-                      child: OutlinedButton(
+                      child: OutlinedButton.icon(
                         onPressed: () =>
                             context.push(Routes.clientTaskTrack(task.id)),
-                        child: Text('Więcej'),
+                        icon: const Icon(Icons.arrow_forward),
+                        label: const Text('Więcej'),
                       ),
                     ),
+                    // Chat button — visible when contractor is assigned
+                    if (task.status == TaskStatus.confirmed ||
+                        task.status == TaskStatus.inProgress) ...[
+                      SizedBox(width: AppSpacing.gapSM),
+                      Expanded(
+                        child: SFChatBadge(
+                          taskId: task.id,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              final currentUser = ref.read(currentUserProvider);
+                              context.push(
+                                Routes.clientTaskChatRoute(task.id),
+                                extra: {
+                                  'taskTitle': task.description,
+                                  'otherUserName':
+                                      task.contractor?.name ?? 'Wykonawca',
+                                  'otherUserAvatarUrl':
+                                      task.contractor?.avatarUrl,
+                                  'currentUserId': currentUser?.id ?? '',
+                                  'currentUserName': currentUser?.name ?? 'Ty',
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.chat_outlined, size: 16),
+                            label: const Text('Czat'),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: AppColors.success,
+                              foregroundColor: AppColors.white,
+                              side: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
