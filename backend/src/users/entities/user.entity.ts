@@ -8,6 +8,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 // User type enum
@@ -22,6 +23,7 @@ export enum UserStatus {
   ACTIVE = 'active',
   SUSPENDED = 'suspended',
   BANNED = 'banned',
+  DELETED = 'deleted',
 }
 
 @Entity('users')
@@ -90,4 +92,7 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date | null;
 }

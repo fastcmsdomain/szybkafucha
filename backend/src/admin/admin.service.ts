@@ -299,6 +299,7 @@ export class AdminService {
       [UserStatus.ACTIVE]: [UserStatus.SUSPENDED, UserStatus.BANNED],
       [UserStatus.SUSPENDED]: [UserStatus.ACTIVE, UserStatus.BANNED],
       [UserStatus.BANNED]: [], // No transitions allowed
+      [UserStatus.DELETED]: [], // No transitions allowed — account is gone
     };
 
     if (!allowedTransitions[user.status].includes(newStatus)) {

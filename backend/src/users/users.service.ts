@@ -6,12 +6,24 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserStatus } from './entities/user.entity';
+import { DeletedAccount } from './entities/deleted-account.entity';
+import { Rating } from '../tasks/entities/rating.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
+import { ClientProfile } from '../client/entities/client-profile.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(DeletedAccount)
+    private readonly deletedAccountRepository: Repository<DeletedAccount>,
+    @InjectRepository(Rating)
+    private readonly ratingRepository: Repository<Rating>,
+    @InjectRepository(ContractorProfile)
+    private readonly contractorProfileRepository: Repository<ContractorProfile>,
+    @InjectRepository(ClientProfile)
+    private readonly clientProfileRepository: Repository<ClientProfile>,
   ) {}
 
   /**
@@ -151,6 +163,75 @@ export class UsersService {
       failedLoginAttempts: 0,
       lockedUntil: null,
     });
+  }
+
+  /**
+   * Archive all user data to deleted_accounts, then anonymise and soft-delete.
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    const user = await this.findByIdOrFail(userId);
+
+    // ── 1. Collect all associated data ──────────────────────────────────────
+
+    const [contractorProfile, clientProfile, reviews] = await Promise.all([
+      this.contractorProfileRepository.findOne({ where: { userId } }),
+      this.clientProfileRepository.findOne({ where: { userId } }),
+      this.ratingRepository.find({ where: { toUserId: userId } }),
+    ]);
+
+    // ── 2. Compute per-role rating summaries ─────────────────────────────────
+
+    const contractorReviews = reviews.filter((r) => r.role === 'contractor');
+    const clientReviews = reviews.filter((r) => r.role === 'client');
+
+    const avg = (items: Rating[]) =>
+      items.length
+        ? items.reduce((s, r) => s + r.rating, 0) / items.length
+        : 0;
+
+    // ── 3. Persist archive record ─────────────────────────────────────────────
+
+    const archive = this.deletedAccountRepository.create({
+      originalUserId: userId,
+      userTypes: user.types,
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      address: user.address,
+      avatarUrl: user.avatarUrl,
+      contractorBio: contractorProfile?.bio ?? null,
+      clientBio: clientProfile?.bio ?? null,
+      contractorRatingAvg: avg(contractorReviews),
+      contractorRatingCount: contractorReviews.length,
+      clientRatingAvg: avg(clientReviews),
+      clientRatingCount: clientReviews.length,
+      reviews: reviews.map((r) => ({
+        taskId: r.taskId,
+        fromUserId: r.fromUserId,
+        rating: r.rating,
+        comment: r.comment,
+        role: r.role,
+        createdAt: r.createdAt,
+      })),
+    });
+
+    await this.deletedAccountRepository.save(archive);
+
+    // ── 4. Anonymise live record and soft-delete ──────────────────────────────
+
+    user.name = null;
+    user.avatarUrl = null;
+    user.address = null;
+    user.fcmToken = null;
+    user.passwordHash = null;
+    user.googleId = null;
+    user.appleId = null;
+    user.email = user.email ? `deleted_${userId}@deleted.invalid` : null;
+    user.phone = user.phone ? `del_${userId.slice(0, 8)}` : null; // max 12 chars, fits varchar(15)
+    user.status = UserStatus.DELETED;
+
+    await this.usersRepository.save(user);
+    await this.usersRepository.softDelete(userId);
   }
 
   /**

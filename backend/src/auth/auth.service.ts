@@ -438,12 +438,18 @@ export class AuthService {
       expiresIn: OTP_CONFIG.EXPIRES_IN_MINUTES * 60,
     };
 
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
+
     if (!user || !user.passwordHash) {
       // User doesn't exist or doesn't use password auth - don't reveal this
+      if (isDev) {
+        this.logger.warn(
+          `[DEV] Password reset skipped for "${email}" — account not found or registered via social/phone (no password)`,
+        );
+      }
       return response;
     }
 
-    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
     const code = isDev ? OTP_CONFIG.DEV_CODE : this.generateOtp();
     const expiresAt = new Date(
       Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
@@ -455,6 +461,10 @@ export class AuthService {
       { code, expiresAt },
       OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
     );
+
+    if (isDev) {
+      this.logger.debug(`[DEV] Password reset OTP for "${email}": ${code}`);
+    }
 
     await this.emailService.sendPasswordResetOtp(email, code);
 

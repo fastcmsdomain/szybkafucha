@@ -8,6 +8,10 @@ import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User, UserType, UserStatus } from './entities/user.entity';
+import { DeletedAccount } from './entities/deleted-account.entity';
+import { Rating } from '../tasks/entities/rating.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
+import { ClientProfile } from '../client/entities/client-profile.entity';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -34,12 +38,35 @@ describe('UsersService', () => {
       create: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
+      softDelete: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+
+    const mockDeletedAccountRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
+    const mockRatingRepository = {
+      find: jest.fn(),
+    };
+
+    const mockContractorProfileRepository = {
+      findOne: jest.fn(),
+    };
+
+    const mockClientProfileRepository = {
+      findOne: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: mockRepository },
+        { provide: getRepositoryToken(DeletedAccount), useValue: mockDeletedAccountRepository },
+        { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
+        { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
+        { provide: getRepositoryToken(ClientProfile), useValue: mockClientProfileRepository },
       ],
     }).compile();
 
