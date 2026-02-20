@@ -8,6 +8,33 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-20] Archiwum danych użytkownika przy usunięciu konta + inline role selector
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dwa zestawy zmian:
+  1. **Inline role selector** — usunięto dedykowany `RoleSelectionScreen`; wybór roli ("Pracodawca / Wykonawca") przeniesiony inline na 3 ekrany (welcome, email register, phone login) jako para małych solid-fill przycisków obok siebie.
+  2. **Archiwizacja danych przy usunięciu konta** — nowa tabela `deleted_accounts` przechowuje pełen snapshot PII + oceny + recenzje przed anonimizacją konta użytkownika.
+- **Files Changed**:
+  - `mobile/lib/features/auth/screens/role_selection_screen.dart` – USUNIĘTO (cały plik)
+  - `mobile/lib/features/auth/auth.dart` – Usunięto export `role_selection_screen.dart`
+  - `mobile/lib/core/router/routes.dart` – Usunięto `roleSelection = '/role-selection'`
+  - `mobile/lib/core/router/app_router.dart` – Usunięto redirect + GoRoute dla roleSelection; usunięto getter `roleSelected` i warunek `isRoleSelectionRoute`
+  - `mobile/lib/features/auth/screens/onboarding_screen.dart` – Zmieniono nawigację z `Routes.roleSelection` → `Routes.publicHome`
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Dodano `_buildRoleSelector()` + widget `_WelcomeRoleBox` (title + subtitle, animated solid fill); zastąpiono `UserTypeSelector`
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – Dodano `_RegRoleBox` powyżej pola "Imię i nazwisko"; initState pobiera rolę z `authProvider.selectedRole`; usunięto `UserTypeSelector`
+  - `mobile/lib/features/auth/screens/phone_login_screen.dart` – Dodano `_PhoneRoleBox` powyżej instrukcji telefonu; initState pobiera rolę z `authProvider.selectedRole`; ikony: `manage_search_outlined` / `handyman_outlined`
+  - `backend/src/users/entities/user.entity.ts` – Dodano `UserStatus.DELETED`, `@DeleteDateColumn deletedAt`
+  - `backend/src/users/entities/deleted-account.entity.ts` – NOWY PLIK: encja archiwum z PII, bio (contractor+client), rating averages, JSONB reviews
+  - `backend/src/users/users.module.ts` – Dodano `DeletedAccount, Rating, ContractorProfile, ClientProfile` do `TypeOrmModule.forFeature`
+  - `backend/src/app.module.ts` – Dodano `DeletedAccount` do tablicy entities
+  - `backend/src/users/users.service.ts` – Nowe `@InjectRepository` (4 repozytoria); `deleteAccount()` archiwizuje dane → anonimizuje → softDelete
+  - `backend/src/users/users.controller.ts` – Dodano `DELETE /users/me` endpoint (`@HttpCode(204)`)
+  - `backend/src/admin/admin.service.ts` – Dodano `[UserStatus.DELETED]: []` do `allowedTransitions`
+  - `backend/src/auth/auth.service.ts` – Dev logging w `requestPasswordReset` gdy brak passwordHash
+- **System Impact**: Nowa tabela DB `deleted_accounts` (auto-sync w dev). Usunięcie konta → snapshot → anonimizacja PII → softDelete. Router onboarding flow zmieniony.
+- **Related Tasks/PRD**: Account deletion + data retention / GDPR archival
+- **Potential Conflicts/Risks**: `UserStatus.DELETED` — sprawdzić czy inne miejsca używają switch/exhaustive check na UserStatus (admin.service.ts już naprawiony). `deleted_accounts` tabela powstanie automatycznie w dev przez TypeORM synchronize.
+
 ## [2026-02-19] Wybór roli przy pierwszej rejestracji (RoleSelectionScreen)
 
 - **Developer/Agent**: Claude

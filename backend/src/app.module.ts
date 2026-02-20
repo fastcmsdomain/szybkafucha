@@ -40,6 +40,7 @@ import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
 import { KycCheck } from './kyc/entities/kyc-check.entity';
 import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscriber.entity';
+import { DeletedAccount } from './users/entities/deleted-account.entity';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
           Payment,
           KycCheck,
           NewsletterSubscriber,
+          DeletedAccount,
         ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',

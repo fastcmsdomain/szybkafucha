@@ -8,12 +8,15 @@ import {
   Put,
   Patch,
   Post,
+  Delete,
   Body,
   UseGuards,
   Request,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -156,6 +159,17 @@ export class UsersController {
       avatarUrl,
       message: 'Avatar uploaded successfully',
     };
+  }
+
+  /**
+   * DELETE /users/me
+   * Soft-deletes the authenticated user's account and anonymises PII.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAccount(@Request() req: AuthenticatedRequest): Promise<void> {
+    await this.usersService.deleteAccount(req.user.id);
   }
 
   /**
