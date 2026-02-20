@@ -33,10 +33,15 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
+  static const String _defaultBudgetPln = '100';
+  static const String _defaultEstimatedDurationHours = '1';
+
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _budgetController = TextEditingController(text: '50');
-  final _estimatedDurationController = TextEditingController();
+  final _budgetController = TextEditingController(text: _defaultBudgetPln);
+  final _estimatedDurationController = TextEditingController(
+    text: _defaultEstimatedDurationHours,
+  );
 
   TaskCategory? _selectedCategory;
   bool _isNow = true;
@@ -58,10 +63,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
-    if (_selectedCategory != null) {
-      final category = TaskCategoryData.fromCategory(_selectedCategory!);
-      _budgetController.text = category.suggestedPrice.toString();
-    }
 
     // Add listeners to update summary when inputs change
     _budgetController.addListener(() {
@@ -214,10 +215,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           }).toList(),
           onChanged: (category) {
             if (category == null) return;
-            final selectedData = TaskCategoryData.fromCategory(category);
             setState(() {
               _selectedCategory = category;
-              _budgetController.text = selectedData.suggestedPrice.toString();
             });
           },
         ),
@@ -609,7 +608,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       suffixStyle: AppTypography.h4.copyWith(
                         color: AppColors.primary,
                       ),
-                      hintText: '35',
+                      hintText: _defaultBudgetPln,
                       hintStyle: AppTypography.h3.copyWith(
                         color: AppColors.gray300,
                       ),
@@ -654,7 +653,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       suffixStyle: AppTypography.h4.copyWith(
                         color: AppColors.primary,
                       ),
-                      hintText: '2.5',
+                      hintText: _defaultEstimatedDurationHours,
                       hintStyle: AppTypography.h3.copyWith(
                         color: AppColors.gray300,
                       ),
@@ -1087,7 +1086,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           : description;
 
       // Parse budget from text field
-      final budgetAmount = double.tryParse(_budgetController.text) ?? 35;
+      final budgetAmount =
+          double.tryParse(_budgetController.text) ??
+          double.parse(_defaultBudgetPln);
 
       // Parse estimated duration (optional)
       final estimatedDurationHours = _estimatedDurationController.text.isNotEmpty

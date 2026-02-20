@@ -167,13 +167,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           color: AppColors.gray500,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => context.push(Routes.termsOfService),
-                        child: Text(
-                          'Regulamin',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                      Semantics(
+                        label: 'Regulamin',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => context.push(Routes.termsOfService),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
+                            child: Text(
+                              'Regulamin',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -183,13 +190,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           color: AppColors.gray500,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => context.push(Routes.privacyPolicy),
-                        child: Text(
-                          'Politykę Prywatności',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                      Semantics(
+                        label: 'Politykę Prywatności',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => context.push(Routes.privacyPolicy),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
+                            child: Text(
+                              'Politykę Prywatności',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -335,6 +349,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             height: 56,
             width: 56,
             fit: BoxFit.cover,
+            semanticLabel: 'Logo Szybka Fucha',
           ),
         ),
         SizedBox(width: AppSpacing.gapMD),
@@ -591,46 +606,51 @@ class _WelcomeRoleBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.paddingLG,
-          horizontal: AppSpacing.paddingMD,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.gray100,
-          borderRadius: AppRadius.radiusMD,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 28,
-              color: selected ? AppColors.white : AppColors.gray700,
-            ),
-            const SizedBox(height: AppSpacing.gapSM),
-            Text(
-              title,
-              style: AppTypography.labelMedium.copyWith(
+    return Semantics(
+      label: '$title — $subtitle',
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.paddingLG,
+            horizontal: AppSpacing.paddingMD,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.gray100,
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 28,
                 color: selected ? AppColors.white : AppColors.gray700,
-                fontWeight: FontWeight.w700,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: AppTypography.caption.copyWith(
-                color: selected
-                    ? AppColors.white.withValues(alpha: 0.85)
-                    : AppColors.gray500,
+              const SizedBox(height: AppSpacing.gapSM),
+              Text(
+                title,
+                style: AppTypography.labelMedium.copyWith(
+                  color: selected ? AppColors.white : AppColors.gray700,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: AppSpacing.gapXS),
+              Text(
+                subtitle,
+                style: AppTypography.caption.copyWith(
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.85)
+                      : AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

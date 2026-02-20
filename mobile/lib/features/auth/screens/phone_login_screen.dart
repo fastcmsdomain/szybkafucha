@@ -48,6 +48,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Wróć',
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -144,10 +145,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                         )
                       : Text(
                           AppStrings.sendCode,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTypography.buttonMedium,
                         ),
                 ),
 
@@ -319,46 +317,51 @@ class _PhoneRoleBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.paddingLG,
-          horizontal: AppSpacing.paddingMD,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.gray100,
-          borderRadius: AppRadius.radiusMD,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 28,
-              color: selected ? AppColors.white : AppColors.gray700,
-            ),
-            const SizedBox(height: AppSpacing.gapSM),
-            Text(
-              title,
-              style: AppTypography.labelMedium.copyWith(
+    return Semantics(
+      label: '$title — $subtitle',
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.paddingLG,
+            horizontal: AppSpacing.paddingMD,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.gray100,
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 28,
                 color: selected ? AppColors.white : AppColors.gray700,
-                fontWeight: FontWeight.w700,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: AppTypography.caption.copyWith(
-                color: selected
-                    ? AppColors.white.withValues(alpha: 0.85)
-                    : AppColors.gray500,
+              const SizedBox(height: AppSpacing.gapSM),
+              Text(
+                title,
+                style: AppTypography.labelMedium.copyWith(
+                  color: selected ? AppColors.white : AppColors.gray700,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: AppSpacing.gapXS),
+              Text(
+                subtitle,
+                style: AppTypography.caption.copyWith(
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.85)
+                      : AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
