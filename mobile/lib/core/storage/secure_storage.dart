@@ -8,6 +8,7 @@ abstract class StorageKeys {
   static const String userType = 'user_type';
   static const String userData = 'user_data';
   static const String onboardingComplete = 'onboarding_complete';
+  static const String selectedRole = 'selected_role';
   static const String fcmToken = 'fcm_token';
 }
 
@@ -125,6 +126,23 @@ class SecureStorageService {
   /// Delete onboarding complete flag (for testing)
   Future<void> deleteOnboardingComplete() async {
     await _storage.delete(key: StorageKeys.onboardingComplete);
+  }
+
+  // ============ Selected Role ============
+
+  /// Save the role selected during onboarding ('client' or 'contractor')
+  Future<void> saveSelectedRole(String role) async {
+    await _storage.write(key: StorageKeys.selectedRole, value: role);
+  }
+
+  /// Get the role selected during onboarding
+  Future<String?> getSelectedRole() async {
+    return await _storage.read(key: StorageKeys.selectedRole);
+  }
+
+  /// Delete selected role (for testing/reset)
+  Future<void> deleteSelectedRole() async {
+    await _storage.delete(key: StorageKeys.selectedRole);
   }
 
   // ============ FCM Token ============

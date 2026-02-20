@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
-import '../widgets/user_type_selector.dart';
 
 /// Phone login screen
 /// User enters their phone number to receive OTP
@@ -32,7 +32,8 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedUserType = widget.userType;
+    _selectedUserType =
+        ref.read(authProvider).selectedRole ?? widget.userType;
   }
 
   @override
@@ -65,13 +66,31 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               children: [
                 SizedBox(height: AppSpacing.space4),
 
-                // Role selection
-                UserTypeSelector(
-                  initialType: _selectedUserType,
-                  onTypeSelected: (type) {
-                    setState(() => _selectedUserType = type);
-                  },
-                  compact: true,
+                // Role selector
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PhoneRoleBox(
+                        selected: _selectedUserType == 'client',
+                        icon: Icons.manage_search_outlined,
+                        title: 'Pracodawca',
+                        subtitle: 'Szukam pomocy',
+                        onTap: () =>
+                            setState(() => _selectedUserType = 'client'),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: _PhoneRoleBox(
+                        selected: _selectedUserType == 'contractor',
+                        icon: Icons.handyman_outlined,
+                        title: 'Wykonawca',
+                        subtitle: 'Chcę pomagać',
+                        onTap: () =>
+                            setState(() => _selectedUserType = 'contractor'),
+                      ),
+                    ),
+                  ],
                 ),
 
                 SizedBox(height: AppSpacing.space8),
@@ -125,7 +144,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                         )
                       : Text(
                           AppStrings.sendCode,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -156,14 +175,14 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               horizontal: AppSpacing.paddingMD,
               vertical: AppSpacing.paddingMD,
             ),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               border: Border(
                 right: BorderSide(color: AppColors.gray200),
               ),
             ),
             child: Row(
               children: [
-                Text(
+                const Text(
                   '🇵🇱',
                   style: TextStyle(fontSize: 20),
                 ),
@@ -279,6 +298,69 @@ class _PhoneNumberFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class _PhoneRoleBox extends StatelessWidget {
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _PhoneRoleBox({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.paddingLG,
+          horizontal: AppSpacing.paddingMD,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.gray100,
+          borderRadius: AppRadius.radiusMD,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: selected ? AppColors.white : AppColors.gray700,
+            ),
+            const SizedBox(height: AppSpacing.gapSM),
+            Text(
+              title,
+              style: AppTypography.labelMedium.copyWith(
+                color: selected ? AppColors.white : AppColors.gray700,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTypography.caption.copyWith(
+                color: selected
+                    ? AppColors.white.withValues(alpha: 0.85)
+                    : AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
