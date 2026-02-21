@@ -165,7 +165,8 @@ jobs:
         run: flutter pub get
 
       - name: Mobile widget test (notifications preferences)
-        run: flutter test mobile/test/features/profile/notifications_preferences_screen_test.dart
+        working-directory: mobile
+        run: flutter test test/features/profile/notifications_preferences_screen_test.dart
 
       - name: Flutter quality gate
         run: mobile/scripts/flutter_quality_gate.sh --scope all
