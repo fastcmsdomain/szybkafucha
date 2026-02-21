@@ -13,6 +13,7 @@ import { ClientProfile } from '../client/entities/client-profile.entity';
 import {
   applyRoleRestrictions,
   DEFAULT_NOTIFICATION_PREFERENCES,
+  NOTIFICATION_PREFERENCE_KEYS,
   normalizeNotificationPreferences,
   NotificationPreferences,
 } from '../notifications/constants/notification-preferences';
@@ -145,13 +146,13 @@ export class UsersService {
     userRoles: string[] = [],
   ): Promise<NotificationPreferences> {
     const current = await this.getNotificationPreferences(id, userRoles);
-    const roles = userRoles.length > 0
-      ? userRoles
-      : (await this.findByIdOrFail(id)).types;
+    const roles =
+      userRoles.length > 0 ? userRoles : (await this.findByIdOrFail(id)).types;
+    const patch = this.toNotificationPreferencesPatch(data);
     const merged = applyRoleRestrictions(
       {
         ...current,
-        ...data,
+        ...patch,
       },
       roles,
     );
@@ -161,6 +162,21 @@ export class UsersService {
     });
 
     return merged;
+  }
+
+  private toNotificationPreferencesPatch(
+    data: UpdateNotificationPreferencesDto,
+  ): Partial<NotificationPreferences> {
+    const patch: Partial<NotificationPreferences> = {};
+
+    for (const key of NOTIFICATION_PREFERENCE_KEYS) {
+      const value = data[key];
+      if (typeof value === 'boolean') {
+        patch[key] = value;
+      }
+    }
+
+    return patch;
   }
 
   /**
@@ -246,9 +262,7 @@ export class UsersService {
     const clientReviews = reviews.filter((r) => r.role === 'client');
 
     const avg = (items: Rating[]) =>
-      items.length
-        ? items.reduce((s, r) => s + r.rating, 0) / items.length
-        : 0;
+      items.length ? items.reduce((s, r) => s + r.rating, 0) / items.length : 0;
 
     // ── 3. Persist archive record ─────────────────────────────────────────────
 
@@ -330,7 +344,8 @@ export class UsersService {
     );
 
     return Object.entries(DEFAULT_NOTIFICATION_PREFERENCES).every(
-      ([key, value]) => normalizedCurrent[key as keyof NotificationPreferences] ===
+      ([key, value]) =>
+        normalizedCurrent[key as keyof NotificationPreferences] ===
         (expected[key as keyof NotificationPreferences] ?? value),
     );
   }
