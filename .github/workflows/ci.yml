@@ -49,6 +49,66 @@ jobs:
       - name: Test
         run: npm test -- --runInBand
 
+  backend-e2e:
+    name: Backend e2e (notification preferences)
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: development
+      JWT_SECRET: test-jwt-secret
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: szybkafucha
+      DATABASE_PASSWORD: szybkafucha_dev_password
+      DATABASE_NAME: szybkafucha
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      FIREBASE_PROJECT_ID: placeholder
+      FIREBASE_CLIENT_EMAIL: placeholder
+      FIREBASE_PRIVATE_KEY: placeholder
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: szybkafucha
+          POSTGRES_PASSWORD: szybkafucha_dev_password
+          POSTGRES_DB: szybkafucha
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U szybkafucha -d szybkafucha"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        shell: bash
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run notification preferences e2e test
+        run: npm run test:e2e -- --runInBand test/users-notification-preferences.e2e-spec.ts
+
   admin:
     name: Admin lint & tests
     runs-on: ubuntu-latest
@@ -103,6 +163,9 @@ jobs:
       - name: Install mobile dependencies
         working-directory: mobile
         run: flutter pub get
+
+      - name: Mobile widget test (notifications preferences)
+        run: flutter test mobile/test/features/profile/notifications_preferences_screen_test.dart
 
       - name: Flutter quality gate
         run: mobile/scripts/flutter_quality_gate.sh --scope all
