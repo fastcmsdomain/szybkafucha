@@ -16,7 +16,7 @@ describe('Users notification preferences (e2e)', () => {
   const testUserEmail = 'notif-pref-client-e2e@szybkafucha.test';
   const testUserPhone = '+48701010203';
   let authToken: string;
-  jest.setTimeout(30000);
+  jest.setTimeout(60000);
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

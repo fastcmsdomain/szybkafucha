@@ -106,6 +106,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Wait for Postgres and Redis
+        run: |
+          echo "Waiting for Postgres on localhost:5432..."
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1; then
+              echo "Postgres is reachable."
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Postgres did not become reachable in time."
+              exit 1
+            fi
+            sleep 2
+          done
+
+          echo "Waiting for Redis on localhost:6379..."
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/6379) >/dev/null 2>&1; then
+              echo "Redis is reachable."
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Redis did not become reachable in time."
+              exit 1
+            fi
+            sleep 2
+          done
+
       - name: Run notification preferences e2e test
         run: npm run test:e2e -- --runInBand test/users-notification-preferences.e2e-spec.ts
 
