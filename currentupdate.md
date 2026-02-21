@@ -8,6 +8,18 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-21] Fix: przyciski "Więcej" i "Czat" znikają po pendingComplete
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Karta zlecenia na `client_home_screen.dart` błędnie blokowała interakcję i ukrywała przyciski "Więcej"/"Czat" gdy zadanie miało status `pendingComplete`. Obie strony powinny móc komunikować się przez czat aż do momentu, gdy zadanie przejdzie w `COMPLETED` (po ocenie przez wykonawcę).
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/client_home_screen.dart` — trzy zmiany:
+    1. `isLocked = false` (zamiast `task.status == pendingComplete`)
+    2. Usunięto `&& task.status != TaskStatus.pendingComplete` z warunku wyświetlania przycisków
+    3. Dodano `|| task.status == TaskStatus.pendingComplete` do warunku wyświetlania przycisku "Czat"
+- **System Impact**: Klient może kliknąć kartę zlecenia, przejść do tracking screen i użyć czatu podczas oczekiwania na ocenę wykonawcy.
+- **Potential Conflicts/Risks**: `task_history_screen.dart` ma ten sam wzorzec — wymaga osobnej zmiany jeśli problem pojawi się też tam.
+
 ## [2026-02-21] Fix: chat offline (WebSocket URL + re-join) + aplikacje niewidoczne po odświeżeniu
 
 - **Developer/Agent**: Claude

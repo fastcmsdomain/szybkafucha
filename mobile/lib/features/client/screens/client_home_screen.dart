@@ -322,7 +322,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildTaskCard(BuildContext context, Task task) {
     final category = task.categoryData;
 
-    final isLocked = task.status == TaskStatus.pendingComplete;
+    // pendingComplete is still interactive — chat must stay accessible until
+    // the contractor rates and the task transitions to COMPLETED.
+    const isLocked = false;
 
     return Semantics(
       label: isLocked
@@ -436,9 +438,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ],
               ),
 
-              // Action button for active tasks (skip waiting-for-contractor-confirmation)
-              if (task.status.isActive &&
-                  task.status != TaskStatus.pendingComplete) ...[
+              // Action buttons for all active tasks, including pendingComplete.
+              // Chat must remain usable until the contractor rates and task becomes COMPLETED.
+              if (task.status.isActive) ...[
                 SizedBox(height: AppSpacing.gapMD),
                 Row(
                   children: [
@@ -451,9 +453,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         label: const Text('Więcej'),
                       ),
                     ),
-                    // Chat button — visible when contractor is assigned
+                    // Chat button — visible when contractor is assigned (including pendingComplete)
                     if (task.status == TaskStatus.confirmed ||
-                        task.status == TaskStatus.inProgress) ...[
+                        task.status == TaskStatus.inProgress ||
+                        task.status == TaskStatus.pendingComplete) ...[
                       SizedBox(width: AppSpacing.gapSM),
                       Expanded(
                         child: SFChatBadge(
