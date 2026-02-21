@@ -19,10 +19,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppStrings.profile,
-          style: AppTypography.h4,
-        ),
+        title: Text(AppStrings.profile, style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -106,24 +103,25 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.help_outline,
                   title: 'Pomoc',
                   onTap: () {
-                    // TODO: Navigate to help
-                    _showComingSoon(context, 'Pomoc');
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorProfileHelp);
+                    } else {
+                      context.push(Routes.clientProfileHelp);
+                    }
                   },
                 ),
                 _buildMenuItem(
                   icon: Icons.description_outlined,
                   title: 'Regulamin',
                   onTap: () {
-                    // TODO: Navigate to terms
-                    _showComingSoon(context, 'Regulamin');
+                    context.push(Routes.termsOfService);
                   },
                 ),
                 _buildMenuItem(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Polityka prywatności',
                   onTap: () {
-                    // TODO: Navigate to privacy
-                    _showComingSoon(context, 'Polityka prywatności');
+                    context.push(Routes.privacyPolicy);
                   },
                 ),
               ],
@@ -155,9 +153,7 @@ class ProfileScreen extends ConsumerWidget {
             Center(
               child: Text(
                 'Wersja 1.0.0',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray400,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray400),
               ),
             ),
           ],
@@ -184,30 +180,21 @@ class ProfileScreen extends ConsumerWidget {
                 : null,
           ),
           child: user?.avatarUrl == null
-              ? Icon(
-                  Icons.person,
-                  size: 50,
-                  color: AppColors.gray400,
-                )
+              ? Icon(Icons.person, size: 50, color: AppColors.gray400)
               : null,
         ),
 
         SizedBox(height: AppSpacing.gapMD),
 
         // Name
-        Text(
-          user?.name ?? 'Użytkownik',
-          style: AppTypography.h4,
-        ),
+        Text(user?.name ?? 'Użytkownik', style: AppTypography.h4),
 
         SizedBox(height: AppSpacing.gapXS),
 
         // Email or phone
         Text(
           user?.email ?? user?.phone ?? '',
-          style: AppTypography.bodyMedium.copyWith(
-            color: AppColors.gray600,
-          ),
+          style: AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
         ),
 
         SizedBox(height: AppSpacing.gapSM),
@@ -247,9 +234,7 @@ class ProfileScreen extends ConsumerWidget {
       children: [
         Text(
           title,
-          style: AppTypography.labelLarge.copyWith(
-            color: AppColors.gray500,
-          ),
+          style: AppTypography.labelLarge.copyWith(color: AppColors.gray500),
         ),
         SizedBox(height: AppSpacing.gapSM),
         Container(
@@ -276,20 +261,13 @@ class ProfileScreen extends ConsumerWidget {
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: AppColors.gray600,
-              size: 24,
-            ),
+            Icon(icon, color: AppColors.gray600, size: 24),
             SizedBox(width: AppSpacing.gapMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: AppTypography.bodyMedium,
-                  ),
+                  Text(title, style: AppTypography.bodyMedium),
                   if (subtitle != null) ...[
                     SizedBox(height: 2),
                     Text(
@@ -302,10 +280,7 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppColors.gray400,
-            ),
+            Icon(Icons.chevron_right, color: AppColors.gray400),
           ],
         ),
       ),
@@ -319,17 +294,12 @@ class ProfileScreen extends ConsumerWidget {
         foregroundColor: AppColors.error,
         side: BorderSide(color: AppColors.error),
         padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.button,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
       ),
       icon: const Icon(Icons.logout),
       label: Text(
         AppStrings.logout,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -397,10 +367,7 @@ class ProfileScreen extends ConsumerWidget {
                 }
               }
             },
-            child: Text(
-              'Usuń',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: Text('Usuń', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
