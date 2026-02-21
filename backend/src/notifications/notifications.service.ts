@@ -15,6 +15,11 @@ import {
   interpolateTemplate,
 } from './constants/notification-templates';
 import {
+  applyRoleRestrictions,
+  getPreferenceKeyForNotificationType,
+  normalizeNotificationPreferences,
+} from './constants/notification-preferences';
+import {
   NotificationResult,
   BatchNotificationResult,
 } from './dto/send-notification.dto';
@@ -96,11 +101,22 @@ export class NotificationsService {
       return { success: false, error: 'No FCM token' };
     }
 
+    if (!this.isNotificationEnabledForUser(user, type)) {
+      this.logger.debug(
+        `User ${userId} disabled notifications for type ${type} - skipping notification`,
+      );
+      return {
+        success: false,
+        error: 'Notification disabled by user preferences',
+      };
+    }
+
     return this.sendToToken(user.fcmToken, type, data);
   }
 
   /**
-   * Send notification directly to FCM token
+   * Send notification directly to FCM token.
+   * This low-level method bypasses per-user preference filtering.
    */
   async sendToToken(
     fcmToken: string,
@@ -181,15 +197,49 @@ export class NotificationsService {
       where: { id: In(userIds) },
     });
 
-    const tokens = users
-      .filter((u) => u.fcmToken)
-      .map((u) => u.fcmToken as string);
+    const results: NotificationResult[] = [];
+    const tokens: string[] = [];
+    const usersById = new Map(users.map((user) => [user.id, user]));
 
-    if (tokens.length === 0) {
-      return { successCount: 0, failureCount: userIds.length, results: [] };
+    for (const userId of userIds) {
+      const user = usersById.get(userId);
+      if (!user) {
+        results.push({ success: false, error: 'User not found' });
+        continue;
+      }
+
+      if (!this.isNotificationEnabledForUser(user, type)) {
+        results.push({
+          success: false,
+          error: 'Notification disabled by user preferences',
+        });
+        continue;
+      }
+
+      if (!user.fcmToken) {
+        results.push({ success: false, error: 'No FCM token' });
+        continue;
+      }
+
+      tokens.push(user.fcmToken);
     }
 
-    return this.sendToTokens(tokens, type, data);
+    if (tokens.length === 0) {
+      return {
+        successCount: 0,
+        failureCount: results.length,
+        results,
+      };
+    }
+
+    const batchResult = await this.sendToTokens(tokens, type, data);
+    const mergedResults = [...results, ...batchResult.results];
+
+    return {
+      successCount: batchResult.successCount,
+      failureCount: mergedResults.length - batchResult.successCount,
+      results: mergedResults,
+    };
   }
 
   /**
@@ -309,5 +359,19 @@ export class NotificationsService {
    */
   isMockMode(): boolean {
     return this.mockMode;
+  }
+
+  private isNotificationEnabledForUser(
+    user: User,
+    type: NotificationType,
+  ): boolean {
+    const preferenceKey = getPreferenceKeyForNotificationType(type);
+    const preferences = applyRoleRestrictions(
+      normalizeNotificationPreferences(
+        user.notificationPreferences as Record<string, boolean> | null | undefined,
+      ),
+      user.types,
+    );
+    return preferences[preferenceKey];
   }
 }

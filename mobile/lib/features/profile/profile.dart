@@ -3,3 +3,4 @@
 
 export 'screens/profile_screen.dart';
 export 'screens/help_contact_screen.dart';
+export 'screens/notifications_preferences_screen.dart';

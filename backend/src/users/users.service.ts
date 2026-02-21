@@ -10,6 +10,13 @@ import { DeletedAccount } from './entities/deleted-account.entity';
 import { Rating } from '../tasks/entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { ClientProfile } from '../client/entities/client-profile.entity';
+import {
+  applyRoleRestrictions,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  normalizeNotificationPreferences,
+  NotificationPreferences,
+} from '../notifications/constants/notification-preferences';
+import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 
 @Injectable()
 export class UsersService {
@@ -100,6 +107,60 @@ export class UsersService {
    */
   async updateFcmToken(id: string, fcmToken: string): Promise<User> {
     return this.update(id, { fcmToken });
+  }
+
+  /**
+   * Get notification preferences for current user.
+   * Ensures defaults are backfilled for legacy rows.
+   */
+  async getNotificationPreferences(
+    id: string,
+    userRoles: string[] = [],
+  ): Promise<NotificationPreferences> {
+    const user = await this.findByIdOrFail(id);
+    const normalized = applyRoleRestrictions(
+      normalizeNotificationPreferences(
+        user.notificationPreferences as Partial<NotificationPreferences> | null,
+      ),
+      userRoles.length > 0 ? userRoles : user.types,
+    );
+
+    if (!this.arePreferencesEqual(user.notificationPreferences, normalized)) {
+      await this.usersRepository.update(id, {
+        notificationPreferences: normalized,
+      });
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Update notification preferences for current user.
+   * Unknown keys are ignored by validation and contractor-only keys
+   * are disabled for non-contractor users.
+   */
+  async updateNotificationPreferences(
+    id: string,
+    data: UpdateNotificationPreferencesDto,
+    userRoles: string[] = [],
+  ): Promise<NotificationPreferences> {
+    const current = await this.getNotificationPreferences(id, userRoles);
+    const roles = userRoles.length > 0
+      ? userRoles
+      : (await this.findByIdOrFail(id)).types;
+    const merged = applyRoleRestrictions(
+      {
+        ...current,
+        ...data,
+      },
+      roles,
+    );
+
+    await this.usersRepository.update(id, {
+      notificationPreferences: merged,
+    });
+
+    return merged;
   }
 
   /**
@@ -254,5 +315,23 @@ export class UsersService {
     // They'll be created automatically when user first edits their profile for that role
 
     return this.usersRepository.save(user);
+  }
+
+  private arePreferencesEqual(
+    current: Record<string, boolean> | null | undefined,
+    expected: NotificationPreferences,
+  ): boolean {
+    if (!current) {
+      return false;
+    }
+
+    const normalizedCurrent = normalizeNotificationPreferences(
+      current as Partial<NotificationPreferences>,
+    );
+
+    return Object.entries(DEFAULT_NOTIFICATION_PREFERENCES).every(
+      ([key, value]) => normalizedCurrent[key as keyof NotificationPreferences] ===
+        (expected[key as keyof NotificationPreferences] ?? value),
+    );
   }
 }
