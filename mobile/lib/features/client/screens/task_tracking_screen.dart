@@ -29,6 +29,12 @@ enum TrackingStatus {
   completed,
 }
 
+enum _TaskOptionsAction {
+  details,
+  reportProblem,
+  cancel,
+}
+
 extension TrackingStatusExtension on TrackingStatus {
   String get title {
     switch (this) {
@@ -84,6 +90,8 @@ class TaskTrackingScreen extends ConsumerStatefulWidget {
 }
 
 class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
+  static const String _supportEmail = 'kontakt@szybkafucha.app';
+
   TrackingStatus _status = TrackingStatus.applications;
   Contractor? _contractor;
   Task? _task;
@@ -1136,10 +1144,10 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  void _showOptionsMenu() {
-    showModalBottomSheet(
+  Future<void> _showOptionsMenu() async {
+    final action = await showModalBottomSheet<_TaskOptionsAction>(
       context: context,
-      builder: (context) => Container(
+      builder: (bottomSheetContext) => Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1148,16 +1156,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               leading: Icon(Icons.info_outline),
               title: Text('Szczegóły zlecenia'),
               onTap: () {
-                context.pop();
-                _showTaskDetails();
+                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.details);
               },
             ),
             ListTile(
               leading: Icon(Icons.report_outlined, color: AppColors.warning),
               title: Text('Zgłoś problem'),
               onTap: () {
-                context.pop();
-                // TODO: Show report dialog
+                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.reportProblem);
               },
             ),
             ListTile(
@@ -1167,14 +1173,71 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.error),
               ),
               onTap: () {
-                context.pop();
-                _showCancelDialog();
+                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.cancel);
               },
             ),
           ],
         ),
       ),
     );
+
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _TaskOptionsAction.details:
+        _showTaskDetails();
+        break;
+      case _TaskOptionsAction.reportProblem:
+        await _openSupportEmailClient();
+        break;
+      case _TaskOptionsAction.cancel:
+        _showCancelDialog();
+        break;
+    }
+  }
+
+  Future<void> _openSupportEmailClient() async {
+    final task = _task;
+    final subject = 'Zgloszenie problemu - zlecenie ${widget.taskId}';
+    final body = StringBuffer()
+      ..writeln('Opisz problem:')
+      ..writeln()
+      ..writeln()
+      ..writeln('--- Kontekst ---')
+      ..writeln('Task ID: ${widget.taskId}')
+      ..writeln('Status: ${_status.name}')
+      ..writeln('Kategoria: ${task?.categoryData.name ?? 'brak'}');
+
+    final mailUri = Uri(
+      scheme: 'mailto',
+      path: _supportEmail,
+      queryParameters: {
+        'subject': subject,
+        'body': body.toString(),
+      },
+    );
+
+    try {
+      final didLaunch = await launchUrl(
+        mailUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!didLaunch && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Nie udało się otworzyć aplikacji pocztowej'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nie udało się otworzyć aplikacji pocztowej: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   void _showTaskDetails() {
