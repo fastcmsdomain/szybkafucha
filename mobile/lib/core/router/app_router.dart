@@ -40,24 +40,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = authNotifier.isAuthenticated;
       final onboardingComplete = authNotifier.onboardingComplete;
 
-      final isAuthRoute = state.matchedLocation == Routes.welcome ||
+      final isAuthRoute =
+          state.matchedLocation == Routes.welcome ||
           state.matchedLocation == Routes.login ||
           state.matchedLocation.startsWith('/login') ||
           state.matchedLocation == Routes.register ||
           state.matchedLocation.startsWith('/register') ||
           state.matchedLocation == Routes.forgotPassword;
-      final isProfileTabRoute = state.matchedLocation == Routes.welcome &&
+      final isProfileTabRoute =
+          state.matchedLocation == Routes.welcome &&
           state.uri.queryParameters['tab'] == 'profile';
 
       // emailVerify is NOT an auth route — it must stay accessible
       // after registration (before activateSession is called)
-      final isEmailVerifyRoute =
-          state.matchedLocation == Routes.emailVerify;
+      final isEmailVerifyRoute = state.matchedLocation == Routes.emailVerify;
 
       final isOnboardingRoute = state.matchedLocation == Routes.onboarding;
       final isBrowseRoute = state.matchedLocation == Routes.browse;
       final isPublicHomeRoute = state.matchedLocation == Routes.publicHome;
-      final isLegalRoute = state.matchedLocation == Routes.termsOfService ||
+      final isLegalRoute =
+          state.matchedLocation == Routes.termsOfService ||
           state.matchedLocation == Routes.privacyPolicy;
 
       // Debug logging
@@ -77,7 +79,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isEmailVerifyRoute) return null;
 
         // If on auth, onboarding, browse, or public home route → redirect to home
-        if (isAuthRoute || isOnboardingRoute || isBrowseRoute || isPublicHomeRoute) {
+        if (isAuthRoute ||
+            isOnboardingRoute ||
+            isBrowseRoute ||
+            isPublicHomeRoute) {
           final user = authNotifier.user;
           final destination = user?.isContractor == true
               ? Routes.contractorHome
@@ -181,10 +186,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final phoneNumber = extra['phone'] as String? ?? '';
           final userType = extra['userType'] as String? ?? 'client';
-          return OtpScreen(
-            phoneNumber: phoneNumber,
-            userType: userType,
-          );
+          return OtpScreen(phoneNumber: phoneNumber, userType: userType);
         },
       ),
       GoRoute(
@@ -248,6 +250,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProfileScreen(),
           ),
           GoRoute(
+            path: Routes.clientProfileHelp,
+            name: 'clientProfileHelp',
+            builder: (context, state) => const HelpContactScreen(),
+          ),
+          GoRoute(
             path: Routes.clientProfileEdit,
             name: 'clientProfileEdit',
             builder: (context, state) => const ClientProfileScreen(),
@@ -255,8 +262,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.clientReviews,
             name: 'clientReviews',
-            builder: (context, state) =>
-                const ClientReviewsScreen(),
+            builder: (context, state) => const ClientReviewsScreen(),
           ),
           // Task routes inside shell - bottom nav always visible
           GoRoute(
@@ -343,7 +349,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: Routes.contractorHome,
             name: 'contractorHome',
-            builder: (context, state) => const contractor.ContractorHomeScreen(),
+            builder: (context, state) =>
+                const contractor.ContractorHomeScreen(),
           ),
           GoRoute(
             path: Routes.contractorTaskList,
@@ -368,9 +375,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ProfileScreen(),
           ),
           GoRoute(
+            path: Routes.contractorProfileHelp,
+            name: 'contractorProfileHelp',
+            builder: (context, state) => const HelpContactScreen(),
+          ),
+          GoRoute(
             path: Routes.contractorProfileEdit,
             name: 'contractorProfileEdit',
-            builder: (context, state) => const contractor.ContractorProfileScreen(),
+            builder: (context, state) =>
+                const contractor.ContractorProfileScreen(),
           ),
           GoRoute(
             path: Routes.contractorReviews,
@@ -426,7 +439,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final taskId = state.pathParameters['taskId']!;
               final task = state.extra as ContractorTask?;
-              return contractor.TaskCompletionScreen(taskId: taskId, task: task);
+              return contractor.TaskCompletionScreen(
+                taskId: taskId,
+                task: task,
+              );
             },
           ),
           GoRoute(
@@ -449,7 +465,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.contractorRegistration,
         name: 'contractorRegistration',
-        redirect: (context, state) => Routes.contractorProfileEdit, // Redirect to profile edit
+        redirect: (context, state) =>
+            Routes.contractorProfileEdit, // Redirect to profile edit
       ),
       GoRoute(
         path: Routes.contractorKyc,
@@ -461,15 +478,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.notifications,
         name: 'notifications',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Notifications'),
+        builder: (context, state) => const NotificationsPreferencesScreen(),
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Page not found: ${state.uri}'),
-      ),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
   );
 });
 

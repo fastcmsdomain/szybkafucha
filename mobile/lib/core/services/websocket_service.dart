@@ -246,7 +246,11 @@ class WebSocketService {
     return _instance;
   }
 
-  WebSocketService._internal();
+  WebSocketService._internal() {
+    // Initialize once here so stateStream is stable across all connect/disconnect cycles.
+    // Recreating it in connect() would orphan all existing subscribers (e.g. ChatNotifier).
+    _stateController = StreamController<WebSocketState>.broadcast();
+  }
 
   late IO.Socket _socket;
   WebSocketState _state = WebSocketState.disconnected;
@@ -272,7 +276,6 @@ class WebSocketService {
 
   /// Initialize WebSocket service with JWT token
   Future<void> connect(String jwtToken) async {
-    _stateController = StreamController<WebSocketState>.broadcast();
     _jwtToken = jwtToken;
 
     // Use mock implementation in dev mode
@@ -623,7 +626,9 @@ class WebSocketService {
     }
 
     _updateState(WebSocketState.disconnected);
-    _listeners.clear();
+    // Do NOT clear _listeners here: providers like ChatNotifier register listeners
+    // in their constructor and only remove them on dispose(). Clearing here would
+    // orphan those handlers during token-refresh reconnects, breaking message delivery.
   }
 
   /// Cleanup resources

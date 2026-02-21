@@ -30,6 +30,8 @@ import {
   ALLOWED_AVATAR_MIMETYPES,
   MAX_AVATAR_SIZE,
 } from './dto/upload-avatar.dto';
+import { NotificationPreferencesDto } from './dto/notification-preferences.dto';
+import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 import type { UploadedFile as FileType } from './file-storage.service';
 
@@ -99,6 +101,38 @@ export class UsersController {
       throw new BadRequestException('FCM token is required');
     }
     return this.usersService.updateFcmToken(req.user.id, fcmToken);
+  }
+
+  /**
+   * GET /users/me/notification-preferences
+   * Returns current push notification preferences.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/notification-preferences')
+  async getNotificationPreferences(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<NotificationPreferencesDto> {
+    return this.usersService.getNotificationPreferences(
+      req.user.id,
+      req.user.types,
+    );
+  }
+
+  /**
+   * PUT /users/me/notification-preferences
+   * Updates push notification preferences.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Put('me/notification-preferences')
+  async updateNotificationPreferences(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateNotificationPreferencesDto,
+  ): Promise<NotificationPreferencesDto> {
+    return this.usersService.updateNotificationPreferences(
+      req.user.id,
+      dto,
+      req.user.types,
+    );
   }
 
   /**

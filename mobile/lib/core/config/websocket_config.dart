@@ -1,14 +1,26 @@
 /// WebSocket Configuration
 /// Centralized WebSocket connection settings with environment support
 
+import '../api/api_config.dart';
+
 abstract class WebSocketConfig {
-  /// WebSocket server URL
-  /// - Dev (Simulator/Emulator): ws://localhost:3000
-  /// - Dev (Physical Device): ws://192.168.1.131:3000 (use your Mac's IP)
-  /// - Staging: wss://staging-api.szybkafucha.pl/realtime
-  /// - Production: wss://api.szybkafucha.pl/realtime
-  /// Find your Mac IP: ifconfig | grep "inet " | grep -v 127.0.0.1
-  static const String webSocketUrl = 'ws://192.168.1.131:3000';
+  /// WebSocket server URL — derived from ApiConfig.serverUrl so both the HTTP
+  /// client and the WebSocket always point to the same host. Using a hardcoded
+  /// LAN IP while the API uses localhost (iOS simulator) or 10.0.2.2 (Android
+  /// emulator) caused the socket to connect to the wrong machine.
+  ///   http://  →  ws://
+  ///   https:// →  wss://
+  /// Override the host at build time with:
+  ///   flutter run --dart-define=DEV_SERVER_URL=http://192.168.1.X:3000
+  static String get webSocketUrl {
+    final serverUrl = ApiConfig.serverUrl;
+    if (serverUrl.startsWith('https://')) {
+      return serverUrl.replaceFirst('https://', 'wss://');
+    } else if (serverUrl.startsWith('http://')) {
+      return serverUrl.replaceFirst('http://', 'ws://');
+    }
+    return serverUrl;
+  }
 
   /// WebSocket namespace
   static const String namespace = '/realtime';

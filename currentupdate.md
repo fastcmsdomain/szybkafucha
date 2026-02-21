@@ -8,6 +8,35 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-21] Fix: chat offline (WebSocket URL + re-join) + aplikacje niewidoczne po odświeżeniu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Trzy powiązane bugi:
+  1. **WebSocket URL niezgodny z URL API** — WS URL był hardcoded do `ws://192.168.1.131:3000` podczas gdy API używało `http://localhost:3000` (iOS simulator). Socket próbował połączyć się z inną maszyną → zawsze "Offline". Fix: `WebSocketConfig.webSocketUrl` zmienione z `const` na `static getter` który derywuje URL z `ApiConfig.serverUrl`.
+  2. **Task room nie był re-joinowany po reconneccie** — po rozłączeniu/ponownym połączeniu WS, pokój zadania nie był ponownie dołączany → wiadomości przestawały docierać. Fix: dodano `joinTask(state.taskId)` w bloku `if (connected)` w `ChatNotifier._connectionSubscription`.
+  3. **Aplikacje wykonawców niewidoczne po odświeżeniu** — AppBar "Odśwież" wywoływał tylko `clientTasksProvider.refresh()`, nie przeładowywał `taskApplicationsProvider`. Fix: `_refreshTask()` teraz wywołuje oba równolegle.
+- **Files Changed**:
+  - `mobile/lib/core/config/websocket_config.dart` – `webSocketUrl` zmienione z hardcoded `const String` na `static String get` derywujący z `ApiConfig.serverUrl`; dodano import `api_config.dart`
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – dodano `joinTask(state.taskId)` w handlerze reconnectu
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – `_refreshTask()` teraz wywołuje `loadApplications()` równolegle
+- **System Impact**: WebSocket zawsze łączy się z tym samym hostem co API. Chat działa po reconneccie. Aplikacje widoczne po odświeżeniu bez hot-restartu.
+- **Potential Conflicts/Risks**: Dla fizycznych urządzeń nadal potrzebne `--dart-define=DEV_SERVER_URL=http://192.168.1.X:3000`.
+
+## [2026-02-21] Fix: chat zawsze offline + mapy nie ładują kafelków
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dwa bugfixy:
+  1. **Chat zawsze "Offline"** — `WebSocketService._stateController` był odtwarzany przy każdym wywołaniu `connect()`, sieroty wszystkich istniejących subskrypcji strumienia (np. `ChatNotifier._connectionSubscription`). Po token refresh subskrypcje wskazywały na stary stream, więc nigdy nie otrzymywały zdarzenia `connected`. Fix: inicjalizacja `_stateController` przeniesiona do prywatnego konstruktora `_internal()`. Dodatkowo usunięto `_listeners.clear()` z `disconnect()`, które kasowało callbacki zdarzeń (np. `messageNew`) podczas reconnect po token refresh.
+  2. **Mapy nie wyświetlają kafelków** — `flutter_map` v8.2.2 dodał wbudowany tile caching (`BuiltInMapCachingProvider`), który zależy od `path_provider`. Jeśli inicjalizacja cache'a failuje po cichu, ładowanie kafelków wisi w nieskończoność bez żadnego błędu. Fix: dodano `tileProvider: NetworkTileProvider(cachingProvider: const DisabledMapCachingProvider())` do wszystkich 4 instancji `TileLayer` w aplikacji.
+- **Files Changed**:
+  - `mobile/lib/core/services/websocket_service.dart` – `_stateController` inicjalizowany w `_internal()` zamiast `connect()`; usunięto `_listeners.clear()` z `disconnect()`
+  - `mobile/lib/core/widgets/sf_map_view.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/auth/screens/public_browse_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/client/screens/client_task_list_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+- **System Impact**: Chat: `isConnected` teraz poprawnie odzwierciedla stan WS po reconnect; wiadomości dostarczane po token refresh. Mapy: kafelki OSM ładują się poprawnie na iOS.
+- **Potential Conflicts/Risks**: Usunięcie `_listeners.clear()` z `disconnect()` oznacza, że listenery przetrwają cykl disconnect/reconnect (pożądane). Przy wylogowaniu użytkownika providers są dispose'd przez Riverpod, więc listenery są usuwane przez `off()`.
+
 ## [2026-02-20] Archiwum danych użytkownika przy usunięciu konta + inline role selector
 
 - **Developer/Agent**: Claude

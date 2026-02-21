@@ -28,6 +28,7 @@ import { KycModule } from './kyc/kyc.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SupportModule } from './support/support.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
@@ -136,6 +137,7 @@ import { DeletedAccount } from './users/entities/deleted-account.entity';
     NewsletterModule,
     HealthModule,
     NotificationsModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

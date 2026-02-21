@@ -240,7 +240,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
   /// Manual refresh for user-triggered reload
   Future<void> _refreshTask() async {
-    await ref.read(clientTasksProvider.notifier).refresh();
+    // Reload task and applications in parallel
+    await Future.wait([
+      ref.read(clientTasksProvider.notifier).refresh(),
+      ref.read(taskApplicationsProvider(widget.taskId).notifier).loadApplications(),
+    ]);
     // After refresh, update local state from latest data
     final tasksState = ref.read(clientTasksProvider);
     final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;

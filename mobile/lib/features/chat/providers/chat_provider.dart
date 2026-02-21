@@ -127,9 +127,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       if (!mounted) return;
       final connected = wsState == WebSocketState.connected;
       state = state.copyWith(isConnected: connected);
-      // Retry pending messages when reconnected
-      if (connected && state.hasPendingMessages) {
-        retrySendingPending(currentUserId: _currentUserId);
+      if (connected) {
+        // Re-join the task room on every (re)connect. Socket.IO rooms are NOT
+        // automatically restored after a disconnect/reconnect cycle, so without
+        // this incoming messages stop arriving after any connection drop.
+        _webSocketService.joinTask(state.taskId);
+        if (state.hasPendingMessages) {
+          retrySendingPending(currentUserId: _currentUserId);
+        }
       }
     });
   }
