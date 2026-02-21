@@ -80,3 +80,32 @@ jobs:
 
       - name: Test
         run: npm test -- --watchAll=false --passWithNoTests
+
+  mobile:
+    name: Mobile quality gates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Flutter quality gate
+        run: mobile/scripts/flutter_quality_gate.sh --scope all
+
+      - name: Platform compliance gate
+        run: mobile/scripts/platform_compliance_gate.sh --scope all --skip-analyze
