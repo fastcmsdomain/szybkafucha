@@ -13,7 +13,7 @@ export class EmailService {
     this.isDev = this.configService.get<string>('NODE_ENV') !== 'production';
     this.fromAddress =
       this.configService.get<string>('SMTP_FROM') ||
-      'Szybka Fucha <noreply@szybkafucha.pl>';
+      'Szybka Fucha <noreply@szybkafucha.app>';
 
     if (!this.isDev) {
       this.initializeTransporter();
@@ -22,13 +22,21 @@ export class EmailService {
 
   private initializeTransporter(): void {
     const host = this.configService.get<string>('SMTP_HOST');
-    const port = this.configService.get<number>('SMTP_PORT') || 587;
+    const portRaw = this.configService.get<string>('SMTP_PORT') || '587';
+    const port = Number.parseInt(portRaw, 10);
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASSWORD');
+    const secureRaw = this.configService.get<string>('SMTP_SECURE');
+    const secure =
+      secureRaw != null
+        ? ['1', 'true', 'yes', 'on'].includes(secureRaw.toLowerCase())
+        : port === 465;
 
-    if (!host || !user || !pass) {
+    if (!host || !user || !pass || Number.isNaN(port)) {
       this.logger.warn(
-        'SMTP not configured - emails will only be logged to console',
+        `SMTP not configured - missing host/user/pass or invalid port (host=${
+          host ? 'set' : 'missing'
+        }, user=${user ? 'set' : 'missing'}, pass=${pass ? 'set' : 'missing'}, port=${portRaw})`,
       );
       return;
     }
@@ -36,9 +44,12 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure,
       auth: { user, pass },
     });
+    this.logger.log(
+      `SMTP transporter initialized (host=${host}, port=${port}, secure=${secure})`,
+    );
   }
 
   /**

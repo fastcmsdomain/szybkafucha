@@ -87,7 +87,8 @@
       "Bash(. \"$NVM_DIR/nvm.sh\")",
       "Bash(python3:*)",
       "Bash(/usr/local/share/flutter/bin/flutter build:*)",
-      "Bash(/usr/local/share/flutter/bin/flutter pub:*)"
+      "Bash(/usr/local/share/flutter/bin/flutter pub:*)",
+      "Bash(/usr/local/share/flutter/bin/flutter analyze:*)"
     ]
   }
 }

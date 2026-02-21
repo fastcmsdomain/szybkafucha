@@ -37,6 +37,17 @@
 	<string>448907052417-in9gees45571297rh7r4eoqh3faghbeu.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby śledzić realizację zlecenia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
