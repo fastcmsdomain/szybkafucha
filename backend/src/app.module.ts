@@ -28,17 +28,20 @@ import { KycModule } from './kyc/kyc.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SupportModule } from './support/support.module';
 
 // Entities
 import { User } from './users/entities/user.entity';
 import { ContractorProfile } from './contractor/entities/contractor-profile.entity';
 import { ClientProfile } from './client/entities/client-profile.entity';
 import { Task } from './tasks/entities/task.entity';
+import { TaskApplication } from './tasks/entities/task-application.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
 import { KycCheck } from './kyc/entities/kyc-check.entity';
 import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscriber.entity';
+import { DeletedAccount } from './users/entities/deleted-account.entity';
 
 @Module({
   imports: [
@@ -66,11 +69,13 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
           ContractorProfile,
           ClientProfile,
           Task,
+          TaskApplication,
           Rating,
           Message,
           Payment,
           KycCheck,
           NewsletterSubscriber,
+          DeletedAccount,
         ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',
@@ -132,6 +137,7 @@ import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscribe
     NewsletterModule,
     HealthModule,
     NotificationsModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [

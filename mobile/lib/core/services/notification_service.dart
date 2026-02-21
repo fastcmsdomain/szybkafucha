@@ -42,9 +42,9 @@ class NotificationService {
     required SecureStorageService storage,
     required Dio apiClient,
     GoRouter? router,
-  })  : _storage = storage,
-        _apiClient = apiClient,
-        _router = router;
+  }) : _storage = storage,
+       _apiClient = apiClient,
+       _router = router;
 
   /// Initialize Firebase Messaging and local notifications
   Future<void> initialize() async {
@@ -58,7 +58,8 @@ class NotificationService {
       if (Platform.isAndroid) {
         await _localNotifications
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.createNotificationChannel(_channel);
       }
 
@@ -79,7 +80,9 @@ class NotificationService {
 
       print('✅ NotificationService: Initialization complete');
     } catch (e, stackTrace) {
-      print('⚠️ NotificationService: Initialization error (continuing in degraded mode)');
+      print(
+        '⚠️ NotificationService: Initialization error (continuing in degraded mode)',
+      );
       print('Error: $e');
       print('Stack trace: $stackTrace');
 
@@ -88,7 +91,9 @@ class NotificationService {
       try {
         await _initializeLocalNotifications();
         _setupNotificationTapHandler();
-        print('✅ NotificationService: Local notifications initialized (FCM disabled)');
+        print(
+          '✅ NotificationService: Local notifications initialized (FCM disabled)',
+        );
       } catch (e2) {
         print('❌ NotificationService: Local notifications also failed: $e2');
       }
@@ -122,8 +127,9 @@ class NotificationService {
 
   /// Initialize local notifications for foreground display
   Future<void> _initializeLocalNotifications() async {
-    const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettingsAndroid = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     const initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: false, // Already requested above
@@ -137,7 +143,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
   }
@@ -149,8 +155,12 @@ class NotificationService {
       if (Platform.isIOS) {
         final apnsToken = await _messaging.getAPNSToken();
         if (apnsToken == null) {
-          print('⚠️ APNS token not available (iOS Simulator or APNS not configured)');
-          print('   Push notifications will not work, but app continues normally');
+          print(
+            '⚠️ APNS token not available (iOS Simulator or APNS not configured)',
+          );
+          print(
+            '   Push notifications will not work, but app continues normally',
+          );
           return;
         }
       }
@@ -259,10 +269,10 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
-      title,
-      body,
-      notificationDetails,
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: _encodePayload(payload),
     );
   }
@@ -395,6 +405,11 @@ class NotificationService {
   /// Get current FCM token (for debugging/testing)
   Future<String?> getToken() async {
     return await _messaging.getToken();
+  }
+
+  /// Read current OS-level push permission status.
+  Future<NotificationSettings> getPermissionSettings() async {
+    return await _messaging.getNotificationSettings();
   }
 
   /// Request permission again (for manual permission request UI)

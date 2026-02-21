@@ -8,7 +8,204 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-21] Fix: chat offline (WebSocket URL + re-join) + aplikacje niewidoczne po odświeżeniu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Trzy powiązane bugi:
+  1. **WebSocket URL niezgodny z URL API** — WS URL był hardcoded do `ws://192.168.1.131:3000` podczas gdy API używało `http://localhost:3000` (iOS simulator). Socket próbował połączyć się z inną maszyną → zawsze "Offline". Fix: `WebSocketConfig.webSocketUrl` zmienione z `const` na `static getter` który derywuje URL z `ApiConfig.serverUrl`.
+  2. **Task room nie był re-joinowany po reconneccie** — po rozłączeniu/ponownym połączeniu WS, pokój zadania nie był ponownie dołączany → wiadomości przestawały docierać. Fix: dodano `joinTask(state.taskId)` w bloku `if (connected)` w `ChatNotifier._connectionSubscription`.
+  3. **Aplikacje wykonawców niewidoczne po odświeżeniu** — AppBar "Odśwież" wywoływał tylko `clientTasksProvider.refresh()`, nie przeładowywał `taskApplicationsProvider`. Fix: `_refreshTask()` teraz wywołuje oba równolegle.
+- **Files Changed**:
+  - `mobile/lib/core/config/websocket_config.dart` – `webSocketUrl` zmienione z hardcoded `const String` na `static String get` derywujący z `ApiConfig.serverUrl`; dodano import `api_config.dart`
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – dodano `joinTask(state.taskId)` w handlerze reconnectu
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – `_refreshTask()` teraz wywołuje `loadApplications()` równolegle
+- **System Impact**: WebSocket zawsze łączy się z tym samym hostem co API. Chat działa po reconneccie. Aplikacje widoczne po odświeżeniu bez hot-restartu.
+- **Potential Conflicts/Risks**: Dla fizycznych urządzeń nadal potrzebne `--dart-define=DEV_SERVER_URL=http://192.168.1.X:3000`.
+
+## [2026-02-21] Fix: chat zawsze offline + mapy nie ładują kafelków
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dwa bugfixy:
+  1. **Chat zawsze "Offline"** — `WebSocketService._stateController` był odtwarzany przy każdym wywołaniu `connect()`, sieroty wszystkich istniejących subskrypcji strumienia (np. `ChatNotifier._connectionSubscription`). Po token refresh subskrypcje wskazywały na stary stream, więc nigdy nie otrzymywały zdarzenia `connected`. Fix: inicjalizacja `_stateController` przeniesiona do prywatnego konstruktora `_internal()`. Dodatkowo usunięto `_listeners.clear()` z `disconnect()`, które kasowało callbacki zdarzeń (np. `messageNew`) podczas reconnect po token refresh.
+  2. **Mapy nie wyświetlają kafelków** — `flutter_map` v8.2.2 dodał wbudowany tile caching (`BuiltInMapCachingProvider`), który zależy od `path_provider`. Jeśli inicjalizacja cache'a failuje po cichu, ładowanie kafelków wisi w nieskończoność bez żadnego błędu. Fix: dodano `tileProvider: NetworkTileProvider(cachingProvider: const DisabledMapCachingProvider())` do wszystkich 4 instancji `TileLayer` w aplikacji.
+- **Files Changed**:
+  - `mobile/lib/core/services/websocket_service.dart` – `_stateController` inicjalizowany w `_internal()` zamiast `connect()`; usunięto `_listeners.clear()` z `disconnect()`
+  - `mobile/lib/core/widgets/sf_map_view.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/auth/screens/public_browse_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/client/screens/client_task_list_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Dodano `tileProvider` z `DisabledMapCachingProvider` do `TileLayer`
+- **System Impact**: Chat: `isConnected` teraz poprawnie odzwierciedla stan WS po reconnect; wiadomości dostarczane po token refresh. Mapy: kafelki OSM ładują się poprawnie na iOS.
+- **Potential Conflicts/Risks**: Usunięcie `_listeners.clear()` z `disconnect()` oznacza, że listenery przetrwają cykl disconnect/reconnect (pożądane). Przy wylogowaniu użytkownika providers są dispose'd przez Riverpod, więc listenery są usuwane przez `off()`.
+
+## [2026-02-20] Archiwum danych użytkownika przy usunięciu konta + inline role selector
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dwa zestawy zmian:
+  1. **Inline role selector** — usunięto dedykowany `RoleSelectionScreen`; wybór roli ("Pracodawca / Wykonawca") przeniesiony inline na 3 ekrany (welcome, email register, phone login) jako para małych solid-fill przycisków obok siebie.
+  2. **Archiwizacja danych przy usunięciu konta** — nowa tabela `deleted_accounts` przechowuje pełen snapshot PII + oceny + recenzje przed anonimizacją konta użytkownika.
+- **Files Changed**:
+  - `mobile/lib/features/auth/screens/role_selection_screen.dart` – USUNIĘTO (cały plik)
+  - `mobile/lib/features/auth/auth.dart` – Usunięto export `role_selection_screen.dart`
+  - `mobile/lib/core/router/routes.dart` – Usunięto `roleSelection = '/role-selection'`
+  - `mobile/lib/core/router/app_router.dart` – Usunięto redirect + GoRoute dla roleSelection; usunięto getter `roleSelected` i warunek `isRoleSelectionRoute`
+  - `mobile/lib/features/auth/screens/onboarding_screen.dart` – Zmieniono nawigację z `Routes.roleSelection` → `Routes.publicHome`
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Dodano `_buildRoleSelector()` + widget `_WelcomeRoleBox` (title + subtitle, animated solid fill); zastąpiono `UserTypeSelector`
+  - `mobile/lib/features/auth/screens/email_register_screen.dart` – Dodano `_RegRoleBox` powyżej pola "Imię i nazwisko"; initState pobiera rolę z `authProvider.selectedRole`; usunięto `UserTypeSelector`
+  - `mobile/lib/features/auth/screens/phone_login_screen.dart` – Dodano `_PhoneRoleBox` powyżej instrukcji telefonu; initState pobiera rolę z `authProvider.selectedRole`; ikony: `manage_search_outlined` / `handyman_outlined`
+  - `backend/src/users/entities/user.entity.ts` – Dodano `UserStatus.DELETED`, `@DeleteDateColumn deletedAt`
+  - `backend/src/users/entities/deleted-account.entity.ts` – NOWY PLIK: encja archiwum z PII, bio (contractor+client), rating averages, JSONB reviews
+  - `backend/src/users/users.module.ts` – Dodano `DeletedAccount, Rating, ContractorProfile, ClientProfile` do `TypeOrmModule.forFeature`
+  - `backend/src/app.module.ts` – Dodano `DeletedAccount` do tablicy entities
+  - `backend/src/users/users.service.ts` – Nowe `@InjectRepository` (4 repozytoria); `deleteAccount()` archiwizuje dane → anonimizuje → softDelete
+  - `backend/src/users/users.controller.ts` – Dodano `DELETE /users/me` endpoint (`@HttpCode(204)`)
+  - `backend/src/admin/admin.service.ts` – Dodano `[UserStatus.DELETED]: []` do `allowedTransitions`
+  - `backend/src/auth/auth.service.ts` – Dev logging w `requestPasswordReset` gdy brak passwordHash
+- **System Impact**: Nowa tabela DB `deleted_accounts` (auto-sync w dev). Usunięcie konta → snapshot → anonimizacja PII → softDelete. Router onboarding flow zmieniony.
+- **Related Tasks/PRD**: Account deletion + data retention / GDPR archival
+- **Potential Conflicts/Risks**: `UserStatus.DELETED` — sprawdzić czy inne miejsca używają switch/exhaustive check na UserStatus (admin.service.ts już naprawiony). `deleted_accounts` tabela powstanie automatycznie w dev przez TypeORM synchronize.
+
+## [2026-02-19] Wybór roli przy pierwszej rejestracji (RoleSelectionScreen)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dodano dedykowany ekran wyboru roli (Szef / Pracownik) wyświetlany raz po onboardingu przed ekranem logowania — aby nowi użytkownicy logujący się przez Google/Apple nie byli domyślnie rejestrowani jako klienci.
+- **Files Changed**:
+  - `mobile/lib/features/auth/screens/role_selection_screen.dart` – Nowy ekran z dwoma kartami `_RoleCard` (Szef/Pracownik), przycisk Kontynuuj (nieaktywny do wyboru), animowane wskaźniki selekcji
+  - `mobile/lib/features/auth/auth.dart` – Dodano export `role_selection_screen.dart`
+  - `mobile/lib/core/storage/secure_storage.dart` – Dodano klucz `selectedRole` do `StorageKeys`, dodano `saveSelectedRole`, `getSelectedRole`, `deleteSelectedRole`
+  - `mobile/lib/core/providers/auth_provider.dart` – Dodano pole `selectedRole: String?` do `AuthState`, getter `roleSelected`, metodę `setSelectedRole()`, logikę migracji (istniejący zalogowany użytkownik → rola pobierana z `userTypes.first`), czyszczenie roli przy `resetOnboarding()`
+  - `mobile/lib/core/router/routes.dart` – Dodano `roleSelection = '/role-selection'`
+  - `mobile/lib/core/router/app_router.dart` – Dodano przekierowanie: jeśli `onboardingComplete && !roleSelected` → `/role-selection`; dodano `GoRoute` dla roleSelection; getter `roleSelected` w `_AuthStateNotifier`; zalogowany użytkownik jest przekierowywany z ekranu wyboru roli
+  - `mobile/lib/features/auth/screens/onboarding_screen.dart` – Zmieniono cel nawigacji z `Routes.browse`/`Routes.welcome` na `Routes.roleSelection` (w `_completeOnboarding` i przycisku "Zaloguj się")
+  - `mobile/lib/features/auth/screens/welcome_screen.dart` – Usunięto `UserTypeSelector` i `_selectedUserType`; dodano getter `_userType` czytający `authProvider.selectedRole ?? 'client'`
+- **System Impact**: Nowy krok w onboarding flow — rola przechowywana w bezpiecznym storage i zapamiętywana między sesjami. Istniejący zalogowani użytkownicy: migracja auto-uzupełnia rolę z danych konta (transparentna aktualizacja). Wylogowani bez zapisanej roli: zobaczą wybór raz przy następnym starcie.
+- **Related Tasks/PRD**: Rejestracja Google/Apple — zapobieganie domyślnemu przypisaniu roli klienta
+- **Potential Conflicts/Risks**: `welcome_screen.dart` — usunięto `UserTypeSelector`; jeśli widget ten jest używany gdzie indziej, wymaga sprawdzenia (nie jest — widget był inline)
+
+## [2026-02-19] Ekran historii zleceń wykonawcy + nowa zakładka w nawigacji
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Dodano ekran historii zleceń dla wykonawcy (2 taby: Aktywne + Historia) oraz nową zakładkę "Historia" w dolnym menu nawigacyjnym między "Zlecenia" a "Zarobki".
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – Nowy ekran z tabami: aktywne zadania (contractorActiveTasksProvider) + historia (contractorHistoryProvider), karty zadań z nawigacją i bottom sheet ze szczegółami
+  - `mobile/lib/features/contractor/screens/screens.dart` – Dodano export nowego ekranu
+  - `mobile/lib/core/providers/task_provider.dart` – Dodano `ContractorHistoryState`, `ContractorHistoryNotifier`, `contractorHistoryProvider` (ładuje zakończone/anulowane zadania)
+  - `mobile/lib/core/router/routes.dart` – Dodano `contractorTaskHistory = '/contractor/history'`
+  - `mobile/lib/core/router/app_router.dart` – Dodano route dla historii, rozszerzono `_ContractorShell` do 5 zakładek, zaktualizowano `_calculateSelectedIndex` i `_onItemTapped`
+- **System Impact**: Nawigacja wykonawcy rozszerzona z 4 do 5 zakładek; nowy provider ładuje historię zadań z `/tasks/contractor/applications`
+- **Related Tasks/PRD**: Funkcja historii zleceń dla wykonawcy
+- **Potential Conflicts/Risks**: Indeksy zakładek nawigacji zmieniły się (Zarobki: 2→3, Profil: 3→4) — jeśli gdzieś są hardkodowane indeksy zakładek, mogą wymagać aktualizacji
+
+## [2026-02-19] Fix: Badge — nie opuszczaj task roomu po zamknięciu czatu/ekranu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał w client_home_screen (kontraktor→klient) i w ogóle dla klienta→wykonawcy. Root cause: `leaveChat()` i `dispose()` wywoływały `leaveTask()` → użytkownik wychodził z room → przestawał otrzymywać `message:new`.
+- **Files Changed**:
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – usunięto `leaveTask()` z `leaveChat()`. Task room pozostaje aktywny po zamknięciu czatu.
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – usunięto wywołanie `_leaveTaskRoom()` z `dispose()` i usunięto nieużywaną metodę.
+- **System Impact**: Użytkownicy pozostają w task roomach przez cały czas sesji WS → badge działa na wszystkich ekranach w obu kierunkach. Cleanup rooms następuje naturalnie przy disconneccie; reconnect auto-joinuje z powrotem.
+- **Potential Conflicts/Risks**: Brak. Roomy są lightweight w Socket.io. Nie opuszczamy rooma przez nawigację — to jest poprawne zachowanie.
+
+---
+
+## [2026-02-19] Fix: Badge — auto-join task rooms on WS connect (backend)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Badge nadal nie działał bo backend emituje `message:new` tylko do pokoju `task:${taskId}`, a użytkownik dołącza do tego pokoju dopiero po otwarciu czatu. Teraz backend auto-joinuje wszystkie aktywne task roomy przy połączeniu WS.
+- **Files Changed**:
+  - `backend/src/realtime/realtime.service.ts` – dodano `getActiveTaskIdsForUser(userId)` — query o aktywne taski
+  - `backend/src/realtime/realtime.gateway.ts` – `handleConnection()`: fire-and-forget auto-join do aktywnych task roomów
+- **System Impact**: Użytkownik po połączeniu WS automatycznie jest w task roomach wszystkich aktywnych zadań → badge działa bez wcześniejszego otwierania czatu.
+- **Potential Conflicts/Risks**: Jeden DB query na połączenie. Fire-and-forget — błąd jest logowany, nie przerywa połączenia.
+
+---
+
+## [2026-02-19] Fix: Unread message badge never showing count
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed `unreadMessagesProvider` so the red badge counter actually appears when a new message arrives. Root cause: `chatMessagesProvider` (the intermediary) is a `StreamProvider` that auto-disposes when no widget watches it (i.e., when no chat screen is open), removing its WS listener. Bypassed it entirely by registering directly with `WebSocketService.on()`. Also eagerly initialized the provider at app startup so it listens from the first frame.
+- **Files Changed**:
+  - `mobile/lib/core/providers/unread_messages_provider.dart` – Removed dependency on `chatMessagesProvider`; now calls `webSocketService.on(WebSocketConfig.messageNew, onNewMessage)` directly; re-registers listener on login (for logout→login cycle); `ref.onDispose` removes listener
+  - `mobile/lib/core/widgets/websocket_initializer.dart` – Added `import unread_messages_provider.dart`; added `ref.read(unreadMessagesProvider)` in `initState()` for eager initialization
+- **System Impact**: Badge count increments in real-time whenever a new message arrives from another user, on all 4 screens (client home, contractor home, task tracking, active task). Count clears when user opens the chat.
+- **Potential Conflicts/Risks**: If `WebSocketService.disconnect()` is called (on logout), its `_listeners.clear()` removes our callback. This is handled by re-registering via `ref.listen(authProvider, ...)` when user logs back in.
+
+---
+
+## [2026-02-19] Fix: Map tiles not loading on iOS (flutter_map built-in cache issue)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Disabled `flutter_map` v8.2.2's built-in tile caching provider to fix blank map on iOS. Also ran `pod install`.
+- **Files Changed**:
+  - `mobile/lib/core/widgets/sf_map_view.dart` – Added explicit `tileProvider: NetworkTileProvider(cachingProvider: const DisabledMapCachingProvider())` to `TileLayer`
+  - `mobile/ios/Podfile.lock` – Updated by `pod install`
+- **Root Cause**: `flutter_map` v8.2.2 added built-in tile caching (`BuiltInMapCachingProvider`) that depends on `path_provider`. The caching provider initializes asynchronously in a fire-and-forget function. If initialization fails or hangs, the internal `_cacheDirectoryPathReady` Completer never completes, causing `getTile()` to await indefinitely. Result: tiles never load, no console errors.
+- **System Impact**: Map tiles now load directly from OSM network (no local caching). Performance slightly reduced due to no tile caching, but maps work correctly.
+- **Related Tasks/PRD**: Map feature on client task tracking and contractor active task screens
+- **Potential Conflicts/Risks**: Tile caching disabled until properly re-enabled. To restore caching: ensure `path_provider` is properly initialized and remove the `cachingProvider` override.
+
+
 **Important**: Claude must read this file before starting any new task to avoid conflicts and regressions.
+
+---
+
+## [2026-02-19] Real-time Chat — Duplikaty wiadomości (Bug Fix)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Naprawiono dwa bugi powodujące wielokrotne wyświetlanie wysłanej wiadomości w UI
+- **Files Changed**:
+  - `mobile/lib/core/services/websocket_service.dart` – lokalny fire `message:new` w `sendMessage()` przeniesiony do bloku `devMode` (wcześniej odpalał się zawsze, tworząc duplikat przed odpowiedzią backendu)
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – `ChatNotifier` otrzymuje `_currentUserId`; `_handleIncomingMessage` ignoruje własne wiadomości (backend broadcastuje `message:new` z powrotem do nadawcy); dodany import `auth_provider.dart`
+- **System Impact**: Wysłana wiadomość pojawia się dokładnie raz; odebrana wiadomość pojawia się po właściwej stronie bańki
+- **Potential Conflicts/Risks**: `chatProvider.family` teraz czyta `currentUserProvider` — jeśli user nie jest zalogowany w momencie tworzenia providera, `currentUserId` będzie pustym stringiem (bezpieczne)
+
+---
+
+## [2026-02-18] Real-time Chat Wiring (Client ↔ Contractor)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Connected the pre-built chat UI to navigation and fixed two bugs in ChatProvider. Backend (REST + WebSocket) was already complete. Changes were purely mobile-side wiring.
+- **Files Changed**:
+  - `mobile/lib/core/router/app_router.dart` – Replaced `PlaceholderScreen` with `ChatScreen` for the client chat route, mirroring existing contractor pattern
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `auth_provider.dart` import; `_openChatWithContractor()` now passes `extra` map with taskTitle, contractor name/avatar, and current user id/name
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Added `auth_provider.dart` import; `_openChat()` now passes `extra` map with taskTitle, client name/avatar, and current user id/name
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Fixed `_handleIncomingMessage` to filter by `taskId`; fixed `leaveChat()` to call `_webSocketService.off()` to remove listener and prevent memory leak
+- **System Impact**: Chat is now fully functional end-to-end — both client and contractor can open a chat screen from their active task views, messages load from REST history and arrive in real-time via WebSocket
+- **Related Tasks/PRD**: Real-time messaging feature
+- **Potential Conflicts/Risks**: None — no backend changes, no existing UI changes
+
+---
+
+## [2026-02-13] Multi-Contractor Bidding System (Licytacja Zleceń)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Replaced the old "first-come-first-served" task acceptance model with a bidding system where multiple contractors (configurable max, default 5) can apply for a task with proposed prices and optional messages. Client sees a list of applicants with profiles (avatar, rating, bio, completed tasks, proposed price) and can accept or reject each. Old `ACCEPTED` status flow replaced: `CREATED → contractors apply → client picks one → CONFIRMED`. Full backend + mobile implementation with WebSocket real-time updates.
+- **Files Changed**:
+  - `backend/src/tasks/entities/task-application.entity.ts` – NEW: TaskApplication entity with ApplicationStatus enum, unique constraint, indexes
+  - `backend/src/tasks/dto/apply-task.dto.ts` – NEW: DTO for contractor applications (proposedPrice min 35, optional message max 500)
+  - `backend/src/tasks/entities/task.entity.ts` – Added maxApplications field (default 5)
+  - `backend/src/tasks/tasks.module.ts` – Registered TaskApplication entity
+  - `backend/src/tasks/dto/create-task.dto.ts` – Added optional maxApplications field (1-20)
+  - `backend/src/tasks/tasks.service.ts` – Major: added applyForTask, getApplications, acceptApplication, rejectApplication, withdrawApplication, getMyApplications; deprecated old acceptTask/confirmContractor/rejectContractor; updated cancelTask to auto-reject pending applications
+  - `backend/src/tasks/tasks.controller.ts` – New endpoints: POST :id/apply, GET :id/applications, PUT :id/applications/:appId/accept, PUT :id/applications/:appId/reject, DELETE :id/apply, GET contractor/applications; old endpoints return 410 Gone
+  - `backend/src/realtime/realtime.gateway.ts` – Added APPLICATION_NEW, APPLICATION_ACCEPTED, APPLICATION_REJECTED, APPLICATION_WITHDRAWN, APPLICATION_COUNT events
+  - `mobile/lib/features/client/models/task_application.dart` – NEW: TaskApplication and MyApplication models with ApplicationStatus enum
+  - `mobile/lib/features/client/models/task.dart` – Added applicationCount and maxApplications fields
+  - `mobile/lib/features/client/widgets/application_card.dart` – NEW: Widget showing contractor bid with accept/reject buttons
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Major: 4-step flow (applications→confirmed→inProgress→completed), WebSocket listener for application events, error display, removed old confirm/reject flow
+  - `mobile/lib/features/contractor/widgets/nearby_task_card.dart` – Changed button from "Przyjmij" to "Zgłoś się"
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Replaced _acceptTask with _showApplyDialog (price + message fields)
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – NEW: Contractor's application history with statuses
+  - `mobile/lib/core/providers/task_provider.dart` – Added taskApplicationsProvider, myApplicationsProvider; replaced acceptTask with applyForTask
+  - `mobile/lib/core/providers/websocket_provider.dart` – Added applicationUpdatesProvider and applicationResultProvider streams
+  - `mobile/lib/core/services/websocket_service.dart` – Added 5 application event listeners
+  - `mobile/lib/core/config/websocket_config.dart` – Added 5 application event name constants
+  - `mobile/lib/core/router/routes.dart` – Added contractorMyApplications route
+- **System Impact**: Major flow change - task acceptance now goes through bidding system. Old direct-accept endpoints return 410 Gone for backward compatibility. WebSocket events notify both clients and contractors in real-time.
+- **Related Tasks/PRD**: Multi-Contractor Bidding System (tasks/Multi-Contractor-Bidding.md), PRD Section 4.3 Matching Module
+- **Potential Conflicts/Risks**:
+  - Old mobile clients hitting deprecated endpoints will get 410 Gone errors
+  - Test spec files need updating for new maxApplications field on Task entity
+  - ACCEPTED status still in Task entity enum for DB backward compat but not used in new flow
 
 ---
 

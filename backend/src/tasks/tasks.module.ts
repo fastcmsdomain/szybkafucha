@@ -5,6 +5,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
+import { TaskApplication } from './entities/task-application.entity';
 import { Rating } from './entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { TasksService } from './tasks.service';
@@ -17,7 +18,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Rating, ContractorProfile]),
+    TypeOrmModule.forFeature([
+      Task,
+      TaskApplication,
+      Rating,
+      ContractorProfile,
+    ]),
     UsersModule,
     ContractorModule,
     forwardRef(() => RealtimeModule),

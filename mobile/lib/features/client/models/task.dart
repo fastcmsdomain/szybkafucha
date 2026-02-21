@@ -64,6 +64,8 @@ class Task {
   final DateTime? acceptedAt;
   final DateTime? completedAt;
   final List<String>? imageUrls;
+  final int applicationCount;
+  final int maxApplications;
 
   const Task({
     required this.id,
@@ -84,6 +86,8 @@ class Task {
     this.acceptedAt,
     this.completedAt,
     this.imageUrls,
+    this.applicationCount = 0,
+    this.maxApplications = 5,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -128,6 +132,8 @@ class Task {
       imageUrls: json['imageUrls'] != null
           ? List<String>.from(json['imageUrls'] as List)
           : (json['image_urls'] != null ? List<String>.from(json['image_urls'] as List) : null),
+      applicationCount: _parseInt(json['applicationCount']) ?? 0,
+      maxApplications: _parseInt(json['maxApplications']) ?? 5,
     );
   }
 
@@ -190,6 +196,8 @@ class Task {
         'accepted_at': acceptedAt?.toIso8601String(),
         'completed_at': completedAt?.toIso8601String(),
         if (imageUrls != null) 'image_urls': imageUrls,
+        'applicationCount': applicationCount,
+        'maxApplications': maxApplications,
       };
 
   Task copyWith({
@@ -210,6 +218,8 @@ class Task {
     DateTime? acceptedAt,
     DateTime? completedAt,
     List<String>? imageUrls,
+    int? applicationCount,
+    int? maxApplications,
     bool clearContractor = false,
   }) {
     return Task(
@@ -230,6 +240,8 @@ class Task {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       completedAt: completedAt ?? this.completedAt,
       imageUrls: imageUrls ?? this.imageUrls,
+      applicationCount: applicationCount ?? this.applicationCount,
+      maxApplications: maxApplications ?? this.maxApplications,
     );
   }
 

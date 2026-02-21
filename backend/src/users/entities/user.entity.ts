@@ -8,6 +8,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 
 // User type enum
@@ -22,6 +23,7 @@ export enum UserStatus {
   ACTIVE = 'active',
   SUSPENDED = 'suspended',
   BANNED = 'banned',
+  DELETED = 'deleted',
 }
 
 @Entity('users')
@@ -85,9 +87,20 @@ export class User {
   @Column({ type: 'text', nullable: true })
   fcmToken: string | null;
 
+  @Column({
+    type: 'jsonb',
+    nullable: false,
+    default: () =>
+      '\'{"messages":true,"taskUpdates":true,"payments":true,"ratingsAndTips":true,"newNearbyTasks":true,"kycUpdates":true}\'::jsonb',
+  })
+  notificationPreferences: Record<string, boolean>;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date | null;
 }

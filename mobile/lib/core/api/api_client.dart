@@ -38,11 +38,9 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (error, handler) {
-          // Handle 401 - could trigger logout here
-          if (error.response?.statusCode == 401) {
-            // Token might be expired, clear it
-            _authToken = null;
-          }
+          // Do NOT clear the token here — the auth provider handles 401s
+          // through its own refresh/logout logic. Clearing here causes
+          // cascading failures when background requests return 401.
           return handler.next(error);
         },
       ),

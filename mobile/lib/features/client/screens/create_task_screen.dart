@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
@@ -32,10 +34,15 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
+  static const String _defaultBudgetPln = '100';
+  static const String _defaultEstimatedDurationHours = '1';
+
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _budgetController = TextEditingController(text: '50');
-  final _estimatedDurationController = TextEditingController();
+  final _budgetController = TextEditingController(text: _defaultBudgetPln);
+  final _estimatedDurationController = TextEditingController(
+    text: _defaultEstimatedDurationHours,
+  );
 
   TaskCategory? _selectedCategory;
   bool _isNow = true;
@@ -58,11 +65,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     super.initState();
     _selectedCategory = widget.initialCategory;
     if (_selectedCategory != null) {
-      final category = TaskCategoryData.fromCategory(_selectedCategory!);
-      _budgetController.text = category.suggestedPrice.toString();
+      _budgetController.text =
+          TaskCategoryData.fromCategory(_selectedCategory!).suggestedPrice.toString();
     }
 
-    // Add listener to update summary when duration changes
+    // Add listeners to update summary when inputs change
+    _budgetController.addListener(() {
+      setState(() {});
+    });
     _estimatedDurationController.addListener(() {
       setState(() {});
     });
@@ -82,7 +92,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+          onPressed: _closeScreen,
           tooltip: 'Zamknij',
         ),
         title: SFRainbowText(AppStrings.createTask),
@@ -154,6 +164,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                           'Znajdź pomocnika',
                           style: AppTypography.bodyMedium.copyWith(
                             fontWeight: FontWeight.w600,
+                            color: AppColors.white,
                           ),
                         ),
                 ),
@@ -229,6 +240,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
+  void _closeScreen() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go(Routes.clientHome);
+  }
+
   Widget _buildDescriptionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,15 +269,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             ),
             counterText: '',
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Wprowadź opis zadania';
-            }
-            if (value.length < 10) {
-              return 'Opis musi mieć co najmniej 10 znaków';
-            }
-            return null;
-          },
+          validator: _validateDescription,
         ),
         SizedBox(height: AppSpacing.gapXS),
         Text(
@@ -552,7 +563,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                 markers: [
                   TaskMarker(
                     position: _selectedLatLng!,
-                    label: 'Lokalizacja zlecenia',
                   ),
                 ],
               ),
@@ -589,7 +599,10 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   TextFormField(
                     controller: _budgetController,
                     keyboardType: TextInputType.number,
-                    style: AppTypography.h3.copyWith(
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    style: AppTypography.h4.copyWith(
                       color: AppColors.primary,
                     ),
                     decoration: InputDecoration(
@@ -597,8 +610,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       suffixStyle: AppTypography.h4.copyWith(
                         color: AppColors.primary,
                       ),
-                      hintText: '35',
-                      hintStyle: AppTypography.h3.copyWith(
+                      hintText: _defaultBudgetPln,
+                      hintStyle: AppTypography.h4.copyWith(
                         color: AppColors.gray300,
                       ),
                     ),
@@ -634,7 +647,10 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   TextFormField(
                     controller: _estimatedDurationController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    style: AppTypography.h3.copyWith(
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
+                    style: AppTypography.h4.copyWith(
                       color: AppColors.primary,
                     ),
                     decoration: InputDecoration(
@@ -642,8 +658,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                       suffixStyle: AppTypography.h4.copyWith(
                         color: AppColors.primary,
                       ),
-                      hintText: '2.5',
-                      hintStyle: AppTypography.h3.copyWith(
+                      hintText: _defaultEstimatedDurationHours,
+                      hintStyle: AppTypography.h4.copyWith(
                         color: AppColors.gray300,
                       ),
                     ),
@@ -980,6 +996,38 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
+  String? _validateDescription(String? value) {
+    final description = value?.trim() ?? '';
+    if (description.isEmpty) {
+      return 'Wprowadź opis zadania';
+    }
+    if (description.length < 10) {
+      return 'Opis musi mieć co najmniej 10 znaków';
+    }
+
+    // Block phone numbers with optional country code and separators.
+    final phoneRegex = RegExp(
+      r'(?:(?:\+|00)\d{1,3}[\s.-]?)?(?:\d[\s.-]?){8,14}\d',
+    );
+    if (phoneRegex.hasMatch(description)) {
+      return 'Nie podawaj numeru telefonu w opisie';
+    }
+
+    // Block long numeric patterns separated by comma, dot or space.
+    final separatedDigitsRegex = RegExp(r'\d{2,}(?:[.,\s]\d{2,}){2,}');
+    if (separatedDigitsRegex.hasMatch(description)) {
+      return 'Usuń długie ciągi cyfr z opisu';
+    }
+
+    // Block continuous long numeric strings.
+    final continuousDigitsRegex = RegExp(r'\d{5,}');
+    if (continuousDigitsRegex.hasMatch(description)) {
+      return 'Usuń ciągłe zapisy numeryczne z opisu';
+    }
+
+    return null;
+  }
+
   /// Format duration hours for summary display
   String _formatDurationForSummary(String hoursText) {
     if (hoursText.isEmpty) return '';
@@ -1037,6 +1085,20 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
+    final description = _descriptionController.text.trim();
+    final descriptionValidationError = _validateDescription(description);
+    if (descriptionValidationError != null) {
+      // Force form errors to show and provide immediate warning on submit.
+      _formKey.currentState?.validate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(descriptionValidationError),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     // Validate location is selected
     if (_selectedLatLng == null || _selectedAddress == null) {
       setState(() {
@@ -1069,13 +1131,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       }
 
       // Create title from first 50 chars of description
-      final description = _descriptionController.text;
       final title = description.length > 50
           ? description.substring(0, 50)
           : description;
 
       // Parse budget from text field
-      final budgetAmount = double.tryParse(_budgetController.text) ?? 35;
+      final budgetAmount =
+          double.tryParse(_budgetController.text) ??
+          double.parse(_defaultBudgetPln);
 
       // Parse estimated duration (optional)
       final estimatedDurationHours = _estimatedDurationController.text.isNotEmpty

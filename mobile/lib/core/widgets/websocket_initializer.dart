@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/unread_messages_provider.dart';
 import '../providers/websocket_provider.dart';
 import '../services/websocket_service.dart';
 
@@ -29,6 +30,9 @@ class _WebSocketInitializerState extends ConsumerState<WebSocketInitializer> {
   @override
   void initState() {
     super.initState();
+    // Eagerly initialize unread messages provider so it registers its
+    // WebSocket listener before any chat badge widget is rendered.
+    ref.read(unreadMessagesProvider);
     // Check auth state after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthAndConnect();

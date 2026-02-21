@@ -5,11 +5,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_progress.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_category.dart';
@@ -257,13 +259,13 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         children: [
           // Map placeholder
           Expanded(
-            flex: 2,
+            flex: 3,
             child: _buildMapSection(task),
           ),
 
           // Task details and actions
           Expanded(
-            flex: 3,
+            flex: 7,
             child: Container(
               decoration: BoxDecoration(
                 color: AppColors.white,
@@ -366,16 +368,49 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           showZoomControls: true,
         ),
 
-        // Navigate button overlay
+        // Navigate button overlay (top-right, same visual height as distance badge)
         Positioned(
-          bottom: AppSpacing.paddingMD,
+          top: AppSpacing.paddingMD,
           right: AppSpacing.paddingMD,
-          child: FloatingActionButton.extended(
-            onPressed: () => _openNavigation(task),
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.white,
-            icon: const Icon(Icons.navigation),
-            label: const Text('Nawiguj'),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _openNavigation(task),
+              borderRadius: AppRadius.radiusMD,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.paddingMD,
+                  vertical: AppSpacing.paddingSM,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: AppRadius.radiusMD,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.gray900.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.navigation,
+                      size: 16,
+                      color: AppColors.white,
+                    ),
+                    SizedBox(width: AppSpacing.gapSM),
+                    Text(
+                      'Nawiguj',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: AppColors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
 
@@ -420,9 +455,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 4-step flow (per job_flow.md - removed "Do potwierdzenia")
-    // Oczekuje → Potwierdzone → W trakcie → Zakończono
-    const steps = ['Oczekuje', 'Potwierdzone', 'W trakcie', 'Zakończono'];
+    // Keep status step visuals aligned with client tracking screen
+    const steps = ['Zgłoszenia', 'Potwierdzony', 'W trakcie', 'Gotowe'];
 
     // Map current status to step index (0-3)
     int currentStep;
@@ -447,7 +481,6 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     return SFRainbowProgress(
       steps: steps,
       currentStep: currentStep,
-      isSmall: true, // Smaller version for contractor screen per spec
     );
   }
 
@@ -694,35 +727,28 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               ],
             ),
           ),
-          TextButton.icon(
+          IconButton(
             onPressed: () => _showClientProfile(task),
-            icon: const Icon(Icons.person_outline, color: AppColors.white),
-            label: const Text(''),
-            style: TextButton.styleFrom(
+            style: IconButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: AppColors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.paddingSM,
-                vertical: AppSpacing.paddingSM,
-              ),
+              shape: const CircleBorder(),
+              padding: EdgeInsets.all(AppSpacing.paddingSM),
             ),
+            icon: const Icon(Icons.person_outline, color: AppColors.white),
           ),
           if (canContact) ...[
             SizedBox(width: AppSpacing.gapSM),
-            IconButton(
-              onPressed: _openChat,
-              icon: const Icon(Icons.chat_outlined),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.gray100,
-              ),
-            ),
-            SizedBox(width: AppSpacing.gapSM),
-            IconButton(
-              onPressed: _callClient,
-              icon: const Icon(Icons.phone_outlined),
-              style: IconButton.styleFrom(
-                backgroundColor: AppColors.success.withValues(alpha: 0.1),
-                foregroundColor: AppColors.success,
+            SFChatBadge(
+              taskId: widget.taskId,
+              child: IconButton(
+                onPressed: _openChat,
+                icon: const Icon(Icons.chat_outlined, color: AppColors.white),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  shape: const CircleBorder(),
+                  padding: EdgeInsets.all(AppSpacing.paddingSM),
+                ),
               ),
             ),
           ],
@@ -769,6 +795,67 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     // Show cancel button for accepted and confirmed tasks (before work starts)
     final showCancelButton = _currentStatus == ContractorTaskStatus.accepted ||
         _currentStatus == ContractorTaskStatus.confirmed;
+    final showSideBySideActions =
+        _currentStatus == ContractorTaskStatus.confirmed && onPressed != null;
+    final sideBySideActionHeight = 52.0;
+    final isStartAction = _currentStatus == ContractorTaskStatus.confirmed;
+    final primaryActionColor = isStartAction ? AppColors.success : AppColors.primary;
+    final primaryVerticalPadding = showSideBySideActions
+        ? AppSpacing.paddingSM
+        : AppSpacing.paddingLG;
+    final cancelVerticalPadding = showSideBySideActions
+        ? AppSpacing.paddingSM
+        : AppSpacing.paddingMD;
+
+    final primaryActionButton = ElevatedButton(
+      onPressed: _isUpdating ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: primaryActionColor,
+        foregroundColor: AppColors.white,
+        disabledForegroundColor: AppColors.white.withValues(alpha: 0.85),
+        padding: EdgeInsets.symmetric(vertical: primaryVerticalPadding),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.white,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.radiusLG,
+        ),
+        disabledBackgroundColor: primaryActionColor.withValues(alpha: 0.5),
+      ),
+      child: _isUpdating
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation(AppColors.white),
+              ),
+            )
+          : Text(
+              buttonText,
+              style: const TextStyle(color: AppColors.white),
+            ),
+    );
+
+    final cancelActionButton = ElevatedButton.icon(
+      onPressed: _isUpdating ? null : _showCancelConfirmation,
+      icon: const Icon(Icons.cancel_outlined, color: AppColors.white),
+      label: Text(
+        'Anuluj',
+        style: const TextStyle(color: AppColors.white),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.error,
+        foregroundColor: AppColors.white,
+        disabledBackgroundColor: AppColors.error.withValues(alpha: 0.5),
+        padding: EdgeInsets.symmetric(vertical: cancelVerticalPadding),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.radiusLG,
+        ),
+      ),
+    );
 
     return Column(
       children: [
@@ -824,56 +911,35 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
         ],
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isUpdating ? null : onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
-              shape: RoundedRectangleBorder(
-                borderRadius: AppRadius.radiusLG,
+        if (showCancelButton && showSideBySideActions) ...[
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: sideBySideActionHeight,
+                  child: primaryActionButton,
+                ),
               ),
-              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
-            ),
-            child: _isUpdating
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppColors.white),
-                    ),
-                  )
-                : Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+              SizedBox(width: AppSpacing.gapMD),
+              Expanded(
+                child: SizedBox(
+                  height: sideBySideActionHeight,
+                  child: cancelActionButton,
+                ),
+              ),
+            ],
           ),
-        ),
-        if (showCancelButton) ...[
+        ] else ...[
+          SizedBox(
+            width: double.infinity,
+            child: primaryActionButton,
+          ),
+        ],
+        if (showCancelButton && !showSideBySideActions) ...[
           SizedBox(height: AppSpacing.gapMD),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _isUpdating ? null : _showCancelConfirmation,
-              icon: Icon(Icons.cancel_outlined, color: AppColors.error),
-              label: Text(
-                'Anuluj',
-                style: TextStyle(color: AppColors.error),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.radiusLG,
-                ),
-              ),
-            ),
+            child: cancelActionButton,
           ),
         ],
       ],
@@ -947,7 +1013,18 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   void _openChat() {
-    context.push(Routes.contractorTaskChatRoute(widget.taskId));
+    final task = ref.read(activeTaskProvider).task;
+    final currentUser = ref.read(currentUserProvider);
+    context.push(
+      Routes.contractorTaskChatRoute(widget.taskId),
+      extra: {
+        'taskTitle': task?.description ?? 'Czat',
+        'otherUserName': task?.clientName ?? 'Klient',
+        'otherUserAvatarUrl': task?.clientAvatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
+    );
   }
 
   void _showClientProfile(ContractorTask task) {

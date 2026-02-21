@@ -1,7 +1,7 @@
 # IT MUST BE DONE BEFORE MVP START
 
 **Document Status**: MVP Production Readiness Prerequisites
-**Last Updated**: 2026-01-19
+**Last Updated**: 2026-02-13
 **Timeline**: 7-11 days to MVP launch
 **Audience**: Development team, DevOps, Product
 
@@ -1030,7 +1030,7 @@ MOBILE APP:
 1. Receives notification tap
 2. Deep links to task details screen
 3. Shows: "Sprzątanie - 200 PLN, Centrum Warszawy, Klient: Anna"
-4. Contractor can tap "Accept" to take the task
+4. Contractor can tap "Zgłoś się" to apply with proposed price
 
 IF APP ALREADY OPEN:
 1. Notification arrives via WebSocket (real-time)
@@ -1038,7 +1038,7 @@ IF APP ALREADY OPEN:
 3. Tasks list auto-refreshes
 4. New task appears at top
 5. Contractor taps to view details
-6. Taps "Accept"
+6. Taps "Zgłoś się" → enters proposed price → submits application
 ```
 
 **Files Involved**:
@@ -1110,29 +1110,24 @@ ws://localhost:3000/realtime
 
 ---
 
-### Task 4.3: Real-Time Task Acceptance Flow (CRITICAL) ✅ IMPLEMENTED
+### Task 4.3: Real-Time Task Bidding & Acceptance Flow (CRITICAL) ✅ IMPLEMENTED
 
-**What it tests**: WebSocket real-time updates when contractor accepts task
-**Current Status**: ✅ IMPLEMENTED
-**Required For**: Core user experience - client must see instant feedback
+**What it tests**: Multi-contractor bidding system with WebSocket real-time updates
+**Current Status**: ✅ IMPLEMENTED (Updated 2026-02-13: Replaced direct-accept with bidding system)
+**Required For**: Core user experience - client must see contractor bids in real-time
 
 #### Why This is Critical
 ```
-Without Real-Time Updates (Old Behavior):
-1. Client creates task
-2. Contractor accepts task
-3. Client's app shows "Szukamy pomocnika" forever
-4. Client has to manually refresh to see status change
-5. Poor user experience - feels like app is broken
+Old Flow (Deprecated - Direct Accept):
+1. Client creates task → One contractor accepts → Client confirms/rejects
+2. No competition, no price negotiation, limited choice
 
-With Real-Time Updates (New Behavior):
-1. Client creates task → Screen shows "Szukamy pomocnika"
-2. Contractor accepts task
-3. WebSocket broadcasts task status to client INSTANTLY
-4. Client's screen updates automatically:
-   - Status: "Pomocnik znaleziony"
-   - Contractor card appears with name, rating, avatar
-5. Smooth, professional user experience
+New Flow (Multi-Contractor Bidding):
+1. Client creates task → Screen shows "Zgłoszenia wykonawców" (0/5)
+2. Multiple contractors apply with proposed prices and optional messages
+3. Client sees real-time list of applicants with profiles, ratings, prices
+4. Client picks the best contractor → Task moves to CONFIRMED
+5. All other applicants auto-rejected with notifications
 ```
 
 #### Test Flow
@@ -1144,98 +1139,152 @@ With Real-Time Updates (New Behavior):
 
 **Step-by-Step Test**:
 
-1. **Setup Two Devices/Simulators**
+1. **Setup Three Devices/Simulators**
    ```
-   Device A: Client account (zleceniodawca)
-   Device B: Contractor account (wykonawca)
+   Device A: Client account (szef)
+   Device B: Contractor 1 account (pracownik)
+   Device C: Contractor 2 account (pracownik)
    ```
 
 2. **Client Creates Task**
    ```
    Device A:
-   - Create new task (e.g., "Pomoc przy zakupach")
+   - Create new task (e.g., "Pomoc przy zakupach" - Budget: 100 PLN)
    - App navigates to TaskTrackingScreen
-   - Screen shows: "Szukamy pomocnika..." with searching animation
+   - Screen shows: "Czekamy na zgłoszenia wykonawców..." with counter "0/5"
    ```
 
-3. **Contractor Accepts Task**
+3. **Contractor 1 Applies**
    ```
    Device B:
    - Open contractor home screen
    - Task appears in nearby tasks list
-   - Tap "Przyjmij" button
+   - Tap "Zgłoś się" button
+   - Enter proposed price: 90 PLN
+   - Optional message: "Mogę być za 30 minut"
+   - Tap "Wyślij zgłoszenie"
    ```
 
-4. **VERIFY: Client Receives Real-Time Update**
+4. **VERIFY: Client Receives Real-Time Application**
    ```
    Device A (within 1-2 seconds):
-   ✅ Status changes from "Szukamy pomocnika" to "Pomocnik znaleziony"
-   ✅ Contractor card appears with:
-      - Name (e.g., "Jan Kowalski")
-      - Rating (e.g., "4.8 ★")
-      - Avatar image (if available)
-   ✅ No manual refresh required
+   ✅ Counter updates to "1/5"
+   ✅ ApplicationCard appears with:
+      - Contractor name, avatar, online indicator
+      - Rating (e.g., "4.8 ★") + review count
+      - Completed tasks count
+      - Distance + ETA
+      - Proposed price: 90 PLN (highlighted if < budget)
+      - Message: "Mogę być za 30 minut"
+      - Accept/Reject buttons
+   ✅ No manual refresh required (WebSocket: application:new)
    ```
 
-5. **Contractor Starts Task**
+5. **Contractor 2 Applies**
    ```
-   Device B:
-   - Tap "Wyruszyłem" or "Rozpocznij" button
+   Device C:
+   - Same flow, proposed price: 80 PLN
    ```
 
-6. **VERIFY: Client Sees Status Update**
+6. **VERIFY: Client Sees Updated List**
    ```
    Device A:
-   ✅ Status changes to "Praca w toku"
-   ✅ Progress indicator updates
+   ✅ Counter updates to "2/5"
+   ✅ Second ApplicationCard appears
+   ✅ Client can compare prices, ratings, messages
    ```
 
-7. **Contractor Completes Task**
-   ```
-   Device B:
-   - Tap "Zakończ" button
-   - Optionally add completion photos
-   ```
-
-8. **VERIFY: Client Sees Completion**
+7. **Client Accepts Contractor 2**
    ```
    Device A:
-   ✅ Status changes to "Zakończone"
-   ✅ Option to rate contractor appears
+   - Tap "Akceptuj" on Contractor 2's card
+   - Task status changes to CONFIRMED
+   ```
+
+8. **VERIFY: Both Contractors Notified**
+   ```
+   Device B (Contractor 1):
+   ✅ Receives application:rejected notification
+   ✅ Application status changes to "Odrzucone"
+
+   Device C (Contractor 2):
+   ✅ Receives application:accepted notification
+   ✅ Task becomes their active task
+   ```
+
+9. **Contractor 2 Starts → Completes Task**
+   ```
+   Device C: Tap "Rozpocznij" → Tap "Zakończ"
+   Device A: ✅ Real-time status updates (inProgress → completed)
    ```
 
 #### Technical Details
 
-**WebSocket Events Tested**:
+**WebSocket Events (Application System)**:
 ```typescript
-// Event: task:status
+// Client receives (new application):
+// Event: application:new
 {
   taskId: "uuid",
-  status: "accepted" | "in_progress" | "completed",
-  updatedAt: "ISO8601",
-  updatedBy: "contractor-uuid",
-  contractor: {  // Only for 'accepted' status
+  application: {
     id: "uuid",
-    name: "Jan Kowalski",
-    avatarUrl: "https://...",
-    rating: 4.8,
-    completedTasks: 42
+    contractorId: "uuid",
+    contractorName: "Jan Kowalski",
+    proposedPrice: 90,
+    message: "Mogę być za 30 minut",
+    status: "pending",
+    createdAt: "ISO8601"
   }
+}
+
+// Contractor receives (accepted/rejected):
+// Event: application:accepted / application:rejected
+{
+  taskId: "uuid",
+  applicationId: "uuid",
+  status: "accepted" | "rejected"
+}
+
+// Client receives (count update):
+// Event: application:count
+{
+  taskId: "uuid",
+  count: 2
 }
 ```
 
-**Files Involved**:
-- Backend: `backend/src/tasks/tasks.service.ts` - WebSocket broadcasts
-- Backend: `backend/src/realtime/realtime.gateway.ts` - broadcastTaskStatusWithContractor
-- Mobile: `mobile/lib/core/services/websocket_service.dart` - TaskStatusEvent + ContractorInfo
-- Mobile: `mobile/lib/features/client/screens/task_tracking_screen.dart` - Real-time UI
-- Mobile: `mobile/lib/core/providers/task_provider.dart` - WebSocket listener
+**API Endpoints (Bidding System)**:
+```
+POST   /tasks/:id/apply                      - Contractor applies (proposedPrice, message?)
+GET    /tasks/:id/applications               - Get applications (client only)
+PUT    /tasks/:id/applications/:appId/accept - Accept application
+PUT    /tasks/:id/applications/:appId/reject - Reject application
+DELETE /tasks/:id/apply                      - Withdraw application (contractor)
+GET    /tasks/contractor/applications        - Contractor's own applications
+```
 
-**UI States (4 basic states)**:
+**Deprecated Endpoints (return 410 Gone)**:
+```
+PUT /tasks/:id/accept           → Use POST /tasks/:id/apply
+PUT /tasks/:id/confirm-contractor → Use PUT /tasks/:id/applications/:appId/accept
+PUT /tasks/:id/reject-contractor  → Use PUT /tasks/:id/applications/:appId/reject
+```
+
+**Files Involved**:
+- Backend: `backend/src/tasks/tasks.service.ts` - Application logic + WebSocket broadcasts
+- Backend: `backend/src/tasks/tasks.controller.ts` - 6 new bidding endpoints
+- Backend: `backend/src/tasks/entities/task-application.entity.ts` - TaskApplication entity
+- Backend: `backend/src/realtime/realtime.gateway.ts` - Application events
+- Mobile: `mobile/lib/features/client/screens/task_tracking_screen.dart` - Applications list UI
+- Mobile: `mobile/lib/features/client/widgets/application_card.dart` - Contractor bid card
+- Mobile: `mobile/lib/core/providers/task_provider.dart` - taskApplicationsProvider
+- Mobile: `mobile/lib/core/providers/websocket_provider.dart` - applicationUpdatesProvider
+
+**UI States (4 steps)**:
 ```dart
 enum TrackingStatus {
-  searching,    // "Szukamy pomocnika..."
-  accepted,     // "Pomocnik znaleziony"
+  applications, // "Zgłoszenia wykonawców" (0/5) - replaces old 'searching'
+  confirmed,    // "Wykonawca wybrany" - after client picks contractor
   inProgress,   // "Praca w toku"
   completed,    // "Zakończone"
 }
@@ -1243,16 +1292,18 @@ enum TrackingStatus {
 
 #### Troubleshooting
 
-**If client doesn't receive updates**:
+**If applications don't appear in real-time**:
 1. Check WebSocket connection: `wsService.isConnected` should be `true`
 2. Check if client joined task room: `wsService.joinTask(taskId)` called
-3. Check backend logs for: `Task ${taskId} status broadcast`
-4. Verify Firebase/Push notification as backup
+3. Check `applicationUpdatesProvider` is listening for `application:new` events
+4. Check backend logs for: `Broadcasting application:new for task ${taskId}`
+5. Verify API GET `/tasks/:id/applications` returns data manually
 
-**If contractor info is missing**:
-1. Check backend sends contractor data in broadcast
-2. Verify ContractorProfile exists for contractor user
-3. Check mobile parses `event.contractor` correctly
+**If contractor can't apply**:
+1. Check task status is `CREATED` (only status allowing applications)
+2. Check max applications not reached (default 5)
+3. Check contractor hasn't already applied (409 Conflict)
+4. Check proposed price >= 35 PLN minimum
 
 ---
 

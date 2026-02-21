@@ -246,7 +246,11 @@ class WebSocketService {
     return _instance;
   }
 
-  WebSocketService._internal();
+  WebSocketService._internal() {
+    // Initialize once here so stateStream is stable across all connect/disconnect cycles.
+    // Recreating it in connect() would orphan all existing subscribers (e.g. ChatNotifier).
+    _stateController = StreamController<WebSocketState>.broadcast();
+  }
 
   late IO.Socket _socket;
   WebSocketState _state = WebSocketState.disconnected;
@@ -272,7 +276,6 @@ class WebSocketService {
 
   /// Initialize WebSocket service with JWT token
   Future<void> connect(String jwtToken) async {
-    _stateController = StreamController<WebSocketState>.broadcast();
     _jwtToken = jwtToken;
 
     // Use mock implementation in dev mode
@@ -403,6 +406,32 @@ class WebSocketService {
         } catch (e) {
           _notifyListeners('error', {'message': 'Failed to parse new task: $e'});
         }
+      });
+
+      // Application/bidding events
+      _socket.on(WebSocketConfig.applicationNew, (data) {
+        _notifyListeners(WebSocketConfig.applicationNew, data);
+        debugPrint('📩 New application received');
+      });
+
+      _socket.on(WebSocketConfig.applicationAccepted, (data) {
+        _notifyListeners(WebSocketConfig.applicationAccepted, data);
+        debugPrint('✅ Application accepted');
+      });
+
+      _socket.on(WebSocketConfig.applicationRejected, (data) {
+        _notifyListeners(WebSocketConfig.applicationRejected, data);
+        debugPrint('❌ Application rejected');
+      });
+
+      _socket.on(WebSocketConfig.applicationWithdrawn, (data) {
+        _notifyListeners(WebSocketConfig.applicationWithdrawn, data);
+        debugPrint('↩️ Application withdrawn');
+      });
+
+      _socket.on(WebSocketConfig.applicationCount, (data) {
+        _notifyListeners(WebSocketConfig.applicationCount, data);
+        debugPrint('📊 Application count updated');
       });
     } catch (e) {
       _updateState(WebSocketState.error);
@@ -537,17 +566,17 @@ class WebSocketService {
         'taskId': taskId,
         'content': content,
       });
+    } else {
+      // Dev mode only: simulate incoming message for UI testing
+      final event = ChatMessageEvent(
+        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+        taskId: taskId,
+        senderId: _jwtToken ?? 'unknown',
+        content: content,
+        createdAt: DateTime.now(),
+      );
+      _notifyListeners(WebSocketConfig.messageNew, event);
     }
-
-    // Emit locally for listeners
-    final event = ChatMessageEvent(
-      id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-      taskId: taskId,
-      senderId: _jwtToken ?? 'unknown',
-      content: content,
-      createdAt: DateTime.now(),
-    );
-    _notifyListeners(WebSocketConfig.messageNew, event);
   }
 
   /// Mark messages as read
@@ -597,7 +626,9 @@ class WebSocketService {
     }
 
     _updateState(WebSocketState.disconnected);
-    _listeners.clear();
+    // Do NOT clear _listeners here: providers like ChatNotifier register listeners
+    // in their constructor and only remove them on dispose(). Clearing here would
+    // orphan those handlers during token-refresh reconnects, breaking message delivery.
   }
 
   /// Cleanup resources

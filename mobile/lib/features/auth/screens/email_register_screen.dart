@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
-import '../widgets/user_type_selector.dart';
 
 /// Email registration screen with password strength indicator
 class EmailRegisterScreen extends ConsumerStatefulWidget {
@@ -26,7 +25,13 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   String? _errorMessage;
-  String _selectedUserType = 'client';
+  late String _selectedUserType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUserType = ref.read(authProvider).selectedRole ?? 'client';
+  }
 
   @override
   void dispose() {
@@ -65,8 +70,8 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
 
   Color get _strengthColor {
     if (_strengthScore <= 2) return AppColors.error;
-    if (_strengthScore <= 3) return Colors.orange;
-    if (_strengthScore <= 4) return Colors.amber;
+    if (_strengthScore <= 3) return AppColors.warning;
+    if (_strengthScore <= 4) return AppColors.warning;
     return AppColors.success;
   }
 
@@ -180,9 +185,6 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
                               padding: EdgeInsets.symmetric(
                                 horizontal: AppSpacing.gapSM,
                               ),
-                              minimumSize: Size.zero,
-                              tapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Text(
                               'Zaloguj się',
@@ -195,6 +197,35 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
                       ],
                     ),
                   ),
+
+                // Role selector
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RegRoleBox(
+                        selected: _selectedUserType == 'client',
+                        icon: Icons.manage_search_outlined,
+                        title: 'Pracodawca',
+                        subtitle: 'Szukam pomocy',
+                        onTap: () =>
+                            setState(() => _selectedUserType = 'client'),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: _RegRoleBox(
+                        selected: _selectedUserType == 'contractor',
+                        icon: Icons.handyman_outlined,
+                        title: 'Wykonawca',
+                        subtitle: 'Chcę pomagać',
+                        onTap: () =>
+                            setState(() => _selectedUserType = 'contractor'),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: AppSpacing.paddingLG),
 
                 // Name field (optional)
                 TextFormField(
@@ -350,21 +381,6 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
                   },
                 ),
 
-                SizedBox(height: AppSpacing.paddingLG),
-
-                // User type selector
-                Text(
-                  'Wybierz rolę',
-                  style: AppTypography.labelLarge,
-                ),
-                SizedBox(height: AppSpacing.gapSM),
-                UserTypeSelector(
-                  initialType: _selectedUserType,
-                  onTypeSelected: (type) {
-                    setState(() => _selectedUserType = type);
-                  },
-                ),
-
                 SizedBox(height: AppSpacing.space8),
 
                 // Register button
@@ -384,13 +400,13 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
                             height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           )
                         : Text(
                             'Zarejestruj się',
                             style: AppTypography.buttonMedium.copyWith(
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           ),
                   ),
@@ -408,13 +424,20 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
                         color: AppColors.gray500,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => context.push(Routes.emailLogin),
-                      child: Text(
-                        'Zaloguj się',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                    Semantics(
+                      label: 'Zaloguj się',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () => context.push(Routes.emailLogin),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
+                          child: Text(
+                            'Zaloguj się',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -432,7 +455,7 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
 
   Widget _buildRequirement(String text, bool met) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 2),
+      padding: const EdgeInsets.only(bottom: AppSpacing.gapXS),
       child: Row(
         children: [
           Icon(
@@ -448,6 +471,74 @@ class _EmailRegisterScreenState extends ConsumerState<EmailRegisterScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RegRoleBox extends StatelessWidget {
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _RegRoleBox({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$title — $subtitle',
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.paddingLG,
+            horizontal: AppSpacing.paddingMD,
+          ),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.gray100,
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: selected ? AppColors.white : AppColors.gray700,
+              ),
+              const SizedBox(height: AppSpacing.gapSM),
+              Text(
+                title,
+                style: AppTypography.labelMedium.copyWith(
+                  color: selected ? AppColors.white : AppColors.gray700,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.gapXS),
+              Text(
+                subtitle,
+                style: AppTypography.caption.copyWith(
+                  color: selected
+                      ? AppColors.white.withValues(alpha: 0.85)
+                      : AppColors.gray500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

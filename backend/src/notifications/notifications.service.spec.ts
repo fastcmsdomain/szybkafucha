@@ -13,6 +13,7 @@ import {
   NOTIFICATION_TEMPLATES,
   interpolateTemplate,
 } from './constants/notification-templates';
+import { DEFAULT_NOTIFICATION_PREFERENCES } from './constants/notification-preferences';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -20,17 +21,25 @@ describe('NotificationsService', () => {
 
   const mockUser: User = {
     id: 'user-123',
-    type: UserType.CONTRACTOR,
+    types: [UserType.CONTRACTOR],
     phone: '+48123456789',
     email: 'test@example.com',
     name: 'Test User',
     avatarUrl: null,
+    address: null,
     status: UserStatus.ACTIVE,
     googleId: null,
     appleId: null,
+    passwordHash: null,
+    passwordUpdatedAt: null,
+    emailVerified: true,
+    failedLoginAttempts: 0,
+    lockedUntil: null,
     fcmToken: 'test-fcm-token-12345',
+    notificationPreferences: { ...DEFAULT_NOTIFICATION_PREFERENCES },
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
   };
 
   const mockUserNoToken: User = {
@@ -124,6 +133,26 @@ describe('NotificationsService', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('No FCM token');
     });
+
+    it('should skip when user disabled this notification category', async () => {
+      userRepository.findOne.mockResolvedValue({
+        ...mockUser,
+        types: [UserType.CLIENT],
+        notificationPreferences: {
+          ...DEFAULT_NOTIFICATION_PREFERENCES,
+          messages: false,
+        },
+      });
+
+      const result = await service.sendToUser(
+        mockUser.id,
+        NotificationType.NEW_MESSAGE,
+        {},
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Notification disabled by user preferences');
+    });
   });
 
   describe('sendToToken', () => {
@@ -179,6 +208,39 @@ describe('NotificationsService', () => {
 
       expect(result.successCount).toBe(0);
       expect(result.failureCount).toBe(1);
+    });
+
+    it('should filter out users who disabled this category', async () => {
+      userRepository.find.mockResolvedValue([
+        {
+          ...mockUser,
+          id: 'allowed-user',
+        },
+        {
+          ...mockUser,
+          id: 'opted-out-user',
+          notificationPreferences: {
+            ...DEFAULT_NOTIFICATION_PREFERENCES,
+            messages: false,
+          },
+        },
+      ]);
+
+      const result = await service.sendToUsers(
+        ['allowed-user', 'opted-out-user'],
+        NotificationType.NEW_MESSAGE,
+        { senderName: 'John', messagePreview: 'Hello!' },
+      );
+
+      expect(result.successCount).toBe(1);
+      expect(result.failureCount).toBe(1);
+      expect(
+        result.results.some(
+          (item) =>
+            item.success === false &&
+            item.error === 'Notification disabled by user preferences',
+        ),
+      ).toBe(true);
     });
   });
 

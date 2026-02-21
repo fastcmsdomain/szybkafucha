@@ -8,12 +8,15 @@ import {
   Put,
   Patch,
   Post,
+  Delete,
   Body,
   UseGuards,
   Request,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -27,6 +30,8 @@ import {
   ALLOWED_AVATAR_MIMETYPES,
   MAX_AVATAR_SIZE,
 } from './dto/upload-avatar.dto';
+import { NotificationPreferencesDto } from './dto/notification-preferences.dto';
+import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 import type { UploadedFile as FileType } from './file-storage.service';
 
@@ -99,6 +104,38 @@ export class UsersController {
   }
 
   /**
+   * GET /users/me/notification-preferences
+   * Returns current push notification preferences.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/notification-preferences')
+  async getNotificationPreferences(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<NotificationPreferencesDto> {
+    return this.usersService.getNotificationPreferences(
+      req.user.id,
+      req.user.types,
+    );
+  }
+
+  /**
+   * PUT /users/me/notification-preferences
+   * Updates push notification preferences.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Put('me/notification-preferences')
+  async updateNotificationPreferences(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: UpdateNotificationPreferencesDto,
+  ): Promise<NotificationPreferencesDto> {
+    return this.usersService.updateNotificationPreferences(
+      req.user.id,
+      dto,
+      req.user.types,
+    );
+  }
+
+  /**
    * POST /users/me/avatar
    * Uploads avatar image to storage
    * Accepts multipart/form-data with 'file' field
@@ -156,6 +193,17 @@ export class UsersController {
       avatarUrl,
       message: 'Avatar uploaded successfully',
     };
+  }
+
+  /**
+   * DELETE /users/me
+   * Soft-deletes the authenticated user's account and anonymises PII.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Delete('me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAccount(@Request() req: AuthenticatedRequest): Promise<void> {
+    await this.usersService.deleteAccount(req.user.id);
   }
 
   /**

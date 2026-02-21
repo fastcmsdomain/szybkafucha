@@ -25,6 +25,15 @@ class ChatInput extends ConsumerStatefulWidget {
   ConsumerState<ChatInput> createState() => _ChatInputState();
 }
 
+/// Detects phone number patterns in text.
+/// Matches: +48 123 456 789, 0048123456789, 123-456-789, (12) 345 6789, etc.
+final _phoneRegex = RegExp(
+  r'(\+?(?:\d[\s\-\.\(\)]?){8,}\d)',
+  caseSensitive: false,
+);
+
+bool _containsPhoneNumber(String text) => _phoneRegex.hasMatch(text);
+
 class _ChatInputState extends ConsumerState<ChatInput> {
   late TextEditingController _messageController;
   bool _isSending = false;
@@ -33,6 +42,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   void initState() {
     super.initState();
     _messageController = TextEditingController();
+    _messageController.addListener(() => setState(() {}));
   }
 
   @override
@@ -44,6 +54,19 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
+
+    if (_containsPhoneNumber(content)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSending = true);
 

@@ -1,7 +1,3 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 /// API configuration for Szybka Fucha
 abstract class ApiConfig {
   /// Enable dev mode to bypass backend and use mock data
@@ -9,7 +5,13 @@ abstract class ApiConfig {
   static const bool devModeEnabled = true;
 
   /// Server base URL for development (without /api/v1)
-  static const String devServerUrl = 'http://localhost:3000';
+  /// Override at run time with --dart-define=DEV_SERVER_URL=http://...
+  /// Default: localhost:3000 (iOS Simulator / Android Emulator)
+  /// Physical device: --dart-define=DEV_SERVER_URL=http://192.168.1.104:3000
+  static const String devServerUrl = String.fromEnvironment(
+    'DEV_SERVER_URL',
+    defaultValue: 'http://localhost:3000',
+  );
 
   /// Server base URL for staging (without /api/v1)
   static const String stagingServerUrl = 'https://staging-api.szybkafucha.pl';
@@ -20,18 +22,8 @@ abstract class ApiConfig {
   /// Current server base URL (change based on build flavor)
   static const String serverUrl = devServerUrl;
 
-  /// Resolve host so that simulators map to the correct machine address.
-  /// - Android emulator uses 10.0.2.2 to reach the host.
-  /// - iOS simulator and Flutter web can reach localhost directly.
-  /// - Physical devices should point to the host LAN IP (override if needed).
-  static String get _localHost {
-    if (kIsWeb) return 'localhost';
-    if (Platform.isAndroid) return '10.0.2.2';
-    return '127.0.0.1';
-  }
-
-  /// Base URL for development (adjusts per platform)
-  static String get devBaseUrl => 'http://$_localHost:3000/api/v1';
+  /// Base URL for development
+  static const String devBaseUrl = '$devServerUrl/api/v1';
 
   /// Base URL for staging
   static const String stagingBaseUrl = '$stagingServerUrl/api/v1';
@@ -40,7 +32,7 @@ abstract class ApiConfig {
   static const String prodBaseUrl = '$prodServerUrl/api/v1';
 
   /// Current base URL (change based on build flavor)
-  static String get baseUrl => devBaseUrl;
+  static const String baseUrl = devBaseUrl;
 
   /// Get full URL for avatar/media paths
   /// Converts relative paths like /uploads/avatars/file.jpg to full URLs

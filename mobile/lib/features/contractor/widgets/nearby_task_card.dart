@@ -322,7 +322,7 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                           borderRadius: AppRadius.radiusMD,
                         ),
                       ),
-                      child: const Text('Przyjmij'),
+                      child: const Text('Zgłoś się'),
                     ),
                   ],
                 ],

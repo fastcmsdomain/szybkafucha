@@ -9,3 +9,4 @@ export 'task_alert_screen.dart';
 export 'task_completion_screen.dart';
 export 'contractor_profile_screen.dart';
 export 'contractor_reviews_screen.dart';
+export 'contractor_task_history_screen.dart';

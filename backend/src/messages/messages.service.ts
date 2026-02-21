@@ -7,6 +7,7 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,6 +17,9 @@ import { User } from '../users/entities/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
+
+/** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
+const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
 // DTO for message response
 export interface MessageResponse {
@@ -99,6 +103,13 @@ export class MessagesService {
   ): Promise<MessageResponse> {
     // Verify user is authorized for this task
     await this.verifyTaskAccess(taskId, senderId);
+
+    // Block phone numbers in chat
+    if (PHONE_NUMBER_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
+      );
+    }
 
     // Create message
     const message = await this.messageRepository.save({

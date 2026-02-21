@@ -132,6 +132,7 @@ class AuthState {
   final String? error;
   final String activeRole; // 'client' or 'contractor' - current active role
   final bool onboardingComplete; // Track if user completed onboarding
+  final String? selectedRole; // Role chosen during onboarding role selection
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -141,6 +142,7 @@ class AuthState {
     this.error,
     this.activeRole = 'client', // Default to client
     this.onboardingComplete = false, // Default to not completed
+    this.selectedRole,
   });
 
   AuthState copyWith({
@@ -151,8 +153,10 @@ class AuthState {
     String? error,
     String? activeRole,
     bool? onboardingComplete,
+    String? selectedRole,
     bool clearUser = false,
     bool clearError = false,
+    bool clearSelectedRole = false,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -162,6 +166,7 @@ class AuthState {
       error: clearError ? null : (error ?? this.error),
       activeRole: activeRole ?? this.activeRole,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      selectedRole: clearSelectedRole ? null : (selectedRole ?? this.selectedRole),
     );
   }
 
@@ -169,6 +174,8 @@ class AuthState {
   bool get isLoading =>
       status == AuthStatus.initial || status == AuthStatus.loading;
   bool get hasError => status == AuthStatus.error;
+  /// Whether the user has completed the role selection step
+  bool get roleSelected => selectedRole != null;
 }
 
 /// Auth notifier for managing authentication state
@@ -223,6 +230,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.saveUserData(jsonEncode(user.toJson()));
     await _storage.saveUserId(user.id);
     await _storage.saveUserType(user.userTypes.first);
+    _ref.read(apiClientProvider).setAuthToken(mockToken);
 
     state = state.copyWith(
       status: AuthStatus.authenticated,
@@ -241,12 +249,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final token = await _storage.getToken();
       final refreshToken = await _storage.getRefreshToken();
       final onboardingComplete = await _storage.isOnboardingComplete();
+      String? selectedRole = await _storage.getSelectedRole();
 
       if (token == null) {
         // No stored credentials - user must login
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           onboardingComplete: onboardingComplete,
+          selectedRole: selectedRole,
         );
         return;
       }
@@ -265,6 +275,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
       }
 
+      // Migration for existing users: derive selectedRole from stored account role
+      if (selectedRole == null && cachedUser != null && cachedUser.userTypes.isNotEmpty) {
+        selectedRole = cachedUser.userTypes.first;
+        await _storage.saveSelectedRole(selectedRole);
+      }
+
       // If we have cached user, show as authenticated immediately
       if (cachedUser != null) {
         state = state.copyWith(
@@ -273,6 +289,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           refreshToken: refreshToken,
           user: cachedUser,
           onboardingComplete: onboardingComplete,
+          selectedRole: selectedRole,
         );
 
         // In dev mode with mock token, skip server validation
@@ -948,7 +965,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Use this to test onboarding flow again
   Future<void> resetOnboarding() async {
     await _storage.deleteOnboardingComplete();
-    state = state.copyWith(onboardingComplete: false);
+    await _storage.deleteSelectedRole();
+    state = state.copyWith(onboardingComplete: false, clearSelectedRole: true);
+  }
+
+  /// Save the role selected during onboarding role selection step
+  Future<void> setSelectedRole(String role) async {
+    await _storage.saveSelectedRole(role);
+    state = state.copyWith(selectedRole: role);
   }
 }
 

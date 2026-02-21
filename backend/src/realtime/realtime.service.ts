@@ -243,6 +243,25 @@ export class RealtimeService {
   }
 
   /**
+   * Get IDs of active tasks for a user (as client or contractor)
+   * Used to auto-join task rooms on WebSocket connect.
+   */
+  async getActiveTaskIdsForUser(userId: string): Promise<string[]> {
+    const tasks = await this.taskRepository
+      .createQueryBuilder('task')
+      .select('task.id')
+      .where('task.clientId = :userId OR task.contractorId = :userId', {
+        userId,
+      })
+      .andWhere('task.status NOT IN (:...completedStatuses)', {
+        completedStatuses: ['completed', 'cancelled'],
+      })
+      .getMany();
+
+    return tasks.map((t) => t.id);
+  }
+
+  /**
    * Get active connections count
    */
   getActiveConnectionsCount(): number {

@@ -1,26 +1,26 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 /// WebSocket Configuration
 /// Centralized WebSocket connection settings with environment support
 
-abstract class WebSocketConfig {
-  /// Resolve host so that simulators map to the correct machine address.
-  /// - Android emulator uses 10.0.2.2 to reach the host.
-  /// - iOS simulator and Flutter web can reach localhost directly.
-  /// - Physical devices should point to the host LAN IP (override if needed).
-  static String get _localHost {
-    if (kIsWeb) return 'localhost';
-    if (Platform.isAndroid) return '10.0.2.2';
-    return '127.0.0.1';
-  }
+import '../api/api_config.dart';
 
-  /// WebSocket server URL
-  /// - Dev: ws://<resolved-host>:3000/realtime
-  /// - Staging: wss://staging-api.szybkafucha.pl/realtime
-  /// - Production: wss://api.szybkafucha.pl/realtime
-  static String get webSocketUrl => 'ws://$_localHost:3000';
+abstract class WebSocketConfig {
+  /// WebSocket server URL — derived from ApiConfig.serverUrl so both the HTTP
+  /// client and the WebSocket always point to the same host. Using a hardcoded
+  /// LAN IP while the API uses localhost (iOS simulator) or 10.0.2.2 (Android
+  /// emulator) caused the socket to connect to the wrong machine.
+  ///   http://  →  ws://
+  ///   https:// →  wss://
+  /// Override the host at build time with:
+  ///   flutter run --dart-define=DEV_SERVER_URL=http://192.168.1.X:3000
+  static String get webSocketUrl {
+    final serverUrl = ApiConfig.serverUrl;
+    if (serverUrl.startsWith('https://')) {
+      return serverUrl.replaceFirst('https://', 'wss://');
+    } else if (serverUrl.startsWith('http://')) {
+      return serverUrl.replaceFirst('http://', 'ws://');
+    }
+    return serverUrl;
+  }
 
   /// WebSocket namespace
   static const String namespace = '/realtime';
@@ -54,6 +54,13 @@ abstract class WebSocketConfig {
   static const String userOnline = 'user:online';
   static const String userOffline = 'user:offline';
   static const String error = 'error';
+
+  // Application/bidding events
+  static const String applicationNew = 'application:new';
+  static const String applicationAccepted = 'application:accepted';
+  static const String applicationRejected = 'application:rejected';
+  static const String applicationWithdrawn = 'application:withdrawn';
+  static const String applicationCount = 'application:count';
 
   /// Event names for client → server
   static const String sendLocation = 'location:update';
