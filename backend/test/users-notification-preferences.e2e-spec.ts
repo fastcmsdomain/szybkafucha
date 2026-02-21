@@ -80,7 +80,7 @@ describe('Users notification preferences (e2e)', () => {
   });
 
   it('applies partial updates and enforces client role restrictions on PUT', async () => {
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .put('/users/me/notification-preferences')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
@@ -90,7 +90,12 @@ describe('Users notification preferences (e2e)', () => {
       })
       .expect(200);
 
-    expect(response.body).toMatchObject({
+    const afterUpdateResponse = await request(app.getHttpServer())
+      .get('/users/me/notification-preferences')
+      .set('Authorization', `Bearer ${authToken}`)
+      .expect(200);
+
+    expect(afterUpdateResponse.body).toMatchObject({
       messages: false,
       payments: false,
       newNearbyTasks: false,
