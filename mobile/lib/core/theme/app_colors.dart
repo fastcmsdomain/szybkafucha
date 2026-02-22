@@ -22,6 +22,7 @@ abstract class AppColors {
   static const Color info = Color(0xFF3B82F6);
 
   // Neutral Colors (Tailwind gray scale)
+  static const Color transparent = Colors.transparent;
   static const Color white = Color(0xFFFFFFFF);
   static const Color gray50 = Color(0xFFF9FAFB);
   static const Color gray100 = Color(0xFFF3F4F6);

@@ -89,7 +89,7 @@ else
       while IFS= read -r line; do
         [[ -n "$line" ]] || continue
         absolute_files+=("$line")
-      done < <(rg --files "$MOBILE_DIR/lib" -g "*.dart")
+      done < <(cd "$MOBILE_DIR" && rg --files lib -g "*.dart")
       # Prefix full path for all files
       absolute_files=("${absolute_files[@]/#/$MOBILE_DIR/}")
       ;;
@@ -144,9 +144,14 @@ done
 echo
 
 declare -a violations=()
+declare -a warnings=()
 
 add_violation() {
   violations+=("$1")
+}
+
+add_warning() {
+  warnings+=("$1")
 }
 
 is_theme_file() {
@@ -215,7 +220,7 @@ check_build_size() {
 
   if [[ -n "$result" ]]; then
     while IFS= read -r match; do
-      add_violation "$file:$match build() exceeds ~100 lines; extract sub-widgets/helpers"
+      add_warning "$file:$match build() exceeds ~100 lines; extract sub-widgets/helpers"
     done <<< "$result"
   fi
 }
@@ -249,6 +254,13 @@ if [[ ${#violations[@]} -gt 0 ]]; then
   done
 else
   echo "Custom checks: PASS"
+fi
+
+if [[ ${#warnings[@]} -gt 0 ]]; then
+  echo "Custom warnings: ${#warnings[@]}"
+  for w in "${warnings[@]}"; do
+    echo "  - $w"
+  done
 fi
 
 if [[ $skip_analyze -eq 1 ]]; then

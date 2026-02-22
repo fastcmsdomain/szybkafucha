@@ -14,10 +14,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Ustawienia',
-          style: AppTypography.h4,
-        ),
+        title: Text('Ustawienia', style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -33,7 +30,7 @@ class SettingsScreen extends ConsumerWidget {
                 _buildMenuItem(
                   icon: Icons.logout_outlined,
                   title: 'Wyloguj się',
-                  titleColor: Colors.red,
+                  titleColor: AppColors.error,
                   onTap: () => _showLogoutConfirmation(context, ref),
                 ),
               ],
@@ -101,12 +98,10 @@ class SettingsScreen extends ConsumerWidget {
               Navigator.pop(context);
               await _performLogout(context, ref);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: Text(
               'Wyloguj',
-              style: TextStyle(color: Colors.white),
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.white),
             ),
           ),
         ],
@@ -130,7 +125,7 @@ class SettingsScreen extends ConsumerWidget {
           SnackBar(
             content: Text(
               'Błąd podczas wylogowania: ${e.toString()}',
-              style: AppTypography.bodyMedium.copyWith(color: Colors.white),
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.white),
             ),
             backgroundColor: AppColors.error,
           ),
@@ -170,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
     required IconData icon,
     required String title,
     String? subtitle,
-    Color titleColor = Colors.black,
+    Color titleColor = AppColors.gray900,
     required VoidCallback onTap,
   }) {
     return Container(
