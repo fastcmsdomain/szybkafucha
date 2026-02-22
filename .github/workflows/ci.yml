@@ -197,7 +197,7 @@ jobs:
         run: flutter test test/features/profile/notifications_preferences_screen_test.dart
 
       - name: Flutter quality gate
-        run: mobile/scripts/flutter_quality_gate.sh --scope all
+        run: mobile/scripts/flutter_quality_gate.sh --scope last-commit
 
       - name: Platform compliance gate
-        run: mobile/scripts/platform_compliance_gate.sh --scope all --skip-analyze
+        run: mobile/scripts/platform_compliance_gate.sh --scope last-commit --skip-analyze

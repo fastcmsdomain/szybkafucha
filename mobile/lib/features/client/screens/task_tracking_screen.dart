@@ -29,11 +29,7 @@ enum TrackingStatus {
   completed,
 }
 
-enum _TaskOptionsAction {
-  details,
-  reportProblem,
-  cancel,
-}
+enum _TaskOptionsAction { details, reportProblem, cancel }
 
 extension TrackingStatusExtension on TrackingStatus {
   String get title {
@@ -80,10 +76,7 @@ extension TrackingStatusExtension on TrackingStatus {
 class TaskTrackingScreen extends ConsumerStatefulWidget {
   final String taskId;
 
-  const TaskTrackingScreen({
-    super.key,
-    required this.taskId,
-  });
+  const TaskTrackingScreen({super.key, required this.taskId});
 
   @override
   ConsumerState<TaskTrackingScreen> createState() => _TaskTrackingScreenState();
@@ -129,7 +122,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   /// Load initial task data from provider
   void _loadTaskData() {
     final tasksState = ref.read(clientTasksProvider);
-    final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+    final task = tasksState.tasks
+        .where((t) => t.id == widget.taskId)
+        .firstOrNull;
     if (task != null) {
       _updateFromTask(task);
     }
@@ -151,7 +146,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     });
 
     // Fetch real stats if we haven't yet for this contractor
-    if (task.contractor != null && _fetchedStatsContractorId != task.contractor!.id) {
+    if (task.contractor != null &&
+        _fetchedStatsContractorId != task.contractor!.id) {
       _fetchContractorStats(task.contractor!.id);
     }
   }
@@ -196,8 +192,10 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       final reviewsData = results[1] as Map<String, dynamic>;
 
       // Override stale rating from profile with real computed values from reviews
-      final realRatingAvg = double.tryParse(reviewsData['ratingAvg']?.toString() ?? '') ?? 0.0;
-      final realRatingCount = int.tryParse(reviewsData['ratingCount']?.toString() ?? '') ?? 0;
+      final realRatingAvg =
+          double.tryParse(reviewsData['ratingAvg']?.toString() ?? '') ?? 0.0;
+      final realRatingCount =
+          int.tryParse(reviewsData['ratingCount']?.toString() ?? '') ?? 0;
 
       profileData['ratingAvg'] = realRatingAvg;
       profileData['ratingCount'] = realRatingCount;
@@ -208,7 +206,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         _contractor = Contractor.fromJson(profileData);
         _fetchedStatsContractorId = contractorId;
       });
-      debugPrint('✅ Contractor stats fetched: rating=${_contractor?.rating}, reviews=${_contractor?.reviewCount}');
+      debugPrint(
+        '✅ Contractor stats fetched: rating=${_contractor?.rating}, reviews=${_contractor?.reviewCount}',
+      );
     } catch (e) {
       debugPrint('⚠️ Failed to fetch contractor stats: $e');
     }
@@ -218,7 +218,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _mapStringStatus(String status) {
     switch (status.toLowerCase()) {
       case 'accepted':
-        return TrackingStatus.confirmed; // In new bidding flow, accepted → confirmed
+        return TrackingStatus
+            .confirmed; // In new bidding flow, accepted → confirmed
       case 'confirmed':
         return TrackingStatus.confirmed;
       case 'in_progress':
@@ -243,11 +244,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     // Reload task and applications in parallel
     await Future.wait([
       ref.read(clientTasksProvider.notifier).refresh(),
-      ref.read(taskApplicationsProvider(widget.taskId).notifier).loadApplications(),
+      ref
+          .read(taskApplicationsProvider(widget.taskId).notifier)
+          .loadApplications(),
     ]);
     // After refresh, update local state from latest data
     final tasksState = ref.read(clientTasksProvider);
-    final task = tasksState.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+    final task = tasksState.tasks
+        .where((t) => t.id == widget.taskId)
+        .firstOrNull;
     if (task != null) {
       _updateFromTask(task);
     }
@@ -262,7 +267,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       _status = _mapStringStatus(event.status);
 
       // Update contractor info if provided (only if we haven't fetched real stats yet)
-      if (event.contractor != null && _fetchedStatsContractorId != event.contractor!.id) {
+      if (event.contractor != null &&
+          _fetchedStatsContractorId != event.contractor!.id) {
         _contractor = Contractor(
           id: event.contractor!.id,
           name: event.contractor!.name,
@@ -277,7 +283,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     });
 
     // Fetch real contractor stats from public profile endpoint
-    if (event.contractor != null && _fetchedStatsContractorId != event.contractor!.id) {
+    if (event.contractor != null &&
+        _fetchedStatsContractorId != event.contractor!.id) {
       _fetchContractorStats(event.contractor!.id);
     }
 
@@ -357,12 +364,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  void _callContractor() {
-    // TODO: Replace with real contractor phone once available from backend
-    final uri = Uri(scheme: 'tel', path: '+48123456789');
-    launchUrl(uri);
-  }
-
   /// Check if contractor location is recent (within 30 seconds)
   bool _isLocationRecent() {
     if (_lastLocationUpdate == null) return false;
@@ -370,113 +371,118 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     return diff.inSeconds < 30;
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _attachRealtimeListeners() {
     // Listen for WebSocket task status updates
-    ref.listen<AsyncValue<TaskStatusEvent>>(
-      taskStatusUpdatesProvider,
-      (previous, next) {
-        next.whenData((event) {
-          if (event.taskId == widget.taskId) {
-            debugPrint('📡 WebSocket status update received: ${event.status} for task ${event.taskId}');
-            _handleStatusUpdate(event);
-          }
-        });
-      },
-    );
+    ref.listen<AsyncValue<TaskStatusEvent>>(taskStatusUpdatesProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((event) {
+        if (event.taskId == widget.taskId) {
+          debugPrint(
+            '📡 WebSocket status update received: ${event.status} for task ${event.taskId}',
+          );
+          _handleStatusUpdate(event);
+        }
+      });
+    });
 
     // Listen for contractor location updates (GPS tracking)
-    ref.listen<AsyncValue<LocationUpdateEvent>>(
-      locationUpdatesProvider,
-      (previous, next) {
-        next.whenData((event) {
-          // Update contractor position on map
-          // Only update if we have a contractor assigned
-          if (_contractor != null &&
-              (_status == TrackingStatus.confirmed ||
-                  _status == TrackingStatus.inProgress)) {
-            setState(() {
-              _contractorLat = event.latitude;
-              _contractorLng = event.longitude;
-              _lastLocationUpdate = event.timestamp;
-            });
-            debugPrint(
-                '📍 Contractor location updated: ${event.latitude}, ${event.longitude}');
-          }
-        });
-      },
-    );
+    ref.listen<AsyncValue<LocationUpdateEvent>>(locationUpdatesProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((event) {
+        // Update contractor position on map
+        // Only update if we have a contractor assigned
+        if (_contractor != null &&
+            (_status == TrackingStatus.confirmed ||
+                _status == TrackingStatus.inProgress)) {
+          setState(() {
+            _contractorLat = event.latitude;
+            _contractorLng = event.longitude;
+            _lastLocationUpdate = event.timestamp;
+          });
+          debugPrint(
+            '📍 Contractor location updated: ${event.latitude}, ${event.longitude}',
+          );
+        }
+      });
+    });
 
     // Listen for application updates (new bids, withdrawals)
-    ref.listen<AsyncValue<Map<String, dynamic>>>(
-      applicationUpdatesProvider,
-      (previous, next) {
-        next.whenData((event) {
-          final eventTaskId = event['taskId'] as String?;
-          if (eventTaskId == widget.taskId &&
-              _status == TrackingStatus.applications) {
-            debugPrint(
-                '📩 Application update for task ${widget.taskId}, reloading...');
-            ref
-                .read(taskApplicationsProvider(widget.taskId).notifier)
-                .loadApplications();
-          }
-        });
-      },
-    );
+    ref.listen<AsyncValue<Map<String, dynamic>>>(applicationUpdatesProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((event) {
+        final eventTaskId = event['taskId'] as String?;
+        if (eventTaskId == widget.taskId &&
+            _status == TrackingStatus.applications) {
+          debugPrint(
+            '📩 Application update for task ${widget.taskId}, reloading...',
+          );
+          ref
+              .read(taskApplicationsProvider(widget.taskId).notifier)
+              .loadApplications();
+        }
+      });
+    });
 
     // Also listen for task provider updates (fallback and real-time sync)
-    ref.listen<ClientTasksState>(
-      clientTasksProvider,
-      (previous, next) {
-        final task = next.tasks.where((t) => t.id == widget.taskId).firstOrNull;
-        if (task != null) {
-          final newStatus = _mapTaskStatus(task.status);
-          // Only update if status changed or contractor changed (compare by ID, not reference)
-          if (newStatus != _status || task.contractor?.id != _contractor?.id) {
-            debugPrint('🔄 Task provider update: status=${task.status}, hasContractor=${task.contractor != null}');
-            _updateFromTask(task);
-          }
+    ref.listen<ClientTasksState>(clientTasksProvider, (previous, next) {
+      final task = next.tasks.where((t) => t.id == widget.taskId).firstOrNull;
+      if (task != null) {
+        final newStatus = _mapTaskStatus(task.status);
+        // Only update if status changed or contractor changed (compare by ID, not reference)
+        if (newStatus != _status || task.contractor?.id != _contractor?.id) {
+          debugPrint(
+            '🔄 Task provider update: status=${task.status}, hasContractor=${task.contractor != null}',
+          );
+          _updateFromTask(task);
         }
-      },
+      }
+    });
+  }
+
+  AppBar _buildTopAppBar(BuildContext context) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () =>
+            context.canPop() ? context.pop() : context.go(Routes.clientHome),
+        tooltip: 'Wróć',
+      ),
+      title: SFRainbowText('Aktywne zlecenie'),
+      centerTitle: true,
+      backgroundColor: AppColors.white,
+      surfaceTintColor: AppColors.white,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Odśwież status',
+          onPressed: _refreshTask,
+        ),
+        IconButton(
+          icon: const Icon(Icons.more_vert),
+          onPressed: _showOptionsMenu,
+          tooltip: 'Więcej opcji',
+        ),
+      ],
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _attachRealtimeListeners();
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go(Routes.clientHome),
-          tooltip: 'Wróć',
-        ),
-        title: SFRainbowText('Aktywne zlecenie'),
-        centerTitle: true,
-        backgroundColor: AppColors.white,
-        surfaceTintColor: AppColors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Odśwież status',
-            onPressed: _refreshTask,
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: _showOptionsMenu,
-            tooltip: 'Więcej opcji',
-          ),
-        ],
-      ),
+      appBar: _buildTopAppBar(context),
       body: Column(
         children: [
-          Expanded(
-            flex: 3,
-            child: _buildMap(),
-          ),
-          Expanded(
-            flex: 7,
-            child: _buildBottomPanel(),
-          ),
+          Expanded(flex: 3, child: _buildMap()),
+          Expanded(flex: 7, child: _buildBottomPanel()),
         ],
       ),
     );
@@ -486,11 +492,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     // If we have task coordinates, render real map; otherwise keep lightweight placeholder
     if (_taskLat != null && _taskLng != null) {
       final center = LatLng(_taskLat!, _taskLng!);
-      final markers = <SFMarker>[
-        TaskMarker(
-          position: center,
-        ),
-      ];
+      final markers = <SFMarker>[TaskMarker(position: center)];
 
       if (_contractorLat != null && _contractorLng != null) {
         markers.add(
@@ -520,10 +522,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     // Fallback placeholder if no coordinates
     return Container(
       color: AppColors.gray100,
-      child: CustomPaint(
-        size: Size.infinite,
-        painter: _MapGridPainter(),
-      ),
+      child: CustomPaint(size: Size.infinite, painter: _MapGridPainter()),
     );
   }
 
@@ -569,44 +568,43 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 AppSpacing.paddingMD + bottomSafe,
               ),
               child: Column(
-                  children: [
-                    // Status header
-                    _buildStatusHeader(),
+                children: [
+                  // Status header
+                  _buildStatusHeader(),
 
-                    SizedBox(height: AppSpacing.space4),
+                  SizedBox(height: AppSpacing.space4),
 
-                    // Progress steps
-                    _buildProgressSteps(),
+                  // Progress steps
+                  _buildProgressSteps(),
 
-                    SizedBox(height: AppSpacing.space4),
+                  SizedBox(height: AppSpacing.space4),
 
-                    // Task details section (same placement as contractor active task screen)
-                    _buildTaskDetailsSection(),
+                  // Task details section (same placement as contractor active task screen)
+                  _buildTaskDetailsSection(),
 
-                    SizedBox(height: AppSpacing.space4),
+                  SizedBox(height: AppSpacing.space4),
 
-                    // Application list (when waiting for bids)
-                    if (_status == TrackingStatus.applications)
-                      _buildApplicationsList(),
+                  // Application list (when waiting for bids)
+                  if (_status == TrackingStatus.applications)
+                    _buildApplicationsList(),
 
-                    // Contractor card (if assigned)
-                    if (_contractor != null &&
-                        _status != TrackingStatus.applications)
-                      _buildContractorCard(),
+                  // Contractor card (if assigned)
+                  if (_contractor != null &&
+                      _status != TrackingStatus.applications)
+                    _buildContractorCard(),
 
-                    // Complete button (when in progress)
-                    if (_status == TrackingStatus.inProgress)
-                      _buildCompleteButton(),
+                  // Complete button (when in progress)
+                  if (_status == TrackingStatus.inProgress)
+                    _buildCompleteButton(),
 
-                    // Cancel button (for all non-completed tasks)
-                    if (_status != TrackingStatus.completed)
-                      _buildCancelButton(),
-                  ],
-                ),
+                  // Cancel button (for all non-completed tasks)
+                  if (_status != TrackingStatus.completed) _buildCancelButton(),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -625,10 +623,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Szczegóły zlecenia',
-            style: AppTypography.labelLarge,
-          ),
+          Text('Szczegóły zlecenia', style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapMD),
           Row(
             children: [
@@ -645,10 +640,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      categoryData.name,
-                      style: AppTypography.labelLarge,
-                    ),
+                    Text(categoryData.name, style: AppTypography.labelLarge),
                     Text(
                       task.address?.trim().isNotEmpty == true
                           ? task.address!
@@ -667,9 +659,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 children: [
                   Text(
                     '${task.budget} PLN',
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.primary,
-                    ),
+                    style: AppTypography.h4.copyWith(color: AppColors.primary),
                   ),
                   Text(
                     'budżet',
@@ -684,9 +674,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           SizedBox(height: AppSpacing.gapMD),
           Text(
             task.description.trim().isEmpty ? 'Brak opisu' : task.description,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray600,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapMD),
           Row(
@@ -702,11 +690,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   task.isImmediate
                       ? 'Termin: Teraz'
                       : task.scheduledAt != null
-                          ? 'Termin: ${_formatScheduledTime(task.scheduledAt!)}'
-                          : 'Termin: Nie określono',
+                      ? 'Termin: ${_formatScheduledTime(task.scheduledAt!)}'
+                      : 'Termin: Nie określono',
                   style: AppTypography.caption.copyWith(
-                    color:
-                        task.isImmediate ? AppColors.warning : AppColors.primary,
+                    color: task.isImmediate
+                        ? AppColors.warning
+                        : AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -738,21 +727,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     valueColor: AlwaysStoppedAnimation(AppColors.warning),
                   ),
                 )
-              : Icon(
-                  _getStatusIcon(),
-                  color: AppColors.success,
-                  size: 24,
-                ),
+              : Icon(_getStatusIcon(), color: AppColors.success, size: 24),
         ),
         SizedBox(width: AppSpacing.gapMD),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _status.title,
-                style: AppTypography.h5,
-              ),
+              Text(_status.title, style: AppTypography.h5),
               Text(
                 _status.subtitle,
                 style: AppTypography.bodySmall.copyWith(
@@ -784,17 +766,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     const steps = ['Zgłoszenia', 'Potwierdzony', 'W trakcie', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
-    return SFRainbowProgress(
-      steps: steps,
-      currentStep: currentStep,
-    );
+    return SFRainbowProgress(steps: steps, currentStep: currentStep);
   }
 
   /// Build the applications list for bidding system
   Widget _buildApplicationsList() {
     if (_task == null) return const SizedBox.shrink();
 
-    final applicationsState = ref.watch(taskApplicationsProvider(widget.taskId));
+    final applicationsState = ref.watch(
+      taskApplicationsProvider(widget.taskId),
+    );
 
     if (applicationsState.isLoading && applicationsState.applications.isEmpty) {
       return Padding(
@@ -806,7 +787,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               SizedBox(height: AppSpacing.paddingSM),
               Text(
                 'Ładowanie zgłoszeń...',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray500,
+                ),
               ),
             ],
           ),
@@ -814,7 +797,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       );
     }
 
-    if (applicationsState.error != null && applicationsState.applications.isEmpty) {
+    if (applicationsState.error != null &&
+        applicationsState.applications.isEmpty) {
       return Padding(
         padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
         child: Center(
@@ -824,18 +808,23 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               SizedBox(height: AppSpacing.paddingSM),
               Text(
                 'Błąd ładowania zgłoszeń',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray600,
+                ),
               ),
               SizedBox(height: AppSpacing.paddingXS),
               Text(
                 applicationsState.error!,
-                style: AppTypography.bodySmall.copyWith(color: AppColors.gray400),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray400,
+                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.paddingSM),
               ElevatedButton.icon(
                 onPressed: () {
-                  ref.read(taskApplicationsProvider(widget.taskId).notifier)
+                  ref
+                      .read(taskApplicationsProvider(widget.taskId).notifier)
                       .loadApplications();
                 },
                 icon: Icon(Icons.refresh, size: 16),
@@ -859,13 +848,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               SizedBox(height: AppSpacing.paddingSM),
               Text(
                 'Czekamy na zgłoszenia wykonawców...',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.gray500,
+                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.paddingXS),
               Text(
                 'Wykonawcy z Twojej okolicy będą się zgłaszać z proponowaną ceną',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.gray400),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray400,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -883,11 +876,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           children: [
             Text(
               'Zgłoszenia (${applications.length}/${_task!.maxApplications})',
-              style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             TextButton.icon(
               onPressed: () {
-                ref.read(taskApplicationsProvider(widget.taskId).notifier)
+                ref
+                    .read(taskApplicationsProvider(widget.taskId).notifier)
                     .loadApplications();
               },
               icon: Icon(Icons.refresh, size: 16),
@@ -902,16 +898,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         SizedBox(height: AppSpacing.paddingSM),
 
         // Applications list
-        ...applications.map((app) => Padding(
-          padding: EdgeInsets.only(bottom: AppSpacing.paddingSM),
-          child: ApplicationCard(
-            application: app,
-            taskBudget: _task!.budget,
-            onViewProfile: () => _showApplicationContractorProfile(app),
-            onAccept: () => _acceptApplication(app.id),
-            onReject: () => _rejectApplication(app.id),
+        ...applications.map(
+          (app) => Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.paddingSM),
+            child: ApplicationCard(
+              application: app,
+              taskBudget: _task!.budget,
+              onViewProfile: () => _showApplicationContractorProfile(app),
+              onAccept: () => _acceptApplication(app.id),
+              onReject: () => _rejectApplication(app.id),
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
@@ -942,9 +940,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           .rejectApplication(applicationId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nie udało się odrzucić: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Nie udało się odrzucić: $e')));
       }
     }
   }
@@ -989,10 +987,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                         ? AppColors.success
                         : AppColors.gray400,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.white,
-                      width: 2,
-                    ),
+                    border: Border.all(color: AppColors.white, width: 2),
                   ),
                 ),
               ),
@@ -1016,11 +1011,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     ),
                     if (_contractor!.isVerified) ...[
                       SizedBox(width: AppSpacing.gapXS),
-                      Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: AppColors.primary,
-                      ),
+                      Icon(Icons.verified, size: 16, color: AppColors.primary),
                     ],
                   ],
                 ),
@@ -1057,16 +1048,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             button: true,
             child: IconButton(
               onPressed: _showContractorProfile,
+              tooltip: 'Pokaż profil wykonawcy',
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: AppColors.white,
                 shape: const CircleBorder(),
                 padding: EdgeInsets.all(AppSpacing.paddingSM),
               ),
-              icon: const Icon(
-                Icons.person_outline,
-                color: AppColors.white,
-              ),
+              icon: const Icon(Icons.person_outline, color: AppColors.white),
             ),
           ),
           SizedBox(width: AppSpacing.gapSM),
@@ -1102,9 +1091,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             backgroundColor: AppColors.success,
             foregroundColor: AppColors.white,
             padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppRadius.button,
-            ),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
           ),
           child: Text(
             'Potwierdź zakończenie',
@@ -1135,9 +1122,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ),
                 )
               : const Icon(Icons.cancel_outlined),
-          label: Text(
-            _isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie',
-          ),
+          label: Text(_isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: AppColors.white,
@@ -1160,21 +1145,27 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               leading: Icon(Icons.info_outline),
               title: Text('Szczegóły zlecenia'),
               onTap: () {
-                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.details);
+                Navigator.of(
+                  bottomSheetContext,
+                ).pop(_TaskOptionsAction.details);
               },
             ),
             ListTile(
               leading: Icon(Icons.report_outlined, color: AppColors.warning),
               title: Text('Zgłoś problem'),
               onTap: () {
-                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.reportProblem);
+                Navigator.of(
+                  bottomSheetContext,
+                ).pop(_TaskOptionsAction.reportProblem);
               },
             ),
             ListTile(
               leading: Icon(Icons.cancel_outlined, color: AppColors.error),
               title: Text(
                 'Anuluj zlecenie',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.error),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.error,
+                ),
               ),
               onTap: () {
                 Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.cancel);
@@ -1214,10 +1205,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     final mailUri = Uri(
       scheme: 'mailto',
       path: _supportEmail,
-      queryParameters: {
-        'subject': subject,
-        'body': body.toString(),
-      },
+      queryParameters: {'subject': subject, 'body': body.toString()},
     );
 
     try {
@@ -1318,22 +1306,21 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               // Scheduled time
               _buildDetailRow(
                 icon: Icons.schedule_outlined,
-                iconColor: _task!.isImmediate ? AppColors.warning : AppColors.primary,
+                iconColor: _task!.isImmediate
+                    ? AppColors.warning
+                    : AppColors.primary,
                 label: 'Termin',
                 value: _task!.isImmediate
                     ? 'Teraz'
                     : _task!.scheduledAt != null
-                        ? _formatScheduledTime(_task!.scheduledAt!)
-                        : 'Nie określono',
+                    ? _formatScheduledTime(_task!.scheduledAt!)
+                    : 'Nie określono',
               ),
 
               // Images
               if (_task!.imageUrls != null && _task!.imageUrls!.isNotEmpty) ...[
                 SizedBox(height: AppSpacing.space4),
-                Text(
-                  'Zdjęcia',
-                  style: AppTypography.labelLarge,
-                ),
+                Text('Zdjęcia', style: AppTypography.labelLarge),
                 SizedBox(height: AppSpacing.gapMD),
                 SizedBox(
                   height: 120,
@@ -1348,28 +1335,29 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                         child: GestureDetector(
                           onTap: () => _showFullImage(imageUrl),
                           child: Container(
-                          width: 120,
-                          height: 120,
-                          margin: EdgeInsets.only(right: AppSpacing.gapSM),
-                          decoration: BoxDecoration(
-                            borderRadius: AppRadius.radiusMD,
-                            border: Border.all(color: AppColors.gray200),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: AppRadius.radiusMD,
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: AppColors.gray100,
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  color: AppColors.gray400,
-                                ),
+                            width: 120,
+                            height: 120,
+                            margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                            decoration: BoxDecoration(
+                              borderRadius: AppRadius.radiusMD,
+                              border: Border.all(color: AppColors.gray200),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: AppRadius.radiusMD,
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, error, stackTrace) =>
+                                    Container(
+                                      color: AppColors.gray100,
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: AppColors.gray400,
+                                      ),
+                                    ),
                               ),
                             ),
                           ),
-                        ),
                         ),
                       );
                     },
@@ -1414,11 +1402,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               color: (iconColor ?? AppColors.gray600).withValues(alpha: 0.1),
               borderRadius: AppRadius.radiusSM,
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor ?? AppColors.gray600,
-            ),
+            child: Icon(icon, size: 20, color: iconColor ?? AppColors.gray600),
           ),
           SizedBox(width: AppSpacing.gapMD),
           Expanded(
@@ -1432,10 +1416,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ),
                 ),
                 SizedBox(height: AppSpacing.gapXS),
-                Text(
-                  value,
-                  style: valueStyle ?? AppTypography.bodyMedium,
-                ),
+                Text(value, style: valueStyle ?? AppTypography.bodyMedium),
               ],
             ),
           ),
@@ -1457,19 +1438,17 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.transparent,
         child: Stack(
           children: [
             InteractiveViewer(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-              ),
+              child: Image.network(imageUrl, fit: BoxFit.contain),
             ),
             Positioned(
               top: 8,
               right: 8,
               child: IconButton(
+                tooltip: 'Zamknij podgląd zdjęcia',
                 icon: Container(
                   padding: EdgeInsets.all(AppSpacing.paddingXS),
                   decoration: BoxDecoration(
@@ -1479,7 +1458,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   child: Icon(Icons.close, color: AppColors.white),
                 ),
                 onPressed: () => context.pop(),
-                tooltip: 'Zamknij podgląd',
               ),
             ),
           ],
@@ -1497,10 +1475,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           'Czy na pewno chcesz anulować to zlecenie? Może to wiązać się z opłatą.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('Nie'),
-          ),
+          TextButton(onPressed: () => context.pop(), child: Text('Nie')),
           TextButton(
             onPressed: () {
               context.pop();
@@ -1590,7 +1565,9 @@ class _ContractorProfileSheetState
     List<_ContractorPublicReview> reviews = const [];
 
     try {
-      final response = await api.get('/contractor/${widget.contractorId}/public');
+      final response = await api.get(
+        '/contractor/${widget.contractorId}/public',
+      );
       final data = response as Map<String, dynamic>;
       fullProfile = Contractor.fromJson(data);
     } catch (e) {
@@ -1598,8 +1575,9 @@ class _ContractorProfileSheetState
     }
 
     try {
-      final reviewsResponse =
-          await api.get('/contractor/${widget.contractorId}/reviews');
+      final reviewsResponse = await api.get(
+        '/contractor/${widget.contractorId}/reviews',
+      );
       final reviewsData = reviewsResponse as Map<String, dynamic>;
 
       final ratingAvgValue = reviewsData['ratingAvg'];
@@ -1665,9 +1643,7 @@ class _ContractorProfileSheetState
               const Spacer(),
               Text(
                 _formatDate(review.createdAt),
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
           ),
@@ -1676,9 +1652,7 @@ class _ContractorProfileSheetState
             review.comment?.trim().isNotEmpty == true
                 ? review.comment!.trim()
                 : 'Brak komentarza.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray700,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray700),
           ),
         ],
       ),
@@ -1713,9 +1687,7 @@ class _ContractorProfileSheetState
             SizedBox(width: AppSpacing.gapSM),
             Text(
               'na podstawie $_ratingCount opinii',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.caption.copyWith(color: AppColors.gray500),
             ),
           ],
         ),
@@ -1723,17 +1695,163 @@ class _ContractorProfileSheetState
         if (_reviews.isEmpty)
           Text(
             'Brak opinii do wyświetlenia.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           )
         else
-          ..._reviews.take(5).map(
+          ..._reviews
+              .take(5)
+              .map(
                 (review) => Padding(
                   padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
                   child: _buildReviewCard(review),
                 ),
               ),
+      ],
+    );
+  }
+
+  Widget _buildSheetHeader(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.paddingMD,
+        AppSpacing.paddingSM,
+        AppSpacing.paddingMD,
+        0,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('Profil wykonawcy', style: AppTypography.h4),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+            tooltip: 'Zamknij',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: AppTypography.labelLarge.copyWith(
+        color: AppColors.gray700,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  Widget _buildAvatarAndNameRow(Contractor contractor) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: AppColors.gray200,
+          backgroundImage: contractor.avatarUrl != null
+              ? NetworkImage(contractor.avatarUrl!)
+              : null,
+          child: contractor.avatarUrl == null
+              ? Text(
+                  contractor.name.isNotEmpty
+                      ? contractor.name[0].toUpperCase()
+                      : '?',
+                  style: AppTypography.h4.copyWith(
+                    color: AppColors.gray600,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+              : null,
+        ),
+        SizedBox(width: AppSpacing.gapMD),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                contractor.name,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              Row(
+                children: [
+                  Icon(Icons.star, size: 18, color: AppColors.warning),
+                  SizedBox(width: AppSpacing.gapXS),
+                  Text(
+                    contractor.formattedRating,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                '${contractor.reviewCount} opinii',
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBioSection(Contractor contractor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Opis'),
+        SizedBox(height: AppSpacing.gapXS),
+        _isLoading
+            ? SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            : _error != null
+            ? Text(
+                'Nie udało się pobrać pełnego profilu',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray400,
+                  fontStyle: FontStyle.italic,
+                ),
+              )
+            : Text(
+                contractor.bio?.isNotEmpty == true
+                    ? contractor.bio!
+                    : 'Brak opisu wykonawcy.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: contractor.bio?.isNotEmpty == true
+                      ? AppColors.gray600
+                      : AppColors.gray400,
+                  fontStyle: contractor.bio?.isNotEmpty == true
+                      ? FontStyle.normal
+                      : FontStyle.italic,
+                ),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildProfileContent(Contractor contractor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: AppSpacing.gapMD),
+        _buildAvatarAndNameRow(contractor),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildBioSection(contractor),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildSectionTitle('Opinie'),
+        SizedBox(height: AppSpacing.gapXS),
+        _buildReviewsSection(),
+        SizedBox(height: AppSpacing.gapMD),
       ],
     );
   }
@@ -1745,25 +1863,7 @@ class _ContractorProfileSheetState
     return SafeArea(
       child: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.paddingMD,
-              AppSpacing.paddingSM,
-              AppSpacing.paddingMD,
-              0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Profil wykonawcy', style: AppTypography.h4),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => context.pop(),
-                  tooltip: 'Zamknij',
-                ),
-              ],
-            ),
-          ),
+          _buildSheetHeader(context),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
@@ -1772,127 +1872,7 @@ class _ContractorProfileSheetState
                 AppSpacing.paddingMD,
                 AppSpacing.paddingMD,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: AppSpacing.gapMD),
-
-                  // Avatar and name row
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: AppColors.gray200,
-                        backgroundImage: contractor.avatarUrl != null
-                            ? NetworkImage(contractor.avatarUrl!)
-                            : null,
-                        child: contractor.avatarUrl == null
-                            ? Text(
-                                contractor.name.isNotEmpty
-                                    ? contractor.name[0].toUpperCase()
-                                    : '?',
-                                style: AppTypography.h4.copyWith(
-                                  color: AppColors.gray600,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              )
-                            : null,
-                      ),
-                      SizedBox(width: AppSpacing.gapMD),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              contractor.name,
-                              style: AppTypography.bodyLarge.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: AppSpacing.gapXS),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  size: 18,
-                                  color: AppColors.warning,
-                                ),
-                                SizedBox(width: AppSpacing.gapXS),
-                                Text(
-                                  contractor.formattedRating,
-                                  style: AppTypography.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: AppSpacing.gapXS),
-                            Text(
-                              '${contractor.reviewCount} opinii',
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.gray500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.gapMD),
-
-                  // Bio section
-                  Text(
-                    'Opis',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppColors.gray700,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  _isLoading
-                      ? SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        )
-                      : _error != null
-                          ? Text(
-                              'Nie udało się pobrać pełnego profilu',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.gray400,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            )
-                          : Text(
-                              contractor.bio?.isNotEmpty == true
-                                  ? contractor.bio!
-                                  : 'Brak opisu wykonawcy.',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: contractor.bio?.isNotEmpty == true
-                                    ? AppColors.gray600
-                                    : AppColors.gray400,
-                                fontStyle: contractor.bio?.isNotEmpty == true
-                                    ? FontStyle.normal
-                                    : FontStyle.italic,
-                              ),
-                            ),
-                  SizedBox(height: AppSpacing.gapMD),
-
-                  Text(
-                    'Opinie',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: AppColors.gray700,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  _buildReviewsSection(),
-                  SizedBox(height: AppSpacing.gapMD),
-                ],
-              ),
+              child: _buildProfileContent(contractor),
             ),
           ),
         ],
