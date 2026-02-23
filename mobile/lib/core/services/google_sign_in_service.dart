@@ -4,12 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// Google Sign-In service for handling Google OAuth authentication
 class GoogleSignInService {
   // Configure scopes needed for the app
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-    ],
-  );
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
   /// Check if user is already signed in with Google
   Future<bool> isSignedIn() async {
@@ -20,7 +15,9 @@ class GoogleSignInService {
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
 
   /// Sign in with Google
-  /// Returns the ID token for backend authentication
+  /// Returns Google account info for backend authentication.
+  /// Note: `idToken` may be null if the OAuth client isn't configured for
+  /// ID-token issuance on the current platform.
   /// Always shows account picker so user can choose role with different account if needed
   Future<GoogleSignInResult> signIn() async {
     try {
@@ -36,12 +33,8 @@ class GoogleSignInService {
       // Get authentication tokens
       final GoogleSignInAuthentication auth = await account.authentication;
 
-      if (auth.idToken == null) {
-        return GoogleSignInResult.error('Failed to get ID token from Google');
-      }
-
       return GoogleSignInResult.success(
-        idToken: auth.idToken!,
+        idToken: auth.idToken,
         accessToken: auth.accessToken,
         email: account.email,
         displayName: account.displayName,
@@ -87,7 +80,7 @@ class GoogleSignInResult {
   });
 
   factory GoogleSignInResult.success({
-    required String idToken,
+    String? idToken,
     String? accessToken,
     String? email,
     String? displayName,
@@ -104,17 +97,11 @@ class GoogleSignInResult {
   }
 
   factory GoogleSignInResult.cancelled() {
-    return GoogleSignInResult._(
-      isSuccess: false,
-      isCancelled: true,
-    );
+    return GoogleSignInResult._(isSuccess: false, isCancelled: true);
   }
 
   factory GoogleSignInResult.error(String message) {
-    return GoogleSignInResult._(
-      isSuccess: false,
-      error: message,
-    );
+    return GoogleSignInResult._(isSuccess: false, error: message);
   }
 }
 

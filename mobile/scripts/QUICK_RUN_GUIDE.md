@@ -6,10 +6,10 @@
 
 ```bash
 # From project root
-./run_ios.sh
+cd mobile
+./scripts/run_ios.sh
 
 # Or from mobile directory
-cd mobile
 ./scripts/run_ios.sh
 ```
 
@@ -17,10 +17,10 @@ cd mobile
 
 ```bash
 # From project root
-./run_android.sh
+cd mobile
+./scripts/run_android.sh
 
 # Or from mobile directory
-cd mobile
 ./scripts/run_android.sh
 ```
 
@@ -55,22 +55,36 @@ In Xcode:
 
 ### Step 4: Run the App
 ```bash
-./run_ios.sh
+cd mobile
+./scripts/run_ios.sh
 ```
 
 ---
 
 ## 🔌 Wireless Connection (Optional)
 
-After first USB connection, you can connect wirelessly:
+You **can’t use a physical iPhone as an iOS Simulator**. What you *can* do is run the app on a **real iPhone over Wi‑Fi** (wireless debugging).
+
+After a first USB connection (pairing), you can connect wirelessly:
 
 1. Connect iPhone via USB first
 2. Open Xcode: `open mobile/ios/Runner.xcworkspace`
 3. Go to: **Window** → **Devices and Simulators**
 4. Select your iPhone
 5. Check **"Connect via network"**
-6. Disconnect USB cable
-7. iPhone will now appear as "wireless" in `flutter devices`
+6. Make sure your Mac and iPhone are on the same Wi‑Fi network
+7. Disconnect USB cable
+8. iPhone will now appear as "wireless" in `flutter devices`
+
+Run the app on the wireless device:
+```bash
+cd mobile
+./scripts/run_ios.sh
+
+# Or manually:
+flutter devices
+flutter run -d <iphone-device-id>
+```
 
 ---
 

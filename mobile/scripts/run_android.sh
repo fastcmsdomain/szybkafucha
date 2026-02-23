@@ -116,5 +116,16 @@ echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
+# Backend URL for Android emulator:
+# - 10.0.2.2 points to the host machine (your Mac) from the emulator.
+DEV_SERVER_URL_ARG=()
+if [ -n "${DEV_SERVER_URL:-}" ]; then
+    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="${DEV_SERVER_URL}")
+else
+    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="http://10.0.2.2:3000")
+fi
+echo -e "${YELLOW}🌐 Using backend: ${DEV_SERVER_URL_ARG[0]#--dart-define=DEV_SERVER_URL=}${NC}"
+echo ""
+
 # Run Flutter app
-flutter run -d "$EMULATOR_ID"
+flutter run -d "$EMULATOR_ID" "${DEV_SERVER_URL_ARG[@]}"

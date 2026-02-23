@@ -128,7 +128,11 @@ echo ""
 
 # Step 5: Get Mac IP for backend connection (if needed)
 echo -e "${BLUE}5️⃣ Network configuration...${NC}"
-MAC_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -n 1)
+MAC_IP=$(
+    ipconfig getifaddr en0 2>/dev/null || \
+    ipconfig getifaddr en1 2>/dev/null || \
+    ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -n 1
+)
 if [ -n "$MAC_IP" ]; then
     echo -e "${GREEN}✅ Mac IP address: ${MAC_IP}${NC}"
     echo -e "${YELLOW}   💡 If backend connection fails, use this IP instead of localhost${NC}"
@@ -137,6 +141,19 @@ else
     echo -e "${YELLOW}⚠️  Could not detect Mac IP address${NC}"
 fi
 echo ""
+
+# If running on a physical iPhone, localhost points to the iPhone itself.
+# Pass DEV_SERVER_URL so the app can reach your Mac backend over the network.
+DEV_SERVER_URL_ARG=()
+if [ -n "${DEV_SERVER_URL:-}" ]; then
+    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="${DEV_SERVER_URL}")
+elif [ -n "$MAC_IP" ]; then
+    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="http://${MAC_IP}:3000")
+fi
+if [ ${#DEV_SERVER_URL_ARG[@]} -gt 0 ]; then
+    echo -e "${GREEN}✅ Using DEV_SERVER_URL: ${DEV_SERVER_URL_ARG[0]#--dart-define=DEV_SERVER_URL=}${NC}"
+    echo ""
+fi
 
 # Step 6: Run the app
 echo -e "${BLUE}6️⃣ Launching Szybka Fucha app on iPhone...${NC}"
@@ -154,7 +171,7 @@ echo ""
 
 # Run Flutter app
 if [ "$DEVICE_ID" = "ios" ]; then
-    flutter run -d ios
+    flutter run -d ios "${DEV_SERVER_URL_ARG[@]}"
 else
-    flutter run -d "$DEVICE_ID"
+    flutter run -d "$DEVICE_ID" "${DEV_SERVER_URL_ARG[@]}"
 fi

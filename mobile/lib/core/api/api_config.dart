@@ -1,17 +1,32 @@
+import 'package:flutter/foundation.dart';
+
 /// API configuration for Szybka Fucha
 abstract class ApiConfig {
   /// Enable dev mode to bypass backend and use mock data
   /// Set to true to test UI without running backend server
   static const bool devModeEnabled = true;
 
-  /// Server base URL for development (without /api/v1)
-  /// Override at run time with --dart-define=DEV_SERVER_URL=http://...
-  /// Default: localhost:3000 (iOS Simulator / Android Emulator)
-  /// Physical device: --dart-define=DEV_SERVER_URL=http://192.168.1.104:3000
-  static const String devServerUrl = String.fromEnvironment(
-    'DEV_SERVER_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+  /// Server base URL for development (without `/api/v1`).
+  /// Override at run time with:
+  ///   `--dart-define=DEV_SERVER_URL=http://...`
+  ///
+  /// Defaults:
+  /// - iOS Simulator: `http://localhost:3000`
+  /// - Android Emulator: `http://10.0.2.2:3000` (host machine)
+  ///
+  /// Physical device (iOS/Android): use your Mac's LAN IP, e.g.:
+  ///   `--dart-define=DEV_SERVER_URL=http://192.168.1.114:3000`
+  static String get devServerUrl {
+    const defined = String.fromEnvironment('DEV_SERVER_URL', defaultValue: '');
+    if (defined.isNotEmpty) return defined;
+
+    if (kIsWeb) return 'http://localhost:3000';
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'http://10.0.2.2:3000',
+      _ => 'http://localhost:3000',
+    };
+  }
 
   /// Server base URL for staging (without /api/v1)
   static const String stagingServerUrl = 'https://staging-api.szybkafucha.pl';
@@ -20,19 +35,19 @@ abstract class ApiConfig {
   static const String prodServerUrl = 'https://api.szybkafucha.pl';
 
   /// Current server base URL (change based on build flavor)
-  static const String serverUrl = devServerUrl;
+  static String get serverUrl => devServerUrl;
 
   /// Base URL for development
-  static const String devBaseUrl = '$devServerUrl/api/v1';
+  static String get devBaseUrl => '$devServerUrl/api/v1';
 
   /// Base URL for staging
-  static const String stagingBaseUrl = '$stagingServerUrl/api/v1';
+  static String get stagingBaseUrl => '$stagingServerUrl/api/v1';
 
   /// Base URL for production
-  static const String prodBaseUrl = '$prodServerUrl/api/v1';
+  static String get prodBaseUrl => '$prodServerUrl/api/v1';
 
   /// Current base URL (change based on build flavor)
-  static const String baseUrl = devBaseUrl;
+  static String get baseUrl => devBaseUrl;
 
   /// Get full URL for avatar/media paths
   /// Converts relative paths like /uploads/avatars/file.jpg to full URLs
@@ -41,7 +56,8 @@ abstract class ApiConfig {
       return null;
     }
     // If already a full URL, return as-is
-    if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    if (relativePath.startsWith('http://') ||
+        relativePath.startsWith('https://')) {
       return relativePath;
     }
     // Prepend server URL to relative path

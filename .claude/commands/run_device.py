@@ -11,7 +11,8 @@ import argparse
 import os
 
 FLUTTER = "/usr/local/share/flutter/bin/flutter"
-MOBILE_DIR = os.path.join(os.path.dirname(__file__), "mobile")
+# Project root is two levels up from .claude/commands/
+MOBILE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "mobile"))
 DEFAULT_SERVER_URL = "http://192.168.1.104:3000"
 
 
