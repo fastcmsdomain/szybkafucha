@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 
@@ -336,6 +337,14 @@ class _ClientProfileScreenState
 
             SizedBox(height: AppSpacing.space6),
 
+            _buildPaymentsShortcut(user),
+
+            SizedBox(height: AppSpacing.space4),
+
+            _buildKycShortcut(user),
+
+            SizedBox(height: AppSpacing.space6),
+
             _buildTextField(
               controller: _nameController,
               label: 'Imię i nazwisko',
@@ -420,6 +429,61 @@ class _ClientProfileScreenState
             borderRadius: AppRadius.radiusMD,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentsShortcut(User? user) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.payments_outlined, color: AppColors.gray600),
+        title: Text('Płatności', style: AppTypography.bodyMedium),
+        subtitle: Text(
+          'Zmień karty oraz dane płatności',
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppColors.gray400),
+        onTap: () => context.push(Routes.clientProfilePayments),
+      ),
+    );
+  }
+
+  Widget _buildKycShortcut(User? user) {
+    final isContractor = user?.isContractor == true;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.verified_user_outlined, color: AppColors.gray600),
+        title: Text('Weryfikacja (KYC)', style: AppTypography.bodyMedium),
+        subtitle: Text(
+          isContractor
+              ? 'Zweryfikuj tożsamość i numer konta do wypłat'
+              : 'Dostępne tylko dla wykonawców',
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppColors.gray400),
+        onTap: () {
+          if (!isContractor) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Weryfikacja KYC jest dostępna tylko dla wykonawców.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: AppColors.info,
+              ),
+            );
+            return;
+          }
+          context.push(Routes.contractorKyc);
+        },
       ),
     );
   }

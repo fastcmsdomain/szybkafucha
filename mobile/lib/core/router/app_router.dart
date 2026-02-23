@@ -260,6 +260,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ClientProfileScreen(),
           ),
           GoRoute(
+            path: Routes.clientProfilePayments,
+            name: 'clientProfilePayments',
+            builder: (context, state) => const PaymentsSettingsScreen(),
+          ),
+          GoRoute(
             path: Routes.clientReviews,
             name: 'clientReviews',
             builder: (context, state) => const ClientReviewsScreen(),
@@ -384,6 +389,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: 'contractorProfileEdit',
             builder: (context, state) =>
                 const contractor.ContractorProfileScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorProfilePayments,
+            name: 'contractorProfilePayments',
+            builder: (context, state) => const PaymentsSettingsScreen(),
           ),
           GoRoute(
             path: Routes.contractorReviews,
@@ -595,11 +605,6 @@ class _ContractorShell extends StatelessWidget {
             label: 'Historia',
           ),
           NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Zarobki',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profil',
@@ -615,8 +620,7 @@ class _ContractorShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith(Routes.contractorTaskList)) return 1;
     if (location.startsWith(Routes.contractorTaskHistory)) return 2;
-    if (location.startsWith(Routes.contractorEarnings)) return 3;
-    if (location.startsWith(Routes.contractorProfile)) return 4;
+    if (location.startsWith(Routes.contractorProfile)) return 3;
     return 0;
   }
 
@@ -632,9 +636,6 @@ class _ContractorShell extends StatelessWidget {
         context.go(Routes.contractorTaskHistory);
         return;
       case 3:
-        context.go(Routes.contractorEarnings);
-        return;
-      case 4:
         context.go(Routes.contractorProfile);
         return;
     }

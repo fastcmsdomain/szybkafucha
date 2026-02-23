@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/kyc_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/providers/websocket_provider.dart';
 import '../../../core/router/routes.dart';
@@ -37,6 +38,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
       ref.read(activeTaskProvider.notifier).refreshActiveTask();
       ref.read(contractorActiveTasksProvider.notifier).loadTasks();
       _checkProfileCompletion();
+      ref.read(kycProvider.notifier).fetchStatus();
     });
   }
 
@@ -65,6 +67,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kycState = ref.watch(kycProvider);
+
     // Listen for new tasks via WebSocket
     ref.listen<AsyncValue<NewTaskEvent>>(newTaskAvailableProvider, (previous, next) {
       next.whenData((newTask) {
@@ -96,6 +100,13 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                     if (!_isCheckingProfile && !_isProfileComplete)
                       ...[
                         _buildCompletionBanner(),
+                        SizedBox(height: AppSpacing.space6),
+                      ],
+
+                    // KYC verification banner (if not verified)
+                    if (!kycState.isLoading && !kycState.canAcceptTasks)
+                      ...[
+                        _buildKycBanner(),
                         SizedBox(height: AppSpacing.space6),
                       ],
 
@@ -210,6 +221,38 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
             onPressed: () => context.push(Routes.contractorProfileEdit),
             child: Text(
               'Uzupełnij',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKycBanner() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.1),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.info),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.verified_user_outlined, color: AppColors.info, size: 28),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Text(
+              'Zweryfikuj tożsamość, aby przyjmować zlecenia',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => context.push(Routes.contractorKyc),
+            child: Text(
+              'Weryfikuj',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
@@ -518,6 +561,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
       ref.read(availableTasksProvider.notifier).refresh(),
       ref.read(activeTaskProvider.notifier).refreshActiveTask(),
       ref.read(contractorActiveTasksProvider.notifier).refresh(),
+      ref.read(kycProvider.notifier).fetchStatus(),
     ]);
   }
 

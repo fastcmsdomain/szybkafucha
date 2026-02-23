@@ -48,6 +48,18 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 _buildMenuItem(
+                  icon: Icons.payments_outlined,
+                  title: 'Płatności',
+                  subtitle: 'Karty i konto do wypłat',
+                  onTap: () {
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorProfilePayments);
+                    } else {
+                      context.push(Routes.clientProfilePayments);
+                    }
+                  },
+                ),
+                _buildMenuItem(
                   icon: Icons.reviews_outlined,
                   title: 'Opinie',
                   onTap: () {

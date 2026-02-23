@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/providers/kyc_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 
-/// KYC Verification screen for contractors - ID document, selfie, and bank account
+/// KYC Verification screen for contractors — ID document, selfie, and bank account
 class KycVerificationScreen extends ConsumerStatefulWidget {
   const KycVerificationScreen({super.key});
 
@@ -17,15 +18,33 @@ class KycVerificationScreen extends ConsumerStatefulWidget {
       _KycVerificationScreenState();
 }
 
-class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
+class _KycVerificationScreenState
+    extends ConsumerState<KycVerificationScreen> {
   File? _idFront;
   File? _idBack;
   File? _selfie;
   final _ibanController = TextEditingController();
   final _accountHolderController = TextEditingController();
 
-  bool _isSubmitting = false;
   int _currentStep = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      await ref.read(kycProvider.notifier).fetchStatus();
+      if (!mounted) return;
+      final kycState = ref.read(kycProvider);
+      if (kycState.bankVerified) {
+        // Already fully verified — shouldn't normally happen
+        _showSuccessDialog();
+      } else if (kycState.selfieVerified) {
+        setState(() => _currentStep = 2);
+      } else if (kycState.idVerified) {
+        setState(() => _currentStep = 1);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -36,11 +55,37 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kycState = ref.watch(kycProvider);
+
+    // Auto-advance steps when verification completes
+    ref.listen<KycState>(kycProvider, (previous, next) {
+      if (previous == null) return;
+
+      if (!previous.idVerified && next.idVerified && _currentStep == 0) {
+        setState(() => _currentStep = 1);
+      } else if (!previous.selfieVerified &&
+          next.selfieVerified &&
+          _currentStep == 1) {
+        setState(() => _currentStep = 2);
+      } else if (!previous.bankVerified && next.bankVerified) {
+        _showSuccessDialog();
+      }
+
+      if (next.error != null && previous.error != next.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: kycState.isBusy ? null : () => context.pop(),
         ),
         title: SFRainbowText('Weryfikacja tożsamości'),
         centerTitle: true,
@@ -48,21 +93,60 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       body: Column(
         children: [
           // Progress steps
-          _buildStepIndicator(),
+          _buildStepIndicator(kycState),
+
+          // Polling banner
+          if (kycState.isPolling) _buildPollingBanner(kycState),
 
           // Step content
           Expanded(
             child: _buildCurrentStep(),
           ),
 
-          // Navigation
-          _buildNavigationButtons(),
+          // Navigation buttons
+          _buildNavigationButtons(kycState),
         ],
       ),
     );
   }
 
-  Widget _buildStepIndicator() {
+  Widget _buildPollingBanner(KycState kycState) {
+    final message = kycState.pollingStep == 'document'
+        ? 'Trwa weryfikacja dokumentu...'
+        : 'Trwa weryfikacja selfie...';
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.paddingMD,
+        vertical: AppSpacing.paddingSM,
+      ),
+      color: AppColors.info.withValues(alpha: 0.1),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(AppColors.info),
+            ),
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.info,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepIndicator(KycState kycState) {
     final steps = [
       _KycStep('Dokument', Icons.badge_outlined),
       _KycStep('Selfie', Icons.face),
@@ -75,7 +159,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         children: steps.asMap().entries.map((entry) {
           final index = entry.key;
           final step = entry.value;
-          final isCompleted = index < _currentStep;
+          final isCompleted = _isStepCompleted(index, kycState);
           final isCurrent = index == _currentStep;
           final isLast = index == steps.length - 1;
 
@@ -136,6 +220,19 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
         }).toList(),
       ),
     );
+  }
+
+  bool _isStepCompleted(int stepIndex, KycState kycState) {
+    switch (stepIndex) {
+      case 0:
+        return kycState.idVerified;
+      case 1:
+        return kycState.selfieVerified;
+      case 2:
+        return kycState.bankVerified;
+      default:
+        return false;
+    }
   }
 
   Widget _buildCurrentStep() {
@@ -229,7 +326,6 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
           border: Border.all(
             color: file != null ? AppColors.success : AppColors.gray300,
             width: file != null ? 2 : 1,
-            style: file != null ? BorderStyle.solid : BorderStyle.solid,
           ),
           image: file != null
               ? DecorationImage(
@@ -486,8 +582,9 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
             controller: _ibanController,
             keyboardType: TextInputType.text,
             textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'PL00 0000 0000 0000 0000 0000 0000',
+              hintText: 'PL61 1090 1014 0000 0712 1981 2874',
               prefixIcon: Icon(Icons.account_balance, color: AppColors.gray400),
               filled: true,
               fillColor: AppColors.gray50,
@@ -517,6 +614,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
           TextFormField(
             controller: _accountHolderController,
             textCapitalization: TextCapitalization.words,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: 'Jan Kowalski',
               prefixIcon: Icon(Icons.person, color: AppColors.gray400),
@@ -640,8 +738,8 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     );
   }
 
-  Widget _buildNavigationButtons() {
-    final canProceed = _canProceed();
+  Widget _buildNavigationButtons(KycState kycState) {
+    final canProceed = _canProceed() && !kycState.isBusy;
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
@@ -661,9 +759,11 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
             if (_currentStep > 0)
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _previousStep,
+                  onPressed:
+                      kycState.isBusy ? null : () => setState(() => _currentStep--),
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding:
+                        EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.radiusMD,
                     ),
@@ -676,29 +776,31 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
             Expanded(
               flex: _currentStep > 0 ? 2 : 1,
               child: ElevatedButton(
-                onPressed: _isSubmitting || !canProceed
-                    ? null
-                    : (_currentStep < 2 ? _nextStep : _submitVerification),
+                onPressed: canProceed ? _handleNextStep : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                  padding:
+                      EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppRadius.radiusMD,
                   ),
                   disabledBackgroundColor: AppColors.gray300,
                 ),
-                child: _isSubmitting
+                child: kycState.isLoading
                     ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(AppColors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation(AppColors.white),
                         ),
                       )
                     : Text(
-                        _currentStep < 2 ? 'Dalej' : 'Wyślij do weryfikacji',
+                        _currentStep < 2
+                            ? 'Wyślij i weryfikuj'
+                            : 'Zweryfikuj konto',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -715,7 +817,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   bool _canProceed() {
     switch (_currentStep) {
       case 0:
-        return _idFront != null && _idBack != null;
+        return _idFront != null;
       case 1:
         return _selfie != null;
       case 2:
@@ -726,15 +828,20 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     }
   }
 
-  void _previousStep() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-    }
-  }
-
-  void _nextStep() {
-    if (_currentStep < 2) {
-      setState(() => _currentStep++);
+  Future<void> _handleNextStep() async {
+    switch (_currentStep) {
+      case 0:
+        await ref.read(kycProvider.notifier).uploadIdDocument(
+              frontFile: _idFront!,
+              backFile: _idBack,
+            );
+      case 1:
+        await ref.read(kycProvider.notifier).uploadSelfie(_selfie!);
+      case 2:
+        await ref.read(kycProvider.notifier).verifyBankAccount(
+              iban: _ibanController.text,
+              accountHolderName: _accountHolderController.text,
+            );
     }
   }
 
@@ -743,9 +850,9 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 90,
+        maxWidth: 1280,
+        maxHeight: 720,
+        imageQuality: 75,
       );
 
       if (image != null) {
@@ -795,19 +902,7 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
     }
   }
 
-  Future<void> _submitVerification() async {
-    setState(() => _isSubmitting = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      // Show pending verification screen
-      _showVerificationPendingDialog();
-    }
-  }
-
-  void _showVerificationPendingDialog() {
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -823,54 +918,28 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
               Container(
                 padding: EdgeInsets.all(AppSpacing.paddingLG),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.hourglass_top,
+                  Icons.verified_user,
                   size: 64,
-                  color: AppColors.warning,
+                  color: AppColors.success,
                 ),
               ),
               SizedBox(height: AppSpacing.gapLG),
               Text(
-                'Weryfikacja w toku',
+                'Weryfikacja zakończona!',
                 style: AppTypography.h3,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.gapSM),
               Text(
-                'Twoje dokumenty zostały wysłane do weryfikacji. Proces może potrwać do 24 godzin.',
+                'Gratulacje! Twoja tożsamość została zweryfikowana. Możesz teraz przyjmować zlecenia.',
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.gray500,
                 ),
                 textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppSpacing.gapMD),
-              Container(
-                padding: EdgeInsets.all(AppSpacing.paddingMD),
-                decoration: BoxDecoration(
-                  color: AppColors.gray50,
-                  borderRadius: AppRadius.radiusMD,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.notifications_active,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                    SizedBox(width: AppSpacing.gapSM),
-                    Expanded(
-                      child: Text(
-                        'Powiadomimy Cię gdy weryfikacja zostanie zakończona.',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
               SizedBox(height: AppSpacing.gapXL),
               SizedBox(
@@ -881,14 +950,15 @@ class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
                     context.go('/contractor');
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.success,
                     foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding:
+                        EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.radiusMD,
                     ),
                   ),
-                  child: const Text('Rozumiem'),
+                  child: const Text('Zacznij zarabiać'),
                 ),
               ),
             ],
