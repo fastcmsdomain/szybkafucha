@@ -686,6 +686,13 @@ class _ContractorProfileSheet extends StatelessWidget {
                       color: AppColors.gray500,
                     ),
                   ),
+                if (contractor.dateOfBirth != null)
+                  Text(
+                    'Data urodzenia: ${_formatDate(contractor.dateOfBirth!)}',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
 
                 SizedBox(height: AppSpacing.space6),
 
@@ -784,5 +791,11 @@ class _ContractorProfileSheet extends StatelessWidget {
       'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
     ];
     return '${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
   }
 }

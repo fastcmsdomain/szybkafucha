@@ -29,6 +29,7 @@ class _ContractorProfileScreenState
   late final TextEditingController _emailController;
   late final TextEditingController _bioController;
   late final TextEditingController _addressController;
+  late final TextEditingController _dateOfBirthController;
 
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
@@ -43,6 +44,8 @@ class _ContractorProfileScreenState
   // Whether the user originally had an email set — determines if field is editable
   // Phone is always read-only (auth credential, requires OTP to change)
   bool _hadEmailOnLoad = false;
+  bool _hadDateOfBirthOnLoad = false;
+  DateTime? _dateOfBirth;
 
   @override
   void initState() {
@@ -53,6 +56,12 @@ class _ContractorProfileScreenState
     _emailController = TextEditingController(text: user?.email ?? '');
     _bioController = TextEditingController(text: ''); // Bio loaded from contractor profile
     _addressController = TextEditingController(text: user?.address ?? '');
+    _dateOfBirthController = TextEditingController();
+    _dateOfBirth = user?.dateOfBirth;
+    _dateOfBirthController.text = user?.dateOfBirth != null
+        ? _formatDateForDisplay(user!.dateOfBirth!)
+        : '';
+    _hadDateOfBirthOnLoad = user?.dateOfBirth != null;
     _hadEmailOnLoad = user?.email?.isNotEmpty == true;
     _loadContractorProfile();
   }
@@ -70,6 +79,7 @@ class _ContractorProfileScreenState
       debugPrint('Categories: ${data['categories']}');
       debugPrint('ServiceRadiusKm: ${data['serviceRadiusKm']}');
       debugPrint('KYC Status: ${data['kycStatus']}');
+      debugPrint('DateOfBirth: ${data['dateOfBirth'] ?? data['date_of_birth']}');
       debugPrint('======================================');
 
       if (mounted) {
@@ -101,6 +111,29 @@ class _ContractorProfileScreenState
           final kycStatus = data['kycStatus'] as String?;
           _isKycVerified = (kycStatus == 'verified');
           debugPrint('DEBUG: Set isKycVerified to: $_isKycVerified');
+
+          final userData = data['user'];
+          final dateOfBirthRaw = data['dateOfBirth'] ??
+              data['date_of_birth'] ??
+              data['birthDate'] ??
+              (userData is Map<String, dynamic>
+                  ? (userData['dateOfBirth'] ??
+                      userData['date_of_birth'] ??
+                      userData['birthDate'])
+                  : null);
+          final parsedDateOfBirth = dateOfBirthRaw is String
+              ? DateTime.tryParse(dateOfBirthRaw)
+              : null;
+          if (parsedDateOfBirth != null ||
+              data.containsKey('dateOfBirth') ||
+              data.containsKey('date_of_birth') ||
+              data.containsKey('birthDate')) {
+            _dateOfBirth = parsedDateOfBirth;
+            _hadDateOfBirthOnLoad = parsedDateOfBirth != null;
+            _dateOfBirthController.text = parsedDateOfBirth != null
+                ? _formatDateForDisplay(parsedDateOfBirth)
+                : '';
+          }
         });
       }
     } catch (e, stackTrace) {
@@ -246,7 +279,40 @@ class _ContractorProfileScreenState
     _emailController.dispose();
     _bioController.dispose();
     _addressController.dispose();
+    _dateOfBirthController.dispose();
     super.dispose();
+  }
+
+  String _formatDateForDisplay(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
+  }
+
+  String _formatDateForApi(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(now.year - 25, now.month, now.day),
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Wybierz datę urodzenia',
+      cancelText: 'Anuluj',
+      confirmText: 'Wybierz',
+    );
+
+    if (pickedDate == null) return;
+
+    setState(() {
+      _dateOfBirth = pickedDate;
+      _dateOfBirthController.text = _formatDateForDisplay(pickedDate);
+    });
   }
 
   Future<void> _saveProfile() async {
@@ -279,6 +345,8 @@ class _ContractorProfileScreenState
         'address': _addressController.text.trim(),
         if (!_hadEmailOnLoad && _emailController.text.trim().isNotEmpty)
           'email': _emailController.text.trim(),
+        if (_dateOfBirth != null) 'dateOfBirth': _formatDateForApi(_dateOfBirth!),
+        if (_dateOfBirth == null && _hadDateOfBirthOnLoad) 'dateOfBirth': null,
       };
 
       debugPrint('=== SAVING CONTRACTOR PROFILE ===');
@@ -477,6 +545,30 @@ class _ContractorProfileScreenState
               icon: Icons.description_outlined,
               maxLines: 3,
             ),
+            _buildTextField(
+              controller: _dateOfBirthController,
+              label: 'Data urodzenia (opcjonalnie)',
+              icon: Icons.cake_outlined,
+              readOnly: true,
+              showReadOnlyLock: false,
+              onTap: _pickDateOfBirth,
+              suffixIcon: _dateOfBirth != null
+                  ? IconButton(
+                      tooltip: 'Wyczyść datę',
+                      onPressed: () {
+                        setState(() {
+                          _dateOfBirth = null;
+                          _dateOfBirthController.clear();
+                        });
+                      },
+                      icon: Icon(Icons.clear, size: 18, color: AppColors.gray500),
+                    )
+                  : Icon(
+                      Icons.calendar_today_outlined,
+                      size: 18,
+                      color: AppColors.gray500,
+                    ),
+            ),
 
             SizedBox(height: AppSpacing.space6),
 
@@ -526,6 +618,9 @@ class _ContractorProfileScreenState
     int maxLines = 1,
     bool readOnly = false,
     String? helperText,
+    VoidCallback? onTap,
+    bool showReadOnlyLock = true,
+    Widget? suffixIcon,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
@@ -534,6 +629,7 @@ class _ContractorProfileScreenState
         keyboardType: keyboardType,
         maxLines: maxLines,
         readOnly: readOnly,
+        onTap: onTap,
         style: readOnly
             ? AppTypography.bodyMedium.copyWith(color: AppColors.gray500)
             : null,
@@ -542,9 +638,10 @@ class _ContractorProfileScreenState
           prefixIcon: Icon(icon),
           helperText: helperText,
           helperStyle: AppTypography.caption.copyWith(color: AppColors.gray400),
-          suffixIcon: readOnly
-              ? Icon(Icons.lock_outline, size: 16, color: AppColors.gray400)
-              : null,
+          suffixIcon: suffixIcon ??
+              (readOnly && showReadOnlyLock
+                  ? Icon(Icons.lock_outline, size: 16, color: AppColors.gray400)
+                  : null),
           border: OutlineInputBorder(
             borderRadius: AppRadius.radiusMD,
           ),
@@ -570,6 +667,9 @@ class _ContractorProfileScreenState
 
     final percent = (completedFields / totalFields * 100).toInt();
     final isComplete = percent == 100;
+
+    // When 100% — the verified badge is shown under the photo instead
+    if (isComplete) return const SizedBox.shrink();
 
     return InkWell(
       borderRadius: AppRadius.radiusMD,

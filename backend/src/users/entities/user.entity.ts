@@ -52,6 +52,9 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   address: string | null;
 
+  @Column({ type: 'date', nullable: true })
+  dateOfBirth: string | null;
+
   @Column({
     type: 'enum',
     enum: UserStatus,

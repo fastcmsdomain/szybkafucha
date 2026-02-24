@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -46,8 +47,14 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(clientTasksProvider);
-    final activeTasks = tasksState.activeTasks;
-    final completedTasks = tasksState.completedTasks;
+    final currentUserId = ref.watch(currentUserProvider)?.id;
+    final clientTasks = currentUserId == null
+        ? tasksState.tasks
+        : tasksState.tasks
+            .where((task) => task.clientId == currentUserId)
+            .toList();
+    final activeTasks = clientTasks.where((task) => task.status.isActive).toList();
+    final completedTasks = clientTasks.where((task) => !task.status.isActive).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -578,7 +585,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                           child: OutlinedButton(
                             onPressed: () {
                               context.pop();
-                              context.push(Routes.clientTask(task.id));
+                              context.push(Routes.clientTaskTrack(task.id));
                             },
                             child: Text('Więcej'),
                           ),

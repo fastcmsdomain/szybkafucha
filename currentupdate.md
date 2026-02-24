@@ -8,6 +8,16 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-24] UI: "Zweryfikowany" badge under profile photo at 100%
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Gdy weryfikacja profilu osiąga 100%, zielony baner z paskiem postępu znika, a pod zdjęciem profilowym pojawia się odznaka "Zweryfikowany" z ikoną.
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – dodano obliczenie `isProfileComplete` w `build()`, opakowano avatar w `Column` z warunkową odznaką; `_buildProfileProgress()` zwraca `SizedBox.shrink()` gdy kompletny
+- **System Impact**: Wyłącznie UI — brak zmian w logice backendu ani state management
+- **Related Tasks/PRD**: KYC verification flow (MVP)
+- **Potential Conflicts/Risks**: Brak
+
 ## [2026-02-23] Security: phone/email edit locked (auth credentials)
 
 - **Developer/Agent**: Claude

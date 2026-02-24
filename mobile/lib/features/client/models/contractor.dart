@@ -15,6 +15,7 @@ class Contractor {
   final int? proposedPrice;
   final List<String> categories;
   final DateTime? memberSince;
+  final DateTime? dateOfBirth;
   final String? bio;
 
   const Contractor({
@@ -31,6 +32,7 @@ class Contractor {
     this.proposedPrice,
     this.categories = const [],
     this.memberSince,
+    this.dateOfBirth,
     this.bio,
   });
 
@@ -67,6 +69,9 @@ class Contractor {
           : json['memberSince'] != null
               ? DateTime.parse(json['memberSince'] as String)
               : null,
+      dateOfBirth: _parseDate(
+        json['dateOfBirth'] ?? json['date_of_birth'] ?? json['birthDate'],
+      ),
       bio: (json['bio'] ??
               json['description'] ??
               json['about'] ??
@@ -88,8 +93,16 @@ class Contractor {
         'proposed_price': proposedPrice,
         'categories': categories,
         'member_since': memberSince?.toIso8601String(),
+        'date_of_birth': dateOfBirth?.toIso8601String(),
         'bio': bio,
       };
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
 
   /// Get formatted rating with one decimal
   String get formattedRating => rating.toStringAsFixed(1);
@@ -112,6 +125,14 @@ class Contractor {
     final hours = etaMinutes! ~/ 60;
     final mins = etaMinutes! % 60;
     return mins > 0 ? '${hours}h ${mins}min' : '${hours}h';
+  }
+
+  String get formattedDateOfBirth {
+    if (dateOfBirth == null) return '';
+    final date = dateOfBirth!;
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
   }
 }
 

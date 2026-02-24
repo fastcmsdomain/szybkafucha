@@ -401,6 +401,7 @@ export class ContractorService {
     categories: string[];
     isVerified: boolean;
     memberSince: Date;
+    dateOfBirth: string | null;
   }> {
     // Try to find contractor profile with user relation
     const profile = await this.contractorRepository.findOne({
@@ -437,6 +438,7 @@ export class ContractorService {
         categories: profile.categories || [],
         isVerified: profile.kycStatus === KycStatus.VERIFIED,
         memberSince: profile.createdAt,
+        dateOfBirth: profile.user.dateOfBirth || null,
       };
     }
 
@@ -458,6 +460,7 @@ export class ContractorService {
       categories: [],
       isVerified: false,
       memberSince: user.createdAt,
+      dateOfBirth: user.dateOfBirth || null,
     };
   }
 

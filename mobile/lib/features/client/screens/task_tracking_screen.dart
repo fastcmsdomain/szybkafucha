@@ -1839,6 +1839,26 @@ class _ContractorProfileSheetState
     );
   }
 
+  Widget _buildDateOfBirthSection(Contractor contractor) {
+    if (contractor.dateOfBirth == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Data urodzenia'),
+        SizedBox(height: AppSpacing.gapXS),
+        Text(
+          contractor.formattedDateOfBirth,
+          style: AppTypography.bodySmall.copyWith(
+            color: AppColors.gray600,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildProfileContent(Contractor contractor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1847,6 +1867,10 @@ class _ContractorProfileSheetState
         _buildAvatarAndNameRow(contractor),
         SizedBox(height: AppSpacing.gapMD),
         _buildBioSection(contractor),
+        if (contractor.dateOfBirth != null) ...[
+          SizedBox(height: AppSpacing.gapMD),
+          _buildDateOfBirthSection(contractor),
+        ],
         SizedBox(height: AppSpacing.gapMD),
         _buildSectionTitle('Opinie'),
         SizedBox(height: AppSpacing.gapXS),

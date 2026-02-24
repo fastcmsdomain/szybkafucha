@@ -30,6 +30,7 @@ class User {
   final String? email;
   final String? name;
   final String? phone;
+  final DateTime? dateOfBirth;
   final List<String> userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
   final String? avatarUrl;
   final bool isVerified;
@@ -41,6 +42,7 @@ class User {
     this.email,
     this.name,
     this.phone,
+    this.dateOfBirth,
     required this.userTypes,
     this.avatarUrl,
     this.isVerified = false,
@@ -71,6 +73,9 @@ class User {
       email: json['email'] as String?,
       name: json['name'] as String?,
       phone: json['phone'] as String?,
+      dateOfBirth: _parseDate(
+        json['dateOfBirth'] ?? json['date_of_birth'] ?? json['birthDate'],
+      ),
       userTypes: userTypes,
       // Convert relative avatar URL to full URL
       avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
@@ -87,12 +92,20 @@ class User {
         'email': email,
         'name': name,
         'phone': phone,
+        'dateOfBirth': dateOfBirth?.toIso8601String(),
         'types': userTypes,
         'avatar_url': avatarUrl,
         'is_verified': isVerified,
         'address': address,
         'bio': bio,
       };
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
 
   bool get isClient => userTypes.contains('client');
   bool get isContractor => userTypes.contains('contractor');
@@ -103,6 +116,7 @@ class User {
     String? email,
     String? name,
     String? phone,
+    DateTime? dateOfBirth,
     List<String>? userTypes,
     String? avatarUrl,
     bool? isVerified,
@@ -114,6 +128,7 @@ class User {
       email: email ?? this.email,
       name: name ?? this.name,
       phone: phone ?? this.phone,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       userTypes: userTypes ?? this.userTypes,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,

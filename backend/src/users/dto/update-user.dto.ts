@@ -8,6 +8,7 @@ import {
   MaxLength,
   IsUrl,
   IsEmail,
+  IsDateString,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -37,4 +38,8 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(255)
   address?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateOfBirth?: string | null;
 }
