@@ -283,14 +283,26 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _resendCode() async {
-    // TODO: Call API to resend OTP
-    _startResendTimer();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppStrings.codeSent),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    try {
+      await ref.read(authProvider.notifier).requestPhoneOtp(widget.phoneNumber);
+      _startResendTimer();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppStrings.codeSent),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nie udało się wysłać kodu. Spróbuj ponownie.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

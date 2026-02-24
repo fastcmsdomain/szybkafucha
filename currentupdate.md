@@ -8,6 +8,63 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-23] Security: phone/email edit locked (auth credentials)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Zabezpieczenie danych logowania w ekranie profilu — telefon zawsze zablokowany, email edytowalny tylko przy pierwszym dodaniu.
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart`:
+    - Dodano `_hadEmailOnLoad` — flaga czy email był ustawiony przy załadowaniu
+    - Telefon: zawsze `readOnly: true` + hint "Zmiana numeru wymaga weryfikacji SMS"
+    - Email: `readOnly: _hadEmailOnLoad` — zablokowany gdy już ustawiony, edytowalny tylko gdy pusty (phone-registered user dodaje po raz pierwszy)
+    - Usunięto `phone` z payload `PUT /users/me` (nie powinno być zmieniane bez OTP)
+    - Email wysyłany w payload tylko gdy `!_hadEmailOnLoad` (pierwszy raz)
+    - `_buildTextField` wzbogacone o `helperText`, `suffixIcon` (kłódka), `fillColor` dla zablokowanych pól
+- **System Impact**: Dane logowania (telefon, email) nie mogą być swobodnie zmieniane. UX informuje użytkownika o powodzie blokady.
+- **Related Tasks/PRD**: Security, profile management
+- **Potential Conflicts/Risks**: Brak — telefon był już wcześniej wysyłany w payload ale nigdy nie powinien być. Email weryfikowany przez `IBAN.isValid` po stronie backendu nie dotyczy.
+
+## [2026-02-23] Bugfix: email editable + EU IBAN + verify button fix
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Trzy poprawki: edytowalny email w profilu, akceptacja wszystkich IBAN EU, naprawa przycisku "Zweryfikuj konto".
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` — usunięto `readOnly: true` z pola email
+  - `backend/src/kyc/kyc.service.ts` — usunięto ograniczenie do kont PL; akceptujemy teraz wszystkie EU IBANy
+  - `backend/src/kyc/dto/kyc.dto.ts` — regex IBAN zaktualizowany z `{4,30}` na `{11,29}` (pokrywa EU: min 16 chars BE, max 31 chars MT)
+  - `mobile/lib/core/providers/kyc_provider.dart` — zaktualizowano komunikat błędu dla nieobsługiwanego IBAN
+  - `mobile/lib/features/contractor/screens/kyc_verification_screen.dart` — dodano `onChanged: (_) => setState(() {})` do pól IBAN i właściciela konta (bez tego przycisk "Zweryfikuj konto" był zawsze wyszarzony); zaktualizowano hint IBAN
+- **System Impact**: KYC bank step działa end-to-end dla EU IBANów. Przycisk aktywuje się natychmiast po wypełnieniu obu pól.
+- **Potential Conflicts/Risks**: Usunięcie ograniczenia PL-only — backend IBAN.isValid() nadal waliduje format i checksum.
+
+## [2026-02-23] Bugfix: profile null crash + KYC body size limit
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Naprawa dwóch bugów znalezionych podczas testów na emulatorze Android.
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` — naprawiono `Null check operator used on a null value` w inicjale avatara: zmieniono `(user?.name ?? 'W').isNotEmpty ? user!.name![0]` na `(user?.name?.isNotEmpty ?? false) ? user!.name![0]`
+  - `backend/src/main.ts` — zwiększono limit body parsera z domyślnych 100kb do 20MB (`bodyParser: false` + manualna konfiguracja `express.json` z `verify` dla Stripe rawBody); dodano importy `NestExpressApplication`, `json`, `urlencoded`, `Request`, `Response`
+  - `mobile/lib/features/contractor/screens/kyc_verification_screen.dart` — zmniejszono rozmiar zdjęcia dokumentu z 1920×1080@90% na 1280×720@75% (szybszy upload, wciąż czytelne dla KYC)
+- **System Impact**: Profile screen nie crashuje gdy `user.name` jest null. KYC upload dokumentów działa dla obrazów base64 (~100-200KB każdy).
+- **Related Tasks/PRD**: KYC flow
+- **Potential Conflicts/Risks**: `bodyParser: false` + manualna konfiguracja – Stripe rawBody nadal działa przez `verify` callback; testować webhook Stripe po wdrożeniu
+
+## [2026-02-23] KYC i weryfikacja numeru telefonu
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Podłączenie ekranu KYC do prawdziwych API, naprawa mock completion w backendzie, dodanie KYC gate w ekranach contractora, naprawa resend OTP.
+- **Files Changed**:
+  - `backend/src/kyc/kyc.service.ts` — naprawiono `mockVerificationComplete` (teraz faktycznie zapisuje COMPLETE do DB i wywołuje `markVerificationComplete` + `updateOverallKycStatus`); naprawiono kolejność save/setTimeout w mock mode; dodano `setContractorKycRejected` gdy Onfido zwraca UNIDENTIFIED; naprawiono prettier lint
+  - `mobile/lib/core/providers/kyc_provider.dart` — **NOWY** Riverpod provider: `fetchStatus`, `uploadIdDocument`, `uploadSelfie`, `verifyBankAccount`, polling co 3s do 90s
+  - `mobile/lib/core/providers/providers.dart` — eksport `kyc_provider.dart`
+  - `mobile/lib/features/contractor/screens/kyc_verification_screen.dart` — zastąpiono symulację (2s delay + fake dialog) prawdziwymi wywołaniami API przez `kycProvider`; auto-advance kroków przez `ref.listen`; dialog sukcesu po bank verification
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` — dodano import `kyc_provider`, `fetchStatus` w initState/refresh, banner KYC "Zweryfikuj tożsamość" gdy `!canAcceptTasks`
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` — dodano import `kyc_provider`, `fetchStatus` w initState, KYC gate w `_showApplyDialog` (dialog z przyciskiem "Weryfikuj" → route do KYC screen)
+  - `mobile/lib/features/auth/screens/otp_screen.dart` — naprawiono `_resendCode` (usunięto TODO, teraz wywołuje `authProvider.notifier.requestPhoneOtp`)
+- **System Impact**: KYC flow końcowo spięty end-to-end. W mock mode: backend automatycznie kończy weryfikację po 5s, mobile polling odbiera wynik. Phone OTP resend działa. Contractor bez KYC nie może aplikować na zlecenia (blokada w UI + backend).
+- **Related Tasks/PRD**: KYC verification for contractors, phone number verification
+- **Potential Conflicts/Risks**: `kycProvider` nie jest automatycznie inicjalizowany — musi być wywołany `fetchStatus()` w initState każdego ekranu który go używa.
+
 ## [2026-02-21] Fix: przyciski "Więcej" i "Czat" znikają po pendingComplete
 
 - **Developer/Agent**: Claude

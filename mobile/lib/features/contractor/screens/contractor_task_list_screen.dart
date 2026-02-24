@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/providers/kyc_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -36,9 +37,10 @@ class _ContractorTaskListScreenState
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Load tasks on screen open
+    // Load tasks and KYC status on screen open
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
+      ref.read(kycProvider.notifier).fetchStatus();
     });
   }
 
@@ -867,6 +869,39 @@ class _ContractorTaskListScreenState
 
   /// Show apply dialog with price and optional message
   Future<void> _showApplyDialog(ContractorTask task) async {
+    // Check KYC verification before allowing application
+    final kycState = ref.read(kycProvider);
+    if (!kycState.canAcceptTasks) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Wymagana weryfikacja tożsamości'),
+          content: const Text(
+            'Aby aplikować na zlecenia, musisz najpierw zweryfikować swoją tożsamość.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Anuluj'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push(Routes.contractorKyc);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+              child: const Text('Weryfikuj'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final priceController = TextEditingController(
       text: task.price.toString(),
     );

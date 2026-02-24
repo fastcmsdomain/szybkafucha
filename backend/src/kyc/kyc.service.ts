@@ -149,16 +149,16 @@ export class KycService {
       kycCheck.onfidoDocumentId = `mock_doc_${Date.now()}`;
       kycCheck.status = KycCheckStatus.IN_PROGRESS;
 
-      // Simulate async verification (would be webhook in production)
-      setTimeout(
-        () => this.mockVerificationComplete(kycCheck.id, 'document'),
-        5000,
-      );
+      // Save first so the check has an ID before scheduling mock completion
+      const savedCheck = await this.saveKycCheck(kycCheck);
 
-      await this.saveKycCheck(kycCheck);
+      // Simulate async verification (would be webhook in production)
+      setTimeout(() => {
+        void this.mockVerificationComplete(savedCheck.id, 'document');
+      }, 5000);
 
       return {
-        checkId: kycCheck.id,
+        checkId: savedCheck.id,
         status: 'processing',
       };
     }
@@ -242,16 +242,16 @@ export class KycService {
       kycCheck.onfidoCheckId = `mock_check_selfie_${Date.now()}`;
       kycCheck.status = KycCheckStatus.IN_PROGRESS;
 
-      // Simulate async verification
-      setTimeout(
-        () => this.mockVerificationComplete(kycCheck.id, 'selfie'),
-        5000,
-      );
+      // Save first so the check has an ID before scheduling mock completion
+      const savedCheck = await this.saveKycCheck(kycCheck);
 
-      await this.saveKycCheck(kycCheck);
+      // Simulate async verification
+      setTimeout(() => {
+        void this.mockVerificationComplete(savedCheck.id, 'selfie');
+      }, 5000);
 
       return {
-        checkId: kycCheck.id,
+        checkId: savedCheck.id,
         status: 'processing',
       };
     }
@@ -315,11 +315,8 @@ export class KycService {
     const electronicIban = IBAN.electronicFormat(dto.iban);
     const countryCode = electronicIban.substring(0, 2);
 
-    // For Poland, validate it starts with PL
     if (countryCode !== 'PL') {
-      throw new BadRequestException(
-        'Only Polish bank accounts (IBAN starting with PL) are supported',
-      );
+      throw new BadRequestException('Only Polish bank accounts');
     }
 
     // Create KYC check record
@@ -428,9 +425,11 @@ export class KycService {
         await this.markVerificationComplete(kycCheck);
       } else if (result === 'consider') {
         kycCheck.result = KycCheckResult.CONSIDER;
-        // May need manual review
+        // May need manual review - treated as pending for now
       } else {
         kycCheck.result = KycCheckResult.UNIDENTIFIED;
+        // Mark contractor as rejected
+        await this.setContractorKycRejected(kycCheck.userId);
       }
     }
 
@@ -570,18 +569,58 @@ export class KycService {
     }
   }
 
+  private async setContractorKycRejected(userId: string): Promise<void> {
+    try {
+      const profile = await this.profileRepository.findOne({
+        where: { userId },
+      });
+      if (profile) {
+        profile.kycStatus = KycStatus.REJECTED;
+        await this.profileRepository.save(profile);
+        this.notificationsService
+          .sendToUser(userId, NotificationType.KYC_FAILED, {})
+          .catch((err) =>
+            this.logger.error(`Failed to send KYC_FAILED notification: ${err}`),
+          );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to set KYC rejected for user ${userId}:`,
+        error as Error,
+      );
+    }
+  }
+
   private maskIban(iban: string): string {
     // Show first 4 and last 4 characters
     if (iban.length <= 8) return iban;
     return `${iban.substring(0, 4)}****${iban.substring(iban.length - 4)}`;
   }
 
-  private mockVerificationComplete(
+  private async mockVerificationComplete(
     checkId: string,
     type: 'document' | 'selfie',
-  ): void {
-    // Simulate webhook callback for mock mode
+  ): Promise<void> {
     this.logger.log(`Mock ${type} verification complete for check ${checkId}`);
-    // In real implementation, this would be triggered by Onfido webhook
+    try {
+      const kycCheck = await this.kycCheckRepository.findOne({
+        where: { id: checkId },
+      });
+      if (!kycCheck) {
+        this.logger.warn(`Mock verification: KYC check ${checkId} not found`);
+        return;
+      }
+      kycCheck.status = KycCheckStatus.COMPLETE;
+      kycCheck.result = KycCheckResult.CLEAR;
+      kycCheck.completedAt = new Date();
+      await this.kycCheckRepository.save(kycCheck);
+      await this.markVerificationComplete(kycCheck);
+      await this.updateOverallKycStatus(kycCheck.userId);
+    } catch (error) {
+      this.logger.error(
+        `Mock ${type} verification failed for check ${checkId}:`,
+        error as Error,
+      );
+    }
   }
 }

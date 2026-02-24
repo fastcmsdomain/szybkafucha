@@ -55,7 +55,7 @@ export class UploadSelfieDto {
 export class VerifyBankDto {
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}$/, {
+  @Matches(/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,29}$/, {
     message: 'Invalid IBAN format',
   })
   iban: string;

@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../client/models/task_category.dart';
@@ -38,6 +40,10 @@ class _ContractorProfileScreenState
   // KYC verification status
   bool _isKycVerified = false;
 
+  // Whether the user originally had an email set — determines if field is editable
+  // Phone is always read-only (auth credential, requires OTP to change)
+  bool _hadEmailOnLoad = false;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +53,7 @@ class _ContractorProfileScreenState
     _emailController = TextEditingController(text: user?.email ?? '');
     _bioController = TextEditingController(text: ''); // Bio loaded from contractor profile
     _addressController = TextEditingController(text: user?.address ?? '');
+    _hadEmailOnLoad = user?.email?.isNotEmpty == true;
     _loadContractorProfile();
   }
 
@@ -265,11 +272,13 @@ class _ContractorProfileScreenState
     try {
       final api = ref.read(apiClientProvider);
 
-      // Update user data (name, phone, address - shared data)
+      // Update user data — phone is read-only (auth credential),
+      // email only sent when user is adding it for the first time
       final userPayload = <String, dynamic>{
         'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
         'address': _addressController.text.trim(),
+        if (!_hadEmailOnLoad && _emailController.text.trim().isNotEmpty)
+          'email': _emailController.text.trim(),
       };
 
       debugPrint('=== SAVING CONTRACTOR PROFILE ===');
@@ -335,6 +344,16 @@ class _ContractorProfileScreenState
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
 
+    // Compute whether profile is 100% complete (mirrors _buildProfileProgress logic)
+    int completedCount = 0;
+    if (user?.name?.isNotEmpty == true) completedCount++;
+    if (user?.address?.isNotEmpty == true) completedCount++;
+    if (_bioController.text.isNotEmpty) completedCount++;
+    if (_selectedCategories.isNotEmpty) completedCount++;
+    if (_serviceRadius > 0) completedCount++;
+    if (_isKycVerified) completedCount++;
+    final isProfileComplete = completedCount == 6;
+
     return Scaffold(
       appBar: AppBar(
         title: SFRainbowText('Mój profil'),
@@ -345,48 +364,70 @@ class _ContractorProfileScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Avatar + change photo
+            // Avatar + change photo + verified badge
             Center(
-              child: Stack(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: AppColors.gray200,
-                    backgroundImage:
-                        user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                    child: _isUploadingAvatar
-                        ? const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          )
-                        : user?.avatarUrl == null
-                            ? Text(
-                                (user?.name ?? 'W').isNotEmpty
-                                    ? user!.name![0].toUpperCase()
-                                    : 'W',
-                                style: AppTypography.h3.copyWith(
-                                  color: AppColors.gray600,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 48,
+                        backgroundColor: AppColors.gray200,
+                        backgroundImage:
+                            user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                        child: _isUploadingAvatar
+                            ? const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
                               )
-                            : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Material(
-                      color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                            : user?.avatarUrl == null
+                                ? Text(
+                                    (user?.name?.isNotEmpty ?? false)
+                                        ? user!.name![0].toUpperCase()
+                                        : 'W',
+                                    style: AppTypography.h3.copyWith(
+                                      color: AppColors.gray600,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  )
+                                : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Material(
+                          color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
+                            child: const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
+                  if (isProfileComplete) ...[
+                    SizedBox(height: AppSpacing.gapSM),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified, color: AppColors.success, size: 18),
+                        SizedBox(width: 4),
+                        Text(
+                          'Zweryfikowany',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -394,6 +435,10 @@ class _ContractorProfileScreenState
             SizedBox(height: AppSpacing.space6),
 
             _buildProfileProgress(),
+
+            SizedBox(height: AppSpacing.space6),
+
+            _buildPaymentsShortcut(),
 
             SizedBox(height: AppSpacing.space6),
 
@@ -407,13 +452,19 @@ class _ContractorProfileScreenState
               label: 'Numer telefonu',
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
+              readOnly: true,
+              helperText:
+                  'Aby zmienić numer, napisz na kontakt@szybkafucha.app',
             ),
             _buildTextField(
               controller: _emailController,
               label: 'Adres email',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
-              readOnly: true,
+              readOnly: _hadEmailOnLoad,
+              helperText: _hadEmailOnLoad
+                  ? 'Aby zmienić email, napisz na kontakt@szybkafucha.app'
+                  : null,
             ),
             _buildTextField(
               controller: _addressController,
@@ -474,6 +525,7 @@ class _ContractorProfileScreenState
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     bool readOnly = false,
+    String? helperText,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
@@ -482,12 +534,22 @@ class _ContractorProfileScreenState
         keyboardType: keyboardType,
         maxLines: maxLines,
         readOnly: readOnly,
+        style: readOnly
+            ? AppTypography.bodyMedium.copyWith(color: AppColors.gray500)
+            : null,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
+          helperText: helperText,
+          helperStyle: AppTypography.caption.copyWith(color: AppColors.gray400),
+          suffixIcon: readOnly
+              ? Icon(Icons.lock_outline, size: 16, color: AppColors.gray400)
+              : null,
           border: OutlineInputBorder(
             borderRadius: AppRadius.radiusMD,
           ),
+          filled: readOnly,
+          fillColor: readOnly ? AppColors.gray50 : null,
         ),
       ),
     );
@@ -509,43 +571,74 @@ class _ContractorProfileScreenState
     final percent = (completedFields / totalFields * 100).toInt();
     final isComplete = percent == 100;
 
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingMD),
-      decoration: BoxDecoration(
-        color: isComplete
-            ? AppColors.success.withValues(alpha: 0.1)
-            : AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isComplete ? AppColors.success : AppColors.warning,
+    return InkWell(
+      borderRadius: AppRadius.radiusMD,
+      onTap: () => context.push(Routes.contractorKyc),
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.paddingMD),
+        decoration: BoxDecoration(
+          color: isComplete
+              ? AppColors.success.withValues(alpha: 0.1)
+              : AppColors.warning.withValues(alpha: 0.1),
+          borderRadius: AppRadius.radiusMD,
+          border: Border.all(
+            color: isComplete ? AppColors.success : AppColors.warning,
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Weryfikacja',
+                  style: AppTypography.h4,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$percent%',
+                      style: AppTypography.h3.copyWith(
+                        color: isComplete ? AppColors.success : AppColors.warning,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapSM),
+                    Icon(Icons.chevron_right, color: AppColors.gray400),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            LinearProgressIndicator(
+              value: completedFields / totalFields,
+              backgroundColor: AppColors.gray200,
+              valueColor: AlwaysStoppedAnimation(
+                isComplete ? AppColors.success : AppColors.warning,
+              ),
+            ),
+          ],
         ),
       ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Weryfikacja',
-                style: AppTypography.h4,
-              ),
-              Text(
-                '$percent%',
-                style: AppTypography.h3.copyWith(
-                  color: isComplete ? AppColors.success : AppColors.warning,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          LinearProgressIndicator(
-            value: completedFields / totalFields,
-            backgroundColor: AppColors.gray200,
-            valueColor: AlwaysStoppedAnimation(
-              isComplete ? AppColors.success : AppColors.warning,
-            ),
-          ),
-        ],
+    );
+  }
+
+  Widget _buildPaymentsShortcut() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.payments_outlined, color: AppColors.gray600),
+        title: Text('Płatności', style: AppTypography.bodyMedium),
+        subtitle: Text(
+          'Zmień karty oraz numer konta do wypłat',
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppColors.gray400),
+        onTap: () => context.push(Routes.contractorProfilePayments),
       ),
     );
   }

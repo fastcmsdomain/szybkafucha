@@ -31,6 +31,7 @@ abstract class Routes {
   static const String clientProfile = '/client/profile';
   static const String clientProfileHelp = '/client/profile/help';
   static const String clientProfileEdit = '/client/profile/edit';
+  static const String clientProfilePayments = '/client/profile/payments';
   static const String clientReviews = '/client/reviews';
   static const String clientTasks = '/client/tasks';
 
@@ -49,6 +50,8 @@ abstract class Routes {
   static const String contractorTaskReview = '/contractor/task/:taskId/review';
   static const String contractorProfileEdit = '/contractor/profile/edit';
   static const String contractorProfileHelp = '/contractor/profile/help';
+  static const String contractorProfilePayments =
+      '/contractor/profile/payments';
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
   static const String contractorReviews = '/contractor/reviews';
