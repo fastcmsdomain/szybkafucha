@@ -315,6 +315,10 @@ export class KycService {
     const electronicIban = IBAN.electronicFormat(dto.iban);
     const countryCode = electronicIban.substring(0, 2);
 
+    if (countryCode !== 'PL') {
+      throw new BadRequestException('Only Polish bank accounts');
+    }
+
     // Create KYC check record
     const kycCheck = new KycCheck();
     kycCheck.userId = userId;
