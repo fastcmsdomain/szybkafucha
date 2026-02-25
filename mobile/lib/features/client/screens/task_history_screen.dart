@@ -51,10 +51,14 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     final clientTasks = currentUserId == null
         ? tasksState.tasks
         : tasksState.tasks
-            .where((task) => task.clientId == currentUserId)
-            .toList();
-    final activeTasks = clientTasks.where((task) => task.status.isActive).toList();
-    final completedTasks = clientTasks.where((task) => !task.status.isActive).toList();
+              .where((task) => task.clientId == currentUserId)
+              .toList();
+    final activeTasks = clientTasks
+        .where((task) => task.status.isActive)
+        .toList();
+    final completedTasks = clientTasks
+        .where((task) => !task.status.isActive)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -117,14 +121,14 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
       body: tasksState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : tasksState.error != null
-              ? _buildErrorState(tasksState.error!)
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildTaskList(activeTasks, isActive: true),
-                    _buildTaskList(completedTasks, isActive: false),
-                  ],
-                ),
+          ? _buildErrorState(tasksState.error!)
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTaskList(activeTasks, isActive: true),
+                _buildTaskList(completedTasks, isActive: false),
+              ],
+            ),
     );
   }
 
@@ -135,25 +139,17 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             SizedBox(height: AppSpacing.space4),
             Text(
               'Wystąpił błąd',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.gray600,
-              ),
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.gray600),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
               error,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
@@ -205,12 +201,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
             ),
             SizedBox(height: AppSpacing.space4),
             Text(
-              isActive
-                  ? 'Brak aktywnych zleceń'
-                  : 'Brak historii zleceń',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.gray600,
-              ),
+              isActive ? 'Brak aktywnych zleceń' : 'Brak historii zleceń',
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.gray600),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.gapSM),
@@ -218,9 +210,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
               isActive
                   ? 'Utwórz nowe zlecenie, aby znaleźć pomocnika'
                   : 'Tutaj pojawią się Twoje zakończone zlecenia',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             if (isActive) ...[
@@ -266,137 +256,134 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                 }
               },
         child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.paddingSM),
-                  decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.radiusMD,
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(color: AppColors.gray200),
+            boxShadow: AppShadows.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.paddingSM),
+                    decoration: BoxDecoration(
+                      color: category.color.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    child: Icon(category.icon, color: category.color, size: 24),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: category.color,
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: category.color,
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: AppTypography.labelMedium.copyWith(
+                            color: category.color,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _formatDate(task.createdAt),
+                        Text(
+                          _formatDate(task.createdAt),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildStatusBadge(task.status),
+                ],
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Description
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Footer row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (task.address != null) ...[
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
+                    Expanded(
+                      child: Text(
+                        task.address!,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.gray500,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildStatusBadge(task.status),
-              ],
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Description
-            Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Footer row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (task.address != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Expanded(
-                    child: Text(
-                      task.address!,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                ] else
-                  const Spacer(),
-                Text(
-                  '${task.budget} PLN',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-
-            // Action buttons for active tasks (skip waiting-for-contractor-confirmation)
-            if (isActive && task.status != TaskStatus.pendingComplete) ...[
-              SizedBox(height: AppSpacing.gapMD),
-              Row(
-                children: [
-                  // Track button (for in progress tasks)
-                  if (task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.pendingComplete)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                        child: Text('Więcej'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  if (task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
-                  // Cancel button (for all active non-completed tasks)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showCancelConfirmation(task),
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
-                      label: const Text('Anuluj'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: AppColors.white,
-                      ),
+                  ] else
+                    const Spacer(),
+                  Text(
+                    '${task.budget} PLN',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
-            ],
+
+              // Action buttons for active tasks (skip waiting-for-contractor-confirmation)
+              if (isActive && task.status != TaskStatus.pendingComplete) ...[
+                SizedBox(height: AppSpacing.gapMD),
+                Row(
+                  children: [
+                    // Track button (for in progress tasks)
+                    if (task.status == TaskStatus.inProgress ||
+                        task.status == TaskStatus.accepted ||
+                        task.status == TaskStatus.confirmed ||
+                        task.status == TaskStatus.pendingComplete)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              context.push(Routes.clientTaskTrack(task.id)),
+                          child: Text('Więcej'),
+                        ),
+                      ),
+                    if (task.status == TaskStatus.inProgress ||
+                        task.status == TaskStatus.accepted ||
+                        task.status == TaskStatus.confirmed ||
+                        task.status == TaskStatus.pendingComplete)
+                      SizedBox(width: AppSpacing.gapSM),
+                    // Cancel button (for all active non-completed tasks)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showCancelConfirmation(task),
+                        icon: const Icon(Icons.cancel_outlined, size: 18),
+                        label: const Text('Anuluj'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: AppColors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -505,10 +492,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              category.name,
-                              style: AppTypography.h4,
-                            ),
+                            Text(category.name, style: AppTypography.h4),
                             _buildStatusBadge(task.status),
                           ],
                         ),
@@ -532,10 +516,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     ),
                   ),
                   SizedBox(height: AppSpacing.gapXS),
-                  Text(
-                    task.description,
-                    style: AppTypography.bodyMedium,
-                  ),
+                  Text(task.description, style: AppTypography.bodyMedium),
 
                   SizedBox(height: AppSpacing.space4),
 
@@ -572,15 +553,19 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   if (task.acceptedAt != null)
                     _buildDetailRow('Przyjęto', _formatDate(task.acceptedAt!)),
                   if (task.completedAt != null)
-                    _buildDetailRow('Zakończono', _formatDate(task.completedAt!)),
+                    _buildDetailRow(
+                      'Zakończono',
+                      _formatDate(task.completedAt!),
+                    ),
 
                   SizedBox(height: AppSpacing.space6),
 
                   // Action buttons row
                   Row(
                     children: [
-                  // More button (active tasks) -> task details (skip pendingComplete)
-                  if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
+                      // More button (active tasks) -> task details (skip pendingComplete)
+                      if (task.status.isActive &&
+                          task.status != TaskStatus.pendingComplete) ...[
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () {
@@ -600,7 +585,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                             backgroundColor: AppColors.error,
                             foregroundColor: AppColors.white,
                           ),
-                          child: Text(AppStrings.close),
+                          child: Text(context.l10n.close),
                         ),
                       ),
                     ],
@@ -624,10 +609,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
         ),
         actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('Nie'),
-          ),
+          TextButton(onPressed: () => context.pop(), child: Text('Nie')),
           TextButton(
             onPressed: () {
               context.pop();
@@ -679,9 +661,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         children: [
           Text(
             label,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           ),
           Text(
             value,

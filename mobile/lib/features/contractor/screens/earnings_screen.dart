@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../models/earnings.dart';
@@ -17,12 +18,18 @@ class EarningsScreen extends ConsumerStatefulWidget {
 class _EarningsScreenState extends ConsumerState<EarningsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _dateFormat = DateFormat('dd MMM yyyy', 'pl_PL');
-  final _timeFormat = DateFormat('HH:mm', 'pl_PL');
 
   // Mock data - in production this would come from providers
   late EarningsSummary _summary;
   late List<Transaction> _transactions;
+
+  DateFormat _dateFormat(BuildContext context) => DateFormat(
+    'dd MMM yyyy',
+    Localizations.localeOf(context).toLanguageTag(),
+  );
+
+  DateFormat _timeFormat(BuildContext context) =>
+      DateFormat('HH:mm', Localizations.localeOf(context).toLanguageTag());
 
   @override
   void initState() {
@@ -55,7 +62,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Odświeżono'),
+          content: Text(context.l10n.success),
           duration: const Duration(seconds: 1),
           backgroundColor: AppColors.success,
         ),
@@ -67,7 +74,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: SFRainbowText('Zarobki'),
+        title: SFRainbowText(context.l10n.earnings),
         centerTitle: true,
         actions: [
           IconButton(
@@ -82,7 +89,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                   )
                 : const Icon(Icons.refresh),
             onPressed: _isRefreshing ? null : _refreshEarnings,
-            tooltip: 'Odśwież',
+            tooltip: context.l10n.retry,
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -103,10 +110,10 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.gray500,
               indicatorColor: AppColors.primary,
-              tabs: const [
-                Tab(text: 'Wszystko'),
-                Tab(text: 'Przychody'),
-                Tab(text: 'Wypłaty'),
+              tabs: [
+                Tab(text: context.l10n.taskListAllTab),
+                Tab(text: context.l10n.taskListEarningsTab),
+                Tab(text: context.l10n.taskListWithdrawalsTab),
               ],
             ),
           ),
@@ -134,10 +141,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
       padding: EdgeInsets.all(AppSpacing.paddingLG),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.secondary,
-            AppColors.secondaryLight,
-          ],
+          colors: [AppColors.secondary, AppColors.secondaryLight],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -149,8 +153,8 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildSummaryItem(
-                'Dziś',
-                '${_summary.todayEarnings.toStringAsFixed(0)} zł',
+                context.l10n.today,
+                '${_summary.todayEarnings.toStringAsFixed(0)} ${context.l10n.currencySymbol}',
                 Icons.today,
               ),
               Container(
@@ -159,8 +163,8 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                 color: AppColors.white.withValues(alpha: 0.2),
               ),
               _buildSummaryItem(
-                'Ten tydzień',
-                '${_summary.weekEarnings.toStringAsFixed(0)} zł',
+                context.l10n.weekEarnings,
+                '${_summary.weekEarnings.toStringAsFixed(0)} ${context.l10n.currencySymbol}',
                 Icons.date_range,
               ),
               Container(
@@ -169,8 +173,8 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                 color: AppColors.white.withValues(alpha: 0.2),
               ),
               _buildSummaryItem(
-                'Ten miesiąc',
-                '${_summary.monthEarnings.toStringAsFixed(0)} zł',
+                context.l10n.monthEarnings,
+                '${_summary.monthEarnings.toStringAsFixed(0)} ${context.l10n.currencySymbol}',
                 Icons.calendar_month,
               ),
             ],
@@ -189,14 +193,14 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Dostępne do wypłaty',
+                      context.l10n.availableBalance,
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.white.withValues(alpha: 0.8),
                       ),
                     ),
                     SizedBox(height: 4),
                     Text(
-                      '${_summary.availableBalance.toStringAsFixed(2)} zł',
+                      '${_summary.availableBalance.toStringAsFixed(2)} ${context.l10n.currencySymbol}',
                       style: AppTypography.h3.copyWith(
                         color: AppColors.white,
                         fontWeight: FontWeight.w700,
@@ -208,7 +212,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Oczekujące',
+                      context.l10n.pendingBalance,
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.white.withValues(alpha: 0.8),
                       ),
@@ -223,7 +227,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '${_summary.pendingPayout.toStringAsFixed(0)} zł',
+                          '${_summary.pendingPayout.toStringAsFixed(0)} ${context.l10n.currencySymbol}',
                           style: AppTypography.labelLarge.copyWith(
                             color: AppColors.warning,
                           ),
@@ -243,11 +247,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
   Widget _buildSummaryItem(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: AppColors.white.withValues(alpha: 0.7),
-          size: 20,
-        ),
+        Icon(icon, color: AppColors.white.withValues(alpha: 0.7), size: 20),
         SizedBox(height: 4),
         Text(
           value,
@@ -283,10 +283,8 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
             ),
             SizedBox(height: AppSpacing.gapMD),
             Text(
-              'Brak transakcji',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.gray500,
-              ),
+              context.l10n.transactionHistory,
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.gray500),
             ),
           ],
         ),
@@ -296,7 +294,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
     // Group transactions by date
     final groupedTransactions = <String, List<Transaction>>{};
     for (final transaction in filtered) {
-      final dateKey = _dateFormat.format(transaction.date);
+      final dateKey = _dateFormat(context).format(transaction.date);
       groupedTransactions.putIfAbsent(dateKey, () => []);
       groupedTransactions[dateKey]!.add(transaction);
     }
@@ -382,15 +380,12 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  transaction.description,
-                  style: AppTypography.labelMedium,
-                ),
+                Text(transaction.description, style: AppTypography.labelMedium),
                 SizedBox(height: 2),
                 Row(
                   children: [
                     Text(
-                      _timeFormat.format(transaction.date),
+                      _timeFormat(context).format(transaction.date),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray400,
                       ),
@@ -407,7 +402,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                           borderRadius: AppRadius.radiusSM,
                         ),
                         child: Text(
-                          'Oczekuje',
+                          context.l10n.pendingBalance,
                           style: AppTypography.caption.copyWith(
                             color: AppColors.warning,
                             fontSize: 10,
@@ -421,7 +416,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
             ),
           ),
           Text(
-            '$prefix${transaction.amount.toStringAsFixed(2)} zł',
+            '$prefix${transaction.amount.toStringAsFixed(2)} ${context.l10n.currencySymbol}',
             style: AppTypography.labelLarge.copyWith(
               color: amountColor,
               fontWeight: FontWeight.w600,
@@ -455,7 +450,7 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
               Padding(
                 padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
                 child: Text(
-                  'Minimalna kwota wypłaty: 50 zł',
+                  context.l10n.earningsMinimumWithdrawInfo,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.gray500,
                   ),
@@ -476,7 +471,9 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
                 ),
                 icon: const Icon(Icons.account_balance),
                 label: Text(
-                  'Wypłać ${_summary.availableBalance.toStringAsFixed(2)} zł',
+                  context.l10n.earningsWithdrawButtonLabel(
+                    _summary.availableBalance.toStringAsFixed(2),
+                  ),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -512,7 +509,9 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Zlecono wypłatę ${amount.toStringAsFixed(2)} zł'),
+          content: Text(
+            context.l10n.earningsWithdrawRequested(amount.toStringAsFixed(2)),
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -536,40 +535,40 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('O zarobkach'),
+        title: Text(context.l10n.earningsInfoTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildInfoRow(
               Icons.check_circle_outline,
-              'Przychody',
-              'Zarobki z ukończonych zleceń',
+              context.l10n.taskListEarningsTab,
+              context.l10n.earningsInfoEarningsDescription,
             ),
             SizedBox(height: AppSpacing.gapMD),
             _buildInfoRow(
               Icons.hourglass_empty,
-              'Oczekujące',
-              'Środki czekające na potwierdzenie klienta',
+              context.l10n.pendingBalance,
+              context.l10n.earningsInfoPendingDescription,
             ),
             SizedBox(height: AppSpacing.gapMD),
             _buildInfoRow(
               Icons.account_balance,
-              'Wypłaty',
-              'Przelewy na Twoje konto bankowe',
+              context.l10n.taskListWithdrawalsTab,
+              context.l10n.earningsInfoWithdrawalsDescription,
             ),
             SizedBox(height: AppSpacing.gapMD),
             _buildInfoRow(
               Icons.info_outline,
-              'Prowizja',
-              'Platforma pobiera 17% od każdego zlecenia',
+              context.l10n.earningsInfoCommissionTitle,
+              context.l10n.earningsInfoCommissionDescription,
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Rozumiem'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -586,15 +585,10 @@ class _EarningsScreenState extends ConsumerState<EarningsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: AppTypography.labelMedium,
-              ),
+              Text(title, style: AppTypography.labelMedium),
               Text(
                 description,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
           ),
@@ -660,28 +654,20 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
             ),
           ),
           SizedBox(height: AppSpacing.gapLG),
-          Text(
-            'Wypłata środków',
-            style: AppTypography.h4,
-          ),
+          Text(context.l10n.withdrawFunds, style: AppTypography.h4),
           SizedBox(height: AppSpacing.gapSM),
           Text(
-            'Środki zostaną przelane na Twoje konto bankowe w ciągu 1-3 dni roboczych.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            context.l10n.earningsWithdrawInfoText,
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           ),
           SizedBox(height: AppSpacing.gapLG),
-          Text(
-            'Kwota wypłaty',
-            style: AppTypography.labelMedium,
-          ),
+          Text(context.l10n.tipAmount, style: AppTypography.labelMedium),
           SizedBox(height: AppSpacing.gapSM),
           TextField(
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              suffixText: 'zł',
+              suffixText: context.l10n.currencySymbol,
               errorText: _error,
               filled: true,
               fillColor: AppColors.gray50,
@@ -704,19 +690,17 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
           Row(
             children: [
               Text(
-                'Dostępne: ',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                '${context.l10n.availableBalance}: ',
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
               GestureDetector(
                 onTap: () {
-                  _amountController.text =
-                      widget.availableBalance.toStringAsFixed(2);
+                  _amountController.text = widget.availableBalance
+                      .toStringAsFixed(2);
                   _validateAmount(_amountController.text);
                 },
                 child: Text(
-                  '${widget.availableBalance.toStringAsFixed(2)} zł',
+                  '${widget.availableBalance.toStringAsFixed(2)} ${context.l10n.currencySymbol}',
                   style: AppTypography.caption.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
@@ -736,9 +720,7 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
                 padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.radiusMD,
-                ),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMD),
               ),
               child: _isProcessing
                   ? SizedBox(
@@ -749,8 +731,8 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
                         valueColor: AlwaysStoppedAnimation(AppColors.white),
                       ),
                     )
-                  : const Text(
-                      'Potwierdź wypłatę',
+                  : Text(
+                      context.l10n.confirm,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -769,11 +751,11 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
 
     setState(() {
       if (amount == null) {
-        _error = 'Wprowadź poprawną kwotę';
+        _error = context.l10n.earningsAmountInvalid;
       } else if (amount < 50) {
-        _error = 'Minimalna kwota wypłaty to 50 zł';
+        _error = context.l10n.earningsMinimumWithdrawError;
       } else if (amount > widget.availableBalance) {
-        _error = 'Nie masz wystarczających środków';
+        _error = context.l10n.earningsInsufficientFunds;
       } else {
         _error = null;
       }
@@ -781,8 +763,7 @@ class _WithdrawBottomSheetState extends State<_WithdrawBottomSheet> {
   }
 
   Future<void> _processWithdraw() async {
-    final amount =
-        double.tryParse(_amountController.text.replaceAll(',', '.'));
+    final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
     if (amount == null) return;
 
     setState(() => _isProcessing = true);

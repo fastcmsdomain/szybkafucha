@@ -14,10 +14,7 @@ class PhoneLoginScreen extends ConsumerStatefulWidget {
   /// User type passed from WelcomeScreen ('client' or 'contractor')
   final String userType;
 
-  const PhoneLoginScreen({
-    super.key,
-    this.userType = 'client',
-  });
+  const PhoneLoginScreen({super.key, this.userType = 'client'});
 
   @override
   ConsumerState<PhoneLoginScreen> createState() => _PhoneLoginScreenState();
@@ -32,8 +29,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedUserType =
-        ref.read(authProvider).selectedRole ?? widget.userType;
+    _selectedUserType = ref.read(authProvider).selectedRole ?? widget.userType;
   }
 
   @override
@@ -51,10 +47,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
           tooltip: 'Wróć',
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          AppStrings.phoneNumber,
-          style: AppTypography.h4,
-        ),
+        title: Text(context.l10n.phoneNumber, style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -129,7 +122,9 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.paddingMD,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.button,
                     ),
@@ -144,7 +139,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
                           ),
                         )
                       : Text(
-                          AppStrings.sendCode,
+                          context.l10n.sendCode,
                           style: AppTypography.buttonMedium,
                         ),
                 ),
@@ -174,16 +169,11 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               vertical: AppSpacing.paddingMD,
             ),
             decoration: const BoxDecoration(
-              border: Border(
-                right: BorderSide(color: AppColors.gray200),
-              ),
+              border: Border(right: BorderSide(color: AppColors.gray200)),
             ),
             child: Row(
               children: [
-                const Text(
-                  '🇵🇱',
-                  style: TextStyle(fontSize: 20),
-                ),
+                const Text('🇵🇱', style: TextStyle(fontSize: 20)),
                 SizedBox(width: AppSpacing.gapSM),
                 Text(
                   '+48',
@@ -252,10 +242,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
         // Navigate to OTP screen with phone number and user type
         context.push(
           Routes.phoneOtp,
-          extra: {
-            'phone': phone,
-            'userType': _selectedUserType,
-          },
+          extra: {'phone': phone, 'userType': _selectedUserType},
         );
       }
     } catch (e) {

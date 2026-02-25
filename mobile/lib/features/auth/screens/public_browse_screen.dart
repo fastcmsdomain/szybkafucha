@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../core/l10n/app_strings.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/public_tasks_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -56,7 +56,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: SFRainbowText(AppStrings.publicBrowseTitle),
+        title: SFRainbowText(context.l10n.publicBrowseTitle),
         centerTitle: true,
         actions: [
           IconButton(
@@ -156,11 +156,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.filter_list,
-                size: 18,
-                color: AppColors.primary,
-              ),
+              Icon(Icons.filter_list, size: 18, color: AppColors.primary),
               SizedBox(width: AppSpacing.gapSM),
               Text(
                 _getSelectedFiltersLabel(),
@@ -170,10 +166,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                 ),
               ),
               SizedBox(width: AppSpacing.gapXS),
-              Icon(
-                Icons.arrow_drop_down,
-                color: AppColors.gray600,
-              ),
+              Icon(Icons.arrow_drop_down, color: AppColors.gray600),
             ],
           ),
         ),
@@ -191,7 +184,8 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
           itemCount: TaskCategoryData.all.length,
-          separatorBuilder: (context, index) => SizedBox(width: AppSpacing.gapSM),
+          separatorBuilder: (context, index) =>
+              SizedBox(width: AppSpacing.gapSM),
           itemBuilder: (context, index) {
             final data = TaskCategoryData.all[index];
             final isSelected = _selectedCategoryFilters.contains(data.category);
@@ -199,11 +193,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
               showCheckmark: true,
               visualDensity: VisualDensity.compact,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              avatar: Icon(
-                data.icon,
-                size: 14,
-                color: data.color,
-              ),
+              avatar: Icon(data.icon, size: 14, color: data.color),
               label: Text(
                 data.name,
                 style: AppTypography.caption.copyWith(
@@ -307,7 +297,8 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                                   Checkbox(
                                     value: isSelected,
                                     visualDensity: VisualDensity.compact,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                     onChanged: (value) {
                                       setModalState(() {
                                         if (value == true) {
@@ -319,11 +310,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                                     },
                                   ),
                                   SizedBox(width: AppSpacing.gapSM),
-                                  Icon(
-                                    data.icon,
-                                    color: data.color,
-                                    size: 20,
-                                  ),
+                                  Icon(data.icon, color: data.color, size: 20),
                                   SizedBox(width: AppSpacing.gapSM),
                                   Expanded(
                                     child: Text(
@@ -438,7 +425,9 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                     height: 54,
                     child: GestureDetector(
                       onTap: () => _showTaskBottomSheet(task),
-                      child: TaskMarker(position: cluster.center).build(context),
+                      child: TaskMarker(
+                        position: cluster.center,
+                      ).build(context),
                     ),
                   );
                 }
@@ -489,11 +478,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.work_outline,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
+                Icon(Icons.work_outline, size: 18, color: AppColors.primary),
                 SizedBox(width: AppSpacing.gapSM),
                 Text(
                   '${tasks.length} zleceń',
@@ -518,15 +503,9 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildZoomButton(
-                icon: Icons.add,
-                onPressed: _zoomIn,
-              ),
+              _buildZoomButton(icon: Icons.add, onPressed: _zoomIn),
               SizedBox(height: AppSpacing.gapXS),
-              _buildZoomButton(
-                icon: Icons.remove,
-                onPressed: _zoomOut,
-              ),
+              _buildZoomButton(icon: Icons.remove, onPressed: _zoomOut),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
                 icon: Icons.center_focus_strong,
@@ -554,11 +533,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           width: 40,
           height: 40,
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.gray700,
-          ),
+          child: Icon(icon, size: 22, color: AppColors.gray700),
         ),
       ),
     );
@@ -646,24 +621,16 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             SizedBox(height: AppSpacing.gapMD),
             Text(
               'Wystąpił błąd',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
+              style: AppTypography.h5.copyWith(color: AppColors.gray600),
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
               error,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
@@ -689,26 +656,18 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.map_outlined,
-            size: 64,
-            color: AppColors.gray400,
-          ),
+          Icon(Icons.map_outlined, size: 64, color: AppColors.gray400),
           SizedBox(height: AppSpacing.gapMD),
           Text(
             'Brak dostępnych zleceń',
-            style: AppTypography.h5.copyWith(
-              color: AppColors.gray600,
-            ),
+            style: AppTypography.h5.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapSM),
           Text(
             hasActiveFilter
                 ? 'Brak zleceń dla wybranych kategorii.'
                 : 'Na mapie pojawią się zlecenia,\ngdy będą dostępne.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
         ],
@@ -725,26 +684,18 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: AppColors.gray400,
-            ),
+            Icon(Icons.search_off, size: 64, color: AppColors.gray400),
             SizedBox(height: AppSpacing.gapMD),
             Text(
               'Brak dostępnych zleceń',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
+              style: AppTypography.h5.copyWith(color: AppColors.gray600),
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
               hasActiveFilter
                   ? 'Brak zleceń dla wybranych kategorii.'
                   : 'Sprawdź ponownie wkrótce.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
@@ -792,9 +743,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
             const SizedBox(height: 12),
             Text(
               'Aby przyjąć zlecenie, zaloguj się jako wykonawca.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray600,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -810,7 +759,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(AppStrings.publicBrowseLoginPromptCancel),
+                    child: Text(context.l10n.publicBrowseLoginPromptCancel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -828,7 +777,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(AppStrings.publicBrowseLoginPromptConfirm),
+                    child: Text(context.l10n.publicBrowseLoginPromptConfirm),
                   ),
                 ),
               ],
@@ -852,21 +801,21 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           context.go(_profileLoginRoute);
         }
       },
-      destinations: const [
+      destinations: [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
-          label: AppStrings.menuHome,
+          label: context.l10n.menuHome,
         ),
         NavigationDestination(
           icon: Icon(Icons.work_outline),
           selectedIcon: Icon(Icons.work),
-          label: AppStrings.menuTasks,
+          label: context.l10n.menuTasks,
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
-          label: AppStrings.menuProfile,
+          label: context.l10n.menuProfile,
         ),
       ],
     );

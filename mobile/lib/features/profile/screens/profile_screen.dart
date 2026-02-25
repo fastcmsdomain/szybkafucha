@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/locale_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 
@@ -16,10 +17,11 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final activeLanguageCode = ref.watch(localeProvider).languageCode;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppStrings.profile, style: AppTypography.h4),
+        title: Text(context.l10n.profile, style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -28,17 +30,17 @@ class ProfileScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // User avatar and name
-            _buildUserHeader(user),
+            _buildUserHeader(context, user),
 
             SizedBox(height: AppSpacing.space8),
 
             // Account section
             _buildSection(
-              title: 'Konto',
+              title: context.l10n.accountSection,
               children: [
                 _buildMenuItem(
                   icon: Icons.person_outline,
-                  title: 'Edytuj profil',
+                  title: context.l10n.editProfile,
                   onTap: () {
                     if (user?.isContractor == true) {
                       context.push(Routes.contractorProfileEdit);
@@ -49,8 +51,8 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 _buildMenuItem(
                   icon: Icons.payments_outlined,
-                  title: 'Płatności',
-                  subtitle: 'Karty i konto do wypłat',
+                  title: context.l10n.payments,
+                  subtitle: context.l10n.paymentsCardsPayouts,
                   onTap: () {
                     if (user?.isContractor == true) {
                       context.push(Routes.contractorProfilePayments);
@@ -61,7 +63,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 _buildMenuItem(
                   icon: Icons.reviews_outlined,
-                  title: 'Opinie',
+                  title: context.l10n.reviews,
                   onTap: () {
                     if (user?.isContractor == true) {
                       context.push(Routes.contractorReviews);
@@ -72,15 +74,15 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 _buildMenuItem(
                   icon: Icons.notifications_outlined,
-                  title: AppStrings.notifications,
+                  title: context.l10n.notifications,
                   onTap: () => context.push(Routes.notifications),
                 ),
                 _buildMenuItem(
                   icon: Icons.security_outlined,
-                  title: 'Bezpieczeństwo',
+                  title: context.l10n.security,
                   onTap: () {
                     // TODO: Navigate to security settings
-                    _showComingSoon(context, 'Bezpieczeństwo');
+                    _showComingSoon(context, context.l10n.security);
                   },
                 ),
               ],
@@ -90,15 +92,16 @@ class ProfileScreen extends ConsumerWidget {
 
             // Preferences section
             _buildSection(
-              title: 'Preferencje',
+              title: context.l10n.preferences,
               children: [
                 _buildMenuItem(
                   icon: Icons.language_outlined,
-                  title: 'Język',
-                  subtitle: 'Polski',
+                  title: context.l10n.language,
+                  subtitle: activeLanguageCode == 'uk'
+                      ? context.l10n.languageUkrainian
+                      : context.l10n.languagePolish,
                   onTap: () {
-                    // TODO: Language selection
-                    _showComingSoon(context, 'Wybór języka');
+                    _showLanguageSelector(context, ref, activeLanguageCode);
                   },
                 ),
                 // MVP: Dark mode hidden - not needed for MVP
@@ -109,11 +112,11 @@ class ProfileScreen extends ConsumerWidget {
 
             // Support section
             _buildSection(
-              title: 'Wsparcie',
+              title: context.l10n.support,
               children: [
                 _buildMenuItem(
                   icon: Icons.help_outline,
-                  title: 'Pomoc',
+                  title: context.l10n.help,
                   onTap: () {
                     if (user?.isContractor == true) {
                       context.push(Routes.contractorProfileHelp);
@@ -124,14 +127,14 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 _buildMenuItem(
                   icon: Icons.description_outlined,
-                  title: 'Regulamin',
+                  title: context.l10n.termsOfService,
                   onTap: () {
                     context.push(Routes.termsOfService);
                   },
                 ),
                 _buildMenuItem(
                   icon: Icons.privacy_tip_outlined,
-                  title: 'Polityka prywatności',
+                  title: context.l10n.privacyPolicy,
                   onTap: () {
                     context.push(Routes.privacyPolicy);
                   },
@@ -151,7 +154,7 @@ class ProfileScreen extends ConsumerWidget {
               child: TextButton(
                 onPressed: () => _showDeleteAccountDialog(context, ref),
                 child: Text(
-                  'Usuń konto',
+                  context.l10n.deleteAccount,
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.error,
                   ),
@@ -164,7 +167,7 @@ class ProfileScreen extends ConsumerWidget {
             // App version
             Center(
               child: Text(
-                'Wersja 1.0.0',
+                context.l10n.versionWithNumber,
                 style: AppTypography.caption.copyWith(color: AppColors.gray400),
               ),
             ),
@@ -174,7 +177,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUserHeader(User? user) {
+  Widget _buildUserHeader(BuildContext context, User? user) {
     return Column(
       children: [
         // Avatar
@@ -199,7 +202,7 @@ class ProfileScreen extends ConsumerWidget {
         SizedBox(height: AppSpacing.gapMD),
 
         // Name
-        Text(user?.name ?? 'Użytkownik', style: AppTypography.h4),
+        Text(user?.name ?? context.l10n.userFallback, style: AppTypography.h4),
 
         SizedBox(height: AppSpacing.gapXS),
 
@@ -224,7 +227,9 @@ class ProfileScreen extends ConsumerWidget {
             borderRadius: AppRadius.radiusSM,
           ),
           child: Text(
-            user?.isContractor == true ? 'Wykonawca' : 'Klient',
+            user?.isContractor == true
+                ? context.l10n.contractorLabel
+                : context.l10n.clientLabel,
             style: AppTypography.caption.copyWith(
               color: user?.isContractor == true
                   ? AppColors.primary
@@ -310,7 +315,7 @@ class ProfileScreen extends ConsumerWidget {
       ),
       icon: const Icon(Icons.logout),
       label: Text(
-        AppStrings.logout,
+        context.l10n.logout,
         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     );
@@ -320,13 +325,13 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(AppStrings.logout),
-        content: const Text('Czy na pewno chcesz się wylogować?'),
+        title: Text(context.l10n.logout),
+        content: Text(context.l10n.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              AppStrings.cancel,
+              context.l10n.cancel,
               style: TextStyle(color: AppColors.gray600),
             ),
           ),
@@ -337,7 +342,7 @@ class ProfileScreen extends ConsumerWidget {
               // Router will automatically redirect to welcome
             },
             child: Text(
-              AppStrings.logout,
+              context.l10n.logout,
               style: TextStyle(color: AppColors.error),
             ),
           ),
@@ -350,15 +355,13 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Usuń konto'),
-        content: const Text(
-          'Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna i wszystkie Twoje dane zostaną trwale usunięte.',
-        ),
+        title: Text(context.l10n.deleteAccount),
+        content: Text(context.l10n.accountDeleteLongWarning),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              AppStrings.cancel,
+              context.l10n.cancel,
               style: TextStyle(color: AppColors.gray600),
             ),
           ),
@@ -372,24 +375,73 @@ class ProfileScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Błąd: ${e.toString()}'),
+                      content: Text(
+                        context.l10n.genericErrorWithPrefix(e.toString()),
+                      ),
                       backgroundColor: AppColors.error,
                     ),
                   );
                 }
               }
             },
-            child: Text('Usuń', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              context.l10n.delete,
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
     );
   }
 
+  void _showLanguageSelector(
+    BuildContext context,
+    WidgetRef ref,
+    String activeLanguageCode,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(title: Text(context.l10n.chooseLanguage)),
+              RadioListTile<String>(
+                value: 'pl',
+                groupValue: activeLanguageCode,
+                title: Text(context.l10n.languagePolish),
+                onChanged: (value) {
+                  if (value == null) return;
+                  ref
+                      .read(localeProvider.notifier)
+                      .setLocale(const Locale('pl'));
+                  Navigator.pop(sheetContext);
+                },
+              ),
+              RadioListTile<String>(
+                value: 'uk',
+                groupValue: activeLanguageCode,
+                title: Text(context.l10n.languageUkrainian),
+                onChanged: (value) {
+                  if (value == null) return;
+                  ref
+                      .read(localeProvider.notifier)
+                      .setLocale(const Locale('uk'));
+                  Navigator.pop(sheetContext);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature - wkrótce dostępne'),
+        content: Text(context.l10n.comingSoon(feature)),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.secondary,
       ),

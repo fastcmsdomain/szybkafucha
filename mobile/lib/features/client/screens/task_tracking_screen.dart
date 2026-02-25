@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/router/routes.dart';
@@ -32,29 +33,29 @@ enum TrackingStatus {
 enum _TaskOptionsAction { details, reportProblem, cancel }
 
 extension TrackingStatusExtension on TrackingStatus {
-  String get title {
+  String title(AppLocalizations l10n) {
     switch (this) {
       case TrackingStatus.applications:
-        return 'Zgłoszenia wykonawców';
+        return l10n.taskTrackingStatusApplicationsTitle;
       case TrackingStatus.confirmed:
-        return 'Wykonawca potwierdzony';
+        return l10n.taskTrackingStatusConfirmedTitle;
       case TrackingStatus.inProgress:
-        return 'Praca w toku';
+        return l10n.taskTrackingStatusInProgressTitle;
       case TrackingStatus.completed:
-        return 'Zakończone';
+        return l10n.taskTrackingStatusCompletedTitle;
     }
   }
 
-  String get subtitle {
+  String subtitle(AppLocalizations l10n) {
     switch (this) {
       case TrackingStatus.applications:
-        return 'Czekamy na zgłoszenia...';
+        return l10n.taskTrackingStatusApplicationsSubtitle;
       case TrackingStatus.confirmed:
-        return 'Czekamy na rozpoczęcie pracy';
+        return l10n.taskTrackingStatusConfirmedSubtitle;
       case TrackingStatus.inProgress:
-        return 'Zadanie jest realizowane';
+        return l10n.taskTrackingStatusInProgressSubtitle;
       case TrackingStatus.completed:
-        return 'Zadanie zostało ukończone';
+        return l10n.taskTrackingStatusCompletedSubtitle;
     }
   }
 
@@ -356,10 +357,10 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       Routes.clientTaskChatRoute(_task!.id),
       extra: {
         'taskTitle': _task!.description,
-        'otherUserName': _contractor?.name ?? 'Wykonawca',
+        'otherUserName': _contractor?.name ?? context.l10n.contractorLabel,
         'otherUserAvatarUrl': _contractor?.avatarUrl,
         'currentUserId': currentUser?.id ?? '',
-        'currentUserName': currentUser?.name ?? 'Ty',
+        'currentUserName': currentUser?.name ?? context.l10n.taskTrackingYou,
       },
     );
   }
@@ -446,14 +447,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   AppBar _buildTopAppBar(BuildContext context) {
+    final l10n = context.l10n;
     return AppBar(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () =>
             context.canPop() ? context.pop() : context.go(Routes.clientHome),
-        tooltip: 'Wróć',
+        tooltip: l10n.back,
       ),
-      title: SFRainbowText('Aktywne zlecenie'),
+      title: SFRainbowText(l10n.activeTasks),
       centerTitle: true,
       backgroundColor: AppColors.white,
       surfaceTintColor: AppColors.white,
@@ -461,13 +463,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
-          tooltip: 'Odśwież status',
+          tooltip: l10n.taskTrackingRefreshStatus,
           onPressed: _refreshTask,
         ),
         IconButton(
           icon: const Icon(Icons.more_vert),
           onPressed: _showOptionsMenu,
-          tooltip: 'Więcej opcji',
+          tooltip: l10n.taskTrackingMoreOptions,
         ),
       ],
     );
@@ -611,6 +613,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   Widget _buildTaskDetailsSection() {
     if (_task == null) return const SizedBox.shrink();
 
+    final l10n = context.l10n;
     final task = _task!;
     final categoryData = task.categoryData;
 
@@ -623,7 +626,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Szczegóły zlecenia', style: AppTypography.labelLarge),
+          Text(l10n.taskDetails, style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapMD),
           Row(
             children: [
@@ -644,7 +647,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     Text(
                       task.address?.trim().isNotEmpty == true
                           ? task.address!
-                          : 'Brak adresu',
+                          : l10n.taskTrackingNoAddress,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -662,7 +665,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     style: AppTypography.h4.copyWith(color: AppColors.primary),
                   ),
                   Text(
-                    'budżet',
+                    l10n.budget.toLowerCase(),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.gray400,
                     ),
@@ -673,7 +676,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            task.description.trim().isEmpty ? 'Brak opisu' : task.description,
+            task.description.trim().isEmpty
+                ? l10n.taskTrackingNoDescription
+                : task.description,
             style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapMD),
@@ -688,10 +693,12 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               Expanded(
                 child: Text(
                   task.isImmediate
-                      ? 'Termin: Teraz'
+                      ? l10n.taskTrackingScheduleNow
                       : task.scheduledAt != null
-                      ? 'Termin: ${_formatScheduledTime(task.scheduledAt!)}'
-                      : 'Termin: Nie określono',
+                      ? l10n.taskTrackingScheduleAt(
+                          _formatScheduledTime(task.scheduledAt!),
+                        )
+                      : l10n.taskTrackingScheduleUnset,
                   style: AppTypography.caption.copyWith(
                     color: task.isImmediate
                         ? AppColors.warning
@@ -708,6 +715,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildStatusHeader() {
+    final l10n = context.l10n;
     return Row(
       children: [
         Container(
@@ -734,9 +742,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_status.title, style: AppTypography.h5),
+              Text(_status.title(l10n), style: AppTypography.h5),
               Text(
-                _status.subtitle,
+                _status.subtitle(l10n),
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.gray500,
                 ),
@@ -762,8 +770,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 5 steps including confirmation - rainbow colored
-    const steps = ['Zgłoszenia', 'Potwierdzony', 'W trakcie', 'Gotowe'];
+    final l10n = context.l10n;
+    final steps = [
+      l10n.taskTrackingStepApplications,
+      l10n.taskTrackingStepConfirmed,
+      l10n.taskTrackingStepInProgress,
+      l10n.taskTrackingStepDone,
+    ];
     final currentStep = _status.stepIndex;
 
     return SFRainbowProgress(steps: steps, currentStep: currentStep);
@@ -773,6 +786,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   Widget _buildApplicationsList() {
     if (_task == null) return const SizedBox.shrink();
 
+    final l10n = context.l10n;
     final applicationsState = ref.watch(
       taskApplicationsProvider(widget.taskId),
     );
@@ -786,7 +800,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               CircularProgressIndicator(strokeWidth: 2),
               SizedBox(height: AppSpacing.paddingSM),
               Text(
-                'Ładowanie zgłoszeń...',
+                l10n.taskTrackingLoadingApplications,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.gray500,
                 ),
@@ -807,7 +821,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               Icon(Icons.error_outline, size: 48, color: AppColors.error),
               SizedBox(height: AppSpacing.paddingSM),
               Text(
-                'Błąd ładowania zgłoszeń',
+                l10n.taskTrackingApplicationsLoadErrorTitle,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.gray600,
                 ),
@@ -828,7 +842,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                       .loadApplications();
                 },
                 icon: Icon(Icons.refresh, size: 16),
-                label: Text('Spróbuj ponownie'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -847,7 +861,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               Icon(Icons.hourglass_empty, size: 48, color: AppColors.gray300),
               SizedBox(height: AppSpacing.paddingSM),
               Text(
-                'Czekamy na zgłoszenia wykonawców...',
+                l10n.taskTrackingWaitingForApplications,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.gray500,
                 ),
@@ -855,7 +869,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               ),
               SizedBox(height: AppSpacing.paddingXS),
               Text(
-                'Wykonawcy z Twojej okolicy będą się zgłaszać z proponowaną ceną',
+                l10n.taskTrackingWaitingForApplicationsSubtitle,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.gray400,
                 ),
@@ -875,7 +889,10 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Zgłoszenia (${applications.length}/${_task!.maxApplications})',
+              l10n.taskTrackingApplicationsCount(
+                applications.length,
+                _task!.maxApplications,
+              ),
               style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -887,7 +904,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     .loadApplications();
               },
               icon: Icon(Icons.refresh, size: 16),
-              label: Text('Odśwież'),
+              label: Text(l10n.retry),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.gray600,
                 textStyle: AppTypography.bodySmall,
@@ -926,7 +943,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nie udało się zaakceptować: $e')),
+          SnackBar(
+            content: Text(context.l10n.taskTrackingAcceptFailed(e.toString())),
+          ),
         );
       }
     }
@@ -940,9 +959,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           .rejectApplication(applicationId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Nie udało się odrzucić: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.taskTrackingRejectFailed(e.toString())),
+          ),
+        );
       }
     }
   }
@@ -1033,7 +1054,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     ),
                     SizedBox(height: AppSpacing.gapXS),
                     Text(
-                      '${_contractor!.reviewCount} opinii',
+                      context.l10n.taskTrackingReviewsCount(
+                        _contractor!.reviewCount,
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.gray500,
                       ),
@@ -1044,11 +1067,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ),
           ),
           Semantics(
-            label: 'Pokaż profil wykonawcy',
+            label: context.l10n.taskTrackingShowContractorProfile,
             button: true,
             child: IconButton(
               onPressed: _showContractorProfile,
-              tooltip: 'Pokaż profil wykonawcy',
+              tooltip: context.l10n.taskTrackingShowContractorProfile,
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.error,
                 foregroundColor: AppColors.white,
@@ -1069,7 +1092,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 shape: const CircleBorder(),
                 padding: EdgeInsets.all(AppSpacing.paddingSM),
               ),
-              tooltip: 'Otwórz czat',
+              tooltip: context.l10n.chat,
             ),
           ),
         ],
@@ -1094,7 +1117,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
           ),
           child: Text(
-            'Potwierdź zakończenie',
+            context.l10n.taskTrackingConfirmCompletion,
             style: AppTypography.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
               color: AppColors.white,
@@ -1122,7 +1145,11 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   ),
                 )
               : const Icon(Icons.cancel_outlined),
-          label: Text(_isCancelling ? 'Anulowanie...' : 'Anuluj zlecenie'),
+          label: Text(
+            _isCancelling
+                ? context.l10n.taskTrackingCancelling
+                : context.l10n.cancelTask,
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: AppColors.white,
@@ -1143,7 +1170,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           children: [
             ListTile(
               leading: Icon(Icons.info_outline),
-              title: Text('Szczegóły zlecenia'),
+              title: Text(context.l10n.taskDetails),
               onTap: () {
                 Navigator.of(
                   bottomSheetContext,
@@ -1152,7 +1179,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ),
             ListTile(
               leading: Icon(Icons.report_outlined, color: AppColors.warning),
-              title: Text('Zgłoś problem'),
+              title: Text(context.l10n.reportProblem),
               onTap: () {
                 Navigator.of(
                   bottomSheetContext,
@@ -1162,7 +1189,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             ListTile(
               leading: Icon(Icons.cancel_outlined, color: AppColors.error),
               title: Text(
-                'Anuluj zlecenie',
+                context.l10n.cancelTask,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.error,
                 ),
@@ -1191,16 +1218,21 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Future<void> _openSupportEmailClient() async {
+    final l10n = context.l10n;
     final task = _task;
-    final subject = 'Zgloszenie problemu - zlecenie ${widget.taskId}';
+    final subject = l10n.taskTrackingSupportSubject(widget.taskId);
     final body = StringBuffer()
-      ..writeln('Opisz problem:')
+      ..writeln(l10n.taskTrackingSupportDescribeProblem)
       ..writeln()
       ..writeln()
-      ..writeln('--- Kontekst ---')
-      ..writeln('Task ID: ${widget.taskId}')
-      ..writeln('Status: ${_status.name}')
-      ..writeln('Kategoria: ${task?.categoryData.name ?? 'brak'}');
+      ..writeln(l10n.taskTrackingSupportContextHeader)
+      ..writeln(l10n.taskTrackingSupportTaskId(widget.taskId))
+      ..writeln(l10n.taskTrackingSupportStatus(_status.name))
+      ..writeln(
+        l10n.taskTrackingSupportCategory(
+          task?.categoryData.name ?? l10n.taskTrackingNoCategory,
+        ),
+      );
 
     final mailUri = Uri(
       scheme: 'mailto',
@@ -1216,7 +1248,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       if (!didLaunch && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Nie udało się otworzyć aplikacji pocztowej'),
+            content: Text(l10n.taskTrackingOpenMailFailed),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1225,7 +1257,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Nie udało się otworzyć aplikacji pocztowej: $e'),
+          content: Text(l10n.taskTrackingOpenMailFailedWithError(e.toString())),
           backgroundColor: AppColors.error,
         ),
       );
@@ -1263,7 +1295,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
               // Title
               Text(
-                'Szczegóły zlecenia',
+                context.l10n.taskDetails,
                 style: AppTypography.h3,
                 textAlign: TextAlign.center,
               ),
@@ -1273,14 +1305,14 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               _buildDetailRow(
                 icon: _task!.categoryData.icon,
                 iconColor: _task!.categoryData.color,
-                label: 'Kategoria',
+                label: context.l10n.categories,
                 value: _task!.categoryData.name,
               ),
 
               // Description
               _buildDetailRow(
                 icon: Icons.description_outlined,
-                label: 'Opis',
+                label: context.l10n.description,
                 value: _task!.description,
               ),
 
@@ -1288,7 +1320,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               if (_task!.address != null)
                 _buildDetailRow(
                   icon: Icons.location_on_outlined,
-                  label: 'Lokalizacja',
+                  label: context.l10n.location,
                   value: _task!.address!,
                 ),
 
@@ -1296,7 +1328,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               _buildDetailRow(
                 icon: Icons.payments_outlined,
                 iconColor: AppColors.success,
-                label: 'Budżet',
+                label: context.l10n.budget,
                 value: '${_task!.budget} PLN',
                 valueStyle: AppTypography.labelLarge.copyWith(
                   color: AppColors.success,
@@ -1309,18 +1341,21 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 iconColor: _task!.isImmediate
                     ? AppColors.warning
                     : AppColors.primary,
-                label: 'Termin',
+                label: context.l10n.schedule,
                 value: _task!.isImmediate
-                    ? 'Teraz'
+                    ? context.l10n.now
                     : _task!.scheduledAt != null
                     ? _formatScheduledTime(_task!.scheduledAt!)
-                    : 'Nie określono',
+                    : context.l10n.taskTrackingScheduleUnspecified,
               ),
 
               // Images
               if (_task!.imageUrls != null && _task!.imageUrls!.isNotEmpty) ...[
                 SizedBox(height: AppSpacing.space4),
-                Text('Zdjęcia', style: AppTypography.labelLarge),
+                Text(
+                  context.l10n.taskTrackingImages,
+                  style: AppTypography.labelLarge,
+                ),
                 SizedBox(height: AppSpacing.gapMD),
                 SizedBox(
                   height: 120,
@@ -1330,7 +1365,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     itemBuilder: (context, index) {
                       final imageUrl = _task!.imageUrls![index];
                       return Semantics(
-                        label: 'Pokaż zdjęcie zlecenia',
+                        label: context.l10n.taskTrackingShowTaskImage,
                         button: true,
                         child: GestureDetector(
                           onTap: () => _showFullImage(imageUrl),
@@ -1375,7 +1410,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                   side: BorderSide(color: AppColors.error),
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                 ),
-                child: Text('Zamknij'),
+                child: Text(context.l10n.close),
               ),
             ],
           ),
@@ -1431,7 +1466,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     final year = dateTime.year;
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$day.$month.$year o $hour:$minute';
+    return '$day.$month.$year $hour:$minute';
   }
 
   void _showFullImage(String imageUrl) {
@@ -1448,7 +1483,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               top: 8,
               right: 8,
               child: IconButton(
-                tooltip: 'Zamknij podgląd zdjęcia',
+                tooltip: context.l10n.taskTrackingCloseImagePreview,
                 icon: Container(
                   padding: EdgeInsets.all(AppSpacing.paddingXS),
                   decoration: BoxDecoration(
@@ -1470,19 +1505,20 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Anuluj zlecenie?'),
-        content: Text(
-          'Czy na pewno chcesz anulować to zlecenie? Może to wiązać się z opłatą.',
-        ),
+        title: Text(context.l10n.taskTrackingCancelDialogTitle),
+        content: Text(context.l10n.taskTrackingCancelDialogContent),
         actions: [
-          TextButton(onPressed: () => context.pop(), child: Text('Nie')),
+          TextButton(
+            onPressed: () => context.pop(),
+            child: Text(context.l10n.no),
+          ),
           TextButton(
             onPressed: () {
               context.pop();
               _cancelTask();
             },
             child: Text(
-              'Tak, anuluj',
+              context.l10n.taskTrackingCancelDialogConfirm,
               style: AppTypography.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
@@ -1505,7 +1541,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Zlecenie zostało anulowane'),
+            content: Text(context.l10n.taskCancelled),
             backgroundColor: AppColors.warning,
           ),
         );
@@ -1516,7 +1552,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Błąd anulowania: ${e.toString()}'),
+            content: Text(context.l10n.taskTrackingCancelError(e.toString())),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1651,7 +1687,7 @@ class _ContractorProfileSheetState
           Text(
             review.comment?.trim().isNotEmpty == true
                 ? review.comment!.trim()
-                : 'Brak komentarza.',
+                : context.l10n.taskTrackingNoComment,
             style: AppTypography.bodySmall.copyWith(color: AppColors.gray700),
           ),
         ],
@@ -1686,7 +1722,7 @@ class _ContractorProfileSheetState
             ),
             SizedBox(width: AppSpacing.gapSM),
             Text(
-              'na podstawie $_ratingCount opinii',
+              context.l10n.taskTrackingBasedOnReviews(_ratingCount),
               style: AppTypography.caption.copyWith(color: AppColors.gray500),
             ),
           ],
@@ -1694,7 +1730,7 @@ class _ContractorProfileSheetState
         SizedBox(height: AppSpacing.gapSM),
         if (_reviews.isEmpty)
           Text(
-            'Brak opinii do wyświetlenia.',
+            context.l10n.taskTrackingNoReviewsToDisplay,
             style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           )
         else
@@ -1721,11 +1757,14 @@ class _ContractorProfileSheetState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Profil wykonawcy', style: AppTypography.h4),
+          Text(
+            context.l10n.taskTrackingContractorProfile,
+            style: AppTypography.h4,
+          ),
           IconButton(
             icon: const Icon(Icons.close),
             onPressed: () => context.pop(),
-            tooltip: 'Zamknij',
+            tooltip: context.l10n.close,
           ),
         ],
       ),
@@ -1789,7 +1828,7 @@ class _ContractorProfileSheetState
               ),
               SizedBox(height: AppSpacing.gapXS),
               Text(
-                '${contractor.reviewCount} opinii',
+                context.l10n.taskTrackingReviewsCount(contractor.reviewCount),
                 style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
@@ -1803,7 +1842,7 @@ class _ContractorProfileSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Opis'),
+        _buildSectionTitle(context.l10n.description),
         SizedBox(height: AppSpacing.gapXS),
         _isLoading
             ? SizedBox(
@@ -1816,7 +1855,7 @@ class _ContractorProfileSheetState
               )
             : _error != null
             ? Text(
-                'Nie udało się pobrać pełnego profilu',
+                context.l10n.taskTrackingFailedToLoadProfile,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.gray400,
                   fontStyle: FontStyle.italic,
@@ -1825,7 +1864,7 @@ class _ContractorProfileSheetState
             : Text(
                 contractor.bio?.isNotEmpty == true
                     ? contractor.bio!
-                    : 'Brak opisu wykonawcy.',
+                    : context.l10n.taskTrackingNoContractorDescription,
                 style: AppTypography.bodySmall.copyWith(
                   color: contractor.bio?.isNotEmpty == true
                       ? AppColors.gray600
@@ -1847,13 +1886,11 @@ class _ContractorProfileSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Data urodzenia'),
+        _buildSectionTitle(context.l10n.taskTrackingDateOfBirth),
         SizedBox(height: AppSpacing.gapXS),
         Text(
           contractor.formattedDateOfBirth,
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.gray600,
-          ),
+          style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
         ),
       ],
     );
@@ -1872,7 +1909,7 @@ class _ContractorProfileSheetState
           _buildDateOfBirthSection(contractor),
         ],
         SizedBox(height: AppSpacing.gapMD),
-        _buildSectionTitle('Opinie'),
+        _buildSectionTitle(context.l10n.reviews),
         SizedBox(height: AppSpacing.gapXS),
         _buildReviewsSection(),
         SizedBox(height: AppSpacing.gapMD),

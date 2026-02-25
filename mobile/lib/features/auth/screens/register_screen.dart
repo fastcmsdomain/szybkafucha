@@ -34,10 +34,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          AppStrings.register,
-          style: AppTypography.h4,
-        ),
+        title: Text(context.l10n.register, style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -51,17 +48,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 SizedBox(height: AppSpacing.space4),
 
                 // Name input
-                Text(
-                  AppStrings.yourName,
-                  style: AppTypography.labelLarge,
-                ),
+                Text(context.l10n.yourName, style: AppTypography.labelLarge),
                 SizedBox(height: AppSpacing.gapSM),
                 TextFormField(
                   controller: _nameController,
                   style: AppTypography.bodyMedium,
                   decoration: InputDecoration(
-                    hintText: AppStrings.enterYourName,
-                    prefixIcon: Icon(Icons.person_outline, color: AppColors.gray400),
+                    hintText: context.l10n.enterYourName,
+                    prefixIcon: Icon(
+                      Icons.person_outline,
+                      color: AppColors.gray400,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -78,7 +75,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // User type selection
                 Text(
-                  AppStrings.selectUserType,
+                  context.l10n.selectUserType,
                   style: AppTypography.labelLarge,
                 ),
                 SizedBox(height: AppSpacing.gapMD),
@@ -87,8 +84,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildUserTypeOption(
                   type: 'client',
                   icon: Icons.search,
-                  title: AppStrings.iAmClient,
-                  description: AppStrings.clientDescription,
+                  title: context.l10n.iAmClient,
+                  description: context.l10n.clientDescription,
                 ),
 
                 SizedBox(height: AppSpacing.gapMD),
@@ -97,8 +94,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildUserTypeOption(
                   type: 'contractor',
                   icon: Icons.handyman,
-                  title: AppStrings.iAmContractor,
-                  description: AppStrings.contractorDescription,
+                  title: context.l10n.iAmContractor,
+                  description: context.l10n.contractorDescription,
                 ),
 
                 const Spacer(),
@@ -109,7 +106,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.paddingMD,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.button,
                     ),
@@ -124,7 +123,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         )
                       : Text(
-                          AppStrings.register,
+                          context.l10n.register,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -155,7 +154,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.1) : AppColors.gray50,
+          color: isSelected
+              ? AppColors.primaryLight.withValues(alpha: 0.1)
+              : AppColors.gray50,
           borderRadius: AppRadius.radiusLG,
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.gray200,

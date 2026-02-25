@@ -1,4 +1,9 @@
-// Szybka Fucha Localization
-// Export all localization-related files from a single entry point
+import 'package:flutter/widgets.dart';
 
-export 'app_strings.dart';
+import 'generated/app_localizations.dart';
+
+export 'generated/app_localizations.dart';
+
+extension L10nBuildContextX on BuildContext {
+  AppLocalizations get l10n => AppLocalizations.of(this);
+}

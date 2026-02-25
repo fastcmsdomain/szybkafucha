@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
-import '../../../core/l10n/app_strings.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -80,7 +80,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             TextButton(
               onPressed: _completeOnboarding,
               child: Text(
-                AppStrings.onboardingSkip,
+                context.l10n.onboardingSkip,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
@@ -95,24 +95,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
-                children: const [
+                children: [
                   _OnboardingPageWithVideo(
-                    title: AppStrings.onboardingTitle1,
-                    subtitle: AppStrings.onboardingSubtitle1,
-                    description: AppStrings.onboardingDescription1,
+                    title: context.l10n.onboardingTitle1,
+                    subtitle: context.l10n.onboardingSubtitle1,
+                    description: context.l10n.onboardingDescription1,
                     videoPath: 'assets/videos/SzybkaFuchaHero.mp4',
                   ),
                   _OnboardingPage(
                     icon: Icons.verified_user,
-                    title: AppStrings.onboardingTitle2,
-                    subtitle: AppStrings.onboardingSubtitle2,
-                    description: AppStrings.onboardingDescription2,
+                    title: context.l10n.onboardingTitle2,
+                    subtitle: context.l10n.onboardingSubtitle2,
+                    description: context.l10n.onboardingDescription2,
                   ),
                   _OnboardingPage(
                     icon: Icons.bolt,
-                    title: AppStrings.onboardingTitle3,
-                    subtitle: AppStrings.onboardingSubtitle3,
-                    description: AppStrings.onboardingDescription3,
+                    title: context.l10n.onboardingTitle3,
+                    subtitle: context.l10n.onboardingSubtitle3,
+                    description: context.l10n.onboardingDescription3,
                   ),
                 ],
               ),
@@ -162,8 +162,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           child: Text(
             _currentPage < 2
-                ? AppStrings.onboardingNext
-                : AppStrings.onboardingStart,
+                ? context.l10n.onboardingNext
+                : context.l10n.onboardingStart,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -213,10 +213,7 @@ class _OnboardingPage extends StatelessWidget {
               Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(
-                      text: 'Szybka',
-                      style: AppTypography.h3,
-                    ),
+                    TextSpan(text: 'Szybka', style: AppTypography.h3),
                     TextSpan(
                       text: 'Fucha',
                       style: AppTypography.h3.copyWith(
@@ -229,11 +226,7 @@ class _OnboardingPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 40),
-          Icon(
-            icon,
-            size: 120,
-            color: AppColors.primary,
-          ),
+          Icon(icon, size: 120, color: AppColors.primary),
           const SizedBox(height: 48),
           Text(
             title,
@@ -284,7 +277,8 @@ class _OnboardingPageWithVideo extends StatefulWidget {
   });
 
   @override
-  State<_OnboardingPageWithVideo> createState() => _OnboardingPageWithVideoState();
+  State<_OnboardingPageWithVideo> createState() =>
+      _OnboardingPageWithVideoState();
 }
 
 class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
@@ -342,10 +336,7 @@ class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
               Text.rich(
                 TextSpan(
                   children: [
-                    TextSpan(
-                      text: 'Szybka',
-                      style: AppTypography.h3,
-                    ),
+                    TextSpan(text: 'Szybka', style: AppTypography.h3),
                     TextSpan(
                       text: 'Fucha',
                       style: AppTypography.h3.copyWith(
@@ -394,9 +385,7 @@ class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
           const SizedBox(height: 32),
           Text(

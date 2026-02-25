@@ -25,8 +25,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   String? _loadingProvider; // 'google', 'apple', or null
 
   /// Returns the role chosen during onboarding, defaulting to 'client'
-  String get _userType =>
-      ref.read(authProvider).selectedRole ?? 'client';
+  String get _userType => ref.read(authProvider).selectedRole ?? 'client';
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +42,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingLG),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -59,13 +59,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                   // Headline
                   Text(
-                    AppStrings.welcomeTitle,
+                    context.l10n.welcomeTitle,
                     style: AppTypography.h4,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: AppSpacing.space3),
                   Text(
-                    AppStrings.welcomeSubtitle,
+                    context.l10n.welcomeSubtitle,
                     style: AppTypography.bodyLarge.copyWith(
                       color: AppColors.gray600,
                     ),
@@ -76,7 +76,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 if (isProfileMode) ...[
                   Center(
                     child: SFRainbowText(
-                      AppStrings.login,
+                      context.l10n.login,
                       style: AppTypography.h2,
                     ),
                   ),
@@ -104,7 +104,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             SocialLoginButton(
                               type: SocialLoginType.apple,
                               isLoading: _loadingProvider == 'apple',
-                              onPressed: _isLoading ? null : () => _handleAppleSignIn(),
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _handleAppleSignIn(),
                             ),
                             SizedBox(height: AppSpacing.gapMD),
                           ],
@@ -133,10 +135,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   onPressed: _isLoading
                       ? null
                       : () {
-                          context.push(
-                            Routes.phoneLogin,
-                            extra: _userType,
-                          );
+                          context.push(Routes.phoneLogin, extra: _userType);
                         },
                 ),
 
@@ -156,7 +155,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                 // Terms agreement
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.paddingMD,
+                  ),
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,
@@ -173,7 +174,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         child: GestureDetector(
                           onTap: () => context.push(Routes.termsOfService),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.gapSM,
+                            ),
                             child: Text(
                               'Regulamin',
                               style: AppTypography.caption.copyWith(
@@ -196,7 +199,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         child: GestureDetector(
                           onTap: () => context.push(Routes.privacyPolicy),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.gapSM,
+                            ),
                             child: Text(
                               'Politykę Prywatności',
                               style: AppTypography.caption.copyWith(
@@ -258,7 +263,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
       // Send user info to backend for authentication
       // Using email as googleId since it's unique per Google account
-      await ref.read(authProvider.notifier).loginWithGoogle(
+      await ref
+          .read(authProvider.notifier)
+          .loginWithGoogle(
             googleId: result.email!,
             email: result.email!,
             name: result.displayName,
@@ -309,7 +316,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       }
 
       // Send user info to backend for authentication
-      await ref.read(authProvider.notifier).loginWithApple(
+      await ref
+          .read(authProvider.notifier)
+          .loginWithApple(
             appleId: result.userIdentifier!,
             email: result.email,
             name: result.fullName,
@@ -356,15 +365,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: 'Szybka',
-                style: AppTypography.h3,
-              ),
+              TextSpan(text: 'Szybka', style: AppTypography.h3),
               TextSpan(
                 text: 'Fucha',
-                style: AppTypography.h3.copyWith(
-                  color: AppColors.primary,
-                ),
+                style: AppTypography.h3.copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -385,21 +389,21 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           context.go('${Routes.welcome}?tab=profile');
         }
       },
-      destinations: const [
+      destinations: [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
-          label: AppStrings.menuHome,
+          label: context.l10n.menuHome,
         ),
         NavigationDestination(
           icon: Icon(Icons.work_outline),
           selectedIcon: Icon(Icons.work),
-          label: AppStrings.menuTasks,
+          label: context.l10n.menuTasks,
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
-          label: AppStrings.menuProfile,
+          label: context.l10n.menuProfile,
         ),
       ],
     );
@@ -436,27 +440,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(
-          child: Divider(
-            color: AppColors.gray300,
-            thickness: 1,
-          ),
-        ),
+        Expanded(child: Divider(color: AppColors.gray300, thickness: 1)),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
           child: Text(
-            AppStrings.orContinueWith,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray500,
-            ),
+            context.l10n.orContinueWith,
+            style: AppTypography.caption.copyWith(color: AppColors.gray500),
           ),
         ),
-        Expanded(
-          child: Divider(
-            color: AppColors.gray300,
-            thickness: 1,
-          ),
-        ),
+        Expanded(child: Divider(color: AppColors.gray300, thickness: 1)),
       ],
     );
   }
@@ -467,20 +459,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       decoration: BoxDecoration(
         color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: AppRadius.radiusLG,
-        border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.developer_mode,
-                color: AppColors.warning,
-                size: 20,
-              ),
+              Icon(Icons.developer_mode, color: AppColors.warning, size: 20),
               SizedBox(width: AppSpacing.gapSM),
               Text(
                 'Tryb deweloperski',
@@ -494,9 +480,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Zaloguj się bez backendu aby testować UI',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray600,
-            ),
+            style: AppTypography.caption.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapMD),
           Row(
@@ -550,9 +534,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.info,
               side: BorderSide(color: AppColors.info),
-              padding: EdgeInsets.symmetric(
-                vertical: AppSpacing.paddingSM,
-              ),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
             ),
           ),
         ],
@@ -561,7 +543,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Future<void> _handleDevLogin({required bool isClient}) async {
-
     setState(() {
       _isLoading = true;
       _loadingProvider = isClient ? 'dev-client' : 'dev-contractor';

@@ -44,7 +44,7 @@ class _UserTypeSelectorState extends State<UserTypeSelector> {
           Expanded(
             child: _buildCompactButton(
               type: 'client',
-              label: AppStrings.iAmClient,
+              label: context.l10n.iAmClient,
               icon: Icons.search,
             ),
           ),
@@ -52,7 +52,7 @@ class _UserTypeSelectorState extends State<UserTypeSelector> {
           Expanded(
             child: _buildCompactButton(
               type: 'contractor',
-              label: AppStrings.iAmContractor,
+              label: context.l10n.iAmContractor,
               icon: Icons.handyman,
             ),
           ),
@@ -66,15 +66,15 @@ class _UserTypeSelectorState extends State<UserTypeSelector> {
           _buildFullOption(
             type: 'client',
             icon: Icons.search,
-            title: AppStrings.iAmClient,
-            description: AppStrings.clientDescription,
+            title: context.l10n.iAmClient,
+            description: context.l10n.clientDescription,
           ),
           SizedBox(height: AppSpacing.gapMD),
           _buildFullOption(
             type: 'contractor',
             icon: Icons.handyman,
-            title: AppStrings.iAmContractor,
-            description: AppStrings.contractorDescription,
+            title: context.l10n.iAmContractor,
+            description: context.l10n.contractorDescription,
           ),
         ],
       );
@@ -101,9 +101,7 @@ class _UserTypeSelectorState extends State<UserTypeSelector> {
           horizontal: AppSpacing.paddingSM,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.gray100,
+          color: isSelected ? AppColors.primary : AppColors.gray100,
           borderRadius: AppRadius.radiusLG,
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.gray300,
@@ -152,7 +150,9 @@ class _UserTypeSelectorState extends State<UserTypeSelector> {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.1) : AppColors.gray50,
+          color: isSelected
+              ? AppColors.primaryLight.withValues(alpha: 0.1)
+              : AppColors.gray50,
           borderRadius: AppRadius.radiusLG,
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.gray200,

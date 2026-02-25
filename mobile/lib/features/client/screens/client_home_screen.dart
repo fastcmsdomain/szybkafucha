@@ -109,10 +109,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               ),
               SizedBox(height: AppSpacing.gapXS),
-              Text(
-                name,
-                style: AppTypography.h2.copyWith(fontSize: 24),
-              ),
+              Text(name, style: AppTypography.h2.copyWith(fontSize: 24)),
             ],
           ),
         ),
@@ -185,9 +182,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   children: [
                     Text(
                       'Potrzebujesz pomocy?',
-                      style: AppTypography.h4.copyWith(
-                        color: AppColors.white,
-                      ),
+                      style: AppTypography.h4.copyWith(color: AppColors.white),
                     ),
                     SizedBox(height: AppSpacing.gapSM),
                     Text(
@@ -248,11 +243,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SFRainbowText(AppStrings.activeTasks, style: AppTypography.h5),
+            SFRainbowText(context.l10n.activeTasks, style: AppTypography.h5),
             TextButton(
               onPressed: () => context.go(Routes.clientHistory),
               child: Text(
-                AppStrings.viewHistory,
+                context.l10n.viewHistory,
                 style: AppTypography.bodySmall.copyWith(
                   color: AppColors.primary,
                 ),
@@ -261,7 +256,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           ],
         ),
         SizedBox(height: AppSpacing.gapMD),
-        
+
         // Loading state
         if (tasksState.isLoading)
           const Center(
@@ -275,10 +270,14 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           _buildEmptyState()
         // List of active tasks
         else
-          ...activeTasks.take(3).map((task) => Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
-                child: _buildTaskCard(context, task),
-              )),
+          ...activeTasks
+              .take(3)
+              .map(
+                (task) => Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
+                  child: _buildTaskCard(context, task),
+                ),
+              ),
       ],
     );
   }
@@ -293,25 +292,17 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.task_alt_outlined,
-            size: 48,
-            color: AppColors.gray400,
-          ),
+          Icon(Icons.task_alt_outlined, size: 48, color: AppColors.gray400),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            AppStrings.noActiveTasks,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray600,
-            ),
+            context.l10n.noActiveTasks,
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Utwórz swoje pierwsze zlecenie, aby znaleźć pomocnika',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
         ],
@@ -362,11 +353,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       color: category.color.withValues(alpha: 0.1),
                       borderRadius: AppRadius.radiusMD,
                     ),
-                    child: Icon(
-                      category.icon,
-                      color: category.color,
-                      size: 24,
-                    ),
+                    child: Icon(category.icon, color: category.color, size: 24),
                   ),
                   SizedBox(width: AppSpacing.gapMD),
                   Expanded(
@@ -565,10 +552,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
         ),
         actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('Nie'),
-          ),
+          TextButton(onPressed: () => context.pop(), child: Text('Nie')),
           TextButton(
             onPressed: () {
               context.pop();
@@ -576,9 +560,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
             },
             child: Text(
               'Tak, anuluj',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
         ],
@@ -647,8 +629,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         _buildStepItem(
           number: '4',
           title: 'Oceń i zapłać',
-          description:
-              'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
+          description: 'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
           icon: Icons.star_outline,
           color: AppColors.info,
           isLast: true,
@@ -674,10 +655,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
               Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     number,
@@ -689,18 +667,15 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                 ),
               ),
               if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: AppColors.gray200,
-                  ),
-                ),
+                Expanded(child: Container(width: 2, color: AppColors.gray200)),
             ],
           ),
           SizedBox(width: AppSpacing.gapMD),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.paddingMD),
+              padding: EdgeInsets.only(
+                bottom: isLast ? 0 : AppSpacing.paddingMD,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -723,11 +698,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       ],
                     ),
                   ),
-                  Icon(
-                    icon,
-                    color: color,
-                    size: 24,
-                  ),
+                  Icon(icon, color: color, size: 24),
                 ],
               ),
             ),

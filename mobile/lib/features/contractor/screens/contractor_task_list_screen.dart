@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/kyc_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
@@ -57,22 +58,25 @@ class _ContractorTaskListScreenState
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
-    final baseTasks = tasksState.tasks
-        .where(_isActiveOrNew)
-        .toList();
+    final baseTasks = tasksState.tasks.where(_isActiveOrNew).toList();
     final availableCategories = _getAvailableCategories(baseTasks);
-    final effectiveSelectedFilters = _getEffectiveSelectedFilters(availableCategories);
-    final filteredTasks = _getFilteredTasks(baseTasks, effectiveSelectedFilters);
+    final effectiveSelectedFilters = _getEffectiveSelectedFilters(
+      availableCategories,
+    );
+    final filteredTasks = _getFilteredTasks(
+      baseTasks,
+      effectiveSelectedFilters,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: SFRainbowText('Dostępne zlecenia'),
+        title: SFRainbowText(context.l10n.availableTasks),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshTasks,
-            tooltip: 'Odśwież',
+            tooltip: context.l10n.retry,
           ),
         ],
         bottom: PreferredSize(
@@ -89,9 +93,9 @@ class _ContractorTaskListScreenState
                 fontWeight: FontWeight.w600,
               ),
               unselectedLabelStyle: AppTypography.labelLarge,
-              tabs: const [
-                Tab(text: 'MAPA'),
-                Tab(text: 'LISTA'),
+              tabs: [
+                Tab(text: context.l10n.taskListMapTab),
+                Tab(text: context.l10n.taskListListTab),
               ],
             ),
           ),
@@ -135,10 +139,10 @@ class _ContractorTaskListScreenState
     return tasks.map((task) => task.category).toSet();
   }
 
-  Set<TaskCategory> _getEffectiveSelectedFilters(Set<TaskCategory> availableCategories) {
-    return _selectedCategoryFilters
-        .where(availableCategories.contains)
-        .toSet();
+  Set<TaskCategory> _getEffectiveSelectedFilters(
+    Set<TaskCategory> availableCategories,
+  ) {
+    return _selectedCategoryFilters.where(availableCategories.contains).toSet();
   }
 
   List<ContractorTask> _getFilteredTasks(
@@ -155,13 +159,15 @@ class _ContractorTaskListScreenState
 
   String _getSelectedFiltersLabel(Set<TaskCategory> effectiveSelectedFilters) {
     if (effectiveSelectedFilters.isEmpty) {
-      return 'Filtry';
+      return context.l10n.taskListFilters;
     }
     if (effectiveSelectedFilters.length == 1) {
       final category = effectiveSelectedFilters.first;
       return TaskCategoryData.fromCategory(category).name;
     }
-    return '${effectiveSelectedFilters.length} wybrane';
+    return context.l10n.taskListSelectedFiltersCount(
+      effectiveSelectedFilters.length,
+    );
   }
 
   Widget _buildMapFiltersButton({
@@ -193,11 +199,7 @@ class _ContractorTaskListScreenState
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.filter_list,
-                size: 18,
-                color: AppColors.primary,
-              ),
+              Icon(Icons.filter_list, size: 18, color: AppColors.primary),
               SizedBox(width: AppSpacing.gapSM),
               Text(
                 _getSelectedFiltersLabel(effectiveSelectedFilters),
@@ -207,10 +209,7 @@ class _ContractorTaskListScreenState
                 ),
               ),
               SizedBox(width: AppSpacing.gapXS),
-              Icon(
-                Icons.arrow_drop_down,
-                color: AppColors.gray600,
-              ),
+              Icon(Icons.arrow_drop_down, color: AppColors.gray600),
             ],
           ),
         ),
@@ -239,7 +238,8 @@ class _ContractorTaskListScreenState
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
           itemCount: availableCategoryData.length,
-          separatorBuilder: (context, index) => SizedBox(width: AppSpacing.gapSM),
+          separatorBuilder: (context, index) =>
+              SizedBox(width: AppSpacing.gapSM),
           itemBuilder: (context, index) {
             final data = availableCategoryData[index];
             final isSelected = effectiveSelectedFilters.contains(data.category);
@@ -247,11 +247,7 @@ class _ContractorTaskListScreenState
               showCheckmark: true,
               visualDensity: VisualDensity.compact,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              avatar: Icon(
-                data.icon,
-                size: 14,
-                color: data.color,
-              ),
+              avatar: Icon(data.icon, size: 14, color: data.color),
               label: Text(
                 data.name,
                 style: AppTypography.caption.copyWith(
@@ -310,7 +306,7 @@ class _ContractorTaskListScreenState
                       children: [
                         Expanded(
                           child: Text(
-                            'Wybierz kategorie',
+                            context.l10n.selectCategory,
                             style: AppTypography.h4,
                           ),
                         ),
@@ -322,13 +318,13 @@ class _ContractorTaskListScreenState
                                     draft.clear();
                                   });
                                 },
-                          child: const Text('Wyczyść'),
+                          child: Text(context.l10n.taskListClearFilters),
                         ),
                       ],
                     ),
                     SizedBox(height: AppSpacing.gapSM),
                     Text(
-                      'Możesz zaznaczyć wiele kategorii',
+                      context.l10n.taskListMultiSelectHint,
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.gray600,
                       ),
@@ -338,7 +334,7 @@ class _ContractorTaskListScreenState
                       child: availableCategoryData.isEmpty
                           ? Center(
                               child: Text(
-                                'Brak kategorii do filtrowania',
+                                context.l10n.taskListNoCategoriesToFilter,
                                 style: AppTypography.bodySmall.copyWith(
                                   color: AppColors.gray500,
                                 ),
@@ -348,7 +344,9 @@ class _ContractorTaskListScreenState
                               itemCount: availableCategoryData.length,
                               itemBuilder: (context, index) {
                                 final data = availableCategoryData[index];
-                                final isSelected = draft.contains(data.category);
+                                final isSelected = draft.contains(
+                                  data.category,
+                                );
                                 return InkWell(
                                   onTap: () {
                                     setModalState(() {
@@ -370,7 +368,8 @@ class _ContractorTaskListScreenState
                                         Checkbox(
                                           value: isSelected,
                                           visualDensity: VisualDensity.compact,
-                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
                                           onChanged: (value) {
                                             setModalState(() {
                                               if (value == true) {
@@ -407,7 +406,7 @@ class _ContractorTaskListScreenState
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Anuluj'),
+                            child: Text(context.l10n.cancel),
                           ),
                         ),
                         SizedBox(width: AppSpacing.gapMD),
@@ -423,7 +422,7 @@ class _ContractorTaskListScreenState
                               backgroundColor: AppColors.primary,
                               foregroundColor: AppColors.white,
                             ),
-                            child: const Text('Zatwierdź'),
+                            child: Text(context.l10n.confirm),
                           ),
                         ),
                       ],
@@ -440,12 +439,10 @@ class _ContractorTaskListScreenState
 
   Widget _buildMapTab(
     AvailableTasksState tasksState,
-    List<ContractorTask> tasks,
-    {
-      required Set<TaskCategory> availableCategories,
-      required Set<TaskCategory> effectiveSelectedFilters,
-    }
-  ) {
+    List<ContractorTask> tasks, {
+    required Set<TaskCategory> availableCategories,
+    required Set<TaskCategory> effectiveSelectedFilters,
+  }) {
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -457,15 +454,22 @@ class _ContractorTaskListScreenState
     }
 
     // Convert tasks to clusterable format
-    final clusterableTasks = tasks.map((task) => ClusterableTask(
-      id: task.id,
-      position: LatLng(task.latitude, task.longitude),
-      category: task.category.name,
-      price: task.price.toDouble(),
-    )).toList();
+    final clusterableTasks = tasks
+        .map(
+          (task) => ClusterableTask(
+            id: task.id,
+            position: LatLng(task.latitude, task.longitude),
+            category: task.category.name,
+            price: task.price.toDouble(),
+          ),
+        )
+        .toList();
 
     // Create clusters based on current zoom
-    final clusters = TaskClusterManager.clusterTasks(clusterableTasks, _currentZoom);
+    final clusters = TaskClusterManager.clusterTasks(
+      clusterableTasks,
+      _currentZoom,
+    );
 
     return Stack(
       children: [
@@ -508,7 +512,9 @@ class _ContractorTaskListScreenState
                     height: 54,
                     child: GestureDetector(
                       onTap: () => _showTaskDetails(task),
-                      child: TaskMarker(position: cluster.center).build(context),
+                      child: TaskMarker(
+                        position: cluster.center,
+                      ).build(context),
                     ),
                   );
                 } else {
@@ -563,14 +569,10 @@ class _ContractorTaskListScreenState
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.work_outline,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
+                Icon(Icons.work_outline, size: 18, color: AppColors.primary),
                 SizedBox(width: AppSpacing.gapSM),
                 Text(
-                  '${tasks.length} zleceń',
+                  context.l10n.taskListTasksCount(tasks.length),
                   style: AppTypography.labelMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -597,15 +599,9 @@ class _ContractorTaskListScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildZoomButton(
-                icon: Icons.add,
-                onPressed: () => _zoomIn(),
-              ),
+              _buildZoomButton(icon: Icons.add, onPressed: () => _zoomIn()),
               SizedBox(height: AppSpacing.gapXS),
-              _buildZoomButton(
-                icon: Icons.remove,
-                onPressed: () => _zoomOut(),
-              ),
+              _buildZoomButton(icon: Icons.remove, onPressed: () => _zoomOut()),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
                 icon: Icons.center_focus_strong,
@@ -633,11 +629,7 @@ class _ContractorTaskListScreenState
           width: 40,
           height: 40,
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.gray700,
-          ),
+          child: Icon(icon, size: 22, color: AppColors.gray700),
         ),
       ),
     );
@@ -667,33 +659,23 @@ class _ContractorTaskListScreenState
     setState(() => _currentZoom = newZoom);
   }
 
-  Widget _buildEmptyMapState({
-    required bool hasActiveFilter,
-  }) {
+  Widget _buildEmptyMapState({required bool hasActiveFilter}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.map_outlined,
-            size: 64,
-            color: AppColors.gray400,
-          ),
+          Icon(Icons.map_outlined, size: 64, color: AppColors.gray400),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            'Brak dostępnych zleceń',
-            style: AppTypography.h5.copyWith(
-              color: AppColors.gray600,
-            ),
+            context.l10n.noAvailableTasks,
+            style: AppTypography.h5.copyWith(color: AppColors.gray600),
           ),
           SizedBox(height: AppSpacing.gapSM),
           Text(
             hasActiveFilter
-                ? 'Brak zleceń dla wybranych kategorii.'
-                : 'Na mapie pojawią się zlecenia,\ngdy będą dostępne.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+                ? context.l10n.taskListNoTasksForSelectedCategories
+                : context.l10n.taskListMapEmptyHint,
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
         ],
@@ -703,11 +685,9 @@ class _ContractorTaskListScreenState
 
   Widget _buildListTab(
     AvailableTasksState tasksState,
-    List<ContractorTask> tasks,
-    {
-      required bool hasActiveFilter,
-    }
-  ) {
+    List<ContractorTask> tasks, {
+    required bool hasActiveFilter,
+  }) {
     // Loading state
     if (tasksState.isLoading && tasks.isEmpty) {
       return _buildLoadingState();
@@ -750,7 +730,7 @@ class _ContractorTaskListScreenState
             const CircularProgressIndicator(),
             SizedBox(height: AppSpacing.gapMD),
             Text(
-              'Ładowanie zleceń...',
+              context.l10n.taskListLoadingTasks,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.gray600,
               ),
@@ -768,31 +748,23 @@ class _ContractorTaskListScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             SizedBox(height: AppSpacing.gapMD),
             Text(
-              'Wystąpił błąd',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
+              context.l10n.error,
+              style: AppTypography.h5.copyWith(color: AppColors.gray600),
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
               error,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
             ElevatedButton.icon(
               onPressed: _refreshTasks,
               icon: const Icon(Icons.refresh),
-              label: const Text('Spróbuj ponownie'),
+              label: Text(context.l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
@@ -804,43 +776,32 @@ class _ContractorTaskListScreenState
     );
   }
 
-  Widget _buildEmptyState({
-    required bool hasActiveFilter,
-  }) {
+  Widget _buildEmptyState({required bool hasActiveFilter}) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.paddingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: AppColors.gray400,
-            ),
+            Icon(Icons.search_off, size: 64, color: AppColors.gray400),
             SizedBox(height: AppSpacing.gapMD),
             Text(
-              'Brak dostępnych zleceń',
-              style: AppTypography.h5.copyWith(
-                color: AppColors.gray600,
-              ),
+              context.l10n.noAvailableTasks,
+              style: AppTypography.h5.copyWith(color: AppColors.gray600),
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
               hasActiveFilter
-                  ? 'Brak zleceń dla wybranych kategorii.'
-                  : 'Obecnie nie ma żadnych dostępnych zleceń w Twojej okolicy. '
-                      'Sprawdź ponownie później.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+                  ? context.l10n.taskListNoTasksForSelectedCategories
+                  : context.l10n.noAvailableTasks,
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
             ElevatedButton.icon(
               onPressed: _refreshTasks,
               icon: const Icon(Icons.refresh),
-              label: const Text('Odśwież'),
+              label: Text(context.l10n.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
@@ -853,10 +814,7 @@ class _ContractorTaskListScreenState
   }
 
   void _showTaskDetails(ContractorTask task) {
-    context.push(
-      Routes.contractorTaskAlertRoute(task.id),
-      extra: task,
-    );
+    context.push(Routes.contractorTaskAlertRoute(task.id), extra: task);
   }
 
   bool _isActiveOrNew(ContractorTask task) {
@@ -876,14 +834,12 @@ class _ContractorTaskListScreenState
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Wymagana weryfikacja tożsamości'),
-          content: const Text(
-            'Aby aplikować na zlecenia, musisz najpierw zweryfikować swoją tożsamość.',
-          ),
+          title: Text(context.l10n.kycRequired),
+          content: Text(context.l10n.taskListKycRequiredToApply),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Anuluj'),
+              child: Text(context.l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -894,7 +850,7 @@ class _ContractorTaskListScreenState
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.white,
               ),
-              child: const Text('Weryfikuj'),
+              child: Text(context.l10n.startVerification),
             ),
           ],
         ),
@@ -902,21 +858,19 @@ class _ContractorTaskListScreenState
       return;
     }
 
-    final priceController = TextEditingController(
-      text: task.price.toString(),
-    );
+    final priceController = TextEditingController(text: task.price.toString());
     final messageController = TextEditingController();
 
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Zgłoś się do zlecenia'),
+        title: Text(context.l10n.taskListApplyDialogTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Budżet klienta: ${task.price} zł',
+              context.l10n.taskListClientBudget(task.price.toString()),
               style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             ),
             SizedBox(height: AppSpacing.paddingSM),
@@ -924,10 +878,10 @@ class _ContractorTaskListScreenState
               controller: priceController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Twoja cena (zł)',
-                hintText: 'Min. 35 zł',
+                labelText: context.l10n.taskListYourPriceLabel,
+                hintText: context.l10n.taskListMinPriceHint,
                 border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
-                suffixText: 'zł',
+                suffixText: context.l10n.currencySymbol,
               ),
             ),
             SizedBox(height: AppSpacing.paddingSM),
@@ -936,8 +890,8 @@ class _ContractorTaskListScreenState
               maxLines: 3,
               maxLength: 500,
               decoration: InputDecoration(
-                labelText: 'Wiadomość (opcjonalnie)',
-                hintText: 'Opisz swoje doświadczenie...',
+                labelText: context.l10n.taskListMessageOptional,
+                hintText: context.l10n.taskListExperienceHint,
                 border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
               ),
             ),
@@ -946,7 +900,7 @@ class _ContractorTaskListScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Anuluj'),
+            child: Text(context.l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -954,7 +908,7 @@ class _ContractorTaskListScreenState
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.white,
             ),
-            child: const Text('Wyślij zgłoszenie'),
+            child: Text(context.l10n.taskListSendApplication),
           ),
         ],
       ),
@@ -967,7 +921,7 @@ class _ContractorTaskListScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Minimalna cena to 35 zł'),
+            content: Text(context.l10n.taskListMinimumPriceError),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -977,7 +931,9 @@ class _ContractorTaskListScreenState
     }
 
     try {
-      await ref.read(availableTasksProvider.notifier).applyForTask(
+      await ref
+          .read(availableTasksProvider.notifier)
+          .applyForTask(
             task.id,
             proposedPrice: price,
             message: messageController.text.isNotEmpty
@@ -988,7 +944,7 @@ class _ContractorTaskListScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Zgłoszenie wysłane! Czekaj na decyzję klienta.'),
+            content: Text(context.l10n.taskListApplicationSent),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -998,7 +954,7 @@ class _ContractorTaskListScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
+            content: Text(context.l10n.genericErrorWithPrefix(e.toString())),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 4),

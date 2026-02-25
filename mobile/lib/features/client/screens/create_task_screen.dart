@@ -24,10 +24,7 @@ import '../models/task_category.dart';
 class CreateTaskScreen extends ConsumerStatefulWidget {
   final TaskCategory? initialCategory;
 
-  const CreateTaskScreen({
-    super.key,
-    this.initialCategory,
-  });
+  const CreateTaskScreen({super.key, this.initialCategory});
 
   @override
   ConsumerState<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -65,8 +62,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     super.initState();
     _selectedCategory = widget.initialCategory;
     if (_selectedCategory != null) {
-      _budgetController.text =
-          TaskCategoryData.fromCategory(_selectedCategory!).suggestedPrice.toString();
+      _budgetController.text = TaskCategoryData.fromCategory(
+        _selectedCategory!,
+      ).suggestedPrice.toString();
     }
 
     // Add listeners to update summary when inputs change
@@ -95,7 +93,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           onPressed: _closeScreen,
           tooltip: 'Zamknij',
         ),
-        title: SFRainbowText(AppStrings.createTask),
+        title: SFRainbowText(context.l10n.createTask),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -146,7 +144,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.paddingMD,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.button,
                     ),
@@ -186,33 +186,21 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.selectCategory,
-          style: AppTypography.labelLarge,
-        ),
+        Text(context.l10n.selectCategory, style: AppTypography.labelLarge),
         SizedBox(height: AppSpacing.gapSM),
         DropdownButtonFormField<TaskCategory>(
           initialValue: _selectedCategory,
           isExpanded: true,
-          decoration: InputDecoration(
-            hintText: 'Wybierz kategorię',
-          ),
+          decoration: InputDecoration(hintText: 'Wybierz kategorię'),
           items: TaskCategoryData.all.map((category) {
             return DropdownMenuItem<TaskCategory>(
               value: category.category,
               child: Row(
                 children: [
-                  Icon(
-                    category.icon,
-                    size: 18,
-                    color: category.color,
-                  ),
+                  Icon(category.icon, size: 18, color: category.color),
                   SizedBox(width: AppSpacing.gapSM),
                   Expanded(
-                    child: Text(
-                      category.name,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text(category.name, overflow: TextOverflow.ellipsis),
                   ),
                 ],
               ),
@@ -231,9 +219,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           SizedBox(height: AppSpacing.gapSM),
           Text(
             selectedCategoryData.description,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray600,
-            ),
+            style: AppTypography.caption.copyWith(color: AppColors.gray600),
           ),
         ],
       ],
@@ -252,10 +238,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.taskDescription,
-          style: AppTypography.labelLarge,
-        ),
+        Text(context.l10n.taskDescription, style: AppTypography.labelLarge),
         SizedBox(height: AppSpacing.gapSM),
         TextFormField(
           controller: _descriptionController,
@@ -274,9 +257,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         SizedBox(height: AppSpacing.gapXS),
         Text(
           'Min. 10 znaków',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.gray500,
-          ),
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
         ),
       ],
     );
@@ -289,24 +270,17 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Zdjęcia (opcjonalnie)',
-              style: AppTypography.labelLarge,
-            ),
+            Text('Zdjęcia (opcjonalnie)', style: AppTypography.labelLarge),
             Text(
               '${_selectedImages.length}/$_maxImages',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.caption.copyWith(color: AppColors.gray500),
             ),
           ],
         ),
         SizedBox(height: AppSpacing.gapSM),
         Text(
           'Dodaj zdjęcia, aby lepiej opisać zlecenie',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.gray500,
-          ),
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
         ),
         SizedBox(height: AppSpacing.gapMD),
 
@@ -479,10 +453,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       try {
         final bytes = await image.readAsBytes();
         final formData = FormData.fromMap({
-          'file': MultipartFile.fromBytes(
-            bytes,
-            filename: image.name,
-          ),
+          'file': MultipartFile.fromBytes(bytes, filename: image.name),
         });
 
         debugPrint('Uploading image: ${image.name}');
@@ -526,10 +497,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.location,
-          style: AppTypography.labelLarge,
-        ),
+        Text(context.l10n.location, style: AppTypography.labelLarge),
         SizedBox(height: AppSpacing.gapMD),
 
         // Address input with GPS option
@@ -560,11 +528,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                 center: _selectedLatLng!,
                 zoom: 15,
                 height: 180,
-                markers: [
-                  TaskMarker(
-                    position: _selectedLatLng!,
-                  ),
-                ],
+                markers: [TaskMarker(position: _selectedLatLng!)],
               ),
             ),
           ),
@@ -591,20 +555,13 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    AppStrings.budget,
-                    style: AppTypography.labelLarge,
-                  ),
+                  Text(context.l10n.budget, style: AppTypography.labelLarge),
                   SizedBox(height: AppSpacing.gapMD),
                   TextFormField(
                     controller: _budgetController,
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.primary,
-                    ),
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: AppTypography.h4.copyWith(color: AppColors.primary),
                     decoration: InputDecoration(
                       suffixText: 'PLN',
                       suffixStyle: AppTypography.h4.copyWith(
@@ -639,20 +596,17 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Szacowany czas',
-                    style: AppTypography.labelLarge,
-                  ),
+                  Text('Szacowany czas', style: AppTypography.labelLarge),
                   SizedBox(height: AppSpacing.gapMD),
                   TextFormField(
                     controller: _estimatedDurationController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.primary,
-                    ),
+                    style: AppTypography.h4.copyWith(color: AppColors.primary),
                     decoration: InputDecoration(
                       suffixText: 'h',
                       suffixStyle: AppTypography.h4.copyWith(
@@ -685,18 +639,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         SizedBox(height: AppSpacing.gapSM),
         Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              size: 14,
-              color: AppColors.gray500,
-            ),
+            Icon(Icons.info_outline, size: 14, color: AppColors.gray500),
             SizedBox(width: AppSpacing.gapXS),
             Expanded(
               child: Text(
                 'Cena za całość zlecenia. Minimalna stawka za godzine: 35 PLN',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ),
           ],
@@ -719,10 +667,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppStrings.schedule,
-          style: AppTypography.labelLarge,
-        ),
+        Text(context.l10n.schedule, style: AppTypography.labelLarge),
         SizedBox(height: AppSpacing.gapMD),
 
         // Now option
@@ -732,45 +677,47 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           child: GestureDetector(
             onTap: () => setState(() => _isNow = true),
             child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: _isNow
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.gray50,
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: _isNow ? AppColors.primary : AppColors.gray200,
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              decoration: BoxDecoration(
+                color: _isNow
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.gray50,
+                borderRadius: AppRadius.radiusMD,
+                border: Border.all(
+                  color: _isNow ? AppColors.primary : AppColors.gray200,
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.flash_on,
-                  color: _isNow ? AppColors.primary : AppColors.gray600,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.now,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: _isNow ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                      Text(
-                        'Znajdź pomocnika jak najszybciej',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                    ],
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.flash_on,
+                    color: _isNow ? AppColors.primary : AppColors.gray600,
                   ),
-                ),
-                _buildRadioIndicator(_isNow),
-              ],
-            ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.now,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: _isNow
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        Text(
+                          'Znajdź pomocnika jak najszybciej',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildRadioIndicator(_isNow),
+                ],
+              ),
             ),
           ),
         ),
@@ -784,50 +731,48 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           child: GestureDetector(
             onTap: () => setState(() => _isNow = false),
             child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: !_isNow
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.gray50,
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: !_isNow ? AppColors.primary : AppColors.gray200,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      color: !_isNow ? AppColors.primary : AppColors.gray600,
-                    ),
-                    SizedBox(width: AppSpacing.gapMD),
-                    Expanded(
-                      child: Text(
-                        AppStrings.scheduleForLater,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: !_isNow ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                    _buildRadioIndicator(!_isNow),
-                  ],
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              decoration: BoxDecoration(
+                color: !_isNow
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.gray50,
+                borderRadius: AppRadius.radiusMD,
+                border: Border.all(
+                  color: !_isNow ? AppColors.primary : AppColors.gray200,
                 ),
-                if (!_isNow) ...[
-                  SizedBox(height: AppSpacing.gapMD),
+              ),
+              child: Column(
+                children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildDateButton(),
+                      Icon(
+                        Icons.schedule,
+                        color: !_isNow ? AppColors.primary : AppColors.gray600,
                       ),
                       SizedBox(width: AppSpacing.gapMD),
                       Expanded(
-                        child: _buildTimeButton(),
+                        child: Text(
+                          context.l10n.scheduleForLater,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: !_isNow
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
                       ),
+                      _buildRadioIndicator(!_isNow),
                     ],
                   ),
-                ],
+                  if (!_isNow) ...[
+                    SizedBox(height: AppSpacing.gapMD),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDateButton()),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(child: _buildTimeButton()),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -908,19 +853,10 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Podsumowanie',
-            style: AppTypography.labelLarge,
-          ),
+          Text('Podsumowanie', style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapMD),
-          _buildSummaryRow(
-            'Kategoria',
-            category?.name ?? 'Nie wybrano',
-          ),
-          _buildSummaryRow(
-            'Budżet',
-            '${_budgetController.text} PLN',
-          ),
+          _buildSummaryRow('Kategoria', category?.name ?? 'Nie wybrano'),
+          _buildSummaryRow('Budżet', '${_budgetController.text} PLN'),
           _buildSummaryRow(
             'Kiedy',
             _isNow
@@ -952,7 +888,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isHighlighted = false, bool wrapValue = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isHighlighted = false,
+    bool wrapValue = false,
+  }) {
     final valueStyle = AppTypography.bodySmall.copyWith(
       fontWeight: FontWeight.w600,
       color: isHighlighted ? AppColors.primary : AppColors.gray800,
@@ -971,11 +912,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   ),
                 ),
                 SizedBox(height: AppSpacing.gapXS),
-                Text(
-                  value,
-                  style: valueStyle,
-                  softWrap: true,
-                ),
+                Text(value, style: valueStyle, softWrap: true),
               ],
             )
           : Row(
@@ -987,10 +924,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     color: AppColors.gray600,
                   ),
                 ),
-                Text(
-                  value,
-                  style: valueStyle,
-                ),
+                Text(value, style: valueStyle),
               ],
             ),
     );
@@ -1141,7 +1075,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           double.parse(_defaultBudgetPln);
 
       // Parse estimated duration (optional)
-      final estimatedDurationHours = _estimatedDurationController.text.isNotEmpty
+      final estimatedDurationHours =
+          _estimatedDurationController.text.isNotEmpty
           ? double.tryParse(_estimatedDurationController.text)
           : null;
 

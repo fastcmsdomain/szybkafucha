@@ -1,0 +1,457 @@
+{
+  "@@locale": "pl",
+  "appName": "SzybkaFucha",
+  "appTagline": "Pomoc jest bliżej niż myślisz",
+  "loading": "Ładowanie...",
+  "error": "Błąd",
+  "success": "Sukces",
+  "cancel": "Anuluj",
+  "confirm": "Potwierdź",
+  "save": "Zapisz",
+  "delete": "Usuń",
+  "edit": "Edytuj",
+  "close": "Zamknij",
+  "back": "Wróć",
+  "next": "Dalej",
+  "done": "Gotowe",
+  "retry": "Spróbuj ponownie",
+  "yes": "Tak",
+  "no": "Nie",
+  "ok": "OK",
+  "search": "Szukaj",
+  "noResults": "Brak wyników",
+  "seeAll": "Zobacz wszystkie",
+  "continueText": "Kontynuuj",
+  "selectCategory": "Wybierz kategorię",
+  "schedule": "Termin",
+  "now": "Teraz",
+  "scheduleForLater": "Zaplanuj na później",
+  "activeTasks": "Aktywne zlecenia",
+  "viewHistory": "Zobacz historię",
+  "noActiveTasks": "Brak aktywnych zleceń",
+  "welcomeTitle": "Pomoc jest bliżej niż myślisz",
+  "welcomeSubtitle": "Znajdź pomocnika do drobnych zadań w kilka minut",
+  "iNeedHelp": "Szukam pomocy",
+  "iWantToEarn": "Chcę pomagać i zarabiać",
+  "termsAgreement": "Dołączając, akceptujesz Regulamin i Politykę Prywatności",
+  "login": "Zaloguj się",
+  "logout": "Wyloguj się",
+  "register": "Zarejestruj się",
+  "continueWithGoogle": "Kontynuuj z Google",
+  "continueWithApple": "Kontynuuj z Apple",
+  "continueWithPhone": "Kontynuuj z numerem telefonu",
+  "orContinueWith": "lub kontynuuj przez",
+  "phoneNumber": "Numer telefonu",
+  "enterPhoneNumber": "Wpisz numer telefonu",
+  "sendCode": "Wyślij kod",
+  "verificationCode": "Kod weryfikacyjny",
+  "enterCode": "Wpisz kod z SMS",
+  "resendCode": "Wyślij ponownie",
+  "resendCodeIn": "Wyślij ponownie za",
+  "invalidPhoneNumber": "Nieprawidłowy numer telefonu",
+  "invalidCode": "Nieprawidłowy kod",
+  "codeSent": "Kod został wysłany",
+  "yourName": "Twoje imię",
+  "enterYourName": "Wpisz swoje imię",
+  "selectUserType": "Wybierz typ konta",
+  "iAmClient": "Szukam pomocy",
+  "iAmContractor": "Chcę pomagać",
+  "clientDescription": "Znajdź pomocników do drobnych zadań",
+  "contractorDescription": "Zarabiaj pomagając innym",
+  "categories": "Kategorie",
+  "categoryPackages": "Paczki",
+  "categoryShopping": "Zakupy",
+  "categoryQueues": "Kolejki",
+  "categoryAssembly": "Montaż",
+  "categoryMoving": "Przeprowadzki",
+  "categoryCleaning": "Sprzątanie",
+  "createTask": "Utwórz zlecenie",
+  "taskTitle": "Tytuł zlecenia",
+  "taskDescription": "Opis zlecenia",
+  "describeTask": "Opisz zadanie...",
+  "taskLocation": "Lokalizacja",
+  "selectLocation": "Wybierz lokalizację",
+  "taskBudget": "Budżet",
+  "suggestedBudget": "Sugerowany budżet",
+  "taskDate": "Data wykonania",
+  "selectDate": "Wybierz datę",
+  "taskTime": "Godzina",
+  "selectTime": "Wybierz godzinę",
+  "asap": "Jak najszybciej",
+  "postTask": "Opublikuj zlecenie",
+  "statusPosted": "Opublikowane",
+  "statusAccepted": "Zaakceptowane",
+  "statusInProgress": "W trakcie",
+  "statusCompleted": "Zakończone",
+  "statusCancelled": "Anulowane",
+  "statusDisputed": "Sporne",
+  "taskDetails": "Szczegóły zlecenia",
+  "postedBy": "Zleceniodawca",
+  "acceptedBy": "Wykonawca",
+  "budget": "Budżet",
+  "location": "Lokalizacja",
+  "dateTime": "Data i godzina",
+  "description": "Opis",
+  "acceptTask": "Przyjmij zlecenie",
+  "cancelTask": "Anuluj zlecenie",
+  "completeTask": "Zakończ zlecenie",
+  "reportProblem": "Zgłoś problem",
+  "tracking": "Śledzenie",
+  "contractorOnTheWay": "Wykonawca w drodze",
+  "estimatedArrival": "Szacowany czas przybycia",
+  "minutes": "min",
+  "arrived": "Na miejscu",
+  "workInProgress": "Praca w toku",
+  "chat": "Czat",
+  "typeMessage": "Napisz wiadomość...",
+  "send": "Wyślij",
+  "messageDelivered": "Dostarczono",
+  "messageRead": "Przeczytano",
+  "rateTask": "Oceń zlecenie",
+  "howWasService": "Jak oceniasz wykonaną usługę?",
+  "leaveReview": "Zostaw opinię (opcjonalnie)",
+  "submitRating": "Wyślij ocenę",
+  "addTip": "Dodaj napiwek",
+  "tipAmount": "Kwota napiwku",
+  "availableTasks": "Dostępne zlecenia",
+  "myTasks": "Moje zlecenia",
+  "noAvailableTasks": "Brak dostępnych zleceń w okolicy",
+  "earnings": "Zarobki",
+  "todayEarnings": "Dzisiaj",
+  "weekEarnings": "Ten tydzień",
+  "monthEarnings": "Ten miesiąc",
+  "totalEarnings": "Łącznie",
+  "withdraw": "Wypłać",
+  "withdrawFunds": "Wypłać środki",
+  "availableBalance": "Dostępne saldo",
+  "pendingBalance": "Oczekujące",
+  "transactionHistory": "Historia transakcji",
+  "menuHome": "Główna",
+  "menuTasks": "Zlecenia",
+  "menuProfile": "Profil",
+  "profile": "Profil",
+  "editProfile": "Edytuj profil",
+  "myReviews": "Moje opinie",
+  "settings": "Ustawienia",
+  "help": "Pomoc",
+  "about": "O aplikacji",
+  "termsOfService": "Regulamin",
+  "privacyPolicy": "Polityka prywatności",
+  "version": "Wersja",
+  "completedTasks": "Ukończone zlecenia",
+  "rating": "Ocena",
+  "memberSince": "Członek od",
+  "kycVerification": "Weryfikacja tożsamości",
+  "kycRequired": "Wymagana weryfikacja",
+  "kycDescription": "Aby przyjmować zlecenia, musisz zweryfikować swoją tożsamość",
+  "startVerification": "Rozpocznij weryfikację",
+  "uploadId": "Prześlij dokument tożsamości",
+  "takeSelfie": "Zrób selfie",
+  "verificationPending": "Weryfikacja w toku",
+  "verificationApproved": "Weryfikacja zatwierdzona",
+  "verificationRejected": "Weryfikacja odrzucona",
+  "notifications": "Powiadomienia",
+  "noNotifications": "Brak powiadomień",
+  "markAllRead": "Oznacz wszystkie jako przeczytane",
+  "notificationSettings": "Ustawienia powiadomień",
+  "pushNotifications": "Powiadomienia push",
+  "emailNotifications": "Powiadomienia email",
+  "smsNotifications": "Powiadomienia SMS",
+  "language": "Język",
+  "deleteAccount": "Usuń konto",
+  "deleteAccountWarning": "Czy na pewno chcesz usunąć konto? Ta operacja jest nieodwracalna.",
+  "errorGeneric": "Wystąpił błąd. Spróbuj ponownie.",
+  "errorNetwork": "Brak połączenia z internetem",
+  "errorServer": "Błąd serwera. Spróbuj ponownie później.",
+  "errorUnauthorized": "Sesja wygasła. Zaloguj się ponownie.",
+  "errorForbidden": "Brak uprawnień do wykonania tej operacji",
+  "errorNotFound": "Nie znaleziono",
+  "errorValidation": "Nieprawidłowe dane",
+  "errorLocationPermission": "Wymagany dostęp do lokalizacji",
+  "errorCameraPermission": "Wymagany dostęp do kamery",
+  "taskCreated": "Zlecenie zostało utworzone",
+  "taskAccepted": "Zlecenie zostało przyjęte",
+  "taskCompleted": "Zlecenie zostało zakończone",
+  "taskCancelled": "Zlecenie zostało anulowane",
+  "ratingSubmitted": "Dziękujemy za ocenę!",
+  "profileUpdated": "Profil został zaktualizowany",
+  "withdrawalRequested": "Wypłata została zlecona",
+  "noTasks": "Brak zleceń",
+  "noTasksDescription": "Nie masz jeszcze żadnych zleceń",
+  "noHistory": "Brak historii",
+  "noHistoryDescription": "Historia zleceń pojawi się tutaj",
+  "noMessages": "Brak wiadomości",
+  "noMessagesDescription": "Rozpocznij rozmowę",
+  "today": "Dzisiaj",
+  "yesterday": "Wczoraj",
+  "justNow": "Przed chwilą",
+  "minutesAgo": "min temu",
+  "hoursAgo": "godz. temu",
+  "daysAgo": "dni temu",
+  "currency": "PLN",
+  "currencySymbol": "zł",
+  "onboardingTitle1": "Potrzebujesz pomocy?",
+  "onboardingSubtitle1": "Znajdź ją w 5 minut",
+  "onboardingDescription1": "Szybka Fucha łączy Cię z pomocnikami w Twojej okolicy",
+  "onboardingTitle2": "Szybko, prosto, bezpiecznie",
+  "onboardingSubtitle2": "Zweryfikowani wykonawcy",
+  "onboardingDescription2": "System ocen i bezpieczne płatności",
+  "onboardingTitle3": "Zarabiaj lub zlecaj",
+  "onboardingSubtitle3": "Wybór należy do Ciebie",
+  "onboardingDescription3": "Przeglądaj dostępne zlecenia i zacznij działać już teraz",
+  "onboardingSkip": "Pomiń",
+  "onboardingNext": "Dalej",
+  "onboardingStart": "Zobacz zlecenia",
+  "publicBrowseTitle": "Dostępne zlecenia",
+  "publicBrowseAddTask": "Dodaj zlecenie",
+  "publicBrowseLoginPromptTitle": "Zaloguj się",
+  "publicBrowseLoginPromptMessage": "Aby dodać zlecenie, musisz się najpierw zalogować.",
+  "publicBrowseLoginPromptCancel": "Anuluj",
+  "publicBrowseLoginPromptConfirm": "Zaloguj się",
+  "accountSection": "Konto",
+  "payments": "Płatności",
+  "paymentsCardsPayouts": "Karty i konto do wypłat",
+  "reviews": "Opinie",
+  "security": "Bezpieczeństwo",
+  "preferences": "Preferencje",
+  "support": "Wsparcie",
+  "userFallback": "Użytkownik",
+  "contractorLabel": "Wykonawca",
+  "clientLabel": "Klient",
+  "logoutConfirm": "Czy na pewno chcesz się wylogować?",
+  "accountDeleteLongWarning": "Czy na pewno chcesz usunąć swoje konto? Ta operacja jest nieodwracalna i wszystkie Twoje dane zostaną trwale usunięte.",
+  "chooseLanguage": "Wybierz język",
+  "languagePolish": "Polski",
+  "languageUkrainian": "Українська",
+  "versionWithNumber": "Wersja 1.0.0",
+  "taskListMapTab": "MAPA",
+  "taskListListTab": "LISTA",
+  "taskListFilters": "Filtry",
+  "taskListSelectedFiltersCount": "{count} wybrane",
+  "taskListClearFilters": "Wyczyść",
+  "taskListMultiSelectHint": "Możesz zaznaczyć wiele kategorii",
+  "taskListNoCategoriesToFilter": "Brak kategorii do filtrowania",
+  "taskListTasksCount": "{count} zleceń",
+  "taskListMapEmptyHint": "Na mapie pojawią się zlecenia,\ngdy będą dostępne.",
+  "taskListNoTasksForSelectedCategories": "Brak zleceń dla wybranych kategorii.",
+  "taskListLoadingTasks": "Ładowanie zleceń...",
+  "taskListKycRequiredToApply": "Aby aplikować na zlecenia, musisz najpierw zweryfikować swoją tożsamość.",
+  "taskListApplyDialogTitle": "Zgłoś się do zlecenia",
+  "taskListClientBudget": "Budżet klienta: {price} zł",
+  "taskListYourPriceLabel": "Twoja cena (zł)",
+  "taskListMinPriceHint": "Min. 35 zł",
+  "taskListMessageOptional": "Wiadomość (opcjonalnie)",
+  "taskListExperienceHint": "Opisz swoje doświadczenie...",
+  "taskListSendApplication": "Wyślij zgłoszenie",
+  "taskListMinimumPriceError": "Minimalna cena to 35 zł",
+  "taskListApplicationSent": "Zgłoszenie wysłane! Czekaj na decyzję klienta.",
+  "taskTrackingYou": "Ty",
+  "taskTrackingRefreshStatus": "Odśwież status",
+  "taskTrackingMoreOptions": "Więcej opcji",
+  "taskTrackingNoAddress": "Brak adresu",
+  "taskTrackingNoDescription": "Brak opisu",
+  "taskTrackingScheduleNow": "Termin: Teraz",
+  "taskTrackingScheduleAt": "Termin: {dateTime}",
+  "taskTrackingScheduleUnset": "Termin: Nie określono",
+  "taskTrackingScheduleUnspecified": "Nie określono",
+  "taskTrackingStatusApplicationsTitle": "Zgłoszenia wykonawców",
+  "taskTrackingStatusConfirmedTitle": "Wykonawca potwierdzony",
+  "taskTrackingStatusInProgressTitle": "Praca w toku",
+  "taskTrackingStatusCompletedTitle": "Zakończone",
+  "taskTrackingStatusApplicationsSubtitle": "Czekamy na zgłoszenia...",
+  "taskTrackingStatusConfirmedSubtitle": "Czekamy na rozpoczęcie pracy",
+  "taskTrackingStatusInProgressSubtitle": "Zadanie jest realizowane",
+  "taskTrackingStatusCompletedSubtitle": "Zadanie zostało ukończone",
+  "taskTrackingStepApplications": "Zgłoszenia",
+  "taskTrackingStepConfirmed": "Potwierdzony",
+  "taskTrackingStepInProgress": "W trakcie",
+  "taskTrackingStepDone": "Gotowe",
+  "taskTrackingLoadingApplications": "Ładowanie zgłoszeń...",
+  "taskTrackingApplicationsLoadErrorTitle": "Błąd ładowania zgłoszeń",
+  "taskTrackingWaitingForApplications": "Czekamy na zgłoszenia wykonawców...",
+  "taskTrackingWaitingForApplicationsSubtitle": "Wykonawcy z Twojej okolicy będą się zgłaszać z proponowaną ceną",
+  "taskTrackingApplicationsCount": "Zgłoszenia ({current}/{max})",
+  "taskTrackingAcceptFailed": "Nie udało się zaakceptować: {error}",
+  "taskTrackingRejectFailed": "Nie udało się odrzucić: {error}",
+  "taskTrackingReviewsCount": "{count} opinii",
+  "taskTrackingShowContractorProfile": "Pokaż profil wykonawcy",
+  "taskTrackingConfirmCompletion": "Potwierdź zakończenie",
+  "taskTrackingCancelling": "Anulowanie...",
+  "taskTrackingSupportSubject": "Zgłoszenie problemu - zlecenie {taskId}",
+  "taskTrackingSupportDescribeProblem": "Opisz problem:",
+  "taskTrackingSupportContextHeader": "--- Kontekst ---",
+  "taskTrackingSupportTaskId": "Task ID: {taskId}",
+  "taskTrackingSupportStatus": "Status: {status}",
+  "taskTrackingSupportCategory": "Kategoria: {category}",
+  "taskTrackingNoCategory": "brak",
+  "taskTrackingOpenMailFailed": "Nie udało się otworzyć aplikacji pocztowej",
+  "taskTrackingOpenMailFailedWithError": "Nie udało się otworzyć aplikacji pocztowej: {error}",
+  "taskTrackingImages": "Zdjęcia",
+  "taskTrackingShowTaskImage": "Pokaż zdjęcie zlecenia",
+  "taskTrackingCloseImagePreview": "Zamknij podgląd zdjęcia",
+  "taskTrackingCancelDialogTitle": "Anuluj zlecenie?",
+  "taskTrackingCancelDialogContent": "Czy na pewno chcesz anulować to zlecenie? Może to wiązać się z opłatą.",
+  "taskTrackingCancelDialogConfirm": "Tak, anuluj",
+  "taskTrackingCancelError": "Błąd anulowania: {error}",
+  "taskTrackingNoComment": "Brak komentarza.",
+  "taskTrackingBasedOnReviews": "na podstawie {count} opinii",
+  "taskTrackingNoReviewsToDisplay": "Brak opinii do wyświetlenia.",
+  "taskTrackingContractorProfile": "Profil wykonawcy",
+  "taskTrackingFailedToLoadProfile": "Nie udało się pobrać pełnego profilu",
+  "taskTrackingNoContractorDescription": "Brak opisu wykonawcy.",
+  "taskTrackingDateOfBirth": "Data urodzenia",
+  "taskListAllTab": "Wszystko",
+  "taskListEarningsTab": "Przychody",
+  "taskListWithdrawalsTab": "Wypłaty",
+  "earningsMinimumWithdrawInfo": "Minimalna kwota wypłaty: 50 zł",
+  "earningsWithdrawButtonLabel": "Wypłać {amount} zł",
+  "earningsWithdrawRequested": "Zlecono wypłatę {amount} zł",
+  "earningsInfoTitle": "O zarobkach",
+  "earningsInfoEarningsDescription": "Zarobki z ukończonych zleceń",
+  "earningsInfoPendingDescription": "Środki czekające na potwierdzenie klienta",
+  "earningsInfoWithdrawalsDescription": "Przelewy na Twoje konto bankowe",
+  "earningsInfoCommissionTitle": "Prowizja",
+  "earningsInfoCommissionDescription": "Platforma pobiera 17% od każdego zlecenia",
+  "earningsWithdrawInfoText": "Środki zostaną przelane na Twoje konto bankowe w ciągu 1-3 dni roboczych.",
+  "earningsAmountInvalid": "Wprowadź poprawną kwotę",
+  "earningsMinimumWithdrawError": "Minimalna kwota wypłaty to 50 zł",
+  "earningsInsufficientFunds": "Nie masz wystarczających środków",
+  "genericErrorWithPrefix": "Błąd: {error}",
+  "comingSoon": "{feature} - wkrótce dostępne",
+  "@taskListSelectedFiltersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskListTasksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskListClientBudget": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingScheduleAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingApplicationsCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskTrackingAcceptFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingRejectFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskTrackingSupportSubject": {
+    "placeholders": {
+      "taskId": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportTaskId": {
+    "placeholders": {
+      "taskId": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingOpenMailFailedWithError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingCancelError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingBasedOnReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@earningsWithdrawButtonLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@earningsWithdrawRequested": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@genericErrorWithPrefix": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@comingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  }
+}

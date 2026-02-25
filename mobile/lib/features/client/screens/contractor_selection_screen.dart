@@ -34,10 +34,7 @@ class ContractorSelectionData {
 class ContractorSelectionScreen extends ConsumerStatefulWidget {
   final ContractorSelectionData? taskData;
 
-  const ContractorSelectionScreen({
-    super.key,
-    this.taskData,
-  });
+  const ContractorSelectionScreen({super.key, this.taskData});
 
   @override
   ConsumerState<ContractorSelectionScreen> createState() =>
@@ -80,11 +77,13 @@ class _ContractorSelectionScreenState
         case 'rating':
           _contractors.sort((a, b) => b.rating.compareTo(a.rating));
         case 'price':
-          _contractors.sort((a, b) =>
-              (a.proposedPrice ?? 0).compareTo(b.proposedPrice ?? 0));
+          _contractors.sort(
+            (a, b) => (a.proposedPrice ?? 0).compareTo(b.proposedPrice ?? 0),
+          );
         case 'eta':
           _contractors.sort(
-              (a, b) => (a.etaMinutes ?? 0).compareTo(b.etaMinutes ?? 0));
+            (a, b) => (a.etaMinutes ?? 0).compareTo(b.etaMinutes ?? 0),
+          );
         default: // recommended
           _contractors.sort((a, b) {
             // Score based on rating, distance, and completion
@@ -125,8 +124,8 @@ class _ContractorSelectionScreenState
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _contractors.isEmpty
-                    ? _buildEmptyState()
-                    : _buildContractorList(),
+                ? _buildEmptyState()
+                : _buildContractorList(),
           ),
         ],
       ),
@@ -143,9 +142,7 @@ class _ContractorSelectionScreenState
       decoration: BoxDecoration(
         color: category.color.withValues(alpha: 0.1),
         borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: category.color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: category.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -163,9 +160,7 @@ class _ContractorSelectionScreenState
                 ),
                 Text(
                   '${widget.taskData!.budget} PLN',
-                  style: AppTypography.h4.copyWith(
-                    color: category.color,
-                  ),
+                  style: AppTypography.h4.copyWith(color: category.color),
                 ),
               ],
             ),
@@ -174,17 +169,13 @@ class _ContractorSelectionScreenState
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Icon(
-                widget.taskData!.isImmediate
-                    ? Icons.flash_on
-                    : Icons.schedule,
+                widget.taskData!.isImmediate ? Icons.flash_on : Icons.schedule,
                 color: AppColors.gray500,
                 size: 20,
               ),
               Text(
                 widget.taskData!.isImmediate ? 'Teraz' : 'Zaplanowane',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
           ),
@@ -262,31 +253,23 @@ class _ContractorSelectionScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_search,
-              size: 64,
-              color: AppColors.gray300,
-            ),
+            Icon(Icons.person_search, size: 64, color: AppColors.gray300),
             SizedBox(height: AppSpacing.space4),
             Text(
               'Szukamy pomocników w Twojej okolicy...',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.gray600,
-              ),
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.gray600),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space2),
             Text(
               'Spróbuj ponownie za chwilę lub zwiększ budżet',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
             OutlinedButton(
               onPressed: _loadContractors,
-              child: Text(AppStrings.retry),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -337,184 +320,184 @@ class _ContractorSelectionScreenState
             boxShadow: isSelected ? AppShadows.md : AppShadows.sm,
           ),
           child: Column(
-          children: [
-            Row(
-              children: [
-                // Avatar
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.gray200,
-                      backgroundImage: contractor.avatarUrl != null
-                          ? NetworkImage(contractor.avatarUrl!)
-                          : null,
-                      child: contractor.avatarUrl == null
-                          ? Text(
-                              contractor.name[0].toUpperCase(),
-                              style: AppTypography.h3.copyWith(
-                                color: AppColors.gray600,
+            children: [
+              Row(
+                children: [
+                  // Avatar
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: AppColors.gray200,
+                        backgroundImage: contractor.avatarUrl != null
+                            ? NetworkImage(contractor.avatarUrl!)
+                            : null,
+                        child: contractor.avatarUrl == null
+                            ? Text(
+                                contractor.name[0].toUpperCase(),
+                                style: AppTypography.h3.copyWith(
+                                  color: AppColors.gray600,
+                                ),
+                              )
+                            : null,
+                      ),
+                      if (contractor.isOnline)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 2,
                               ),
-                            )
-                          : null,
-                    ),
-                    if (contractor.isOnline)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.white,
-                              width: 2,
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            contractor.name,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (contractor.isVerified) ...[
-                            SizedBox(width: AppSpacing.gapXS),
-                            Icon(
-                              Icons.verified,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                          ],
-                        ],
-                      ),
-                      SizedBox(height: AppSpacing.gapXS),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            size: 16,
-                            color: AppColors.warning,
-                          ),
-                          SizedBox(width: AppSpacing.gapXS),
-                          Text(
-                            contractor.formattedRating,
-                            style: AppTypography.bodySmall.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            ' (${contractor.reviewCount})',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray500,
-                            ),
-                          ),
-                          SizedBox(width: AppSpacing.gapMD),
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 14,
-                            color: AppColors.gray500,
-                          ),
-                          SizedBox(width: AppSpacing.gapXS),
-                          Text(
-                            '${contractor.completedTasks} zleceń',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray500,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
-                ),
+                  SizedBox(width: AppSpacing.gapMD),
 
-                // Price
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              contractor.name,
+                              style: AppTypography.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (contractor.isVerified) ...[
+                              SizedBox(width: AppSpacing.gapXS),
+                              Icon(
+                                Icons.verified,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: AppSpacing.gapXS),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              size: 16,
+                              color: AppColors.warning,
+                            ),
+                            SizedBox(width: AppSpacing.gapXS),
+                            Text(
+                              contractor.formattedRating,
+                              style: AppTypography.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              ' (${contractor.reviewCount})',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
+                            ),
+                            SizedBox(width: AppSpacing.gapMD),
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 14,
+                              color: AppColors.gray500,
+                            ),
+                            SizedBox(width: AppSpacing.gapXS),
+                            Text(
+                              '${contractor.completedTasks} zleceń',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Price
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${contractor.proposedPrice} PLN',
+                        style: AppTypography.h4.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      if (contractor.etaMinutes != null)
+                        Text(
+                          contractor.formattedEta,
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Distance and ETA bar
+              SizedBox(height: AppSpacing.gapMD),
+              Row(
+                children: [
+                  if (contractor.distanceKm != null) ...[
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
                     Text(
-                      '${contractor.proposedPrice} PLN',
-                      style: AppTypography.h4.copyWith(
+                      contractor.formattedDistance,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray600,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.gapMD),
+                  ],
+                  if (contractor.etaMinutes != null) ...[
+                    Icon(
+                      Icons.directions_walk,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
+                    Text(
+                      'Dotrze za ${contractor.formattedEta}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.gray600,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => _showContractorProfile(contractor),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Zobacz profil',
+                      style: AppTypography.caption.copyWith(
                         color: AppColors.primary,
                       ),
                     ),
-                    if (contractor.etaMinutes != null)
-                      Text(
-                        contractor.formattedEta,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-
-            // Distance and ETA bar
-            SizedBox(height: AppSpacing.gapMD),
-            Row(
-              children: [
-                if (contractor.distanceKm != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    contractor.formattedDistance,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapMD),
-                ],
-                if (contractor.etaMinutes != null) ...[
-                  Icon(
-                    Icons.directions_walk,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    'Dotrze za ${contractor.formattedEta}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
                   ),
                 ],
-                const Spacer(),
-                TextButton(
-                  onPressed: () => _showContractorProfile(contractor),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Zobacz profil',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
           ),
         ),
       ),
@@ -576,9 +559,7 @@ class _ContractorSelectionScreenState
                   horizontal: AppSpacing.paddingLG,
                   vertical: AppSpacing.paddingMD,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.button,
-                ),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
               ),
               child: Text(
                 'Wybierz',
@@ -611,10 +592,7 @@ class PaymentData {
   final ContractorSelectionData taskData;
   final Contractor contractor;
 
-  const PaymentData({
-    required this.taskData,
-    required this.contractor,
-  });
+  const PaymentData({required this.taskData, required this.contractor});
 }
 
 /// Bottom sheet showing contractor profile details
@@ -656,26 +634,17 @@ class _ContractorProfileSheet extends StatelessWidget {
                   backgroundColor: AppColors.gray200,
                   child: Text(
                     contractor.name[0].toUpperCase(),
-                    style: AppTypography.h1.copyWith(
-                      color: AppColors.gray600,
-                    ),
+                    style: AppTypography.h1.copyWith(color: AppColors.gray600),
                   ),
                 ),
                 SizedBox(height: AppSpacing.gapMD),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      contractor.name,
-                      style: AppTypography.h3,
-                    ),
+                    Text(contractor.name, style: AppTypography.h3),
                     if (contractor.isVerified) ...[
                       SizedBox(width: AppSpacing.gapSM),
-                      Icon(
-                        Icons.verified,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
+                      Icon(Icons.verified, color: AppColors.primary, size: 24),
                     ],
                   ],
                 ),
@@ -754,7 +723,7 @@ class _ContractorProfileSheet extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () => context.pop(),
-                    child: Text(AppStrings.close),
+                    child: Text(context.l10n.close),
                   ),
                 ),
               ],
@@ -765,21 +734,15 @@ class _ContractorProfileSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(
-      IconData icon, String value, String label, Color color) {
+  Widget _buildStat(IconData icon, String value, String label, Color color) {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
         SizedBox(height: AppSpacing.gapXS),
-        Text(
-          value,
-          style: AppTypography.h4,
-        ),
+        Text(value, style: AppTypography.h4),
         Text(
           label,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.gray500,
-          ),
+          style: AppTypography.caption.copyWith(color: AppColors.gray500),
         ),
       ],
     );
@@ -787,8 +750,18 @@ class _ContractorProfileSheet extends StatelessWidget {
 
   String _formatMemberSince(DateTime date) {
     final months = [
-      'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
-      'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
+      'stycznia',
+      'lutego',
+      'marca',
+      'kwietnia',
+      'maja',
+      'czerwca',
+      'lipca',
+      'sierpnia',
+      'września',
+      'października',
+      'listopada',
+      'grudnia',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }

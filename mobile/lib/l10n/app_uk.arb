@@ -1,0 +1,457 @@
+{
+  "@@locale": "uk",
+  "appName": "SzybkaFucha",
+  "appTagline": "Допомога ближче, ніж ти думаєш",
+  "loading": "Завантаження...",
+  "error": "Помилка",
+  "success": "Успіх",
+  "cancel": "Скасувати",
+  "confirm": "Підтвердити",
+  "save": "Зберегти",
+  "delete": "Видалити",
+  "edit": "Редагувати",
+  "close": "Закрити",
+  "back": "Назад",
+  "next": "Далі",
+  "done": "Готово",
+  "retry": "Спробувати знову",
+  "yes": "Так",
+  "no": "Ні",
+  "ok": "OK",
+  "search": "Пошук",
+  "noResults": "Немає результатів",
+  "seeAll": "Показати все",
+  "continueText": "Продовжити",
+  "selectCategory": "Оберіть категорію",
+  "schedule": "Термін",
+  "now": "Зараз",
+  "scheduleForLater": "Запланувати на пізніше",
+  "activeTasks": "Активні замовлення",
+  "viewHistory": "Переглянути історію",
+  "noActiveTasks": "Немає активних замовлень",
+  "welcomeTitle": "Допомога ближче, ніж ти думаєш",
+  "welcomeSubtitle": "Знайди помічника для дрібних завдань за кілька хвилин",
+  "iNeedHelp": "Шукаю допомогу",
+  "iWantToEarn": "Хочу допомагати і заробляти",
+  "termsAgreement": "Приєднуючись, ти приймаєш Регламент і Політику конфіденційності",
+  "login": "Увійти",
+  "logout": "Вийти",
+  "register": "Зареєструватися",
+  "continueWithGoogle": "Продовжити з Google",
+  "continueWithApple": "Продовжити з Apple",
+  "continueWithPhone": "Продовжити з номером телефону",
+  "orContinueWith": "або продовжити через",
+  "phoneNumber": "Номер телефону",
+  "enterPhoneNumber": "Введи номер телефону",
+  "sendCode": "Надіслати код",
+  "verificationCode": "Код підтвердження",
+  "enterCode": "Введи код із SMS",
+  "resendCode": "Надіслати знову",
+  "resendCodeIn": "Надіслати знову через",
+  "invalidPhoneNumber": "Неправильний номер телефону",
+  "invalidCode": "Неправильний код",
+  "codeSent": "Код було надіслано",
+  "yourName": "Твоє ім’я",
+  "enterYourName": "Введи своє ім’я",
+  "selectUserType": "Оберіть тип акаунта",
+  "iAmClient": "Шукаю допомогу",
+  "iAmContractor": "Хочу допомагати",
+  "clientDescription": "Знайди помічників для дрібних завдань",
+  "contractorDescription": "Заробляй, допомагаючи іншим",
+  "categories": "Категорії",
+  "categoryPackages": "Посилки",
+  "categoryShopping": "Покупки",
+  "categoryQueues": "Черги",
+  "categoryAssembly": "Монтаж",
+  "categoryMoving": "Переїзди",
+  "categoryCleaning": "Прибирання",
+  "createTask": "Створити замовлення",
+  "taskTitle": "Назва замовлення",
+  "taskDescription": "Опис замовлення",
+  "describeTask": "Опиши завдання...",
+  "taskLocation": "Локація",
+  "selectLocation": "Оберіть локацію",
+  "taskBudget": "Бюджет",
+  "suggestedBudget": "Рекомендований бюджет",
+  "taskDate": "Дата виконання",
+  "selectDate": "Оберіть дату",
+  "taskTime": "Час",
+  "selectTime": "Оберіть час",
+  "asap": "Якнайшвидше",
+  "postTask": "Опублікувати замовлення",
+  "statusPosted": "Опубліковано",
+  "statusAccepted": "Прийнято",
+  "statusInProgress": "У процесі",
+  "statusCompleted": "Завершено",
+  "statusCancelled": "Скасовано",
+  "statusDisputed": "Спірне",
+  "taskDetails": "Деталі замовлення",
+  "postedBy": "Замовник",
+  "acceptedBy": "Виконавець",
+  "budget": "Бюджет",
+  "location": "Локація",
+  "dateTime": "Дата і час",
+  "description": "Опис",
+  "acceptTask": "Прийняти замовлення",
+  "cancelTask": "Скасувати замовлення",
+  "completeTask": "Завершити замовлення",
+  "reportProblem": "Повідомити про проблему",
+  "tracking": "Відстеження",
+  "contractorOnTheWay": "Виконавець у дорозі",
+  "estimatedArrival": "Орієнтовний час прибуття",
+  "minutes": "хв",
+  "arrived": "На місці",
+  "workInProgress": "Робота триває",
+  "chat": "Чат",
+  "typeMessage": "Напиши повідомлення...",
+  "send": "Надіслати",
+  "messageDelivered": "Доставлено",
+  "messageRead": "Прочитано",
+  "rateTask": "Оціни замовлення",
+  "howWasService": "Як ти оцінюєш виконану послугу?",
+  "leaveReview": "Залиши відгук (необов’язково)",
+  "submitRating": "Надіслати оцінку",
+  "addTip": "Додати чайові",
+  "tipAmount": "Сума чайових",
+  "availableTasks": "Доступні замовлення",
+  "myTasks": "Мої замовлення",
+  "noAvailableTasks": "Поруч немає доступних замовлень",
+  "earnings": "Заробіток",
+  "todayEarnings": "Сьогодні",
+  "weekEarnings": "Цього тижня",
+  "monthEarnings": "Цього місяця",
+  "totalEarnings": "Разом",
+  "withdraw": "Вивести",
+  "withdrawFunds": "Вивести кошти",
+  "availableBalance": "Доступний баланс",
+  "pendingBalance": "Очікується",
+  "transactionHistory": "Історія транзакцій",
+  "menuHome": "Головна",
+  "menuTasks": "Замовлення",
+  "menuProfile": "Профіль",
+  "profile": "Профіль",
+  "editProfile": "Редагувати профіль",
+  "myReviews": "Мої відгуки",
+  "settings": "Налаштування",
+  "help": "Допомога",
+  "about": "Про застосунок",
+  "termsOfService": "Регламент",
+  "privacyPolicy": "Політика конфіденційності",
+  "version": "Версія",
+  "completedTasks": "Завершені замовлення",
+  "rating": "Рейтинг",
+  "memberSince": "Учасник з",
+  "kycVerification": "Верифікація особи",
+  "kycRequired": "Потрібна верифікація",
+  "kycDescription": "Щоб приймати замовлення, потрібно підтвердити особу",
+  "startVerification": "Почати верифікацію",
+  "uploadId": "Завантаж документ, що посвідчує особу",
+  "takeSelfie": "Зроби селфі",
+  "verificationPending": "Верифікація триває",
+  "verificationApproved": "Верифікацію схвалено",
+  "verificationRejected": "Верифікацію відхилено",
+  "notifications": "Сповіщення",
+  "noNotifications": "Немає сповіщень",
+  "markAllRead": "Позначити все як прочитане",
+  "notificationSettings": "Налаштування сповіщень",
+  "pushNotifications": "Push-сповіщення",
+  "emailNotifications": "Email-сповіщення",
+  "smsNotifications": "SMS-сповіщення",
+  "language": "Мова",
+  "deleteAccount": "Видалити акаунт",
+  "deleteAccountWarning": "Ви впевнені, що хочете видалити акаунт? Ця дія незворотна.",
+  "errorGeneric": "Сталася помилка. Спробуй ще раз.",
+  "errorNetwork": "Немає підключення до інтернету",
+  "errorServer": "Помилка сервера. Спробуй пізніше.",
+  "errorUnauthorized": "Сесію завершено. Увійди знову.",
+  "errorForbidden": "Немає прав для виконання цієї дії",
+  "errorNotFound": "Не знайдено",
+  "errorValidation": "Неправильні дані",
+  "errorLocationPermission": "Потрібен доступ до локації",
+  "errorCameraPermission": "Потрібен доступ до камери",
+  "taskCreated": "Замовлення створено",
+  "taskAccepted": "Замовлення прийнято",
+  "taskCompleted": "Замовлення завершено",
+  "taskCancelled": "Замовлення скасовано",
+  "ratingSubmitted": "Дякуємо за оцінку!",
+  "profileUpdated": "Профіль оновлено",
+  "withdrawalRequested": "Запит на виплату надіслано",
+  "noTasks": "Немає замовлень",
+  "noTasksDescription": "У тебе ще немає замовлень",
+  "noHistory": "Немає історії",
+  "noHistoryDescription": "Історія замовлень з’явиться тут",
+  "noMessages": "Немає повідомлень",
+  "noMessagesDescription": "Почни розмову",
+  "today": "Сьогодні",
+  "yesterday": "Вчора",
+  "justNow": "Щойно",
+  "minutesAgo": "хв тому",
+  "hoursAgo": "год тому",
+  "daysAgo": "дн тому",
+  "currency": "PLN",
+  "currencySymbol": "zł",
+  "onboardingTitle1": "Потрібна допомога?",
+  "onboardingSubtitle1": "Знайди її за 5 хвилин",
+  "onboardingDescription1": "Szybka Fucha з’єднує тебе з помічниками поруч",
+  "onboardingTitle2": "Швидко, просто, безпечно",
+  "onboardingSubtitle2": "Перевірені виконавці",
+  "onboardingDescription2": "Система оцінок і безпечні платежі",
+  "onboardingTitle3": "Заробляй або замовляй",
+  "onboardingSubtitle3": "Вибір за тобою",
+  "onboardingDescription3": "Переглядай доступні замовлення і починай вже зараз",
+  "onboardingSkip": "Пропустити",
+  "onboardingNext": "Далі",
+  "onboardingStart": "Переглянути замовлення",
+  "publicBrowseTitle": "Доступні замовлення",
+  "publicBrowseAddTask": "Додати замовлення",
+  "publicBrowseLoginPromptTitle": "Увійти",
+  "publicBrowseLoginPromptMessage": "Щоб додати замовлення, спочатку увійди.",
+  "publicBrowseLoginPromptCancel": "Скасувати",
+  "publicBrowseLoginPromptConfirm": "Увійти",
+  "accountSection": "Акаунт",
+  "payments": "Платежі",
+  "paymentsCardsPayouts": "Картки та рахунок для виплат",
+  "reviews": "Відгуки",
+  "security": "Безпека",
+  "preferences": "Налаштування",
+  "support": "Підтримка",
+  "userFallback": "Користувач",
+  "contractorLabel": "Виконавець",
+  "clientLabel": "Клієнт",
+  "logoutConfirm": "Ви впевнені, що хочете вийти?",
+  "accountDeleteLongWarning": "Ви впевнені, що хочете видалити свій акаунт? Ця дія незворотна, і всі ваші дані буде видалено назавжди.",
+  "chooseLanguage": "Оберіть мову",
+  "languagePolish": "Polski",
+  "languageUkrainian": "Українська",
+  "versionWithNumber": "Версія 1.0.0",
+  "taskListMapTab": "КАРТА",
+  "taskListListTab": "СПИСОК",
+  "taskListFilters": "Фільтри",
+  "taskListSelectedFiltersCount": "{count} вибрано",
+  "taskListClearFilters": "Очистити",
+  "taskListMultiSelectHint": "Можна вибрати кілька категорій",
+  "taskListNoCategoriesToFilter": "Немає категорій для фільтрації",
+  "taskListTasksCount": "{count} замовлень",
+  "taskListMapEmptyHint": "Замовлення з’являться на карті,\nколи будуть доступні.",
+  "taskListNoTasksForSelectedCategories": "Немає замовлень для вибраних категорій.",
+  "taskListLoadingTasks": "Завантаження замовлень...",
+  "taskListKycRequiredToApply": "Щоб подаватися на замовлення, спочатку потрібно підтвердити особу.",
+  "taskListApplyDialogTitle": "Податися на замовлення",
+  "taskListClientBudget": "Бюджет клієнта: {price} zł",
+  "taskListYourPriceLabel": "Твоя ціна (zł)",
+  "taskListMinPriceHint": "Мін. 35 zł",
+  "taskListMessageOptional": "Повідомлення (необов’язково)",
+  "taskListExperienceHint": "Опиши свій досвід...",
+  "taskListSendApplication": "Надіслати заявку",
+  "taskListMinimumPriceError": "Мінімальна ціна: 35 zł",
+  "taskListApplicationSent": "Заявку надіслано! Чекай на рішення клієнта.",
+  "taskTrackingYou": "Ти",
+  "taskTrackingRefreshStatus": "Оновити статус",
+  "taskTrackingMoreOptions": "Більше опцій",
+  "taskTrackingNoAddress": "Немає адреси",
+  "taskTrackingNoDescription": "Немає опису",
+  "taskTrackingScheduleNow": "Термін: Зараз",
+  "taskTrackingScheduleAt": "Термін: {dateTime}",
+  "taskTrackingScheduleUnset": "Термін: Не вказано",
+  "taskTrackingScheduleUnspecified": "Не вказано",
+  "taskTrackingStatusApplicationsTitle": "Заявки виконавців",
+  "taskTrackingStatusConfirmedTitle": "Виконавця підтверджено",
+  "taskTrackingStatusInProgressTitle": "Робота триває",
+  "taskTrackingStatusCompletedTitle": "Завершено",
+  "taskTrackingStatusApplicationsSubtitle": "Очікуємо заявки...",
+  "taskTrackingStatusConfirmedSubtitle": "Очікуємо початку роботи",
+  "taskTrackingStatusInProgressSubtitle": "Замовлення виконується",
+  "taskTrackingStatusCompletedSubtitle": "Замовлення завершено",
+  "taskTrackingStepApplications": "Заявки",
+  "taskTrackingStepConfirmed": "Підтверджено",
+  "taskTrackingStepInProgress": "У процесі",
+  "taskTrackingStepDone": "Готово",
+  "taskTrackingLoadingApplications": "Завантаження заявок...",
+  "taskTrackingApplicationsLoadErrorTitle": "Помилка завантаження заявок",
+  "taskTrackingWaitingForApplications": "Очікуємо заявки виконавців...",
+  "taskTrackingWaitingForApplicationsSubtitle": "Виконавці поруч із тобою надсилатимуть заявки зі своєю ціною",
+  "taskTrackingApplicationsCount": "Заявки ({current}/{max})",
+  "taskTrackingAcceptFailed": "Не вдалося прийняти: {error}",
+  "taskTrackingRejectFailed": "Не вдалося відхилити: {error}",
+  "taskTrackingReviewsCount": "{count} відгуків",
+  "taskTrackingShowContractorProfile": "Показати профіль виконавця",
+  "taskTrackingConfirmCompletion": "Підтвердити завершення",
+  "taskTrackingCancelling": "Скасування...",
+  "taskTrackingSupportSubject": "Повідомлення про проблему - замовлення {taskId}",
+  "taskTrackingSupportDescribeProblem": "Опиши проблему:",
+  "taskTrackingSupportContextHeader": "--- Контекст ---",
+  "taskTrackingSupportTaskId": "Task ID: {taskId}",
+  "taskTrackingSupportStatus": "Статус: {status}",
+  "taskTrackingSupportCategory": "Категорія: {category}",
+  "taskTrackingNoCategory": "немає",
+  "taskTrackingOpenMailFailed": "Не вдалося відкрити поштовий застосунок",
+  "taskTrackingOpenMailFailedWithError": "Не вдалося відкрити поштовий застосунок: {error}",
+  "taskTrackingImages": "Фото",
+  "taskTrackingShowTaskImage": "Показати фото замовлення",
+  "taskTrackingCloseImagePreview": "Закрити перегляд фото",
+  "taskTrackingCancelDialogTitle": "Скасувати замовлення?",
+  "taskTrackingCancelDialogContent": "Ти впевнений(а), що хочеш скасувати це замовлення? Це може бути пов’язано з оплатою.",
+  "taskTrackingCancelDialogConfirm": "Так, скасувати",
+  "taskTrackingCancelError": "Помилка скасування: {error}",
+  "taskTrackingNoComment": "Немає коментаря.",
+  "taskTrackingBasedOnReviews": "на основі {count} відгуків",
+  "taskTrackingNoReviewsToDisplay": "Немає відгуків для показу.",
+  "taskTrackingContractorProfile": "Профіль виконавця",
+  "taskTrackingFailedToLoadProfile": "Не вдалося завантажити повний профіль",
+  "taskTrackingNoContractorDescription": "Немає опису виконавця.",
+  "taskTrackingDateOfBirth": "Дата народження",
+  "taskListAllTab": "Усе",
+  "taskListEarningsTab": "Надходження",
+  "taskListWithdrawalsTab": "Виплати",
+  "earningsMinimumWithdrawInfo": "Мінімальна сума виплати: 50 zł",
+  "earningsWithdrawButtonLabel": "Вивести {amount} zł",
+  "earningsWithdrawRequested": "Запит на виплату {amount} zł надіслано",
+  "earningsInfoTitle": "Про заробіток",
+  "earningsInfoEarningsDescription": "Заробіток із завершених замовлень",
+  "earningsInfoPendingDescription": "Кошти, що очікують підтвердження клієнта",
+  "earningsInfoWithdrawalsDescription": "Перекази на твій банківський рахунок",
+  "earningsInfoCommissionTitle": "Комісія",
+  "earningsInfoCommissionDescription": "Платформа утримує 17% з кожного замовлення",
+  "earningsWithdrawInfoText": "Кошти буде переказано на твій банківський рахунок протягом 1-3 робочих днів.",
+  "earningsAmountInvalid": "Введи коректну суму",
+  "earningsMinimumWithdrawError": "Мінімальна сума виплати: 50 zł",
+  "earningsInsufficientFunds": "Недостатньо коштів",
+  "genericErrorWithPrefix": "Помилка: {error}",
+  "comingSoon": "{feature} - незабаром доступно",
+  "@taskListSelectedFiltersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskListTasksCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskListClientBudget": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingScheduleAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingApplicationsCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskTrackingAcceptFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingRejectFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@taskTrackingSupportSubject": {
+    "placeholders": {
+      "taskId": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportTaskId": {
+    "placeholders": {
+      "taskId": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingSupportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingOpenMailFailedWithError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingCancelError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@taskTrackingBasedOnReviews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@earningsWithdrawButtonLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@earningsWithdrawRequested": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@genericErrorWithPrefix": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@comingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  }
+}

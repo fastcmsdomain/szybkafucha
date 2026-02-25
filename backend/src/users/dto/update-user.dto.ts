@@ -9,7 +9,9 @@ import {
   IsUrl,
   IsEmail,
   IsDateString,
+  IsEnum,
 } from 'class-validator';
+import { PreferredLanguage } from '../entities/user.entity';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -42,4 +44,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsDateString()
   dateOfBirth?: string | null;
+
+  @IsOptional()
+  @IsEnum(PreferredLanguage)
+  preferredLanguage?: PreferredLanguage;
 }

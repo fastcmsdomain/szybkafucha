@@ -26,6 +26,11 @@ export enum UserStatus {
   DELETED = 'deleted',
 }
 
+export enum PreferredLanguage {
+  PL = 'pl',
+  UK = 'uk',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -54,6 +59,9 @@ export class User {
 
   @Column({ type: 'date', nullable: true })
   dateOfBirth: string | null;
+
+  @Column({ type: 'varchar', length: 5, default: PreferredLanguage.PL })
+  preferredLanguage: PreferredLanguage;
 
   @Column({
     type: 'enum',

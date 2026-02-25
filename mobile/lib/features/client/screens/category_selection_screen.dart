@@ -27,7 +27,7 @@ class _CategorySelectionScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: SFRainbowText(AppStrings.selectCategory),
+        title: SFRainbowText(context.l10n.selectCategory),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -37,10 +37,7 @@ class _CategorySelectionScreenState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header text
-              Text(
-                'Czego potrzebujesz?',
-                style: AppTypography.h3,
-              ),
+              Text('Czego potrzebujesz?', style: AppTypography.h3),
 
               SizedBox(height: AppSpacing.gapSM),
 
@@ -70,8 +67,8 @@ class _CategorySelectionScreenState
                             width: itemWidth,
                             child: CategoryCard(
                               category: category,
-                              isSelected: _selectedCategory ==
-                                  category.category,
+                              isSelected:
+                                  _selectedCategory == category.category,
                               onTap: () {
                                 setState(() {
                                   _selectedCategory = category.category;
@@ -95,19 +92,19 @@ class _CategorySelectionScreenState
 
               // Continue button
               ElevatedButton(
-                onPressed: _selectedCategory != null ? _continueToDetails : null,
+                onPressed: _selectedCategory != null
+                    ? _continueToDetails
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
                   disabledBackgroundColor: AppColors.gray200,
                   disabledForegroundColor: AppColors.gray400,
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.button,
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 child: Text(
-                  AppStrings.continueText,
+                  context.l10n.continueText,
                   style: AppTypography.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -128,9 +125,7 @@ class _CategorySelectionScreenState
       decoration: BoxDecoration(
         color: category.color.withValues(alpha: 0.1),
         borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: category.color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: category.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -141,11 +136,7 @@ class _CategorySelectionScreenState
               color: category.color.withValues(alpha: 0.2),
               borderRadius: AppRadius.radiusSM,
             ),
-            child: Icon(
-              category.icon,
-              color: category.color,
-              size: 24,
-            ),
+            child: Icon(category.icon, color: category.color, size: 24),
           ),
           SizedBox(width: AppSpacing.gapMD),
           Expanded(
@@ -180,9 +171,7 @@ class _CategorySelectionScreenState
               ),
               Text(
                 category.estimatedTime,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
           ),
@@ -195,9 +184,6 @@ class _CategorySelectionScreenState
     if (_selectedCategory == null) return;
 
     // Navigate to task details screen with selected category
-    context.push(
-      Routes.clientCreateTask,
-      extra: _selectedCategory,
-    );
+    context.push(Routes.clientCreateTask, extra: _selectedCategory);
   }
 }

@@ -14,12 +14,16 @@ import 'storage_provider.dart';
 enum AuthStatus {
   /// App just started, checking for stored credentials
   initial,
+
   /// Checking stored token validity with backend
   loading,
+
   /// User is logged in
   authenticated,
+
   /// User is not logged in
   unauthenticated,
+
   /// Auth error occurred
   error,
 }
@@ -31,7 +35,9 @@ class User {
   final String? name;
   final String? phone;
   final DateTime? dateOfBirth;
-  final List<String> userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
+  final String preferredLanguage; // 'pl' | 'uk'
+  final List<String>
+  userTypes; // ['client'] or ['contractor'] or ['client', 'contractor']
   final String? avatarUrl;
   final bool isVerified;
   final String? address;
@@ -43,6 +49,7 @@ class User {
     this.name,
     this.phone,
     this.dateOfBirth,
+    this.preferredLanguage = 'pl',
     required this.userTypes,
     this.avatarUrl,
     this.isVerified = false,
@@ -76,29 +83,32 @@ class User {
       dateOfBirth: _parseDate(
         json['dateOfBirth'] ?? json['date_of_birth'] ?? json['birthDate'],
       ),
+      preferredLanguage:
+          (json['preferredLanguage'] ?? json['preferred_language'] ?? 'pl')
+              .toString(),
       userTypes: userTypes,
       // Convert relative avatar URL to full URL
       avatarUrl: ApiConfig.getFullMediaUrl(rawAvatarUrl),
       // Backend returns 'status', check if active
-      isVerified: json['is_verified'] as bool? ??
-                  (json['status'] == 'active'),
+      isVerified: json['is_verified'] as bool? ?? (json['status'] == 'active'),
       address: json['address'] as String?,
       bio: json['bio'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'name': name,
-        'phone': phone,
-        'dateOfBirth': dateOfBirth?.toIso8601String(),
-        'types': userTypes,
-        'avatar_url': avatarUrl,
-        'is_verified': isVerified,
-        'address': address,
-        'bio': bio,
-      };
+    'id': id,
+    'email': email,
+    'name': name,
+    'phone': phone,
+    'dateOfBirth': dateOfBirth?.toIso8601String(),
+    'preferredLanguage': preferredLanguage,
+    'types': userTypes,
+    'avatar_url': avatarUrl,
+    'is_verified': isVerified,
+    'address': address,
+    'bio': bio,
+  };
 
   static DateTime? _parseDate(dynamic value) {
     if (value == null) return null;
@@ -117,6 +127,7 @@ class User {
     String? name,
     String? phone,
     DateTime? dateOfBirth,
+    String? preferredLanguage,
     List<String>? userTypes,
     String? avatarUrl,
     bool? isVerified,
@@ -129,6 +140,7 @@ class User {
       name: name ?? this.name,
       phone: phone ?? this.phone,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       userTypes: userTypes ?? this.userTypes,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       isVerified: isVerified ?? this.isVerified,
@@ -181,7 +193,9 @@ class AuthState {
       error: clearError ? null : (error ?? this.error),
       activeRole: activeRole ?? this.activeRole,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
-      selectedRole: clearSelectedRole ? null : (selectedRole ?? this.selectedRole),
+      selectedRole: clearSelectedRole
+          ? null
+          : (selectedRole ?? this.selectedRole),
     );
   }
 
@@ -189,6 +203,7 @@ class AuthState {
   bool get isLoading =>
       status == AuthStatus.initial || status == AuthStatus.loading;
   bool get hasError => status == AuthStatus.error;
+
   /// Whether the user has completed the role selection step
   bool get roleSelected => selectedRole != null;
 }
@@ -208,6 +223,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'client@test.pl',
     name: 'Jan Kowalski',
     phone: '+48123456789',
+    preferredLanguage: 'pl',
     userTypes: ['client'],
     isVerified: true,
   );
@@ -217,6 +233,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     email: 'contractor@test.pl',
     name: 'Anna Nowak',
     phone: '+48987654321',
+    preferredLanguage: 'pl',
     userTypes: ['contractor'],
     isVerified: true,
   );
@@ -291,7 +308,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
 
       // Migration for existing users: derive selectedRole from stored account role
-      if (selectedRole == null && cachedUser != null && cachedUser.userTypes.isNotEmpty) {
+      if (selectedRole == null &&
+          cachedUser != null &&
+          cachedUser.userTypes.isNotEmpty) {
         selectedRole = cachedUser.userTypes.first;
         await _storage.saveSelectedRole(selectedRole);
       }
@@ -421,10 +440,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Login with email and password (for testing)
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     state = state.copyWith(status: AuthStatus.loading, clearError: true);
 
     try {
@@ -455,10 +471,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -509,10 +522,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -554,10 +564,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -597,10 +604,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -648,10 +652,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         clearError: true,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -702,10 +703,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: user,
       );
     } catch (e) {
-      state = state.copyWith(
-        status: AuthStatus.error,
-        error: e.toString(),
-      );
+      state = state.copyWith(status: AuthStatus.error, error: e.toString());
       rethrow;
     }
   }
@@ -765,11 +763,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       await api.post<Map<String, dynamic>>(
         '/auth/email/reset-password',
-        data: {
-          'email': email,
-          'code': code,
-          'newPassword': newPassword,
-        },
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
       );
     } catch (e) {
       rethrow;
@@ -787,10 +781,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       final response = await api.patch<Map<String, dynamic>>(
         '/users/me',
-        data: {
-          'name': name,
-          'user_type': userType,
-        },
+        data: {'name': name, 'user_type': userType},
       );
 
       final user = User.fromJson(response);
@@ -839,10 +830,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Update user profile
-  Future<void> updateProfile({
-    String? name,
-    String? avatarUrl,
-  }) async {
+  Future<void> updateProfile({String? name, String? avatarUrl}) async {
     if (!state.isAuthenticated) return;
 
     try {
@@ -880,6 +868,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Update only preferred language in local auth state/cache.
+  /// Used for optimistic locale updates without forcing full user refresh.
+  Future<void> setPreferredLanguageLocal(String languageCode) async {
+    final user = state.user;
+    if (user == null) return;
+
+    final normalized = languageCode.toLowerCase() == 'uk' ? 'uk' : 'pl';
+    final updatedUser = user.copyWith(preferredLanguage: normalized);
+    await _storage.saveUserData(jsonEncode(updatedUser.toJson()));
+    state = state.copyWith(user: updatedUser);
+  }
+
   /// Add a role to the current user (client or contractor)
   /// Creates empty profile when role is added
   Future<void> addRole(String role) async {
@@ -896,9 +896,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await refreshUser();
     } catch (e) {
       // Error adding role
-      state = state.copyWith(
-        error: 'Failed to add role: $e',
-      );
+      state = state.copyWith(error: 'Failed to add role: $e');
       rethrow;
     }
   }

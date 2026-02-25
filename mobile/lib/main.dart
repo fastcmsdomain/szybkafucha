@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/l10n.dart';
+import 'core/providers/locale_provider.dart';
 import 'core/router/router.dart';
 import 'core/services/notification_service.dart';
 import 'core/theme/theme.dart';
@@ -33,7 +34,9 @@ void main() async {
     // Firebase initialization error
     print('⚠️ Firebase initialization failed: $e');
     print('⚠️ App will run without push notifications');
-    print('⚠️ Ensure Firebase credentials are configured in firebase_options.dart');
+    print(
+      '⚠️ Ensure Firebase credentials are configured in firebase_options.dart',
+    );
   }
 
   // Set preferred orientations
@@ -52,11 +55,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    const ProviderScope(
-      child: SzybkaFuchaApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: SzybkaFuchaApp()));
 }
 
 class SzybkaFuchaApp extends ConsumerWidget {
@@ -65,21 +64,19 @@ class SzybkaFuchaApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final locale = ref.watch(localeProvider);
 
     return WebSocketInitializer(
       child: NotificationInitializer(
         child: MaterialApp.router(
-          title: AppStrings.appName,
+          title: 'SzybkaFucha',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           routerConfig: router,
-          // Locale settings for Polish
-          locale: const Locale('pl', 'PL'),
-          supportedLocales: const [
-            Locale('pl', 'PL'),
-            Locale('en', 'US'), // Fallback
-          ],
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: const [
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,

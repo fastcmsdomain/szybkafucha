@@ -9,6 +9,7 @@ import '../../features/client/screens/client_profile_screen.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
 import '../../features/profile/profile.dart';
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
 import 'routes.dart';
 
@@ -153,16 +154,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.termsOfService,
         name: 'termsOfService',
-        builder: (context, state) => const LegalDocumentScreen(
-          title: 'Regulamin',
+        builder: (context, state) => LegalDocumentScreen(
+          title: context.l10n.termsOfService,
           assetPath: 'assets/legal/terms_of_service.txt',
         ),
       ),
       GoRoute(
         path: Routes.privacyPolicy,
         name: 'privacyPolicy',
-        builder: (context, state) => const LegalDocumentScreen(
-          title: 'Polityka prywatności',
+        builder: (context, state) => LegalDocumentScreen(
+          title: context.l10n.privacyPolicy,
           assetPath: 'assets/legal/privacy_policy.txt',
         ),
       ),
@@ -318,8 +319,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
-                taskTitle: extra?['taskTitle'] ?? 'Czat',
-                otherUserName: extra?['otherUserName'] ?? 'Wykonawca',
+                taskTitle: extra?['taskTitle'] ?? context.l10n.chat,
+                otherUserName:
+                    extra?['otherUserName'] ?? context.l10n.contractorLabel,
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
                 currentUserId: extra?['currentUserId'] ?? '',
                 currentUserName: extra?['currentUserName'] ?? '',
@@ -435,7 +437,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
-                taskTitle: extra?['taskTitle'] ?? 'Czat',
+                taskTitle: extra?['taskTitle'] ?? context.l10n.chat,
                 otherUserName: extra?['otherUserName'] ?? 'Unknown',
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
                 currentUserId: extra?['currentUserId'] ?? 'user_id',
@@ -524,26 +526,26 @@ class _ClientShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
-            label: 'Główna',
+            label: context.l10n.menuHome,
           ),
           NavigationDestination(
             icon: Icon(Icons.work_outline),
             selectedIcon: Icon(Icons.work),
-            label: 'Zlecenia',
+            label: context.l10n.menuTasks,
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
-            label: 'Historia',
+            label: context.l10n.viewHistory,
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
-            label: 'Profil',
+            label: context.l10n.menuProfile,
           ),
         ],
         selectedIndex: _calculateSelectedIndex(context),
@@ -588,26 +590,26 @@ class _ContractorShell extends StatelessWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
-            label: 'Główna',
+            label: context.l10n.menuHome,
           ),
           NavigationDestination(
             icon: Icon(Icons.work_outline),
             selectedIcon: Icon(Icons.work),
-            label: 'Zlecenia',
+            label: context.l10n.menuTasks,
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
-            label: 'Historia',
+            label: context.l10n.viewHistory,
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
-            label: 'Profil',
+            label: context.l10n.menuProfile,
           ),
         ],
         selectedIndex: _calculateSelectedIndex(context),

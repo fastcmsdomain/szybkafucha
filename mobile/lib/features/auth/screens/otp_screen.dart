@@ -30,10 +30,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     6,
     (_) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    6,
-    (_) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _isLoading = false;
   int _resendCountdown = 60;
@@ -79,10 +76,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: Text(
-          AppStrings.verificationCode,
-          style: AppTypography.h4,
-        ),
+        title: Text(context.l10n.verificationCode, style: AppTypography.h4),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -132,9 +126,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.button,
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 child: _isLoading
                     ? SizedBox(
@@ -190,16 +182,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
               contentPadding: EdgeInsets.zero,
             ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
               if (value.isNotEmpty && index < 5) {
                 _focusNodes[index + 1].requestFocus();
@@ -223,11 +210,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       onPressed: _resendCountdown == 0 ? _resendCode : null,
       child: Text(
         _resendCountdown > 0
-            ? '${AppStrings.resendCodeIn} ${_resendCountdown}s'
-            : AppStrings.resendCode,
+            ? '${context.l10n.resendCodeIn} ${_resendCountdown}s'
+            : context.l10n.resendCode,
         style: AppTypography.bodyMedium.copyWith(
-          color:
-              _resendCountdown > 0 ? AppColors.gray400 : AppColors.primary,
+          color: _resendCountdown > 0 ? AppColors.gray400 : AppColors.primary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -254,7 +240,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     try {
       // Verify OTP via auth provider
-      await ref.read(authProvider.notifier).verifyPhoneOtp(
+      await ref
+          .read(authProvider.notifier)
+          .verifyPhoneOtp(
             phone: widget.phoneNumber,
             otp: otp,
             userType: _selectedUserType,
@@ -289,7 +277,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppStrings.codeSent),
+            content: Text(context.l10n.codeSent),
             backgroundColor: AppColors.success,
           ),
         );

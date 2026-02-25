@@ -21,7 +21,8 @@ class PublicHomeScreen extends StatelessWidget {
           padding: EdgeInsets.all(AppSpacing.paddingLG),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -32,13 +33,13 @@ class PublicHomeScreen extends StatelessWidget {
                 _buildLogo(),
                 SizedBox(height: AppSpacing.space8),
                 Text(
-                  AppStrings.welcomeTitle,
+                  context.l10n.welcomeTitle,
                   style: AppTypography.h3,
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: AppSpacing.space3),
                 Text(
-                  AppStrings.welcomeSubtitle,
+                  context.l10n.welcomeSubtitle,
                   style: AppTypography.bodyLarge.copyWith(
                     color: AppColors.gray600,
                   ),
@@ -49,7 +50,7 @@ class PublicHomeScreen extends StatelessWidget {
                   onPressed: () => context.go(Routes.browse),
                   icon: const Icon(Icons.work_outline),
                   label: Text(
-                    AppStrings.menuTasks,
+                    context.l10n.menuTasks,
                     style: AppTypography.buttonMedium.copyWith(
                       color: Colors.white,
                     ),
@@ -67,7 +68,7 @@ class PublicHomeScreen extends StatelessWidget {
                   onPressed: () => context.go(_profileLoginRoute),
                   icon: const Icon(Icons.person_outline),
                   label: Text(
-                    AppStrings.login,
+                    context.l10n.login,
                     style: AppTypography.buttonMedium.copyWith(
                       color: AppColors.primary,
                     ),
@@ -108,15 +109,10 @@ class PublicHomeScreen extends StatelessWidget {
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(
-                text: 'Szybka',
-                style: AppTypography.h3,
-              ),
+              TextSpan(text: 'Szybka', style: AppTypography.h3),
               TextSpan(
                 text: 'Fucha',
-                style: AppTypography.h3.copyWith(
-                  color: AppColors.primary,
-                ),
+                style: AppTypography.h3.copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -135,30 +131,28 @@ class PublicHomeScreen extends StatelessWidget {
           context.go(_profileLoginRoute);
         }
       },
-      destinations: const [
+      destinations: [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
-          label: AppStrings.menuHome,
+          label: context.l10n.menuHome,
         ),
         NavigationDestination(
           icon: Icon(Icons.work_outline),
           selectedIcon: Icon(Icons.work),
-          label: AppStrings.menuTasks,
+          label: context.l10n.menuTasks,
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
-          label: AppStrings.menuProfile,
+          label: context.l10n.menuProfile,
         ),
       ],
     );
   }
 
   Widget _buildLegalConsent(BuildContext context) {
-    final baseStyle = AppTypography.caption.copyWith(
-      color: AppColors.gray500,
-    );
+    final baseStyle = AppTypography.caption.copyWith(color: AppColors.gray500);
     final linkStyle = AppTypography.caption.copyWith(
       color: AppColors.primary,
       fontWeight: FontWeight.w700,

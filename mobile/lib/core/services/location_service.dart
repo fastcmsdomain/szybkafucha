@@ -18,6 +18,12 @@ enum LocationPermissionStatus {
 class LocationService {
   static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const String _userAgent = 'SzybkaFucha/1.0';
+  static String _preferredLanguage = 'pl';
+
+  static void setPreferredLanguage(String languageCode) {
+    final normalized = languageCode.toLowerCase();
+    _preferredLanguage = normalized == 'uk' ? 'uk' : 'pl';
+  }
 
   /// Poland geographic bounds (approximate)
   static const double _polandNorth = 54.9;
@@ -28,9 +34,9 @@ class LocationService {
   /// Check if coordinates are within Poland bounds
   static bool isInPoland(LatLng latLng) {
     return latLng.latitude >= _polandSouth &&
-           latLng.latitude <= _polandNorth &&
-           latLng.longitude >= _polandWest &&
-           latLng.longitude <= _polandEast;
+        latLng.latitude <= _polandNorth &&
+        latLng.longitude >= _polandWest &&
+        latLng.longitude <= _polandEast;
   }
 
   /// Check if location services are enabled
@@ -155,13 +161,10 @@ class LocationService {
         'lon=${latLng.longitude}&'
         'format=json&'
         'addressdetails=1&'
-        'accept-language=pl',
+        'accept-language=$_preferredLanguage',
       );
 
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': _userAgent},
-      );
+      final response = await http.get(url, headers: {'User-Agent': _userAgent});
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -188,13 +191,10 @@ class LocationService {
         'format=json&'
         'addressdetails=1&'
         'limit=5&'
-        'accept-language=pl',
+        'accept-language=$_preferredLanguage',
       );
 
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': _userAgent},
-      );
+      final response = await http.get(url, headers: {'User-Agent': _userAgent});
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -230,10 +230,11 @@ class LocationService {
     }
 
     // City or town
-    final city = address['city'] ??
-                 address['town'] ??
-                 address['village'] ??
-                 address['municipality'];
+    final city =
+        address['city'] ??
+        address['town'] ??
+        address['village'] ??
+        address['municipality'];
     if (city != null) {
       parts.add(city as String);
     }
@@ -282,10 +283,11 @@ class AddressSuggestion {
     // Extract components
     final street = address?['road'] as String?;
     final houseNumber = address?['house_number'] as String?;
-    final city = address?['city'] ??
-                 address?['town'] ??
-                 address?['village'] ??
-                 address?['municipality'];
+    final city =
+        address?['city'] ??
+        address?['town'] ??
+        address?['village'] ??
+        address?['municipality'];
     final postcode = address?['postcode'] as String?;
     final state = address?['state'] as String?;
 
