@@ -3,8 +3,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../client/models/task_application.dart';
 import '../../client/models/task_category.dart';
@@ -91,6 +94,20 @@ class MyApplicationsScreen extends ConsumerWidget {
           final app = state.applications[index];
           return _ApplicationListItem(
             application: app,
+            onChat: app.status.isPending
+                ? () {
+                    final currentUser = ref.read(currentUserProvider);
+                    context.push(
+                      Routes.contractorTaskChatRoute(app.taskId),
+                      extra: {
+                        'taskTitle': app.taskTitle,
+                        'otherUserName': 'Zleceniodawca',
+                        'currentUserId': currentUser?.id ?? '',
+                        'currentUserName': currentUser?.name ?? 'Ty',
+                      },
+                    );
+                  }
+                : null,
             onWithdraw: app.status.isPending
                 ? () => _withdrawApplication(context, ref, app)
                 : null,
@@ -152,10 +169,12 @@ class MyApplicationsScreen extends ConsumerWidget {
 class _ApplicationListItem extends StatelessWidget {
   final MyApplication application;
   final VoidCallback? onWithdraw;
+  final VoidCallback? onChat;
 
   const _ApplicationListItem({
     required this.application,
     this.onWithdraw,
+    this.onChat,
   });
 
   @override
@@ -273,20 +292,38 @@ class _ApplicationListItem extends StatelessWidget {
             ],
           ),
 
-          // Withdraw button for pending
-          if (onWithdraw != null) ...[
+          // Action buttons for pending
+          if (onChat != null || onWithdraw != null) ...[
             SizedBox(height: AppSpacing.paddingSM),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onWithdraw,
-                icon: const Icon(Icons.undo, size: 16),
-                label: const Text('Wycofaj zgłoszenie'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: BorderSide(color: AppColors.error.withValues(alpha: 0.3)),
-                ),
-              ),
+            Row(
+              children: [
+                if (onChat != null)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onChat,
+                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                      label: const Text('Czat'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                    ),
+                  ),
+                if (onChat != null && onWithdraw != null)
+                  SizedBox(width: AppSpacing.paddingSM),
+                if (onWithdraw != null)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onWithdraw,
+                      icon: const Icon(Icons.undo, size: 16),
+                      label: const Text('Wycofaj'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: BorderSide(color: AppColors.error.withValues(alpha: 0.3)),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ],
@@ -303,6 +340,8 @@ class _ApplicationListItem extends StatelessWidget {
       case ApplicationStatus.rejected:
         return AppColors.error;
       case ApplicationStatus.withdrawn:
+        return AppColors.gray500;
+      case ApplicationStatus.kicked:
         return AppColors.gray500;
     }
   }

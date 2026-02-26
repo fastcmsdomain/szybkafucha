@@ -9,6 +9,8 @@ import '../../features/client/screens/client_profile_screen.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
 import '../../features/profile/profile.dart';
+import '../../features/client/screens/wallet_screen.dart';
+import '../../features/contractor/screens/contractor_wallet_screen.dart';
 import '../providers/auth_provider.dart';
 import 'routes.dart';
 
@@ -265,6 +267,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const PaymentsSettingsScreen(),
           ),
           GoRoute(
+            path: Routes.clientWallet,
+            name: 'clientWallet',
+            builder: (context, state) => const WalletScreen(),
+          ),
+          GoRoute(
             path: Routes.clientReviews,
             name: 'clientReviews',
             builder: (context, state) => const ClientReviewsScreen(),
@@ -373,6 +380,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: Routes.contractorEarnings,
             name: 'contractorEarnings',
             builder: (context, state) => const contractor.EarningsScreen(),
+          ),
+          GoRoute(
+            path: Routes.contractorWallet,
+            name: 'contractorWallet',
+            builder: (context, state) => const ContractorWalletScreen(),
           ),
           GoRoute(
             path: Routes.contractorProfile,

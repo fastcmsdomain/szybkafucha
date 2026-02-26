@@ -562,9 +562,14 @@ class WebSocketService {
     }
 
     if (!WebSocketConfig.devModeEnabled) {
-      _socket.emit(WebSocketConfig.sendMessage, {
+      _socket.emitWithAck(WebSocketConfig.sendMessage, {
         'taskId': taskId,
         'content': content,
+      }, ack: (response) {
+        if (response is Map && response['success'] == false) {
+          final error = response['error'] as String? ?? 'Błąd wysyłania wiadomości';
+          _notifyListeners('message:error', {'taskId': taskId, 'error': error});
+        }
       });
     } else {
       // Dev mode only: simulate incoming message for UI testing

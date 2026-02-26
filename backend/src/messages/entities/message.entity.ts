@@ -36,6 +36,10 @@ export class Message {
   @Column({ type: 'text' })
   content: string;
 
+  // Flagged by moderation (company/social media mentions)
+  @Column({ type: 'boolean', default: false })
+  flagged: boolean;
+
   // When the message was read by recipient
   @Column({ type: 'timestamp', nullable: true })
   readAt: Date | null;

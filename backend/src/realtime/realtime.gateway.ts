@@ -27,6 +27,12 @@ import { UserType } from '../users/entities/user.entity';
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
 const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
+/** Detects email addresses */
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
+
+/** Detects URLs */
+const URL_REGEX = /(https?:\/\/|www\.)[^\s]+/gi;
+
 // Events emitted by server
 export enum ServerEvent {
   LOCATION_UPDATE = 'location:update',
@@ -304,6 +310,22 @@ export class RealtimeGateway
       return {
         success: false,
         error: 'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block email addresses in chat
+    if (EMAIL_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie adresów email w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block URLs in chat
+    if (URL_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie linków w czacie jest niedozwolone.',
       };
     }
 

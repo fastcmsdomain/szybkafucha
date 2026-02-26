@@ -133,6 +133,45 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                               ),
                             ),
                           ],
+                          // Room slots badge
+                          SizedBox(width: AppSpacing.gapSM),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: task.applicationsCount >= task.maxApplications
+                                  ? AppColors.gray200
+                                  : AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: AppRadius.radiusSM,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.people_outline,
+                                  size: 10,
+                                  color: task.applicationsCount >= task.maxApplications
+                                      ? AppColors.gray500
+                                      : AppColors.primary,
+                                ),
+                                SizedBox(width: 2),
+                                Text(
+                                  task.applicationsCount >= task.maxApplications
+                                      ? 'Pełny'
+                                      : '${task.applicationsCount}/${task.maxApplications}',
+                                  style: AppTypography.caption.copyWith(
+                                    color: task.applicationsCount >= task.maxApplications
+                                        ? AppColors.gray500
+                                        : AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       Text(

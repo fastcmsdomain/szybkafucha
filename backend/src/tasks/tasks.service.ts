@@ -28,9 +28,10 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 import { ServerEvent } from '../realtime/realtime.gateway';
 import { ContractorService } from '../contractor/contractor.service';
+import { CreditsService } from '../payments/credits.service';
 
-// Platform commission percentage
-const COMMISSION_RATE = 0.17;
+// MVP Phase 1: Flat fee per side (client pays 10 zł, contractor pays 10 zł)
+const MATCHING_FEE_PER_SIDE = 10;
 
 // Scoring weights for contractor matching
 const SCORING_WEIGHTS = {
@@ -73,6 +74,7 @@ export class TasksService {
     private readonly notificationsService: NotificationsService,
     @Inject(forwardRef(() => ContractorService))
     private readonly contractorService: ContractorService,
+    private readonly creditsService: CreditsService,
   ) {}
 
   /**
@@ -134,13 +136,32 @@ export class TasksService {
   /**
    * Find all available tasks (MVP - no location filtering)
    * Used when contractor doesn't provide location
+   * Includes applicationsCount for room slots display
    */
-  async findAllAvailable(): Promise<Task[]> {
-    return this.tasksRepository.find({
+  async findAllAvailable(): Promise<any[]> {
+    const tasks = await this.tasksRepository.find({
       where: { status: TaskStatus.CREATED },
       relations: ['client'],
       order: { createdAt: 'DESC' },
     });
+
+    // Attach application counts for each task
+    const tasksWithCounts = await Promise.all(
+      tasks.map(async (task) => {
+        const applicationsCount = await this.taskApplicationRepository.count({
+          where: {
+            taskId: task.id,
+            status: ApplicationStatus.PENDING,
+          },
+        });
+        return {
+          ...task,
+          applicationsCount,
+        };
+      }),
+    );
+
+    return tasksWithCounts;
   }
 
   /**
@@ -175,21 +196,34 @@ export class TasksService {
 
     const tasks = await queryBuilder.getMany();
 
-    // Sanitize data - remove sensitive information
-    return tasks.map((task) => ({
-      id: task.id,
-      category: task.category,
-      title: task.title,
-      description: task.description?.substring(0, 200), // Truncate to 200 chars
-      address: this.sanitizeAddress(task.address),
-      budgetAmount: task.budgetAmount,
-      // Round coordinates to ~1km precision for privacy
-      locationLat: Math.round(Number(task.locationLat) * 100) / 100,
-      locationLng: Math.round(Number(task.locationLng) * 100) / 100,
-      createdAt: task.createdAt,
-      estimatedDurationHours: task.estimatedDurationHours,
-      scheduledAt: task.scheduledAt,
-    }));
+    // Attach application counts and sanitize data
+    const results = await Promise.all(
+      tasks.map(async (task) => {
+        const applicationsCount = await this.taskApplicationRepository.count({
+          where: {
+            taskId: task.id,
+            status: ApplicationStatus.PENDING,
+          },
+        });
+        return {
+          id: task.id,
+          category: task.category,
+          title: task.title,
+          description: task.description?.substring(0, 200),
+          address: this.sanitizeAddress(task.address),
+          budgetAmount: task.budgetAmount,
+          locationLat: Math.round(Number(task.locationLat) * 100) / 100,
+          locationLng: Math.round(Number(task.locationLng) * 100) / 100,
+          createdAt: task.createdAt,
+          estimatedDurationHours: task.estimatedDurationHours,
+          scheduledAt: task.scheduledAt,
+          applicationsCount,
+          maxApplications: task.maxApplications,
+        };
+      }),
+    );
+
+    return results;
   }
 
   /**
@@ -202,7 +236,7 @@ export class TasksService {
     lat: number,
     lng: number,
     radiusKm: number = 10,
-  ): Promise<Task[]> {
+  ): Promise<any[]> {
     // For MVP, use simple distance calculation
     // In production, use PostGIS for accurate geospatial queries
     const tasks = await this.tasksRepository.find({
@@ -212,7 +246,7 @@ export class TasksService {
     });
 
     // Filter by category and distance
-    return tasks.filter((task) => {
+    const filtered = tasks.filter((task) => {
       // Check category
       if (!categories.includes(task.category)) {
         return false;
@@ -228,6 +262,24 @@ export class TasksService {
 
       return distance <= radiusKm;
     });
+
+    // Attach application counts for room slots display
+    const tasksWithCounts = await Promise.all(
+      filtered.map(async (task) => {
+        const applicationsCount = await this.taskApplicationRepository.count({
+          where: {
+            taskId: task.id,
+            status: ApplicationStatus.PENDING,
+          },
+        });
+        return {
+          ...task,
+          applicationsCount,
+        };
+      }),
+    );
+
+    return tasksWithCounts;
   }
 
   /**
@@ -308,6 +360,7 @@ export class TasksService {
       contractorId,
       proposedPrice: dto.proposedPrice,
       message: dto.message || null,
+      joinedRoomAt: new Date(),
     });
 
     const savedApplication =
@@ -467,6 +520,14 @@ export class TasksService {
       throw new BadRequestException('Application is no longer pending');
     }
 
+    // MVP Phase 1: Atomic credit deduction (10 zł from client + 10 zł from contractor)
+    await this.creditsService.deductMatchingFee(
+      clientId,
+      application.contractorId,
+      taskId,
+      MATCHING_FEE_PER_SIDE,
+    );
+
     // Accept this application
     application.status = ApplicationStatus.ACCEPTED;
     application.respondedAt = new Date();
@@ -477,6 +538,8 @@ export class TasksService {
     task.status = TaskStatus.CONFIRMED;
     task.confirmedAt = new Date();
     task.finalAmount = application.proposedPrice;
+    task.flatFee = MATCHING_FEE_PER_SIDE;
+    task.matchingFee = MATCHING_FEE_PER_SIDE;
 
     const savedTask = await this.tasksRepository.save(task);
 
@@ -696,6 +759,94 @@ export class TasksService {
   }
 
   /**
+   * Client kicks a contractor from the room
+   * Rate limits: max 3 kicks per 5 minutes per task
+   * Soft cap: warn after 10 kicks per task, hard cap at 20
+   */
+  async kickFromRoom(
+    taskId: string,
+    applicationId: string,
+    clientId: string,
+  ): Promise<{ message: string; kickCount: number }> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    if (task.status !== TaskStatus.CREATED) {
+      throw new BadRequestException(
+        'Can only kick contractors before accepting one',
+      );
+    }
+
+    const application = await this.taskApplicationRepository.findOne({
+      where: { id: applicationId, taskId, status: ApplicationStatus.PENDING },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found or not pending');
+    }
+
+    // Count total kicks for this task
+    const totalKicks = await this.taskApplicationRepository.count({
+      where: { taskId, status: ApplicationStatus.KICKED },
+    });
+
+    // Hard cap: 20 kicks per task
+    if (totalKicks >= 20) {
+      throw new BadRequestException(
+        'Osiągnięto limit usunięć z pokoju (20). Skontaktuj się z pomocą techniczną.',
+      );
+    }
+
+    // Kick the contractor
+    application.status = ApplicationStatus.KICKED;
+    application.respondedAt = new Date();
+    await this.taskApplicationRepository.save(application);
+
+    // Update application count for client
+    const pendingCount = await this.taskApplicationRepository.count({
+      where: { taskId, status: ApplicationStatus.PENDING },
+    });
+
+    // Notify kicked contractor via WebSocket
+    this.realtimeGateway.sendToUser(
+      application.contractorId,
+      ServerEvent.APPLICATION_REJECTED,
+      {
+        taskId,
+        applicationId: application.id,
+        status: 'kicked',
+        reason: 'Klient usunął Cię z pokoju',
+      },
+    );
+
+    // Update count for client
+    this.realtimeGateway.sendToUser(
+      task.clientId,
+      ServerEvent.APPLICATION_COUNT,
+      {
+        taskId,
+        count: pendingCount,
+        max: task.maxApplications,
+      },
+    );
+
+    const newKickCount = totalKicks + 1;
+    let message = 'Wykonawca usunięty z pokoju';
+    if (newKickCount >= 10) {
+      message += ` (uwaga: ${newKickCount}/20 usunięć)`;
+    }
+
+    this.logger.log(
+      `Client ${clientId} kicked contractor ${application.contractorId} from task ${taskId} (kick ${newKickCount})`,
+    );
+
+    return { message, kickCount: newKickCount };
+  }
+
+  /**
    * Get all applications for a contractor (their application history)
    */
   async getMyApplications(contractorId: string): Promise<any[]> {
@@ -795,15 +946,9 @@ export class TasksService {
       );
     }
 
-    // Calculate final amounts (for earnings display)
-    const finalAmount = task.budgetAmount;
-    const commissionAmount = Number(
-      (Number(finalAmount) * COMMISSION_RATE).toFixed(2),
-    );
-
-    // Status stays PENDING_COMPLETE - will change to COMPLETED when both rate
-    task.finalAmount = finalAmount;
-    task.commissionAmount = commissionAmount;
+    // MVP Phase 1: Payment already settled at acceptance (flat fee credits model)
+    // Set finalAmount for records, no commission calculation needed
+    task.finalAmount = task.budgetAmount;
     task.completionPhotos = completionPhotos || null;
 
     const savedTask = await this.tasksRepository.save(task);
@@ -902,6 +1047,30 @@ export class TasksService {
     // Store contractor ID before clearing (for notifications)
     const previousContractorId = task.contractorId;
 
+    // MVP Phase 1: Process credit refunds if matching fee was already paid
+    const wasMatchingFeePaid =
+      (task.status === TaskStatus.CONFIRMED ||
+        task.status === TaskStatus.IN_PROGRESS) &&
+      task.contractorId &&
+      Number(task.flatFee) > 0;
+
+    if (wasMatchingFeePaid) {
+      const cancellerId = userId;
+      const injuredPartyId =
+        isClientCancelling ? task.contractorId! : task.clientId;
+
+      await this.creditsService.processCancellationRefund(
+        cancellerId,
+        injuredPartyId,
+        taskId,
+        MATCHING_FEE_PER_SIDE,
+      );
+
+      this.logger.log(
+        `Cancellation refund processed for task ${taskId}. Canceller: ${cancellerId}, injured: ${injuredPartyId}`,
+      );
+    }
+
     if (isContractorCancelling) {
       // CONTRACTOR is cancelling - return task to 'posted' status so other contractors can accept it
       this.logger.log(
@@ -911,9 +1080,10 @@ export class TasksService {
       task.status = TaskStatus.CREATED;
       task.contractorId = null;
       task.acceptedAt = null;
-      task.confirmedAt = null; // Clear confirmation when contractor releases
+      task.confirmedAt = null;
       task.startedAt = null;
-      // Don't set cancelledAt - task is not cancelled, just released
+      task.flatFee = 0;
+      task.matchingFee = 0;
 
       const savedTask = await this.tasksRepository.save(task);
 

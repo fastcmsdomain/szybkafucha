@@ -116,6 +116,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
       _handleIncomingMessage,
     );
 
+    // Listen for message send errors (moderation blocks)
+    _webSocketService.on(
+      'message:error',
+      _handleMessageError,
+    );
+
     // Join task room to receive updates
     _webSocketService.joinTask(state.taskId);
 
@@ -137,6 +143,23 @@ class ChatNotifier extends StateNotifier<ChatState> {
         }
       }
     });
+  }
+
+  /// Handle message send error from WebSocket (moderation block)
+  void _handleMessageError(dynamic data) {
+    if (data is Map) {
+      final taskId = data['taskId'] as String?;
+      if (taskId == state.taskId) {
+        final error = data['error'] as String? ?? 'Błąd wysyłania wiadomości';
+        state = state.copyWith(error: error);
+        // Remove the last pending message since it was rejected
+        if (state.pendingMessages.isNotEmpty) {
+          final pending = List<Message>.from(state.pendingMessages);
+          pending.removeLast();
+          state = state.copyWith(pendingMessages: pending);
+        }
+      }
+    }
   }
 
   /// Handle incoming message from WebSocket
@@ -261,6 +284,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Leave task chat
   void leaveChat() {
     _webSocketService.off(WebSocketConfig.messageNew, _handleIncomingMessage);
+    _webSocketService.off('message:error', _handleMessageError);
     // NOTE: Do NOT call leaveTask() here. The task room must remain joined
     // so that the unread badge continues to work after the chat screen closes.
     // Rooms are cleaned up automatically on WS disconnect and re-joined on reconnect.

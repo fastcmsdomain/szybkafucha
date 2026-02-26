@@ -32,6 +32,7 @@ abstract class Routes {
   static const String clientProfileHelp = '/client/profile/help';
   static const String clientProfileEdit = '/client/profile/edit';
   static const String clientProfilePayments = '/client/profile/payments';
+  static const String clientWallet = '/client/profile/wallet';
   static const String clientReviews = '/client/reviews';
   static const String clientTasks = '/client/tasks';
 
@@ -52,6 +53,7 @@ abstract class Routes {
   static const String contractorProfileHelp = '/contractor/profile/help';
   static const String contractorProfilePayments =
       '/contractor/profile/payments';
+  static const String contractorWallet = '/contractor/profile/wallet';
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
   static const String contractorReviews = '/contractor/reviews';

@@ -20,6 +20,7 @@ export enum ApplicationStatus {
   ACCEPTED = 'accepted',
   REJECTED = 'rejected',
   WITHDRAWN = 'withdrawn',
+  KICKED = 'kicked',
 }
 
 @Entity('task_applications')
@@ -62,4 +63,11 @@ export class TaskApplication {
 
   @Column({ type: 'timestamp', nullable: true })
   respondedAt: Date | null;
+
+  // MVP Phase 1: Room timeout tracking
+  @Column({ type: 'timestamp', nullable: true })
+  joinedRoomAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  firstMessageSentAt: Date | null;
 }

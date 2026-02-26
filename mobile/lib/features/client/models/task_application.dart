@@ -9,6 +9,7 @@ enum ApplicationStatus {
   accepted,
   rejected,
   withdrawn,
+  kicked,
 }
 
 /// Extension for application status display
@@ -23,6 +24,8 @@ extension ApplicationStatusExtension on ApplicationStatus {
         return 'Odrzucone';
       case ApplicationStatus.withdrawn:
         return 'Wycofane';
+      case ApplicationStatus.kicked:
+        return 'Usunięty';
     }
   }
 
@@ -101,6 +104,8 @@ class TaskApplication {
         return ApplicationStatus.rejected;
       case 'withdrawn':
         return ApplicationStatus.withdrawn;
+      case 'kicked':
+        return ApplicationStatus.kicked;
       default:
         return ApplicationStatus.pending;
     }

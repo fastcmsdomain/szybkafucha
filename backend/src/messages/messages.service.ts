@@ -13,13 +13,31 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 import { Task } from '../tasks/entities/task.entity';
+import {
+  TaskApplication,
+  ApplicationStatus,
+} from '../tasks/entities/task-application.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 
+// MVP Phase 1: Chat moderation regex patterns
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
 const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
+
+/** Detects email addresses */
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
+
+/** Detects URLs and links */
+const URL_REGEX = /(https?:\/\/|www\.)[^\s]+/gi;
+
+/** Flags company/social media mentions (not blocked, just flagged for admin review) */
+const COMPANY_FLAG_REGEX =
+  /\b(sp\.?\s*z\.?\s*o\.?\s*o|s\.?\s*a\.|firma|spółka|instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal)\b/gi;
+
+/** 5 minutes in milliseconds */
+const FIRST_MESSAGE_TIMEOUT_MS = 5 * 60 * 1000;
 
 // DTO for message response
 export interface MessageResponse {
@@ -44,6 +62,8 @@ export class MessagesService {
     private readonly taskRepository: Repository<Task>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(TaskApplication)
+    private readonly taskApplicationRepository: Repository<TaskApplication>,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -104,11 +124,55 @@ export class MessagesService {
     // Verify user is authorized for this task
     await this.verifyTaskAccess(taskId, senderId);
 
-    // Block phone numbers in chat
+    // MVP Phase 1: Enhanced chat moderation
     if (PHONE_NUMBER_REGEX.test(dto.content)) {
       throw new BadRequestException(
         'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
       );
+    }
+
+    if (EMAIL_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Udostępnianie adresów email w czacie jest niedozwolone.',
+      );
+    }
+
+    if (URL_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Udostępnianie linków w czacie jest niedozwolone.',
+      );
+    }
+
+    // Check for company/social media mentions (flag, don't block)
+    const isFlagged = COMPANY_FLAG_REGEX.test(dto.content);
+
+    // Fetch task for timeout check + notification routing
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+
+    // MVP Phase 1: 5-minute first message timeout for contractors
+    if (task && senderId !== task.clientId) {
+      const application = await this.taskApplicationRepository.findOne({
+        where: {
+          taskId,
+          contractorId: senderId,
+          status: ApplicationStatus.PENDING,
+        },
+      });
+
+      if (application && !application.firstMessageSentAt) {
+        const timeSinceJoin =
+          Date.now() - new Date(application.joinedRoomAt!).getTime();
+
+        if (timeSinceJoin > FIRST_MESSAGE_TIMEOUT_MS) {
+          throw new BadRequestException(
+            'Minął czas na pierwszą wiadomość (5 min). Twoja aplikacja wygasła.',
+          );
+        }
+
+        // Record first message timestamp
+        application.firstMessageSentAt = new Date();
+        await this.taskApplicationRepository.save(application);
+      }
     }
 
     // Create message
@@ -116,6 +180,7 @@ export class MessagesService {
       taskId,
       senderId,
       content: dto.content,
+      flagged: isFlagged,
     });
 
     // Get sender info
@@ -125,8 +190,6 @@ export class MessagesService {
 
     this.logger.debug(`Message sent in task ${taskId} by ${senderId}`);
 
-    // Get the task to find the recipient
-    const task = await this.taskRepository.findOne({ where: { id: taskId } });
     if (task) {
       // Determine the recipient (the other party in the chat)
       const recipientId =
@@ -256,12 +319,26 @@ export class MessagesService {
       throw new NotFoundException('Task not found');
     }
 
-    if (task.clientId !== userId && task.contractorId !== userId) {
-      throw new ForbiddenException(
-        'You are not authorized to access this chat',
-      );
+    // Client or assigned contractor always have access
+    if (task.clientId === userId || task.contractorId === userId) {
+      return task;
     }
 
-    return task;
+    // Applicants with PENDING status also have chat access (room concept)
+    const application = await this.taskApplicationRepository.findOne({
+      where: {
+        taskId,
+        contractorId: userId,
+        status: ApplicationStatus.PENDING,
+      },
+    });
+
+    if (application) {
+      return task;
+    }
+
+    throw new ForbiddenException(
+      'You are not authorized to access this chat',
+    );
   }
 }

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/credits_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/providers/task_provider.dart';
@@ -109,6 +110,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     super.initState();
     _loadTaskData();
     _joinTaskRoom();
+    ref.read(creditsProvider.notifier).fetchBalance();
   }
 
   @override
@@ -870,6 +872,28 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // "10 zł" info banner
+        Container(
+          padding: EdgeInsets.all(AppSpacing.paddingSM),
+          margin: EdgeInsets.only(bottom: AppSpacing.paddingSM),
+          decoration: BoxDecoration(
+            color: AppColors.info.withValues(alpha: 0.1),
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: AppColors.info),
+              SizedBox(width: AppSpacing.gapSM),
+              Expanded(
+                child: Text(
+                  'Wejście jest darmowe. Płacisz 10 zł tylko gdy wybierzesz pomocnika.',
+                  style: AppTypography.caption.copyWith(color: AppColors.info),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // Header with count
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -905,8 +929,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               application: app,
               taskBudget: _task!.budget,
               onViewProfile: () => _showApplicationContractorProfile(app),
+              onChat: () => _openChatWithApplicant(app),
               onAccept: () => _acceptApplication(app.id),
-              onReject: () => _rejectApplication(app.id),
+              onKick: () => _kickFromRoom(app.id, app.contractorName),
             ),
           ),
         ),
@@ -914,12 +939,123 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  /// Accept an application (bidding system)
+  /// Open chat with a specific applicant in the room
+  void _openChatWithApplicant(TaskApplication app) {
+    if (_task == null) return;
+    final currentUser = ref.read(currentUserProvider);
+    context.push(
+      Routes.clientTaskChatRoute(_task!.id),
+      extra: {
+        'taskTitle': _task!.description,
+        'otherUserName': app.contractorName,
+        'otherUserAvatarUrl': app.contractorAvatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
+    );
+  }
+
+  /// Kick a contractor from the room
+  Future<void> _kickFromRoom(String applicationId, String contractorName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Wyrzuć z pokoju?'),
+        content: Text('Czy na pewno chcesz usunąć $contractorName z pokoju?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Anuluj'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Wyrzuć'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.delete('/tasks/${widget.taskId}/applications/$applicationId/kick');
+
+      // Reload applications
+      ref.read(taskApplicationsProvider(widget.taskId).notifier).loadApplications();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$contractorName został usunięty z pokoju'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMsg = e.toString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMsg.contains('429') || errorMsg.contains('Too many')
+                  ? 'Zbyt wiele usunięć. Spróbuj ponownie za chwilę.'
+                  : 'Nie udało się usunąć: $errorMsg',
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Accept an application (bidding system) — with balance gate
   Future<void> _acceptApplication(String applicationId) async {
+    // Balance gate: check if client has at least 10 zł
+    final credits = ref.read(creditsProvider);
+    if (credits.balance < 10) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Niewystarczające środki'),
+          content: Text(
+            'Potrzebujesz minimum 10 zł na koncie, aby wybrać wykonawcę.\n\n'
+            'Twoje saldo: ${credits.balance.toStringAsFixed(2)} zł',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Anuluj'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.push(Routes.clientWallet);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+              child: const Text('Doładuj portfel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     try {
       await ref
           .read(taskApplicationsProvider(widget.taskId).notifier)
           .acceptApplication(applicationId);
+
+      // Refresh credits balance after acceptance deduction
+      ref.read(creditsProvider.notifier).fetchBalance();
 
       // Reload the task to get updated status
       await ref.read(clientTasksProvider.notifier).loadTasks();
@@ -933,20 +1069,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   /// Reject an application (bidding system)
-  Future<void> _rejectApplication(String applicationId) async {
-    try {
-      await ref
-          .read(taskApplicationsProvider(widget.taskId).notifier)
-          .rejectApplication(applicationId);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Nie udało się odrzucić: $e')));
-      }
-    }
-  }
-
   Widget _buildContractorCard() {
     return Container(
       margin: EdgeInsets.only(bottom: AppSpacing.gapMD),

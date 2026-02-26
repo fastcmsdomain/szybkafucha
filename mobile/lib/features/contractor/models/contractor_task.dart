@@ -25,6 +25,8 @@ class ContractorTask {
   final DateTime? scheduledAt;
   final List<String>? imageUrls;
   final bool isUrgent;
+  final int applicationsCount;
+  final int maxApplications;
 
   const ContractorTask({
     required this.id,
@@ -50,6 +52,8 @@ class ContractorTask {
     this.scheduledAt,
     this.imageUrls,
     this.isUrgent = false,
+    this.applicationsCount = 0,
+    this.maxApplications = 5,
   });
 
   factory ContractorTask.fromJson(Map<String, dynamic> json) {
@@ -152,6 +156,10 @@ class ContractorTask {
       isUrgent: json['isUrgent'] as bool? ??
                 json['is_urgent'] as bool? ??
                 json['scheduledAt'] == null, // Immediate = urgent
+      applicationsCount: _parseInt(json['applicationsCount']) ??
+                         _parseInt(json['applications_count']) ?? 0,
+      maxApplications: _parseInt(json['maxApplications']) ??
+                       _parseInt(json['max_applications']) ?? 5,
     );
   }
 
@@ -187,6 +195,8 @@ class ContractorTask {
           : null,
       imageUrls: null, // No images in public view
       isUrgent: false, // Urgency not shown publicly
+      applicationsCount: _parseInt(json['applicationsCount']) ?? 0,
+      maxApplications: _parseInt(json['maxApplications']) ?? 5,
     );
   }
 
@@ -248,9 +258,9 @@ class ContractorTask {
 
   String get formattedPrice => '$price PLN';
 
-  double get earnings => price * 0.83; // 83% after 17% commission
+  double get earnings => price.toDouble(); // Full amount, matching fee handled separately
 
-  String get formattedEarnings => '${earnings.toStringAsFixed(0)} PLN';
+  String get formattedEarnings => '$price PLN';
 
   /// Mock tasks for development
   static List<ContractorTask> mockNearbyTasks() {

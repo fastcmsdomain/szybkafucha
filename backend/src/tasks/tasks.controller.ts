@@ -206,6 +206,19 @@ export class TasksController {
   }
 
   /**
+   * DELETE /tasks/:id/applications/:appId/kick
+   * Client kicks a contractor from the room
+   */
+  @Delete(':id/applications/:appId/kick')
+  async kickFromRoom(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('appId', ParseUUIDPipe) appId: string,
+  ) {
+    return this.tasksService.kickFromRoom(id, appId, req.user.id);
+  }
+
+  /**
    * DELETE /tasks/:id/apply
    * Contractor withdraws their application
    */

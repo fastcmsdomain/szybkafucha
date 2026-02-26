@@ -6,6 +6,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
+import {
+  TaskApplication,
+  ApplicationStatus,
+} from '../tasks/entities/task-application.entity';
 import { Message } from '../messages/entities/message.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
@@ -57,6 +61,8 @@ export class RealtimeService {
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
+    @InjectRepository(TaskApplication)
+    private readonly taskApplicationRepository: Repository<TaskApplication>,
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(ContractorProfile)
@@ -239,7 +245,21 @@ export class RealtimeService {
       return false;
     }
 
-    return task.clientId === userId || task.contractorId === userId;
+    // Client or assigned contractor always have access
+    if (task.clientId === userId || task.contractorId === userId) {
+      return true;
+    }
+
+    // Applicants with PENDING status also have chat access (room concept)
+    const application = await this.taskApplicationRepository.findOne({
+      where: {
+        taskId,
+        contractorId: userId,
+        status: ApplicationStatus.PENDING,
+      },
+    });
+
+    return !!application;
   }
 
   /**
@@ -247,6 +267,7 @@ export class RealtimeService {
    * Used to auto-join task rooms on WebSocket connect.
    */
   async getActiveTaskIdsForUser(userId: string): Promise<string[]> {
+    // Tasks where user is client or assigned contractor
     const tasks = await this.taskRepository
       .createQueryBuilder('task')
       .select('task.id')
@@ -258,7 +279,24 @@ export class RealtimeService {
       })
       .getMany();
 
-    return tasks.map((t) => t.id);
+    const taskIds = tasks.map((t) => t.id);
+
+    // Also include tasks where user has a pending application (room concept)
+    const applications = await this.taskApplicationRepository.find({
+      where: {
+        contractorId: userId,
+        status: ApplicationStatus.PENDING,
+      },
+      select: ['taskId'],
+    });
+
+    for (const app of applications) {
+      if (!taskIds.includes(app.taskId)) {
+        taskIds.push(app.taskId);
+      }
+    }
+
+    return taskIds;
   }
 
   /**

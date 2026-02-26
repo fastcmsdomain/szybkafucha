@@ -16,16 +16,24 @@ abstract class ApiConfig {
   ///
   /// Physical device (iOS/Android): use your Mac's LAN IP, e.g.:
   ///   `--dart-define=DEV_SERVER_URL=http://192.168.1.114:3000`
+  /// Default backend port for development
+  static const int devPort = 3000;
+
   static String get devServerUrl {
     const defined = String.fromEnvironment('DEV_SERVER_URL', defaultValue: '');
-    if (defined.isNotEmpty) return defined;
-
-    if (kIsWeb) return 'http://localhost:3000';
-
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.android => 'http://10.0.2.2:3000',
-      _ => 'http://localhost:3000',
-    };
+    if (defined.isEmpty) {
+      if (kIsWeb) return 'http://localhost:$devPort';
+      return switch (defaultTargetPlatform) {
+        TargetPlatform.android => 'http://10.0.2.2:$devPort',
+        _ => 'http://localhost:$devPort',
+      };
+    }
+    // If URL has no port (e.g. http://192.168.1.113), append default dev port
+    final uri = Uri.tryParse(defined);
+    if (uri != null && !uri.hasPort && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      return '${uri.origin}:$devPort';
+    }
+    return defined;
   }
 
   /// Server base URL for staging (without /api/v1)

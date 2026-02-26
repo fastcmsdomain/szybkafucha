@@ -8,6 +8,87 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-26] Room Chat: Enable chat between client and applicants before acceptance
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Implemented the "room" chat concept - client and contractors with pending applications can now chat before the client accepts anyone. Previously chat was only available after contractor was assigned.
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/realtime/realtime.service.ts` – Imported TaskApplication, added TaskApplicationRepository injection, updated `isUserAuthorizedForTask()` and `getActiveTaskIdsForUser()` to include pending applicants
+  - `backend/src/realtime/realtime.module.ts` – Registered TaskApplication entity in TypeOrmModule
+  - `backend/src/messages/messages.service.ts` – Updated `verifyTaskAccess()` to allow pending applicants to access chat
+
+  **Mobile:**
+  - `mobile/lib/features/client/widgets/application_card.dart` – Added `onChat` callback, redesigned action buttons: [Czat] + [Wyrzuć] row + full-width [Akceptuj] button
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `_openChatWithApplicant()` method, wired `onChat` to ApplicationCard
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `onChat` to `_ApplicationListItem`, chat button navigates to contractor chat route, added go_router/routes/auth imports
+
+- **System Impact**: Both client and contractors can now communicate during the application/bidding phase. WebSocket authorization extended to include applicants.
+- **Related Tasks/PRD**: MVP Phase 1 room concept
+- **Potential Conflicts/Risks**: Chat room is shared per task (not per applicant), so all participants in the room see each other's messages. This is by design for the room concept.
+
+---
+
+## [2026-02-25] MVP Phase 1: Flat-Fee Credits Model (Task Flow & Payment)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Complete replacement of 17% Stripe escrow commission model with flat-fee credits system. Users top up credits via Stripe, 10 zł deducted from both client and contractor atomically on acceptance. Includes cancellation refunds, kick from room, enhanced chat moderation, auto-7d rating completion, room slots display, balance gates, and wallet screens.
+
+- **Files Changed**:
+  **Backend (new):**
+  - `backend/src/payments/entities/credit-transaction.entity.ts` – New CreditTransaction entity (topup, deduction, refund, bonus types)
+  - `backend/src/payments/credits.service.ts` – Credits business logic (balance, transactions, topup, confirm)
+  - `backend/src/payments/credits.controller.ts` – 4 endpoints: balance, transactions, topup, confirm
+  - `backend/src/payments/dto/topup-credits.dto.ts` – TopUp DTO with min 20 zł validation
+  - `backend/src/tasks/tasks.scheduler.ts` – Auto-7d cron job for stale PENDING_COMPLETE tasks
+
+  **Backend (modified):**
+  - `backend/src/users/entities/user.entity.ts` – Added `credits` (decimal), `strikes` (int) fields
+  - `backend/src/tasks/entities/task.entity.ts` – Added `flatFee`, `matchingFee` fields
+  - `backend/src/tasks/entities/task-application.entity.ts` – Added `KICKED` status, `joinedRoomAt`, `firstMessageSentAt`
+  - `backend/src/messages/entities/message.entity.ts` – Added `flagged` boolean
+  - `backend/src/payments/payments.module.ts` – Registered new entities/services/controllers
+  - `backend/src/payments/payments.service.ts` – Updated webhook routing for credits topup
+  - `backend/src/tasks/tasks.service.ts` – Atomic 10+10 zł payment in acceptApplication(), refund logic in cancelTask(), kickFromRoom(), applicationsCount in browse endpoints
+  - `backend/src/tasks/tasks.controller.ts` – Added kick endpoint (DELETE /tasks/:id/applications/:appId/kick)
+  - `backend/src/messages/messages.service.ts` – Email/URL blocking, company flagging, 5-min first message timeout
+  - `backend/src/realtime/realtime.gateway.ts` – Added EMAIL_REGEX/URL_REGEX blocking in WebSocket handler
+  - `backend/src/tasks/tasks.module.ts` – Registered scheduler
+  - `backend/src/messages/messages.module.ts` – Added TaskApplication entity
+  - `backend/src/app.module.ts` – Added CreditTransaction entity, ScheduleModule
+
+  **Mobile (new):**
+  - `mobile/lib/core/providers/credits_provider.dart` – CreditsNotifier with balance/transactions/topup
+  - `mobile/lib/features/client/screens/wallet_screen.dart` – Client wallet with balance, topup, transaction history
+  - `mobile/lib/features/contractor/screens/contractor_wallet_screen.dart` – Contractor wallet
+
+  **Mobile (modified):**
+  - `mobile/lib/core/providers/providers.dart` – Added credits export
+  - `mobile/lib/core/router/routes.dart` – Added clientWallet, contractorWallet routes
+  - `mobile/lib/core/router/app_router.dart` – Registered wallet routes
+  - `mobile/lib/features/client/screens/payment_screen.dart` – Replaced 17% commission with 10 zł flat fee, balance gate
+  - `mobile/lib/features/client/screens/client_profile_screen.dart` – Added wallet shortcut widget
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Added wallet shortcut widget
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Fixed earnings (no 17% deduction), added applicationsCount/maxApplications
+  - `mobile/lib/features/contractor/widgets/nearby_task_card.dart` – Room slots badge (X/5 miejsca)
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Balance info in apply dialog
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Balance gate on accept, kick button, 10 zł info banner
+  - `mobile/lib/features/client/widgets/application_card.dart` – Added onKick callback, kick button
+  - `mobile/lib/features/client/models/task_application.dart` – Added `kicked` enum value
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `kicked` status color
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Added message:error listener for moderation blocks
+  - `mobile/lib/core/services/websocket_service.dart` – emitWithAck for message send errors
+
+- **System Impact**: Major payment model change. Commission model replaced with flat credits. New DB columns/tables added. New API endpoints for credits management.
+- **Related Tasks/PRD**: MVP Phase 1, tasks/mvp-phase-1.md
+- **Potential Conflicts/Risks**:
+  - Database migration needed for new columns (credits, strikes, flatFee, matchingFee, joinedRoomAt, firstMessageSentAt, flagged)
+  - Existing Stripe payment flow still exists alongside new credits system
+  - Spec files have TS errors due to new entity fields (pre-existing pattern)
+
+---
+
 ## [2026-02-24] UI: "Zweryfikowany" badge under profile photo at 100%
 
 - **Developer/Agent**: Claude
