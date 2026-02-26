@@ -363,11 +363,19 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     );
   }
 
+  String _taskDetailRoute(ContractorTask task) {
+    // Room tasks go to the room screen, others to active task screen
+    if (task.status == ContractorTaskStatus.offered) {
+      return Routes.contractorTaskRoomRoute(task.id);
+    }
+    return Routes.contractorTask(task.id);
+  }
+
   Widget _buildActiveTaskCard(ContractorTask task) {
     final categoryData = TaskCategoryData.fromCategory(task.category);
 
     return GestureDetector(
-      onTap: () => context.push(Routes.contractorTask(task.id)),
+      onTap: () => context.push(_taskDetailRoute(task)),
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
@@ -468,7 +476,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => context.push(Routes.contractorTask(task.id)),
+                    onPressed: () => context.push(_taskDetailRoute(task)),
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text('Więcej'),
                   ),

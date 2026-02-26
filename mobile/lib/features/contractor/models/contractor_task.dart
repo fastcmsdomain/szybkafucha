@@ -262,6 +262,38 @@ class ContractorTask {
 
   String get formattedEarnings => '$price PLN';
 
+  ContractorTask copyWith({
+    ContractorTaskStatus? status,
+  }) {
+    return ContractorTask(
+      id: id,
+      category: category,
+      description: description,
+      clientId: clientId,
+      clientName: clientName,
+      clientAvatarUrl: clientAvatarUrl,
+      clientRating: clientRating,
+      clientReviewCount: clientReviewCount,
+      address: address,
+      latitude: latitude,
+      longitude: longitude,
+      distanceKm: distanceKm,
+      estimatedMinutes: estimatedMinutes,
+      estimatedDurationHours: estimatedDurationHours,
+      price: price,
+      status: status ?? this.status,
+      createdAt: createdAt,
+      acceptedAt: acceptedAt,
+      startedAt: startedAt,
+      completedAt: completedAt,
+      scheduledAt: scheduledAt,
+      imageUrls: imageUrls,
+      isUrgent: isUrgent,
+      applicationsCount: applicationsCount,
+      maxApplications: maxApplications,
+    );
+  }
+
   /// Mock tasks for development
   static List<ContractorTask> mockNearbyTasks() {
     final now = DateTime.now();
@@ -379,7 +411,7 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
       case ContractorTaskStatus.available:
         return 'Dostępne';
       case ContractorTaskStatus.offered:
-        return 'Nowe zlecenie';
+        return 'W pokoju';
       case ContractorTaskStatus.accepted:
         return 'Oczekuje'; // Waiting for client confirmation
       case ContractorTaskStatus.confirmed:
@@ -396,6 +428,7 @@ extension ContractorTaskStatusExtension on ContractorTaskStatus {
   }
 
   bool get isActive =>
+      this == ContractorTaskStatus.offered || // In room (pending application)
       this == ContractorTaskStatus.accepted ||
       this == ContractorTaskStatus.confirmed ||
       this == ContractorTaskStatus.inProgress ||

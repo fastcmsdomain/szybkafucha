@@ -8,6 +8,30 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-26] Contractor Room: Applied tasks visible as active + room detail screen
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: When a contractor applies to a task (enters the room), the task now appears in their active tasks list on both the home screen and task history. Added a dedicated room detail screen with full task info, "Czat z szefem" and "Rezygnuję" buttons. Resigning frees the room slot.
+
+- **Files Changed**:
+  **Mobile (new):**
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Room detail screen with task info, chat, resign
+
+  **Mobile (modified):**
+  - `mobile/lib/core/providers/task_provider.dart` – `ContractorActiveTasksNotifier.loadTasks()` now includes `pending` applications (room), sets status to `offered` ("W pokoju")
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Added `copyWith()`, updated `offered` displayName to "W pokoju", added `offered` to `isActive`
+  - `mobile/lib/features/contractor/screens/screens.dart` – Exported room screen
+  - `mobile/lib/core/router/routes.dart` – Added `contractorTaskRoom` route + helper
+  - `mobile/lib/core/router/app_router.dart` – Registered room route
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Room tasks route to room screen, added `_taskDetailRoute()` helper
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – Room tasks route to room screen in both card tap and action buttons
+
+- **System Impact**: Contractor now sees applied (room) tasks as active. Room detail screen provides chat + resign flow.
+- **Related Tasks/PRD**: MVP Phase 1 room concept
+- **Potential Conflicts/Risks**: None
+
+---
+
 ## [2026-02-26] Room Chat: Enable chat between client and applicants before acceptance
 
 - **Developer/Agent**: Claude

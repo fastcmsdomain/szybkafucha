@@ -30,7 +30,7 @@ enum TrackingStatus {
   completed,
 }
 
-enum _TaskOptionsAction { details, reportProblem, cancel }
+enum _TaskOptionsAction { details, map, reportProblem, cancel }
 
 extension TrackingStatusExtension on TrackingStatus {
   String get title {
@@ -89,11 +89,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _status = TrackingStatus.applications;
   Contractor? _contractor;
   Task? _task;
-
-  // Contractor location for live tracking
-  double? _contractorLat;
-  double? _contractorLng;
-  DateTime? _lastLocationUpdate;
 
   // Task location
   double? _taskLat;
@@ -366,13 +361,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     );
   }
 
-  /// Check if contractor location is recent (within 30 seconds)
-  bool _isLocationRecent() {
-    if (_lastLocationUpdate == null) return false;
-    final diff = DateTime.now().difference(_lastLocationUpdate!);
-    return diff.inSeconds < 30;
-  }
-
   void _attachRealtimeListeners() {
     // Listen for WebSocket task status updates
     ref.listen<AsyncValue<TaskStatusEvent>>(taskStatusUpdatesProvider, (
@@ -385,29 +373,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             '📡 WebSocket status update received: ${event.status} for task ${event.taskId}',
           );
           _handleStatusUpdate(event);
-        }
-      });
-    });
-
-    // Listen for contractor location updates (GPS tracking)
-    ref.listen<AsyncValue<LocationUpdateEvent>>(locationUpdatesProvider, (
-      previous,
-      next,
-    ) {
-      next.whenData((event) {
-        // Update contractor position on map
-        // Only update if we have a contractor assigned
-        if (_contractor != null &&
-            (_status == TrackingStatus.confirmed ||
-                _status == TrackingStatus.inProgress)) {
-          setState(() {
-            _contractorLat = event.latitude;
-            _contractorLng = event.longitude;
-            _lastLocationUpdate = event.timestamp;
-          });
-          debugPrint(
-            '📍 Contractor location updated: ${event.latitude}, ${event.longitude}',
-          );
         }
       });
     });
@@ -481,50 +446,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
     return Scaffold(
       appBar: _buildTopAppBar(context),
-      body: Column(
-        children: [
-          Expanded(flex: 3, child: _buildMap()),
-          Expanded(flex: 7, child: _buildBottomPanel()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMap() {
-    // If we have task coordinates, render real map; otherwise keep lightweight placeholder
-    if (_taskLat != null && _taskLng != null) {
-      final center = LatLng(_taskLat!, _taskLng!);
-      final markers = <SFMarker>[TaskMarker(position: center)];
-
-      if (_contractorLat != null && _contractorLng != null) {
-        markers.add(
-          ContractorMarker(
-            position: LatLng(_contractorLat!, _contractorLng!),
-            name: _contractor?.name,
-            isOnline: _isLocationRecent(),
-          ),
-        );
-      }
-
-      return Stack(
-        children: [
-          Positioned.fill(
-            child: SFMapView(
-              center: center,
-              zoom: 15,
-              markers: markers,
-              interactive: true,
-              showZoomControls: true,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Fallback placeholder if no coordinates
-    return Container(
-      color: AppColors.gray100,
-      child: CustomPaint(size: Size.infinite, painter: _MapGridPainter()),
+      body: _buildBottomPanel(),
     );
   }
 
@@ -534,78 +456,45 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     final bottomSafe = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.radiusXL.topLeft.x),
+      color: AppColors.white,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.paddingMD,
+          AppSpacing.paddingMD,
+          AppSpacing.paddingMD,
+          AppSpacing.paddingMD + bottomSafe,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.gray900.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            margin: EdgeInsets.only(top: AppSpacing.paddingSM),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.gray300,
-              borderRadius: AppRadius.radiusFull,
-            ),
-          ),
+        child: Column(
+          children: [
+            // Status header
+            _buildStatusHeader(),
 
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.paddingMD,
-                AppSpacing.paddingMD,
-                AppSpacing.paddingMD,
-                AppSpacing.paddingMD + bottomSafe,
-              ),
-              child: Column(
-                children: [
-                  // Status header
-                  _buildStatusHeader(),
+            SizedBox(height: AppSpacing.space4),
 
-                  SizedBox(height: AppSpacing.space4),
+            // Progress steps
+            _buildProgressSteps(),
 
-                  // Progress steps
-                  _buildProgressSteps(),
+            SizedBox(height: AppSpacing.space4),
 
-                  SizedBox(height: AppSpacing.space4),
+            // Task details section (same placement as contractor active task screen)
+            _buildTaskDetailsSection(),
 
-                  // Task details section (same placement as contractor active task screen)
-                  _buildTaskDetailsSection(),
+            SizedBox(height: AppSpacing.space4),
 
-                  SizedBox(height: AppSpacing.space4),
+            // Application list (when waiting for bids)
+            if (_status == TrackingStatus.applications) _buildApplicationsList(),
 
-                  // Application list (when waiting for bids)
-                  if (_status == TrackingStatus.applications)
-                    _buildApplicationsList(),
+            // Contractor card (if assigned)
+            if (_contractor != null && _status != TrackingStatus.applications)
+              _buildContractorCard(),
 
-                  // Contractor card (if assigned)
-                  if (_contractor != null &&
-                      _status != TrackingStatus.applications)
-                    _buildContractorCard(),
+            // Complete button (when in progress)
+            if (_status == TrackingStatus.inProgress) _buildCompleteButton(),
 
-                  // Complete button (when in progress)
-                  if (_status == TrackingStatus.inProgress)
-                    _buildCompleteButton(),
-
-                  // Cancel button (for all non-completed tasks)
-                  if (_status != TrackingStatus.completed) _buildCancelButton(),
-                ],
-              ),
-            ),
-          ),
-        ],
+            // Cancel button (for all non-completed tasks)
+            if (_status != TrackingStatus.completed) _buildCancelButton(),
+          ],
+        ),
       ),
     );
   }
@@ -1273,6 +1162,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.map_outlined),
+              title: Text('Mapa zlecenia'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.map);
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.report_outlined, color: AppColors.warning),
               title: Text('Zgłoś problem'),
               onTap: () {
@@ -1303,6 +1199,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       case _TaskOptionsAction.details:
         _showTaskDetails();
         break;
+      case _TaskOptionsAction.map:
+        _openTaskLocationMap();
+        break;
       case _TaskOptionsAction.reportProblem:
         await _openSupportEmailClient();
         break;
@@ -1310,6 +1209,18 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         _showCancelDialog();
         break;
     }
+  }
+
+  void _openTaskLocationMap() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _TaskLocationMapScreen(
+          latitude: _taskLat,
+          longitude: _taskLng,
+          taskAddress: _task?.address,
+        ),
+      ),
+    );
   }
 
   Future<void> _openSupportEmailClient() async {
@@ -1644,6 +1555,91 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         );
       }
     }
+  }
+}
+
+class _TaskLocationMapScreen extends StatelessWidget {
+  final double? latitude;
+  final double? longitude;
+  final String? taskAddress;
+
+  const _TaskLocationMapScreen({
+    required this.latitude,
+    required this.longitude,
+    required this.taskAddress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLocation = latitude != null && longitude != null;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mapa zlecenia'),
+        backgroundColor: AppColors.white,
+        surfaceTintColor: AppColors.white,
+      ),
+      body: hasLocation
+          ? Stack(
+              children: [
+                Positioned.fill(
+                  child: SFMapView(
+                    center: LatLng(latitude!, longitude!),
+                    zoom: 15,
+                    markers: [TaskMarker(position: LatLng(latitude!, longitude!))],
+                    interactive: true,
+                    showZoomControls: true,
+                  ),
+                ),
+                Positioned(
+                  left: AppSpacing.paddingMD,
+                  right: AppSpacing.paddingMD,
+                  bottom: AppSpacing.paddingMD,
+                  child: Container(
+                    padding: EdgeInsets.all(AppSpacing.paddingMD),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: AppRadius.radiusMD,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gray900.withValues(alpha: 0.12),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.place_outlined, color: AppColors.primary),
+                        SizedBox(width: AppSpacing.gapSM),
+                        Expanded(
+                          child: Text(
+                            taskAddress?.trim().isNotEmpty == true
+                                ? taskAddress!
+                                : 'Lokalizacja zlecenia',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.gray700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.paddingLG),
+                child: Text(
+                  'Brak współrzędnych lokalizacji dla tego zlecenia.',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+    );
   }
 }
 
@@ -2048,29 +2044,4 @@ class _ContractorPublicReview {
           : DateTime.now(),
     );
   }
-}
-
-/// Custom painter for map grid pattern
-class _MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.gray200
-      ..strokeWidth = 1;
-
-    const spacing = 20.0;
-
-    // Vertical lines
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    // Horizontal lines
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

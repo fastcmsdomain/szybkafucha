@@ -43,6 +43,7 @@ abstract class Routes {
   static const String contractorTaskList = '/contractor/tasks';
   static const String contractorTaskAlert = '/contractor/task/:taskId/alert';
   static const String contractorTaskDetails = '/contractor/task/:taskId';
+  static const String contractorTaskRoom = '/contractor/task/:taskId/room';
   static const String contractorTaskNavigation =
       '/contractor/task/:taskId/navigation';
   static const String contractorTaskChat = '/contractor/task/:taskId/chat';
@@ -75,6 +76,8 @@ abstract class Routes {
       '/client/task/$taskId/complete';
 
   static String contractorTask(String taskId) => '/contractor/task/$taskId';
+  static String contractorTaskRoomRoute(String taskId) =>
+      '/contractor/task/$taskId/room';
   static String contractorTaskAlertRoute(String taskId) =>
       '/contractor/task/$taskId/alert';
   static String contractorTaskNav(String taskId) =>

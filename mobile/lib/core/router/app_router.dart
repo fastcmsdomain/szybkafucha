@@ -424,6 +424,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: Routes.contractorTaskRoom,
+            name: 'contractorTaskRoom',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return contractor.ContractorTaskRoomScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
             path: Routes.contractorTaskDetails,
             name: 'contractorTaskDetails',
             builder: (context, state) {

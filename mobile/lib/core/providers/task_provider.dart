@@ -826,22 +826,32 @@ class ContractorActiveTasksNotifier
       final response =
           await _api.get<List<dynamic>>('/tasks/contractor/applications');
 
-      final acceptedApps = response
+      // Include both pending (room/applied) and accepted applications as active
+      final activeApps = response
           .whereType<Map<String, dynamic>>()
-          .where(
-              (app) => app['status']?.toString().toLowerCase() == 'accepted')
-          .toList();
+          .where((app) {
+        final status = app['status']?.toString().toLowerCase() ?? '';
+        return status == 'pending' || status == 'accepted';
+      }).toList();
 
       final tasks = <ContractorTask>[];
-      for (final app in acceptedApps) {
+      for (final app in activeApps) {
         final taskId = app['taskId']?.toString();
         if (taskId == null || taskId.isEmpty) continue;
+        final appStatus = app['status']?.toString().toLowerCase() ?? '';
         try {
           final taskResponse =
               await _api.get<Map<String, dynamic>>('/tasks/$taskId');
           final task = ContractorTask.fromJson(taskResponse);
-          if (task.status.isActive) {
-            tasks.add(task);
+          // For pending applications (room), task status is still CREATED
+          // but we show it as active for the contractor
+          if (appStatus == 'pending' || task.status.isActive) {
+            // Override status for room tasks so they show as "offered" (in room)
+            final displayTask = appStatus == 'pending' &&
+                    task.status == ContractorTaskStatus.available
+                ? task.copyWith(status: ContractorTaskStatus.offered)
+                : task;
+            tasks.add(displayTask);
           }
         } catch (_) {}
       }

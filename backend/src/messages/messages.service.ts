@@ -1,6 +1,6 @@
 /**
  * Messages Service
- * Business logic for chat functionality
+ * Business logic for chat functionality (1-to-1 private conversations)
  */
 import {
   Injectable,
@@ -44,6 +44,7 @@ export interface MessageResponse {
   id: string;
   taskId: string;
   senderId: string;
+  recipientId: string | null;
   senderName: string | null;
   senderAvatar: string | null;
   content: string;
@@ -68,11 +69,12 @@ export class MessagesService {
   ) {}
 
   /**
-   * Get messages for a task
+   * Get messages for a 1-to-1 conversation within a task
    */
   async getTaskMessages(
     taskId: string,
     userId: string,
+    otherUserId: string,
     limit = 50,
     before?: string,
   ): Promise<MessageResponse[]> {
@@ -82,7 +84,12 @@ export class MessagesService {
     const queryBuilder = this.messageRepository
       .createQueryBuilder('message')
       .leftJoinAndSelect('message.sender', 'sender')
-      .where('message.taskId = :taskId', { taskId });
+      .where('message.taskId = :taskId', { taskId })
+      .andWhere(
+        '((message.senderId = :userId AND message.recipientId = :otherUserId) ' +
+          'OR (message.senderId = :otherUserId AND message.recipientId = :userId))',
+        { userId, otherUserId },
+      );
 
     // Pagination - get messages before a specific message ID
     if (before) {
@@ -105,6 +112,7 @@ export class MessagesService {
       id: msg.id,
       taskId: msg.taskId,
       senderId: msg.senderId,
+      recipientId: msg.recipientId,
       senderName: msg.sender?.name || null,
       senderAvatar: msg.sender?.avatarUrl || null,
       content: msg.content,
@@ -114,14 +122,15 @@ export class MessagesService {
   }
 
   /**
-   * Send a message in a task chat
+   * Send a message in a 1-to-1 task chat
    */
   async sendMessage(
     taskId: string,
     senderId: string,
+    recipientId: string,
     dto: CreateMessageDto,
   ): Promise<MessageResponse> {
-    // Verify user is authorized for this task
+    // Verify sender is authorized for this task
     await this.verifyTaskAccess(taskId, senderId);
 
     // MVP Phase 1: Enhanced chat moderation
@@ -146,7 +155,7 @@ export class MessagesService {
     // Check for company/social media mentions (flag, don't block)
     const isFlagged = COMPANY_FLAG_REGEX.test(dto.content);
 
-    // Fetch task for timeout check + notification routing
+    // Fetch task for timeout check
     const task = await this.taskRepository.findOne({ where: { id: taskId } });
 
     // MVP Phase 1: 5-minute first message timeout for contractors
@@ -175,10 +184,11 @@ export class MessagesService {
       }
     }
 
-    // Create message
+    // Create message with recipientId
     const message = await this.messageRepository.save({
       taskId,
       senderId,
+      recipientId,
       content: dto.content,
       flagged: isFlagged,
     });
@@ -188,36 +198,32 @@ export class MessagesService {
       where: { id: senderId },
     });
 
-    this.logger.debug(`Message sent in task ${taskId} by ${senderId}`);
+    this.logger.debug(
+      `Message sent in task ${taskId} from ${senderId} to ${recipientId}`,
+    );
 
-    if (task) {
-      // Determine the recipient (the other party in the chat)
-      const recipientId =
-        task.clientId === senderId ? task.contractorId : task.clientId;
-      if (recipientId) {
-        // Send push notification to recipient
-        const messagePreview =
-          dto.content.length > 50
-            ? dto.content.substring(0, 50) + '...'
-            : dto.content;
+    // Send push notification to recipient
+    const messagePreview =
+      dto.content.length > 50
+        ? dto.content.substring(0, 50) + '...'
+        : dto.content;
 
-        this.notificationsService
-          .sendToUser(recipientId, NotificationType.NEW_MESSAGE, {
-            senderName: sender?.name || 'Użytkownik',
-            messagePreview,
-          })
-          .catch((err) =>
-            this.logger.error(
-              `Failed to send NEW_MESSAGE notification: ${err}`,
-            ),
-          );
-      }
-    }
+    this.notificationsService
+      .sendToUser(recipientId, NotificationType.NEW_MESSAGE, {
+        senderName: sender?.name || 'Użytkownik',
+        messagePreview,
+      })
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send NEW_MESSAGE notification: ${err}`,
+        ),
+      );
 
     return {
       id: message.id,
       taskId: message.taskId,
       senderId: message.senderId,
+      recipientId: message.recipientId,
       senderName: sender?.name || null,
       senderAvatar: sender?.avatarUrl || null,
       content: message.content,
@@ -227,81 +233,82 @@ export class MessagesService {
   }
 
   /**
-   * Mark messages as read
+   * Mark messages as read in a 1-to-1 conversation
    */
   async markAsRead(
     taskId: string,
     userId: string,
+    otherUserId: string,
   ): Promise<{ updated: number }> {
     // Verify user is authorized for this task
     await this.verifyTaskAccess(taskId, userId);
 
-    // Mark all unread messages from other users as read
+    // Mark messages sent by otherUser to current user as read
     const result = await this.messageRepository
       .createQueryBuilder()
       .update()
       .set({ readAt: new Date() })
       .where('taskId = :taskId', { taskId })
-      .andWhere('senderId != :userId', { userId })
+      .andWhere('senderId = :otherUserId', { otherUserId })
+      .andWhere('recipientId = :userId', { userId })
       .andWhere('readAt IS NULL')
       .execute();
 
     this.logger.debug(
-      `Marked ${result.affected} messages as read in task ${taskId}`,
+      `Marked ${result.affected} messages as read in task ${taskId} (conversation with ${otherUserId})`,
     );
 
     return { updated: result.affected || 0 };
   }
 
   /**
-   * Get unread message count for a task
+   * Get unread message count for a specific conversation
    */
-  async getUnreadCount(taskId: string, userId: string): Promise<number> {
+  async getUnreadCount(
+    taskId: string,
+    userId: string,
+    otherUserId: string,
+  ): Promise<number> {
     // Verify user is authorized for this task
     await this.verifyTaskAccess(taskId, userId);
 
-    return this.messageRepository.count({
-      where: {
-        taskId,
-        readAt: undefined,
-      },
-    });
+    return this.messageRepository
+      .createQueryBuilder('message')
+      .where('message.taskId = :taskId', { taskId })
+      .andWhere('message.senderId = :otherUserId', { otherUserId })
+      .andWhere('message.recipientId = :userId', { userId })
+      .andWhere('message.readAt IS NULL')
+      .getCount();
   }
 
   /**
-   * Get all unread counts for a user's active tasks
+   * Get all unread counts for a user's active conversations
+   * Returns per-conversation counts: { taskId, otherUserId, count }
    */
   async getAllUnreadCounts(
     userId: string,
-  ): Promise<{ taskId: string; count: number }[]> {
-    // Get tasks where user is client or contractor
-    const tasks = await this.taskRepository
-      .createQueryBuilder('task')
-      .select('task.id')
-      .where('task.clientId = :userId OR task.contractorId = :userId', {
-        userId,
-      })
-      .andWhere('task.status NOT IN (:...completedStatuses)', {
-        completedStatuses: ['completed', 'cancelled'],
-      })
-      .getMany();
-
-    const unreadCounts: { taskId: string; count: number }[] = [];
-
-    for (const task of tasks) {
-      const count = await this.messageRepository
+  ): Promise<{ taskId: string; otherUserId: string; count: number }[]> {
+    const results: { taskId: string; otherUserId: string; count: string }[] =
+      await this.messageRepository
         .createQueryBuilder('message')
-        .where('message.taskId = :taskId', { taskId: task.id })
-        .andWhere('message.senderId != :userId', { userId })
+        .select('message.taskId', 'taskId')
+        .addSelect('message.senderId', 'otherUserId')
+        .addSelect('COUNT(*)', 'count')
+        .innerJoin('message.task', 'task')
+        .where('message.recipientId = :userId', { userId })
         .andWhere('message.readAt IS NULL')
-        .getCount();
+        .andWhere('task.status NOT IN (:...done)', {
+          done: ['completed', 'cancelled'],
+        })
+        .groupBy('message.taskId')
+        .addGroupBy('message.senderId')
+        .getRawMany();
 
-      if (count > 0) {
-        unreadCounts.push({ taskId: task.id, count });
-      }
-    }
-
-    return unreadCounts;
+    return results.map((r) => ({
+      taskId: r.taskId,
+      otherUserId: r.otherUserId,
+      count: parseInt(r.count, 10),
+    }));
   }
 
   /**

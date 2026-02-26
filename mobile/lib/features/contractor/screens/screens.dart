@@ -10,3 +10,4 @@ export 'task_completion_screen.dart';
 export 'contractor_profile_screen.dart';
 export 'contractor_reviews_screen.dart';
 export 'contractor_task_history_screen.dart';
+export 'contractor_task_room_screen.dart';

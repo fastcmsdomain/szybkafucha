@@ -213,7 +213,11 @@ class _ContractorTaskCard extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: isActive
-            ? () => context.push(Routes.contractorTask(task.id))
+            ? () => context.push(
+                  task.status == ContractorTaskStatus.offered
+                      ? Routes.contractorTaskRoomRoute(task.id)
+                      : Routes.contractorTask(task.id),
+                )
             : () => _showTaskDetails(context, task, categoryData),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.paddingMD),
@@ -348,7 +352,11 @@ class _ActiveTaskActions extends StatelessWidget {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => context.push(Routes.contractorTask(task.id)),
+            onPressed: () => context.push(
+              task.status == ContractorTaskStatus.offered
+                  ? Routes.contractorTaskRoomRoute(task.id)
+                  : Routes.contractorTask(task.id),
+            ),
             child: const Text('Szczegóły'),
           ),
         ),
