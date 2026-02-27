@@ -25,6 +25,7 @@ import { TasksService } from './tasks.service';
 import { FileStorageService } from '../users/file-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApplyTaskDto } from './dto/apply-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { UserType } from '../users/entities/user.entity';
@@ -53,6 +54,19 @@ export class TasksController {
     @Body() createTaskDto: CreateTaskDto,
   ) {
     return this.tasksService.create(req.user.id, createTaskDto);
+  }
+
+  /**
+   * PUT /tasks/:id
+   * Update an existing task (client only)
+   */
+  @Put(':id')
+  async update(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ) {
+    return this.tasksService.updateTask(id, req.user.id, updateTaskDto);
   }
 
   /**

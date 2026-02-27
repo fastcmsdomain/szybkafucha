@@ -21,6 +21,7 @@ import {
 import { Rating } from './entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApplyTaskDto } from './dto/apply-task.dto';
 import { RateTaskDto } from './dto/rate-task.dto';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -99,6 +100,93 @@ export class TasksService {
     });
 
     return savedTask;
+  }
+
+  /**
+   * Update an existing task.
+   * Client can edit task details while task is still active.
+   */
+  async updateTask(
+    taskId: string,
+    clientId: string,
+    dto: UpdateTaskDto,
+  ): Promise<Task> {
+    const task = await this.findByIdOrFail(taskId);
+
+    if (task.clientId !== clientId) {
+      throw new ForbiddenException('You are not the owner of this task');
+    }
+
+    if (
+      task.status === TaskStatus.CANCELLED ||
+      task.status === TaskStatus.COMPLETED
+    ) {
+      throw new BadRequestException(
+        'Cannot edit cancelled or completed task',
+      );
+    }
+
+    if (dto.category !== undefined) task.category = dto.category;
+    if (dto.title !== undefined) task.title = dto.title;
+    if (dto.description !== undefined) task.description = dto.description;
+    if (dto.locationLat !== undefined) task.locationLat = dto.locationLat;
+    if (dto.locationLng !== undefined) task.locationLng = dto.locationLng;
+    if (dto.address !== undefined) task.address = dto.address;
+    if (dto.budgetAmount !== undefined) task.budgetAmount = dto.budgetAmount;
+    if (dto.estimatedDurationHours !== undefined) {
+      task.estimatedDurationHours = dto.estimatedDurationHours;
+    }
+    if (dto.maxApplications !== undefined) {
+      task.maxApplications = dto.maxApplications;
+    }
+    if (dto.imageUrls !== undefined) {
+      task.imageUrls = dto.imageUrls;
+    }
+    if (Object.prototype.hasOwnProperty.call(dto, 'scheduledAt')) {
+      task.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
+    }
+
+    await this.tasksRepository.save(task);
+
+    // Broadcast update so connected users refresh task data instantly.
+    this.realtimeGateway.broadcastTaskStatus(
+      task.id,
+      task.status,
+      clientId,
+      task.clientId,
+    );
+    if (task.contractorId) {
+      this.realtimeGateway.sendToUser(task.contractorId, ServerEvent.TASK_STATUS, {
+        taskId: task.id,
+        status: task.status,
+        updatedAt: new Date(),
+        updatedBy: clientId,
+      });
+    }
+
+    // If task is still open for applications, refresh contractor lists in real time.
+    if (task.status === TaskStatus.CREATED) {
+      const rankedContractors = await this.findAndRankContractors(task);
+      for (const ranked of rankedContractors) {
+        this.realtimeGateway.sendToUser(ranked.contractorId, 'task:new_available', {
+          type: 'task:new_available',
+          task: {
+            id: task.id,
+            category: task.category,
+            title: task.title,
+            budgetAmount: task.budgetAmount,
+            address: task.address,
+            locationLat: task.locationLat,
+            locationLng: task.locationLng,
+            createdAt: task.createdAt,
+          },
+          score: ranked.score,
+          distance: ranked.distance,
+        });
+      }
+    }
+
+    return this.findByIdOrFail(taskId);
   }
 
   /**

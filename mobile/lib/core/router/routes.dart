@@ -24,6 +24,7 @@ abstract class Routes {
   static const String clientPayment = '/client/task/payment';
   static const String clientTaskDetails = '/client/task/:taskId';
   static const String clientTaskTracking = '/client/task/:taskId/tracking';
+  static const String clientTaskEdit = '/client/task/:taskId/edit';
   static const String clientTaskChat = '/client/task/:taskId/chat';
   static const String clientTaskRating = '/client/task/:taskId/rating';
   static const String clientTaskCompletion = '/client/task/:taskId/complete';
@@ -69,6 +70,8 @@ abstract class Routes {
   static String clientTask(String taskId) => '/client/task/$taskId';
   static String clientTaskTrack(String taskId) =>
       '/client/task/$taskId/tracking';
+  static String clientTaskEditRoute(String taskId) =>
+      '/client/task/$taskId/edit';
   static String clientTaskChatRoute(String taskId) =>
       '/client/task/$taskId/chat';
   static String clientTaskRate(String taskId) => '/client/task/$taskId/rating';

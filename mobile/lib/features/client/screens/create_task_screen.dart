@@ -17,16 +17,19 @@ import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_address_autocomplete.dart';
 import '../../../core/widgets/sf_map_view.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../models/task.dart';
 import '../models/task_category.dart';
 
 /// Task creation screen - collect task details
 /// Includes: description, location, budget, schedule
 class CreateTaskScreen extends ConsumerStatefulWidget {
   final TaskCategory? initialCategory;
+  final String? editTaskId;
 
   const CreateTaskScreen({
     super.key,
     this.initialCategory,
+    this.editTaskId,
   });
 
   @override
@@ -49,6 +52,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   DateTime _scheduledDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _scheduledTime = TimeOfDay.now();
   bool _isLoading = false;
+  bool _isInitializingEdit = false;
 
   // Location state
   LatLng? _selectedLatLng;
@@ -57,8 +61,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   // Task images (max 5)
   final List<XFile> _selectedImages = [];
+  final List<String> _existingImageUrls = [];
   static const int _maxImages = 5;
   final ImagePicker _imagePicker = ImagePicker();
+
+  bool get _isEditMode => widget.editTaskId != null;
 
   @override
   void initState() {
@@ -76,6 +83,101 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     _estimatedDurationController.addListener(() {
       setState(() {});
     });
+
+    if (_isEditMode) {
+      Future.microtask(_loadTaskForEdit);
+    }
+  }
+
+  Future<void> _loadTaskForEdit() async {
+    final taskId = widget.editTaskId;
+    if (taskId == null) return;
+
+    setState(() => _isInitializingEdit = true);
+
+    try {
+      Task? task = ref
+          .read(clientTasksProvider)
+          .tasks
+          .where((t) => t.id == taskId)
+          .firstOrNull;
+
+      task ??= await _fetchTaskById(taskId);
+
+      if (task == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Nie znaleziono zlecenia do edycji'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          _closeScreen();
+        }
+        return;
+      }
+      if (!mounted) return;
+
+      _selectedCategory = task.category;
+      _descriptionController.text = task.description;
+      _budgetController.text = task.budget.toString();
+      _estimatedDurationController.text = _formatDurationForInput(
+        task.estimatedDurationHours,
+      );
+
+      if (task.latitude != null && task.longitude != null) {
+        _selectedLatLng = LatLng(task.latitude!, task.longitude!);
+      }
+      _selectedAddress = task.address;
+      _existingImageUrls
+        ..clear()
+        ..addAll(task.imageUrls ?? const <String>[]);
+
+      if (task.scheduledAt == null) {
+        _isNow = true;
+      } else {
+        final scheduled = task.scheduledAt!;
+        _isNow = false;
+        _scheduledDate = DateTime(
+          scheduled.year,
+          scheduled.month,
+          scheduled.day,
+        );
+        _scheduledTime = TimeOfDay(
+          hour: scheduled.hour,
+          minute: scheduled.minute,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nie udało się załadować zlecenia do edycji: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isInitializingEdit = false);
+      }
+    }
+  }
+
+  Future<Task?> _fetchTaskById(String taskId) async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get<Map<String, dynamic>>('/tasks/$taskId');
+      return Task.fromJson(response);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _formatDurationForInput(double? value) {
+    if (value == null) return '';
+    if (value == value.toInt()) return value.toInt().toString();
+    return value.toString();
   }
 
   @override
@@ -95,10 +197,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           onPressed: _closeScreen,
           tooltip: 'Zamknij',
         ),
-        title: SFRainbowText(AppStrings.createTask),
+        title: SFRainbowText(
+          _isEditMode ? 'Edytuj zlecenie' : AppStrings.createTask,
+        ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: _isInitializingEdit
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -142,7 +248,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
                 // Create button
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _createTask,
+                  onPressed: _isLoading
+                      ? null
+                      : (_isEditMode ? _saveTask : _createTask),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
@@ -161,7 +269,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                           ),
                         )
                       : Text(
-                          'Znajdź pomocnika',
+                          _isEditMode
+                              ? 'Zapisz zlecenie'
+                              : 'Znajdź pomocnika',
                           style: AppTypography.bodyMedium.copyWith(
                             fontWeight: FontWeight.w600,
                             color: AppColors.white,
@@ -283,6 +393,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Widget _buildImageSection() {
+    final totalImages = _existingImageUrls.length + _selectedImages.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -294,7 +406,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               style: AppTypography.labelLarge,
             ),
             Text(
-              '${_selectedImages.length}/$_maxImages',
+              '$totalImages/$_maxImages',
               style: AppTypography.caption.copyWith(
                 color: AppColors.gray500,
               ),
@@ -317,7 +429,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             scrollDirection: Axis.horizontal,
             children: [
               // Add image button
-              if (_selectedImages.length < _maxImages)
+              if (totalImages < _maxImages)
                 Semantics(
                   label: 'Dodaj zdjęcie do zlecenia',
                   button: true,
@@ -355,6 +467,62 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     ),
                   ),
                 ),
+
+              // Existing uploaded images (edit mode)
+              ..._existingImageUrls.asMap().entries.map((entry) {
+                final index = entry.key;
+                final imageUrl = entry.value;
+
+                return Container(
+                  width: 100,
+                  height: 100,
+                  margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: AppRadius.radiusMD,
+                        child: Image.network(
+                          imageUrl,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, error, stackTrace) => Container(
+                            color: AppColors.gray100,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: AppColors.gray400,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Semantics(
+                          label: 'Usuń zdjęcie',
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () => _removeExistingImage(index),
+                            child: Container(
+                              padding: EdgeInsets.all(AppSpacing.paddingXS),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray900.withValues(alpha: 0.7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
 
               // Selected images
               ..._selectedImages.asMap().entries.map((entry) {
@@ -411,7 +579,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   /// Pick image from gallery or camera
   Future<void> _pickImage() async {
-    if (_selectedImages.length >= _maxImages) return;
+    final totalImages = _existingImageUrls.length + _selectedImages.length;
+    if (totalImages >= _maxImages) return;
 
     // Show bottom sheet with options
     final source = await showModalBottomSheet<ImageSource>(
@@ -466,6 +635,12 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
+    });
+  }
+
+  void _removeExistingImage(int index) {
+    setState(() {
+      _existingImageUrls.removeAt(index);
     });
   }
 
@@ -1178,6 +1353,120 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
         // Navigate to task tracking
         context.go('/client/task/${task.id}/tracking');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _saveTask() async {
+    final taskId = widget.editTaskId;
+    if (taskId == null) return;
+
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Wybierz kategorię'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final description = _descriptionController.text.trim();
+    final descriptionValidationError = _validateDescription(description);
+    if (descriptionValidationError != null) {
+      _formKey.currentState?.validate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(descriptionValidationError),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedLatLng == null || _selectedAddress == null) {
+      setState(() {
+        _locationError = 'Wybierz lokalizację zlecenia';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Wybierz lokalizację zlecenia'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      DateTime? scheduledAt;
+      if (!_isNow) {
+        scheduledAt = DateTime(
+          _scheduledDate.year,
+          _scheduledDate.month,
+          _scheduledDate.day,
+          _scheduledTime.hour,
+          _scheduledTime.minute,
+        );
+      }
+
+      final title = description.length > 50
+          ? description.substring(0, 50)
+          : description;
+
+      final budgetAmount =
+          double.tryParse(_budgetController.text) ??
+          double.parse(_defaultBudgetPln);
+
+      final estimatedDurationHours = _estimatedDurationController.text.isNotEmpty
+          ? double.tryParse(_estimatedDurationController.text)
+          : null;
+
+      final imageUrls = <String>[..._existingImageUrls];
+      if (_selectedImages.isNotEmpty) {
+        imageUrls.addAll(await _uploadImages());
+      }
+
+      final dto = CreateTaskDto(
+        category: _selectedCategory!,
+        title: title,
+        description: description,
+        locationLat: _selectedLatLng!.latitude,
+        locationLng: _selectedLatLng!.longitude,
+        address: _selectedAddress!,
+        budgetAmount: budgetAmount,
+        estimatedDurationHours: estimatedDurationHours,
+        scheduledAt: scheduledAt,
+        imageUrls: imageUrls,
+      );
+
+      final updatedTask =
+          await ref.read(clientTasksProvider.notifier).updateTask(taskId, dto);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Zlecenie zapisane'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.go(Routes.clientTaskTrack(updatedTask.id));
       }
     } catch (e) {
       if (mounted) {

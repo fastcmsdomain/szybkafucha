@@ -318,6 +318,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: Routes.clientTaskEdit,
+            name: 'clientTaskEdit',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return CreateTaskScreen(editTaskId: taskId);
+            },
+          ),
+          GoRoute(
             path: Routes.clientTaskChat,
             name: 'clientTaskChat',
             builder: (context, state) {

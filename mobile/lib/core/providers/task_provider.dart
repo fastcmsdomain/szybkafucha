@@ -39,7 +39,11 @@ class CreateTaskDto {
     this.imageUrls,
   });
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson({
+    bool includeNullScheduledAt = false,
+    bool includeEmptyImageUrls = false,
+  }) =>
+      {
         'category': category.name,
         'title': title,
         if (description != null) 'description': description,
@@ -47,9 +51,13 @@ class CreateTaskDto {
         'locationLng': locationLng,
         'address': address,
         'budgetAmount': budgetAmount,
-        if (estimatedDurationHours != null) 'estimatedDurationHours': estimatedDurationHours,
-        if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
-        if (imageUrls != null && imageUrls!.isNotEmpty) 'imageUrls': imageUrls,
+        if (estimatedDurationHours != null)
+          'estimatedDurationHours': estimatedDurationHours,
+        if (scheduledAt != null || includeNullScheduledAt)
+          'scheduledAt': scheduledAt?.toIso8601String(),
+        if (imageUrls != null &&
+            (imageUrls!.isNotEmpty || includeEmptyImageUrls))
+          'imageUrls': imageUrls,
       };
 }
 
@@ -77,8 +85,7 @@ class ClientTasksState {
     );
   }
 
-  List<Task> get activeTasks =>
-      tasks.where((t) => t.status.isActive).toList();
+  List<Task> get activeTasks => tasks.where((t) => t.status.isActive).toList();
 
   List<Task> get completedTasks =>
       tasks.where((t) => !t.status.isActive).toList();
@@ -163,6 +170,25 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
     final updatedTasks = List<Task>.from(state.tasks);
     updatedTasks[taskIndex] = updatedTask;
     state = state.copyWith(tasks: updatedTasks);
+
+    // Fetch latest task snapshot so edited fields (description/budget/address)
+    // are reflected instantly, not only the status.
+    Future.microtask(() => _refreshTaskFromServer(event.taskId));
+  }
+
+  Future<void> _refreshTaskFromServer(String taskId) async {
+    try {
+      final response = await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+      final freshTask = Task.fromJson(response);
+      final index = state.tasks.indexWhere((t) => t.id == taskId);
+      if (index == -1) return;
+
+      final updatedTasks = List<Task>.from(state.tasks);
+      updatedTasks[index] = freshTask;
+      state = state.copyWith(tasks: updatedTasks);
+    } catch (_) {
+      // Best-effort sync; ignore transient network failures.
+    }
   }
 
   /// Map backend status string to TaskStatus enum
@@ -225,6 +251,43 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
       );
 
       return task;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      rethrow;
+    }
+  }
+
+  /// Update existing task details
+  Future<Task> updateTask(String taskId, CreateTaskDto dto) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final response = await _api.put<Map<String, dynamic>>(
+        '/tasks/$taskId',
+        data: dto.toJson(
+          includeNullScheduledAt: true,
+          includeEmptyImageUrls: true,
+        ),
+      );
+
+      final updatedTask = Task.fromJson(response);
+      final index = state.tasks.indexWhere((t) => t.id == taskId);
+
+      if (index == -1) {
+        state = state.copyWith(
+          tasks: [updatedTask, ...state.tasks],
+          isLoading: false,
+        );
+      } else {
+        final updatedTasks = List<Task>.from(state.tasks);
+        updatedTasks[index] = updatedTask;
+        state = state.copyWith(
+          tasks: updatedTasks,
+          isLoading: false,
+        );
+      }
+
+      return updatedTask;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;
@@ -393,7 +456,9 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
       _removeTask(event.taskId);
     }
     // Also remove if task was accepted/confirmed/in progress by another contractor
-    else if (status == 'accepted' || status == 'confirmed' || status == 'in_progress') {
+    else if (status == 'accepted' ||
+        status == 'confirmed' ||
+        status == 'in_progress') {
       _removeTask(event.taskId);
     }
   }
@@ -605,6 +670,19 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
     state = state.copyWith(
       task: state.task?.copyWith(status: newStatus),
     );
+
+    // Pull full task snapshot so contractor sees edited fields immediately.
+    Future.microtask(() => _refreshTaskSilently(event.taskId));
+  }
+
+  Future<void> _refreshTaskSilently(String taskId) async {
+    try {
+      final response = await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+      final task = ContractorTask.fromJson(response);
+      state = state.copyWith(task: task);
+    } catch (_) {
+      // Ignore sync failures; current state remains usable.
+    }
   }
 
   /// Set the active task (after accepting)
@@ -630,28 +708,29 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
   /// Restore active task after app restart by checking accepted applications
   Future<void> _loadInitialActiveTask() async {
     try {
-      final response = await _api.get<List<dynamic>>('/tasks/contractor/applications');
+      final response =
+          await _api.get<List<dynamic>>('/tasks/contractor/applications');
 
       final acceptedApps = response
           .whereType<Map<String, dynamic>>()
-          .where((app) =>
-              app['status']?.toString().toLowerCase() == 'accepted')
+          .where((app) => app['status']?.toString().toLowerCase() == 'accepted')
           .toList()
-        ..sort((a, b) {
-          final aDate = DateTime.tryParse(a['createdAt']?.toString() ?? '');
-          final bDate = DateTime.tryParse(b['createdAt']?.toString() ?? '');
-          if (aDate == null && bDate == null) return 0;
-          if (aDate == null) return 1;
-          if (bDate == null) return -1;
-          return bDate.compareTo(aDate);
-        });
+            ..sort((a, b) {
+              final aDate = DateTime.tryParse(a['createdAt']?.toString() ?? '');
+              final bDate = DateTime.tryParse(b['createdAt']?.toString() ?? '');
+              if (aDate == null && bDate == null) return 0;
+              if (aDate == null) return 1;
+              if (bDate == null) return -1;
+              return bDate.compareTo(aDate);
+            });
 
       for (final app in acceptedApps) {
         final taskId = app['taskId']?.toString();
         if (taskId == null || taskId.isEmpty) continue;
 
         try {
-          final taskResponse = await _api.get<Map<String, dynamic>>('/tasks/$taskId');
+          final taskResponse =
+              await _api.get<Map<String, dynamic>>('/tasks/$taskId');
           final task = ContractorTask.fromJson(taskResponse);
 
           if (task.status.isActive) {
@@ -706,7 +785,8 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
             status: newStatus,
             createdAt: state.task!.createdAt,
             acceptedAt: state.task!.acceptedAt,
-            startedAt: action == 'start' ? DateTime.now() : state.task!.startedAt,
+            startedAt:
+                action == 'start' ? DateTime.now() : state.task!.startedAt,
             completedAt:
                 action == 'complete' ? DateTime.now() : state.task!.completedAt,
             isUrgent: state.task!.isUrgent,
@@ -839,9 +919,8 @@ class ContractorActiveTasksNotifier
           await _api.get<List<dynamic>>('/tasks/contractor/applications');
 
       // Include both pending (room/applied) and accepted applications as active
-      final activeApps = response
-          .whereType<Map<String, dynamic>>()
-          .where((app) {
+      final activeApps =
+          response.whereType<Map<String, dynamic>>().where((app) {
         final status = app['status']?.toString().toLowerCase() ?? '';
         return status == 'pending' || status == 'accepted';
       }).toList();
@@ -917,8 +996,7 @@ class ContractorHistoryState {
 }
 
 /// Notifier for contractor's completed/cancelled task history
-class ContractorHistoryNotifier
-    extends StateNotifier<ContractorHistoryState> {
+class ContractorHistoryNotifier extends StateNotifier<ContractorHistoryState> {
   final ApiClient _api;
   final Ref _ref;
 
@@ -945,8 +1023,7 @@ class ContractorHistoryNotifier
 
       final acceptedApps = response
           .whereType<Map<String, dynamic>>()
-          .where(
-              (app) => app['status']?.toString().toLowerCase() == 'accepted')
+          .where((app) => app['status']?.toString().toLowerCase() == 'accepted')
           .toList();
 
       final tasks = <ContractorTask>[];
@@ -964,9 +1041,8 @@ class ContractorHistoryNotifier
         } catch (_) {}
       }
 
-      tasks.sort((a, b) =>
-          (b.completedAt ?? b.createdAt)
-              .compareTo(a.completedAt ?? a.createdAt));
+      tasks.sort((a, b) => (b.completedAt ?? b.createdAt)
+          .compareTo(a.completedAt ?? a.createdAt));
 
       state = state.copyWith(tasks: tasks, isLoading: false);
     } catch (e) {
@@ -978,8 +1054,8 @@ class ContractorHistoryNotifier
 }
 
 /// Provider for contractor's completed/cancelled task history
-final contractorHistoryProvider = StateNotifierProvider<
-    ContractorHistoryNotifier, ContractorHistoryState>(
+final contractorHistoryProvider =
+    StateNotifierProvider<ContractorHistoryNotifier, ContractorHistoryState>(
   (ref) => ContractorHistoryNotifier(ref.read(apiClientProvider), ref),
 );
 
@@ -1081,8 +1157,7 @@ class TaskApplicationsNotifier extends StateNotifier<TaskApplicationsState> {
         '/tasks/$_taskId/applications',
       );
       final applications = response
-          .map((json) =>
-              TaskApplication.fromJson(json as Map<String, dynamic>))
+          .map((json) => TaskApplication.fromJson(json as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(applications: applications, isLoading: false);
@@ -1188,8 +1263,7 @@ class MyApplicationsNotifier extends StateNotifier<MyApplicationsState> {
         '/tasks/contractor/applications',
       );
       final applications = response
-          .map((json) =>
-              MyApplication.fromJson(json as Map<String, dynamic>))
+          .map((json) => MyApplication.fromJson(json as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(applications: applications, isLoading: false);

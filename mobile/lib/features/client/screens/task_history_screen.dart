@@ -244,6 +244,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
   Widget _buildTaskCard(Task task, {required bool isActive}) {
     final category = task.categoryData;
     final isLocked = task.status == TaskStatus.pendingComplete;
+    final hasAssignedContractor =
+        (task.contractorId?.isNotEmpty == true) || task.contractor != null;
 
     return Semantics(
       label: isLocked
@@ -382,17 +384,28 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                       task.status == TaskStatus.confirmed ||
                       task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
-                  // Cancel button (for all active non-completed tasks)
+                  // Chat button for tasks with assigned contractor,
+                  // otherwise keep cancel for open tasks.
                   Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showCancelConfirmation(task),
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
-                      label: const Text('Anuluj'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: AppColors.white,
-                      ),
-                    ),
+                    child: hasAssignedContractor
+                        ? ElevatedButton.icon(
+                            onPressed: () => _openTaskChat(task),
+                            icon: const Icon(Icons.chat_outlined, size: 18),
+                            label: const Text('Czat'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.success,
+                              foregroundColor: AppColors.white,
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () => _showCancelConfirmation(task),
+                            icon: const Icon(Icons.cancel_outlined, size: 18),
+                            label: const Text('Anuluj'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: AppColors.white,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -401,6 +414,34 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _openTaskChat(Task task) {
+    final currentUser = ref.read(currentUserProvider);
+    final otherUserId = task.contractor?.id ?? task.contractorId ?? '';
+
+    if (otherUserId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Czat dostępny po przypisaniu wykonawcy'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final description = task.description.trim();
+    context.push(
+      Routes.clientTaskChatRoute(task.id),
+      extra: {
+        'otherUserId': otherUserId,
+        'taskTitle': description.isNotEmpty ? description : 'Czat',
+        'otherUserName': task.contractor?.name ?? 'Wykonawca',
+        'otherUserAvatarUrl': task.contractor?.avatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
     );
   }
 

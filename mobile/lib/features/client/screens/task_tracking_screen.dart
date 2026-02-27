@@ -30,7 +30,7 @@ enum TrackingStatus {
   completed,
 }
 
-enum _TaskOptionsAction { details, map, reportProblem, cancel }
+enum _TaskOptionsAction { details, edit, map, reportProblem, cancel }
 
 extension TrackingStatusExtension on TrackingStatus {
   String get title {
@@ -1165,6 +1165,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               },
             ),
             ListTile(
+              leading: Icon(Icons.edit_outlined),
+              title: Text('Edytuj zlecenie'),
+              onTap: () {
+                Navigator.of(bottomSheetContext).pop(_TaskOptionsAction.edit);
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.map_outlined),
               title: Text('Mapa zlecenia'),
               onTap: () {
@@ -1201,6 +1208,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     switch (action) {
       case _TaskOptionsAction.details:
         _showTaskDetails();
+        break;
+      case _TaskOptionsAction.edit:
+        context.push(Routes.clientTaskEditRoute(widget.taskId));
         break;
       case _TaskOptionsAction.map:
         _openTaskLocationMap();
