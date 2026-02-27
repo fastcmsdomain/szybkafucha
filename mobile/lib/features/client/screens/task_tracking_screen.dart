@@ -349,11 +349,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   void _openChatWithContractor() {
     if (_task == null) return;
     final currentUser = ref.read(currentUserProvider);
+    final title = _task!.title.trim();
+    final description = _task!.description.trim();
     context.push(
       Routes.clientTaskChatRoute(_task!.id),
       extra: {
         'otherUserId': _contractor?.id ?? _task!.contractorId ?? '',
-        'taskTitle': _task!.description,
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
         'otherUserName': _contractor?.name ?? 'Wykonawca',
         'otherUserAvatarUrl': _contractor?.avatarUrl,
         'currentUserId': currentUser?.id ?? '',
@@ -565,9 +569,21 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            task.description.trim().isEmpty ? 'Brak opisu' : task.description,
-            style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
+            task.title,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.gray800,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+          if (task.description.trim().isNotEmpty) ...[
+            SizedBox(height: AppSpacing.gapXS),
+            Text(
+              task.description,
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray600),
+            ),
+          ],
           SizedBox(height: AppSpacing.gapMD),
           Row(
             children: [
@@ -833,11 +849,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   void _openChatWithApplicant(TaskApplication app) {
     if (_task == null) return;
     final currentUser = ref.read(currentUserProvider);
+    final title = _task!.title.trim();
+    final description = _task!.description.trim();
     context.push(
       Routes.clientTaskChatRoute(_task!.id),
       extra: {
         'otherUserId': app.contractorId,
-        'taskTitle': _task!.description,
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
         'otherUserName': app.contractorName,
         'otherUserAvatarUrl': app.contractorAvatarUrl,
         'currentUserId': currentUser?.id ?? '',
@@ -1323,11 +1343,19 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                 value: _task!.categoryData.name,
               ),
 
+              _buildDetailRow(
+                icon: Icons.title,
+                label: 'Tytuł',
+                value: _task!.title,
+              ),
+
               // Description
               _buildDetailRow(
                 icon: Icons.description_outlined,
                 label: 'Opis',
-                value: _task!.description,
+                value: _task!.description.trim().isEmpty
+                    ? 'Brak opisu'
+                    : _task!.description,
               ),
 
               // Address

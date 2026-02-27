@@ -771,6 +771,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
           task: ContractorTask(
             id: state.task!.id,
             category: state.task!.category,
+            title: state.task!.title,
             description: state.task!.description,
             clientId: state.task!.clientId,
             clientName: state.task!.clientName,
@@ -1064,6 +1065,7 @@ extension ContractorTaskCopyWith on ContractorTask {
   ContractorTask copyWith({
     String? id,
     TaskCategory? category,
+    String? title,
     String? description,
     String? clientId,
     String? clientName,
@@ -1087,6 +1089,7 @@ extension ContractorTaskCopyWith on ContractorTask {
     return ContractorTask(
       id: id ?? this.id,
       category: category ?? this.category,
+      title: title ?? this.title,
       description: description ?? this.description,
       clientId: clientId ?? this.clientId,
       clientName: clientName ?? this.clientName,

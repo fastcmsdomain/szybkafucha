@@ -545,11 +545,21 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            task.description,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray600,
+            task.title,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.gray800,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          if (task.description.trim().isNotEmpty) ...[
+            SizedBox(height: AppSpacing.gapXS),
+            Text(
+              task.description,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray600,
+              ),
+            ),
+          ],
 
           // Scheduled time
           SizedBox(height: AppSpacing.gapMD),
@@ -1015,11 +1025,15 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   void _openChat() {
     final task = ref.read(activeTaskProvider).task;
     final currentUser = ref.read(currentUserProvider);
+    final title = task?.title.trim() ?? '';
+    final description = task?.description.trim() ?? '';
     context.push(
       Routes.contractorTaskChatRoute(widget.taskId),
       extra: {
         'otherUserId': task?.clientId ?? '',
-        'taskTitle': task?.description ?? 'Czat',
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
         'otherUserName': task?.clientName ?? 'Klient',
         'otherUserAvatarUrl': task?.clientAvatarUrl,
         'currentUserId': currentUser?.id ?? '',

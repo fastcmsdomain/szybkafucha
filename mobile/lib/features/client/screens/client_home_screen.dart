@@ -394,13 +394,24 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
               SizedBox(height: AppSpacing.gapMD),
 
-              // Description
+              // Title + description preview
               Text(
-                task.description,
-                style: AppTypography.bodySmall,
-                maxLines: 2,
+                task.title,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (task.description.trim().isNotEmpty) ...[
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.description,
+                  style: AppTypography.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
 
               SizedBox(height: AppSpacing.gapMD),
 
@@ -471,7 +482,11 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                                   'otherUserId': task.contractor?.id ??
                                       task.contractorId ??
                                       '',
-                                  'taskTitle': task.description,
+                                  'taskTitle': task.title.trim().isNotEmpty
+                                      ? task.title
+                                      : (task.description.trim().isNotEmpty
+                                            ? task.description
+                                            : 'Czat'),
                                   'otherUserName':
                                       task.contractor?.name ?? 'Wykonawca',
                                   'otherUserAvatarUrl':

@@ -319,13 +319,24 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
             SizedBox(height: AppSpacing.gapMD),
 
-            // Description
+            // Title + description preview
             Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
+              task.title,
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (task.description.trim().isNotEmpty) ...[
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
 
             SizedBox(height: AppSpacing.gapMD),
 
@@ -431,12 +442,15 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
       return;
     }
 
+    final title = task.title.trim();
     final description = task.description.trim();
     context.push(
       Routes.clientTaskChatRoute(task.id),
       extra: {
         'otherUserId': otherUserId,
-        'taskTitle': description.isNotEmpty ? description : 'Czat',
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
         'otherUserName': task.contractor?.name ?? 'Wykonawca',
         'otherUserAvatarUrl': task.contractor?.avatarUrl,
         'currentUserId': currentUser?.id ?? '',
@@ -565,6 +579,23 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
                   SizedBox(height: AppSpacing.space4),
 
+                  // Title
+                  Text(
+                    'Tytuł',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.gapXS),
+                  Text(
+                    task.title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
                   // Description
                   Text(
                     'Opis',
@@ -574,7 +605,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   ),
                   SizedBox(height: AppSpacing.gapXS),
                   Text(
-                    task.description,
+                    task.description.trim().isEmpty
+                        ? 'Brak opisu'
+                        : task.description,
                     style: AppTypography.bodyMedium,
                   ),
 

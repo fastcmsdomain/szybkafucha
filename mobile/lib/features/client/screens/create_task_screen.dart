@@ -21,7 +21,7 @@ import '../models/task.dart';
 import '../models/task_category.dart';
 
 /// Task creation screen - collect task details
-/// Includes: description, location, budget, schedule
+/// Includes: title, description, location, budget, schedule
 class CreateTaskScreen extends ConsumerStatefulWidget {
   final TaskCategory? initialCategory;
   final String? editTaskId;
@@ -41,6 +41,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   static const String _defaultEstimatedDurationHours = '1';
 
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _budgetController = TextEditingController(text: _defaultBudgetPln);
   final _estimatedDurationController = TextEditingController(
@@ -83,6 +84,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     _estimatedDurationController.addListener(() {
       setState(() {});
     });
+    _titleController.addListener(() {
+      setState(() {});
+    });
 
     if (_isEditMode) {
       Future.microtask(_loadTaskForEdit);
@@ -119,6 +123,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       if (!mounted) return;
 
       _selectedCategory = task.category;
+      _titleController.text = task.title;
       _descriptionController.text = task.description;
       _budgetController.text = task.budget.toString();
       _estimatedDurationController.text = _formatDurationForInput(
@@ -182,6 +187,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _descriptionController.dispose();
     _budgetController.dispose();
     _estimatedDurationController.dispose();
@@ -214,6 +220,11 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               children: [
                 // Category selection
                 _buildCategorySection(),
+                SizedBox(height: AppSpacing.space8),
+
+                // Title
+                _buildTitleSection(),
+
                 SizedBox(height: AppSpacing.space8),
 
                 // Description
@@ -356,6 +367,33 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
     context.go(Routes.clientHome);
+  }
+
+  Widget _buildTitleSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppStrings.taskTitle,
+          style: AppTypography.labelLarge,
+        ),
+        SizedBox(height: AppSpacing.gapSM),
+        TextFormField(
+          controller: _titleController,
+          maxLines: 1,
+          maxLength: 200,
+          style: AppTypography.bodyMedium,
+          decoration: InputDecoration(
+            hintText: 'Np. Montaż lampy w salonie',
+            hintStyle: AppTypography.bodyMedium.copyWith(
+              color: AppColors.gray400,
+            ),
+            counterText: '',
+          ),
+          validator: _validateTitle,
+        ),
+      ],
+    );
   }
 
   Widget _buildDescriptionSection() {
@@ -1093,6 +1131,13 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             category?.name ?? 'Nie wybrano',
           ),
           _buildSummaryRow(
+            'Tytuł',
+            _titleController.text.trim().isEmpty
+                ? 'Nie podano'
+                : _titleController.text.trim(),
+            wrapValue: true,
+          ),
+          _buildSummaryRow(
             'Budżet',
             '${_budgetController.text} PLN',
           ),
@@ -1169,6 +1214,20 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               ],
             ),
     );
+  }
+
+  String? _validateTitle(String? value) {
+    final title = value?.trim() ?? '';
+    if (title.isEmpty) {
+      return 'Wprowadź tytuł zlecenia';
+    }
+    if (title.length < 3) {
+      return 'Tytuł musi mieć co najmniej 3 znaki';
+    }
+    if (title.length > 200) {
+      return 'Tytuł może mieć maksymalnie 200 znaków';
+    }
+    return null;
   }
 
   String? _validateDescription(String? value) {
@@ -1260,6 +1319,19 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
+    final title = _titleController.text.trim();
+    final titleValidationError = _validateTitle(title);
+    if (titleValidationError != null) {
+      _formKey.currentState?.validate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(titleValidationError),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     final description = _descriptionController.text.trim();
     final descriptionValidationError = _validateDescription(description);
     if (descriptionValidationError != null) {
@@ -1304,11 +1376,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           _scheduledTime.minute,
         );
       }
-
-      // Create title from first 50 chars of description
-      final title = description.length > 50
-          ? description.substring(0, 50)
-          : description;
 
       // Parse budget from text field
       final budgetAmount =
@@ -1384,6 +1451,19 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
+    final title = _titleController.text.trim();
+    final titleValidationError = _validateTitle(title);
+    if (titleValidationError != null) {
+      _formKey.currentState?.validate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(titleValidationError),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
     final description = _descriptionController.text.trim();
     final descriptionValidationError = _validateDescription(description);
     if (descriptionValidationError != null) {
@@ -1425,10 +1505,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           _scheduledTime.minute,
         );
       }
-
-      final title = description.length > 50
-          ? description.substring(0, 50)
-          : description;
 
       final budgetAmount =
           double.tryParse(_budgetController.text) ??

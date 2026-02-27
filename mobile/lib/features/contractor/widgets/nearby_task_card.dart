@@ -208,15 +208,27 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
 
             SizedBox(height: AppSpacing.gapMD),
 
-            // Description
+            // Title + description preview
             Text(
-              task.description,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.gray600,
+              task.title,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.gray800,
+                fontWeight: FontWeight.w600,
               ),
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (task.description.trim().isNotEmpty) ...[
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                task.description,
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
 
             SizedBox(height: AppSpacing.gapMD),
 

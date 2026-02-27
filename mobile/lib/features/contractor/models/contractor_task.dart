@@ -4,6 +4,7 @@ import '../../../features/client/models/task_category.dart';
 class ContractorTask {
   final String id;
   final TaskCategory category;
+  final String title;
   final String description;
   final String clientId;
   final String clientName;
@@ -31,6 +32,7 @@ class ContractorTask {
   const ContractorTask({
     required this.id,
     required this.category,
+    required this.title,
     required this.description,
     required this.clientId,
     required this.clientName,
@@ -64,32 +66,32 @@ class ContractorTask {
     // Handle client data - may be nested object or flat fields
     final client = json['client'] as Map<String, dynamic>?;
     final clientId = client?['id'] as String? ??
-                     json['clientId'] as String? ??
-                     json['client_id'] as String? ??
-                     '';
+        json['clientId'] as String? ??
+        json['client_id'] as String? ??
+        '';
     final clientName = client?['name'] as String? ??
-                       client?['fullName'] as String? ??
-                       client?['full_name'] as String? ??
-                       json['clientName'] as String? ??
-                       json['client_name'] as String? ??
-                       'Klient';
+        client?['fullName'] as String? ??
+        client?['full_name'] as String? ??
+        json['clientName'] as String? ??
+        json['client_name'] as String? ??
+        'Klient';
     final clientRating = _parseDouble(client?['rating']) ??
-                         _parseDouble(json['clientRating']) ??
-                         _parseDouble(json['client_rating']) ??
-                         0.0;
+        _parseDouble(json['clientRating']) ??
+        _parseDouble(json['client_rating']) ??
+        0.0;
     final clientReviewCount = _parseInt(client?['reviewCount']) ??
-                              _parseInt(client?['review_count']) ??
-                              _parseInt(client?['ratingCount']) ??
-                              _parseInt(client?['rating_count']) ??
-                              _parseInt(json['clientReviewCount']) ??
-                              _parseInt(json['client_review_count']) ??
-                              _parseInt(json['ratingCount']) ??
-                              _parseInt(json['rating_count']) ??
-                              0;
+        _parseInt(client?['review_count']) ??
+        _parseInt(client?['ratingCount']) ??
+        _parseInt(client?['rating_count']) ??
+        _parseInt(json['clientReviewCount']) ??
+        _parseInt(json['client_review_count']) ??
+        _parseInt(json['ratingCount']) ??
+        _parseInt(json['rating_count']) ??
+        0;
     final clientAvatarUrl = client?['avatarUrl'] as String? ??
-                            client?['avatar_url'] as String? ??
-                            json['clientAvatarUrl'] as String? ??
-                            json['client_avatar_url'] as String?;
+        client?['avatar_url'] as String? ??
+        json['clientAvatarUrl'] as String? ??
+        json['client_avatar_url'] as String?;
 
     return ContractorTask(
       id: json['id'] as String,
@@ -98,8 +100,12 @@ class ContractorTask {
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.sprzatanie,
       ),
-      // Backend may send title or description
-      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      title: (json['title'] as String?)?.trim().isNotEmpty == true
+          ? (json['title'] as String).trim()
+          : ((json['description'] as String?)?.trim().isNotEmpty == true
+              ? (json['description'] as String).trim()
+              : 'Zlecenie'),
+      description: json['description'] as String? ?? '',
       clientName: clientName,
       clientAvatarUrl: clientAvatarUrl,
       clientRating: clientRating,
@@ -107,27 +113,30 @@ class ContractorTask {
       // Backend uses camelCase - may return String or num
       address: json['address'] as String? ?? '',
       latitude: _parseDouble(json['locationLat']) ??
-                _parseDouble(json['latitude']) ?? 0.0,
+          _parseDouble(json['latitude']) ??
+          0.0,
       longitude: _parseDouble(json['locationLng']) ??
-                 _parseDouble(json['longitude']) ?? 0.0,
+          _parseDouble(json['longitude']) ??
+          0.0,
       // Distance may not be provided by backend - default to 0
       distanceKm: _parseDouble(json['distanceKm']) ??
-                  _parseDouble(json['distance_km']) ?? 0.0,
+          _parseDouble(json['distance_km']) ??
+          0.0,
       // Estimated minutes - default to 15
       estimatedMinutes: _parseInt(json['estimatedMinutes']) ??
-                        _parseInt(json['estimated_minutes']) ?? 15,
+          _parseInt(json['estimated_minutes']) ??
+          15,
       // Estimated duration in hours from client
       estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       // Budget from backend - may be String like "50.00"
       price: _parseInt(json['budgetAmount']) ??
-             _parseInt(json['price']) ??
-             _parseInt(json['budget']) ?? 0,
+          _parseInt(json['price']) ??
+          _parseInt(json['budget']) ??
+          0,
       status: status,
-      createdAt: DateTime.parse(
-        json['createdAt'] as String? ??
-        json['created_at'] as String? ??
-        DateTime.now().toIso8601String()
-      ),
+      createdAt: DateTime.parse(json['createdAt'] as String? ??
+          json['created_at'] as String? ??
+          DateTime.now().toIso8601String()),
       acceptedAt: json['acceptedAt'] != null
           ? DateTime.parse(json['acceptedAt'] as String)
           : (json['accepted_at'] != null
@@ -154,12 +163,14 @@ class ContractorTask {
               ? List<String>.from(json['image_urls'] as List)
               : null),
       isUrgent: json['isUrgent'] as bool? ??
-                json['is_urgent'] as bool? ??
-                json['scheduledAt'] == null, // Immediate = urgent
+          json['is_urgent'] as bool? ??
+          json['scheduledAt'] == null, // Immediate = urgent
       applicationsCount: _parseInt(json['applicationsCount']) ??
-                         _parseInt(json['applications_count']) ?? 0,
+          _parseInt(json['applications_count']) ??
+          0,
       maxApplications: _parseInt(json['maxApplications']) ??
-                       _parseInt(json['max_applications']) ?? 5,
+          _parseInt(json['max_applications']) ??
+          5,
     );
   }
 
@@ -172,7 +183,12 @@ class ContractorTask {
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.sprzatanie,
       ),
-      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      title: (json['title'] as String?)?.trim().isNotEmpty == true
+          ? (json['title'] as String).trim()
+          : ((json['description'] as String?)?.trim().isNotEmpty == true
+              ? (json['description'] as String).trim()
+              : 'Zlecenie'),
+      description: json['description'] as String? ?? '',
       // Public tasks don't have client info
       clientId: '',
       clientName: 'Użytkownik', // Generic name for privacy
@@ -258,16 +274,19 @@ class ContractorTask {
 
   String get formattedPrice => '$price PLN';
 
-  double get earnings => price.toDouble(); // Full amount, matching fee handled separately
+  double get earnings =>
+      price.toDouble(); // Full amount, matching fee handled separately
 
   String get formattedEarnings => '$price PLN';
 
   ContractorTask copyWith({
+    String? title,
     ContractorTaskStatus? status,
   }) {
     return ContractorTask(
       id: id,
       category: category,
+      title: title ?? this.title,
       description: description,
       clientId: clientId,
       clientName: clientName,
@@ -301,6 +320,7 @@ class ContractorTask {
       ContractorTask(
         id: 'ct1',
         category: TaskCategory.sprzatanie,
+        title: 'Sprzątanie mieszkania po remoncie',
         description:
             'Potrzebuję pomocy ze sprzątaniem 2-pokojowego mieszkania po remoncie. Około 50m2.',
         clientId: 'client1',
@@ -319,6 +339,7 @@ class ContractorTask {
       ContractorTask(
         id: 'ct2',
         category: TaskCategory.zakupy,
+        title: 'Zakupy spożywcze z dostawą',
         description:
             'Zakupy spożywcze w Biedronce - lista około 15 produktów. Preferuję dostawę do 14:00.',
         clientId: 'client2',
@@ -336,6 +357,7 @@ class ContractorTask {
       ContractorTask(
         id: 'ct3',
         category: TaskCategory.montaz,
+        title: 'Montaż szafy PAX',
         description:
             'Montaż szafy PAX z IKEA. Szafa 3-drzwiowa, wszystkie elementy są na miejscu.',
         clientId: 'client3',
@@ -353,6 +375,7 @@ class ContractorTask {
       ContractorTask(
         id: 'ct4',
         category: TaskCategory.przeprowadzki,
+        title: 'Pomoc przy przeprowadzce',
         description:
             'Pomoc przy przeprowadzce - przeniesienie mebli z 3 piętra do samochodu. Około 10 kartonów i kilka mebli.',
         clientId: 'client4',
@@ -374,6 +397,7 @@ class ContractorTask {
     return ContractorTask(
       id: 'active1',
       category: TaskCategory.sprzatanie,
+      title: 'Sprzątanie mieszkania 3-pokojowego',
       description:
           'Sprzątanie mieszkania 3-pokojowego. Proszę o dokładne sprzątanie łazienki.',
       clientId: 'client5',

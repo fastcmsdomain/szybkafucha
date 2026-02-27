@@ -87,11 +87,26 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSection(
+                    title: 'Tytuł zlecenia',
+                    child: Text(
+                      _task.title,
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.gray800,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
                   // Description section
                   _buildSection(
                     title: 'Opis zlecenia',
                     child: Text(
-                      _task.description,
+                      _task.description.trim().isEmpty
+                          ? 'Brak opisu'
+                          : _task.description,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.gray700,
                         height: 1.5,

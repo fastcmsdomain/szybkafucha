@@ -122,13 +122,16 @@ class _ContractorTaskRoomScreenState
     final clientName =
         _taskData?['client']?['name'] as String? ?? 'Zleceniodawca';
     final clientAvatar = _taskData?['client']?['avatarUrl'] as String?;
-    final description = _taskData?['description'] as String? ?? 'Czat';
+    final title = (_taskData?['title'] as String?)?.trim() ?? '';
+    final description = (_taskData?['description'] as String?)?.trim() ?? '';
 
     context.push(
       Routes.contractorTaskChatRoute(widget.taskId),
       extra: {
         'otherUserId': clientId,
-        'taskTitle': description,
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
         'otherUserName': clientName,
         'otherUserAvatarUrl': clientAvatar,
         'currentUserId': currentUser?.id ?? '',
@@ -199,7 +202,8 @@ class _ContractorTaskRoomScreenState
     );
     final categoryData = TaskCategoryData.fromCategory(category);
 
-    final description = _taskData!['description'] as String? ?? '';
+    final title = (_taskData!['title'] as String?)?.trim() ?? '';
+    final description = (_taskData!['description'] as String?)?.trim() ?? '';
     final address = _taskData!['address'] as String? ?? '';
     final budget = _parseNum(_taskData!['budgetAmount']);
     final budgetStr = budget != null ? '${budget.toStringAsFixed(0)} zł' : 'Do ustalenia';
@@ -304,6 +308,21 @@ class _ContractorTaskRoomScreenState
             ),
             SizedBox(height: AppSpacing.space6),
 
+            // Title
+            Text(
+              'Tytuł zlecenia',
+              style: AppTypography.labelMedium
+                  .copyWith(color: AppColors.gray500),
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            Text(
+              title.isNotEmpty ? title : 'Zlecenie',
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.space6),
+
             // Description
             Text(
               'Opis zlecenia',
@@ -312,7 +331,7 @@ class _ContractorTaskRoomScreenState
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              description,
+              description.isNotEmpty ? description : 'Brak opisu',
               style: AppTypography.bodyMedium,
             ),
             SizedBox(height: AppSpacing.space6),
