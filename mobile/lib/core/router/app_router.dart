@@ -325,6 +325,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
+                otherUserId: extra?['otherUserId'] ?? '',
                 taskTitle: extra?['taskTitle'] ?? 'Czat',
                 otherUserName: extra?['otherUserName'] ?? 'Wykonawca',
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
@@ -455,6 +456,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
+                otherUserId: extra?['otherUserId'] ?? '',
                 taskTitle: extra?['taskTitle'] ?? 'Czat',
                 otherUserName: extra?['otherUserName'] ?? 'Unknown',
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],

@@ -148,6 +148,7 @@ class TaskApplication {
 class MyApplication {
   final String id;
   final String taskId;
+  final String clientId;
   final String taskTitle;
   final String taskCategory;
   final String taskAddress;
@@ -161,6 +162,7 @@ class MyApplication {
   const MyApplication({
     required this.id,
     required this.taskId,
+    required this.clientId,
     required this.taskTitle,
     required this.taskCategory,
     required this.taskAddress,
@@ -176,6 +178,7 @@ class MyApplication {
     return MyApplication(
       id: json['id'] as String,
       taskId: json['taskId'] as String,
+      clientId: json['clientId'] as String? ?? '',
       taskTitle: json['taskTitle'] as String? ?? '',
       taskCategory: json['taskCategory'] as String? ?? '',
       taskAddress: json['taskAddress'] as String? ?? '',

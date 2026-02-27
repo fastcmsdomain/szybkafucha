@@ -1018,6 +1018,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     context.push(
       Routes.contractorTaskChatRoute(widget.taskId),
       extra: {
+        'otherUserId': task?.clientId ?? '',
         'taskTitle': task?.description ?? 'Czat',
         'otherUserName': task?.clientName ?? 'Klient',
         'otherUserAvatarUrl': task?.clientAvatarUrl,

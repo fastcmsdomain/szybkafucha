@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/chat_provider.dart';
 
 class ChatInput extends ConsumerStatefulWidget {
-  final String taskId;
+  final ChatKey chatKey;
   final String currentUserId;
   final String currentUserName;
   final VoidCallback onMessageSent;
@@ -14,7 +14,7 @@ class ChatInput extends ConsumerStatefulWidget {
 
   const ChatInput({
     Key? key,
-    required this.taskId,
+    required this.chatKey,
     required this.currentUserId,
     required this.currentUserName,
     required this.onMessageSent,
@@ -71,7 +71,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     setState(() => _isSending = true);
 
     try {
-      await ref.read(chatProvider(widget.taskId).notifier).sendMessage(
+      await ref.read(chatProvider(widget.chatKey).notifier).sendMessage(
             content: content,
             currentUserId: widget.currentUserId,
             currentUserName: widget.currentUserName,
@@ -109,7 +109,7 @@ class _ChatInputState extends ConsumerState<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
-    final hasPending = ref.watch(hasPendingMessagesProvider(widget.taskId));
+    final hasPending = ref.watch(hasPendingMessagesProvider(widget.chatKey));
 
     return SafeArea(
       child: Column(

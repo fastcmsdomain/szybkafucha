@@ -100,6 +100,7 @@ class MyApplicationsScreen extends ConsumerWidget {
                     context.push(
                       Routes.contractorTaskChatRoute(app.taskId),
                       extra: {
+                        'otherUserId': app.clientId,
                         'taskTitle': app.taskTitle,
                         'otherUserName': 'Zleceniodawca',
                         'currentUserId': currentUser?.id ?? '',

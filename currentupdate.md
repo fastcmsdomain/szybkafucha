@@ -8,6 +8,40 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-27] 1-to-1 Private Chat (Replace Group Chat)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Converted the group chat system to private 1-to-1 conversations. Previously, all messages in a task were visible to everyone in the room (group chat). Now each contractor chats privately with the client per task. Added `recipientId` to Message entity, scoped all queries by user pair, introduced per-conversation WebSocket rooms (`chat:{taskId}:{sortedUserA}:{sortedUserB}`), and updated all mobile navigation to pass `otherUserId`.
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/messages/entities/message.entity.ts` – Added `recipientId` column (nullable UUID), `@ManyToOne(() => User)` relation, composite index
+  - `backend/src/realtime/realtime.service.ts` – Added `getChatRoomName()`, `getActiveChatRoomsForUser()`, updated `saveMessage()` with `recipientId`, scoped `markMessagesRead()` by conversation pair
+  - `backend/src/messages/messages.service.ts` – Scoped all queries by `(senderId, recipientId)` pair: `getTaskMessages`, `sendMessage`, `markAsRead`, `getUnreadCount`, `getAllUnreadCounts`
+  - `backend/src/messages/messages.controller.ts` – New routes with `:otherUserId` param: `GET/POST /tasks/:taskId/messages/:otherUserId`, read/unread endpoints
+  - `backend/src/realtime/realtime.gateway.ts` – Added `chat:join` event, chat room naming, scoped broadcast to chat rooms, auto-join chat rooms on connect
+  - `backend/src/tasks/tasks.service.ts` – Added `clientId` to `getMyApplications()` response
+
+  **Mobile:**
+  - `mobile/lib/core/services/websocket_service.dart` – Added `recipientId` to `ChatMessageEvent`, `joinChat()` method, updated `sendMessage()` signature
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Added `ChatKey` composite key (`taskId + otherUserId`), scoped state and all providers
+  - `mobile/lib/features/chat/screens/chat_screen.dart` – Added `otherUserId` param, uses `ChatKey` for providers
+  - `mobile/lib/features/chat/widgets/chat_input.dart` – Changed from `taskId` to `chatKey: ChatKey`
+  - `mobile/lib/core/providers/unread_messages_provider.dart` – `activeChatKeyProvider` (ChatKey), composite key `taskId:otherUserId`, `chatUnreadCountProvider` + `taskUnreadCountProvider`
+  - `mobile/lib/core/router/app_router.dart` – Both client and contractor chat routes extract `otherUserId` from extras
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Pass `otherUserId` in chat navigation (contractor + applicant)
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/client/models/task_application.dart` – Added `clientId` field to `MyApplication` model
+
+- **System Impact**: Chat is now private 1-to-1. Each contractor has a separate conversation with the client per task. Unread badges work per-conversation. WebSocket rooms are per-conversation (`chat:{taskId}:{sorted pair}`), task rooms remain for status events.
+- **Related Tasks/PRD**: 1-to-1 chat requirement for MVP
+- **Potential Conflicts/Risks**:
+  - Existing messages in DB have `recipientId = null` (backward compatible, nullable column)
+  - Spec files need updating for new method signatures (pre-existing pattern of spec lag)
+  - Old chat room format (`task:{taskId}`) no longer used for messages; only for status/application events
+
 ## [2026-02-26] Contractor Room: Applied tasks visible as active + room detail screen
 
 - **Developer/Agent**: Claude

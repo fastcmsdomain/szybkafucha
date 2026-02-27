@@ -114,6 +114,9 @@ class _ContractorTaskRoomScreenState
 
   void _openChat() {
     final currentUser = ref.read(currentUserProvider);
+    final clientId = _taskData?['client']?['id'] as String? ??
+        _taskData?['clientId'] as String? ??
+        '';
     final clientName =
         _taskData?['client']?['name'] as String? ?? 'Zleceniodawca';
     final clientAvatar = _taskData?['client']?['avatarUrl'] as String?;
@@ -122,6 +125,7 @@ class _ContractorTaskRoomScreenState
     context.push(
       Routes.contractorTaskChatRoute(widget.taskId),
       extra: {
+        'otherUserId': clientId,
         'taskTitle': description,
         'otherUserName': clientName,
         'otherUserAvatarUrl': clientAvatar,

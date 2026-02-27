@@ -3,21 +3,24 @@ import '../config/websocket_config.dart';
 import '../providers/auth_provider.dart';
 import '../providers/websocket_provider.dart';
 import '../services/websocket_service.dart';
+import '../../features/chat/providers/chat_provider.dart';
 
-/// Tracks which chat screen is currently open (taskId), or null if none.
-final activeChatTaskIdProvider = StateProvider<String?>((ref) => null);
+/// Tracks which 1-to-1 chat is currently open, or null if none.
+final activeChatKeyProvider = StateProvider<ChatKey?>((ref) => null);
 
 class UnreadMessagesNotifier extends StateNotifier<Map<String, int>> {
   UnreadMessagesNotifier() : super({});
 
-  void increment(String taskId) {
-    final current = state[taskId] ?? 0;
-    state = {...state, taskId: current + 1};
+  /// Increment unread count for a conversation (keyed by "taskId:otherUserId")
+  void increment(String conversationKey) {
+    final current = state[conversationKey] ?? 0;
+    state = {...state, conversationKey: current + 1};
   }
 
-  void clearUnread(String taskId) {
-    if (!state.containsKey(taskId)) return;
-    state = Map<String, int>.from(state)..remove(taskId);
+  /// Clear unread count for a conversation
+  void clearUnread(String conversationKey) {
+    if (!state.containsKey(conversationKey)) return;
+    state = Map<String, int>.from(state)..remove(conversationKey);
   }
 }
 
@@ -31,8 +34,19 @@ final unreadMessagesProvider =
       if (data is! ChatMessageEvent) return;
       final currentUserId = ref.read(currentUserProvider)?.id ?? '';
       if (data.senderId == currentUserId) return;
-      if (data.taskId == ref.read(activeChatTaskIdProvider)) return;
-      notifier.increment(data.taskId);
+
+      // Build conversation key from taskId + sender (the other user)
+      final conversationKey = '${data.taskId}:${data.senderId}';
+
+      // Don't count if this exact conversation is currently open
+      final activeKey = ref.read(activeChatKeyProvider);
+      if (activeKey != null &&
+          activeKey.taskId == data.taskId &&
+          activeKey.otherUserId == data.senderId) {
+        return;
+      }
+
+      notifier.increment(conversationKey);
     }
 
     void registerListener() {
@@ -60,7 +74,19 @@ final unreadMessagesProvider =
   },
 );
 
-/// Unread count for a specific task.
+/// Unread count for a specific conversation.
+final chatUnreadCountProvider = Provider.family<int, ChatKey>((ref, key) {
+  return ref.watch(unreadMessagesProvider)[key.toString()] ?? 0;
+});
+
+/// Unread count for a specific task (sum of all conversations in that task).
 final taskUnreadCountProvider = Provider.family<int, String>((ref, taskId) {
-  return ref.watch(unreadMessagesProvider)[taskId] ?? 0;
+  final allUnread = ref.watch(unreadMessagesProvider);
+  int total = 0;
+  for (final entry in allUnread.entries) {
+    if (entry.key.startsWith('$taskId:')) {
+      total += entry.value;
+    }
+  }
+  return total;
 });

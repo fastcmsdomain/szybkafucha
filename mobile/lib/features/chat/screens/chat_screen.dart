@@ -1,5 +1,5 @@
 /// Chat Screen
-/// Real-time task chat interface with message input and status indicators
+/// Real-time 1-to-1 task chat interface with message input and status indicators
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,7 @@ import '../../../core/providers/unread_messages_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String taskId;
+  final String otherUserId;
   final String taskTitle;
   final String otherUserName;
   final String? otherUserAvatarUrl;
@@ -19,6 +20,7 @@ class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({
     Key? key,
     required this.taskId,
+    required this.otherUserId,
     required this.taskTitle,
     required this.otherUserName,
     this.otherUserAvatarUrl,
@@ -34,6 +36,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _autoScroll = true;
 
+  ChatKey get _chatKey =>
+      ChatKey(taskId: widget.taskId, otherUserId: widget.otherUserId);
+
   @override
   void initState() {
     super.initState();
@@ -41,9 +46,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     Future.microtask(() {
       if (!mounted) return;
       // Mark this chat as active — stops unread counter from incrementing
-      ref.read(activeChatTaskIdProvider.notifier).state = widget.taskId;
-      ref.read(unreadMessagesProvider.notifier).clearUnread(widget.taskId);
-      ref.read(chatProvider(widget.taskId).notifier).loadInitialMessages();
+      ref.read(activeChatKeyProvider.notifier).state = _chatKey;
+      ref.read(unreadMessagesProvider.notifier)
+          .clearUnread(_chatKey.toString());
+      ref.read(chatProvider(_chatKey).notifier).loadInitialMessages();
     });
   }
 
@@ -65,7 +71,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatState = ref.watch(chatProvider(widget.taskId));
+    final chatState = ref.watch(chatProvider(_chatKey));
     final messages = chatState.getAllMessagesSorted();
     final isConnected = chatState.isConnected;
 
@@ -78,8 +84,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       onPopInvoked: (didPop) {
         if (didPop) {
           // Clear active chat — resume counting unread for other screens
-          ref.read(activeChatTaskIdProvider.notifier).state = null;
-          ref.read(chatProvider(widget.taskId).notifier).leaveChat();
+          ref.read(activeChatKeyProvider.notifier).state = null;
+          ref.read(chatProvider(_chatKey).notifier).leaveChat();
         }
       },
       child: Scaffold(
@@ -182,7 +188,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             // Chat input
             ChatInput(
-              taskId: widget.taskId,
+              chatKey: _chatKey,
               currentUserId: widget.currentUserId,
               currentUserName: widget.currentUserName,
               onMessageSent: _scrollToBottom,

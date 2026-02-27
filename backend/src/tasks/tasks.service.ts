@@ -859,6 +859,7 @@ export class TasksService {
     return applications.map((app) => ({
       id: app.id,
       taskId: app.taskId,
+      clientId: app.task?.clientId || '',
       taskTitle: app.task?.title || '',
       taskCategory: app.task?.category || '',
       taskAddress: app.task?.address || '',

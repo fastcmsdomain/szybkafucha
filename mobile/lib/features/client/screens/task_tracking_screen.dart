@@ -352,6 +352,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     context.push(
       Routes.clientTaskChatRoute(_task!.id),
       extra: {
+        'otherUserId': _contractor?.id ?? _task!.contractorId ?? '',
         'taskTitle': _task!.description,
         'otherUserName': _contractor?.name ?? 'Wykonawca',
         'otherUserAvatarUrl': _contractor?.avatarUrl,
@@ -835,6 +836,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     context.push(
       Routes.clientTaskChatRoute(_task!.id),
       extra: {
+        'otherUserId': app.contractorId,
         'taskTitle': _task!.description,
         'otherUserName': app.contractorName,
         'otherUserAvatarUrl': app.contractorAvatarUrl,
