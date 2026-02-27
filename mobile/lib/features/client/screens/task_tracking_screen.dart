@@ -851,7 +851,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Wyrzuć z pokoju?'),
+        title: const Text('Zwolnij z pokoju?'),
         content: Text('Czy na pewno chcesz usunąć $contractorName z pokoju?'),
         actions: [
           TextButton(
@@ -864,7 +864,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: AppColors.white,
             ),
-            child: const Text('Wyrzuć'),
+            child: const Text('Zwolnij'),
           ),
         ],
       ),
@@ -1074,6 +1074,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           SizedBox(width: AppSpacing.gapSM),
           SFChatBadge(
             taskId: widget.taskId,
+            otherUserId: _contractor?.id ?? _task?.contractorId,
             child: IconButton(
               onPressed: _openChatWithContractor,
               icon: const Icon(Icons.chat_outlined, color: AppColors.white),

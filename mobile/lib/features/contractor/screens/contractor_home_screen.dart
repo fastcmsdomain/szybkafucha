@@ -491,6 +491,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                         context.push(
                           Routes.contractorTaskChatRoute(task.id),
                           extra: {
+                            'otherUserId': task.clientId,
                             'taskTitle': task.description,
                             'otherUserName': task.clientName,
                             'otherUserAvatarUrl': task.clientAvatarUrl,

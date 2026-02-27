@@ -551,7 +551,7 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
     );
   }
 
-  /// Handle contractor application result events (accepted/rejected)
+  /// Handle contractor application result events (accepted/rejected/kicked)
   void _handleApplicationResult(Map<String, dynamic> event) {
     final status = event['status']?.toString().toLowerCase();
     final taskId = event['taskId']?.toString();
@@ -561,6 +561,18 @@ class ActiveTaskNotifier extends StateNotifier<ActiveTaskState> {
     // When client accepts contractor's application, load full task as active
     if (status == 'accepted') {
       Future.microtask(() => fetchTask(taskId));
+    }
+
+    // When kicked or rejected, clear the active task if it matches
+    if (status == 'kicked' || status == 'rejected') {
+      if (state.task?.id == taskId) {
+        state = state.copyWith(clearTask: true);
+      }
+      // Remove from active tasks list and refresh applications
+      Future.microtask(() {
+        _ref.read(contractorActiveTasksProvider.notifier).removeTask(taskId);
+        _ref.read(myApplicationsProvider.notifier).loadApplications();
+      });
     }
   }
 
@@ -859,6 +871,14 @@ class ContractorActiveTasksNotifier
       state = state.copyWith(tasks: tasks, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Remove a task from the list instantly (e.g. when kicked by client)
+  void removeTask(String taskId) {
+    final updated = state.tasks.where((t) => t.id != taskId).toList();
+    if (updated.length != state.tasks.length) {
+      state = state.copyWith(tasks: updated);
     }
   }
 

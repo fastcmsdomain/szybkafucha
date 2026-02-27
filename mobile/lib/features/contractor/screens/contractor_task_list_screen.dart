@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/credits_provider.dart';
 import '../../../core/providers/kyc_provider.dart';
 import '../../../core/providers/task_provider.dart';
@@ -1053,14 +1054,37 @@ class _ContractorTaskListScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        if (e is ForbiddenException) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              icon: Icon(Icons.block, color: AppColors.error, size: 48),
+              title: const Text('Nie możesz dołączyć'),
+              content: const Text(
+                'Zostałeś zwolniony z tego zlecenia przez klienta i nie możesz ponownie aplikować.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
+                  child: const Text('Rozumiem'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Błąd: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     }
   }

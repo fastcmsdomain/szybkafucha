@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/chat/providers/chat_provider.dart';
 import '../providers/unread_messages_provider.dart';
 import '../theme/theme.dart';
 
 /// Wraps any widget (button) with a red unread message badge.
 /// Shows a count when unread > 0, with a pop animation on new messages.
+///
+/// When [otherUserId] is provided, shows unread count for that specific
+/// conversation only. Otherwise sums all conversations for the task.
 class SFChatBadge extends ConsumerStatefulWidget {
   final String taskId;
+  final String? otherUserId;
   final Widget child;
 
   const SFChatBadge({
     super.key,
     required this.taskId,
+    this.otherUserId,
     required this.child,
   });
 
@@ -47,7 +53,10 @@ class _SFChatBadgeState extends ConsumerState<SFChatBadge>
 
   @override
   Widget build(BuildContext context) {
-    final count = ref.watch(taskUnreadCountProvider(widget.taskId));
+    final count = widget.otherUserId != null
+        ? ref.watch(chatUnreadCountProvider(
+            ChatKey(taskId: widget.taskId, otherUserId: widget.otherUserId!)))
+        : ref.watch(taskUnreadCountProvider(widget.taskId));
 
     // Trigger pop animation when count increases
     if (count > _prevCount && count > 0) {

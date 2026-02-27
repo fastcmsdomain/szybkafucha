@@ -8,6 +8,32 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-02-27] Per-conversation unread badges, ApplicationCard UX, kick/re-apply logic
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed per-conversation unread badges (was showing total for all conversations on every card), restructured ApplicationCard buttons into 2 rows (Profil|Czat, Zwolnij|Akceptuj), renamed "Wyrzuć" → "Zwolnij", instant task removal from contractor screens on kick, and differentiated re-apply rules (withdrawn → can re-apply, kicked → 403 with popup).
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/tasks/tasks.service.ts` – `applyForTask` now checks existing application status: KICKED → 403 ForbiddenException, WITHDRAWN → reactivate to PENDING. Extracted `_notifyClientAboutApplication()` helper.
+
+  **Mobile:**
+  - `mobile/lib/core/widgets/sf_chat_badge.dart` – Added optional `otherUserId` param; when provided uses `chatUnreadCountProvider(ChatKey)` instead of `taskUnreadCountProvider`
+  - `mobile/lib/features/client/widgets/application_card.dart` – Restructured buttons: Row 1 (Profil | Czat as OutlinedButton green text), Row 2 (Zwolnij red | Akceptuj green). SFChatBadge uses `otherUserId: application.contractorId`
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `otherUserId` to SFChatBadge for confirmed contractor, renamed "Wyrzuć" → "Zwolnij" in kick dialog
+  - `mobile/lib/features/client/screens/client_home_screen.dart` – Added `otherUserId` to SFChatBadge
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `otherUserId` to SFChatBadge
+  - `mobile/lib/core/providers/task_provider.dart` – `ActiveTaskNotifier` handles `kicked`/`rejected` status (clears task, removes from list, reloads applications). Added `removeTask()` to `ContractorActiveTasksNotifier`
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Added `ref.listen` for `applicationResultProvider` to detect kick while viewing room → snackbar + pop
+  - `mobile/lib/features/contractor/screens/task_alert_screen.dart` – Added `ForbiddenException` catch with `_showKickedDialog()` popup
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Added `ForbiddenException` catch with kicked popup
+
+- **System Impact**: Unread badges now correctly show per-conversation counts. Kicked contractors see 403 + popup when trying to re-apply. Withdrawn contractors can re-apply freely. Tasks instantly disappear from contractor screens on kick.
+- **Related Tasks/PRD**: MVP chat UX, task room management
+- **Potential Conflicts/Risks**:
+  - `SFChatBadge` callers must pass `otherUserId` for per-conversation accuracy (falls back to task-level sum if omitted)
+  - Backend `applyForTask` now differentiates application statuses — requires `KICKED` status to exist in `ApplicationStatus` enum
+
 ## [2026-02-27] 1-to-1 Private Chat (Replace Group Chat)
 
 - **Developer/Agent**: Claude

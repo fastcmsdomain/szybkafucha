@@ -342,6 +342,30 @@ export class TasksService {
       where: { taskId, contractorId },
     });
     if (existing) {
+      // Kicked contractors cannot re-apply
+      if (existing.status === ApplicationStatus.KICKED) {
+        throw new ForbiddenException(
+          'You have been removed from this task and cannot re-apply',
+        );
+      }
+      // Withdrawn contractors can re-apply — reactivate the existing application
+      if (existing.status === ApplicationStatus.WITHDRAWN) {
+        existing.status = ApplicationStatus.PENDING;
+        existing.proposedPrice = dto.proposedPrice;
+        existing.message = dto.message || null;
+        existing.joinedRoomAt = new Date();
+        existing.respondedAt = null;
+        await this.taskApplicationRepository.save(existing);
+
+        // Continue below to send notifications (reuse savedApplication reference)
+        // Skip creating a new record — jump to notification logic
+        return this._notifyClientAboutApplication(
+          existing,
+          task,
+          contractorId,
+          dto,
+        );
+      }
       throw new BadRequestException('You have already applied for this task');
     }
 
@@ -366,6 +390,27 @@ export class TasksService {
     const savedApplication =
       await this.taskApplicationRepository.save(application);
 
+    return this._notifyClientAboutApplication(
+      savedApplication,
+      task,
+      contractorId,
+      dto,
+    );
+  }
+
+  /**
+   * Send WebSocket + push notifications to client about a new/re-activated application
+   */
+  private async _notifyClientAboutApplication(
+    application: TaskApplication,
+    task: Task,
+    contractorId: string,
+    dto: ApplyTaskDto,
+  ): Promise<TaskApplication> {
+    const currentCount = await this.taskApplicationRepository.count({
+      where: { taskId: task.id, status: ApplicationStatus.PENDING },
+    });
+
     // Get contractor profile for notification details
     const contractorProfile = await this.contractorProfileRepository.findOne({
       where: { userId: contractorId },
@@ -374,8 +419,8 @@ export class TasksService {
 
     // Notify client via WebSocket about new application
     const applicationSummary = {
-      applicationId: savedApplication.id,
-      taskId,
+      applicationId: application.id,
+      taskId: task.id,
       contractor: {
         id: contractorId,
         name: contractorProfile?.user?.name || 'Wykonawca',
@@ -386,8 +431,8 @@ export class TasksService {
       },
       proposedPrice: dto.proposedPrice,
       message: dto.message || null,
-      createdAt: savedApplication.createdAt,
-      applicationCount: currentCount + 1,
+      createdAt: application.createdAt,
+      applicationCount: currentCount,
       maxApplications: task.maxApplications,
     };
 
@@ -402,8 +447,8 @@ export class TasksService {
       task.clientId,
       ServerEvent.APPLICATION_COUNT,
       {
-        taskId,
-        count: currentCount + 1,
+        taskId: task.id,
+        count: currentCount,
         max: task.maxApplications,
       },
     );
@@ -421,10 +466,10 @@ export class TasksService {
       );
 
     this.logger.log(
-      `Contractor ${contractorId} applied for task ${taskId} with price ${dto.proposedPrice} PLN`,
+      `Contractor ${contractorId} applied for task ${task.id} with price ${dto.proposedPrice} PLN`,
     );
 
-    return savedApplication;
+    return application;
   }
 
   /**

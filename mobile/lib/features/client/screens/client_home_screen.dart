@@ -461,12 +461,16 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       Expanded(
                         child: SFChatBadge(
                           taskId: task.id,
+                          otherUserId: task.contractor?.id ?? task.contractorId,
                           child: OutlinedButton.icon(
                             onPressed: () {
                               final currentUser = ref.read(currentUserProvider);
                               context.push(
                                 Routes.clientTaskChatRoute(task.id),
                                 extra: {
+                                  'otherUserId': task.contractor?.id ??
+                                      task.contractorId ??
+                                      '',
                                   'taskTitle': task.description,
                                   'otherUserName':
                                       task.contractor?.name ?? 'Wykonawca',

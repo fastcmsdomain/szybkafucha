@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/providers/websocket_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../../client/models/task_category.dart';
 
 /// Screen showing task room details for a contractor who applied.
@@ -137,6 +139,31 @@ class _ContractorTaskRoomScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Listen for kick/reject events — navigate back if this task is affected
+    ref.listen<AsyncValue<Map<String, dynamic>>>(
+      applicationResultProvider,
+      (previous, next) {
+        next.whenData((event) {
+          final status = event['status']?.toString().toLowerCase();
+          final taskId = event['taskId']?.toString();
+          if (taskId == widget.taskId &&
+              (status == 'kicked' || status == 'rejected')) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(status == 'kicked'
+                      ? 'Zostałeś zwolniony z tego pokoju'
+                      : 'Twoje zgłoszenie zostało odrzucone'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+              context.pop();
+            }
+          }
+        });
+      },
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pokój zlecenia'),
@@ -449,19 +476,22 @@ class _ContractorTaskRoomScreenState
         children: [
           // Resign button
           Expanded(
-            child: OutlinedButton.icon(
+            child: ElevatedButton.icon(
               onPressed: _isResigning ? null : _resignFromRoom,
               icon: _isResigning
                   ? SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white,
+                      ),
                     )
                   : Icon(Icons.exit_to_app, size: 18),
               label: const Text('Rezygnuję'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: BorderSide(color: AppColors.error.withValues(alpha: 0.3)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: AppColors.white,
                 padding:
                     EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
               ),
@@ -470,16 +500,18 @@ class _ContractorTaskRoomScreenState
           SizedBox(width: AppSpacing.paddingSM),
           // Chat button
           Expanded(
-            flex: 2,
-            child: ElevatedButton.icon(
-              onPressed: _openChat,
-              icon: Icon(Icons.chat_bubble_outline, size: 18),
-              label: const Text('Czat z szefem'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                padding:
-                    EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+            child: SFChatBadge(
+              taskId: widget.taskId,
+              child: ElevatedButton.icon(
+                onPressed: _openChat,
+                icon: Icon(Icons.chat_bubble_outline, size: 18),
+                label: const Text('Czat z szefem'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: AppColors.white,
+                  padding:
+                      EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                ),
               ),
             ),
           ),

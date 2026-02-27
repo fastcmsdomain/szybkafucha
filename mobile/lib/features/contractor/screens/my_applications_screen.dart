@@ -9,6 +9,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../../client/models/task_application.dart';
 import '../../client/models/task_category.dart';
 
@@ -300,13 +301,17 @@ class _ApplicationListItem extends StatelessWidget {
               children: [
                 if (onChat != null)
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onChat,
-                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: const Text('Czat'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                    child: SFChatBadge(
+                      taskId: application.taskId,
+                      otherUserId: application.clientId,
+                      child: OutlinedButton.icon(
+                        onPressed: onChat,
+                        icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                        label: const Text('Czat'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                        ),
                       ),
                     ),
                   ),

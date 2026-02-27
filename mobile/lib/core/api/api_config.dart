@@ -63,13 +63,36 @@ abstract class ApiConfig {
     if (relativePath == null || relativePath.isEmpty) {
       return null;
     }
-    // If already a full URL, return as-is
+    // If already a full URL, keep it unless it points to localhost.
+    // On physical devices localhost refers to the phone, not the dev backend.
     if (relativePath.startsWith('http://') ||
         relativePath.startsWith('https://')) {
+      final mediaUri = Uri.tryParse(relativePath);
+      final apiUri = Uri.tryParse(serverUrl);
+
+      if (mediaUri != null &&
+          apiUri != null &&
+          _isLocalhost(mediaUri.host) &&
+          !_isLocalhost(apiUri.host)) {
+        return mediaUri
+            .replace(
+              scheme: apiUri.scheme,
+              host: apiUri.host,
+              port: apiUri.hasPort ? apiUri.port : null,
+            )
+            .toString();
+      }
       return relativePath;
     }
     // Prepend server URL to relative path
     return '$serverUrl$relativePath';
+  }
+
+  static bool _isLocalhost(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'localhost' ||
+        normalized == '127.0.0.1' ||
+        normalized == '::1';
   }
 
   /// Connection timeout in milliseconds
