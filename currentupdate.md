@@ -8,6 +8,38 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-01] Disable user auto-suspension for MVP Phase 1, add post-MVP doc
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Auto-suspension (3 strikes → status SUSPENDED) is disabled for MVP Phase 1. Strikes are still incremented on cancellation; only the status update to SUSPENDED is commented out. Added `docs/todo_post_MVP/user-suspension.md` with re-enable instructions.
+
+- **Files Changed**:
+  - `backend/src/payments/credits.service.ts` – In `processCancellationRefund()`, commented out the block that sets `user.status = 'suspended'` when `canceller.strikes >= 3`. Strike increment and refund logic unchanged.
+  - `docs/todo_post_MVP/user-suspension.md` – New doc: status, description (auto 3-strike + admin manual), where disabled, how to re-enable, related code, priority.
+
+- **System Impact**: Users are no longer auto-suspended after 3 post-matching-fee cancellations. Admin can still set status to SUSPENDED via admin panel. JWT/auth still reject SUSPENDED users. Strike counts continue to be stored for future use.
+- **Related Tasks/PRD**: MVP Phase 1 scope; post-MVP: re-enable per user-suspension.md
+- **Potential Conflicts/Risks**: None. Re-enabling is a simple uncomment in `credits.service.ts`.
+
+## [2026-03-01] Auto-discover dev backend on physical iOS devices (iPhone & iPad)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed "Connection refused" errors when running on physical iOS devices. The app now auto-discovers the dev backend on the local network at startup via a parallel /24 subnet scan, eliminating the need to manually pass `--dart-define=DEV_SERVER_URL`. Also added `NSLocalNetworkUsageDescription` to Info.plist for iOS 14+ LAN permission, and improved `run_ios.sh` with multi-device selection (iPhone + iPad).
+
+- **Files Changed**:
+  - `mobile/lib/core/api/api_config.dart` – Added `initialize()` static async method with 4-layer URL resolution: (1) compile-time `DEV_SERVER_URL`, (2) localhost reachability test (simulator), (3) SharedPreferences cached URL, (4) parallel LAN subnet scan. Caches discovered IP for subsequent launches.
+  - `mobile/lib/main.dart` – Call `ApiConfig.initialize()` before `runApp()` so the resolved URL is ready before any API client is created.
+  - `mobile/ios/Runner/Info.plist` – Added `NSLocalNetworkUsageDescription` (Polish string) required for iOS 14+ local network access permission dialog.
+  - `mobile/scripts/run_ios.sh` – Rewritten with multi-device selection (numbered list when multiple devices connected), better device ID extraction using `•` separator, cleaner output. Still auto-detects Mac LAN IP and passes `DEV_SERVER_URL` as compile-time backup.
+
+- **System Impact**: Physical iOS devices (iPhone and iPad) now automatically find the dev backend on the local WiFi network. No manual IP configuration required. First launch scans the subnet (~500ms), subsequent launches use cached URL.
+- **Related Tasks/PRD**: Development tooling / physical device testing
+- **Potential Conflicts/Risks**:
+  - Subnet scan adds ~0.5–4s to first cold start on physical devices only (cached on subsequent runs)
+  - iOS 14+ will show a "Local Network" permission prompt on first run – user must allow
+  - If multiple machines run backends on port 3000 on the same subnet, the first discovered host wins
+  - `ApiConfig.initialize()` must be called before any `ApiClient` is created (enforced by placement in `main()`)
+
 ## [2026-02-27] Per-conversation unread badges, ApplicationCard UX, kick/re-apply logic
 
 - **Developer/Agent**: Claude

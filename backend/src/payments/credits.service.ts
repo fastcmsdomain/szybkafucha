@@ -436,18 +436,19 @@ export class CreditsService {
 
       await queryRunner.manager.save([cancellerTx, injuredTx]);
 
-      // Check if canceller reached 3 strikes
-      const canceller = await queryRunner.manager.findOne(User, {
-        where: { id: cancellerId },
-      });
-      if (canceller && canceller.strikes >= 3) {
-        await queryRunner.manager.update(User, cancellerId, {
-          status: 'suspended' as any,
-        });
-        this.logger.warn(
-          `User ${cancellerId} suspended after ${canceller.strikes} strikes`,
-        );
-      }
+      // MVP Phase 1: Auto-suspension disabled (see docs/todo_post_MVP/user-suspension.md)
+      // Strikes are still incremented for analytics; re-enable block below post-MVP.
+      // const canceller = await queryRunner.manager.findOne(User, {
+      //   where: { id: cancellerId },
+      // });
+      // if (canceller && canceller.strikes >= 3) {
+      //   await queryRunner.manager.update(User, cancellerId, {
+      //     status: 'suspended' as any,
+      //   });
+      //   this.logger.warn(
+      //     `User ${cancellerId} suspended after ${canceller.strikes} strikes`,
+      //   );
+      // }
 
       await queryRunner.commitTransaction();
     } catch (error) {
