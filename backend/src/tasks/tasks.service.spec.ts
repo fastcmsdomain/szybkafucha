@@ -16,6 +16,7 @@ import {
 import { ContractorService } from '../contractor/contractor.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CreditsService } from '../payments/credits.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -92,6 +93,7 @@ describe('TasksService', () => {
       save: jest.fn(),
       find: jest.fn(),
       findOne: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
       update: jest.fn(),
     };
 
@@ -116,6 +118,13 @@ describe('TasksService', () => {
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
+    const mockCreditsService = {
+      addCredits: jest.fn(),
+      getBalance: jest.fn(),
+      getTransactions: jest.fn(),
+      handlePaymentSuccess: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -132,6 +141,7 @@ describe('TasksService', () => {
         { provide: RealtimeGateway, useValue: mockRealtimeGateway },
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: ContractorService, useValue: mockContractorService },
+        { provide: CreditsService, useValue: mockCreditsService },
       ],
     }).compile();
 

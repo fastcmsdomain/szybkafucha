@@ -16,6 +16,7 @@ import {
 } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CreditsService } from './credits.service';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
@@ -131,6 +132,13 @@ describe('PaymentsService', () => {
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
+    const mockCreditsService = {
+      addCredits: jest.fn(),
+      getBalance: jest.fn(),
+      getTransactions: jest.fn(),
+      handlePaymentSuccess: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
@@ -146,6 +154,7 @@ describe('PaymentsService', () => {
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: CreditsService, useValue: mockCreditsService },
       ],
     }).compile();
 
