@@ -21,7 +21,7 @@ export class EnsureTasksTitleColumn1771800000000 implements MigrationInterface {
     `);
   }
 
-  public async down(_queryRunner: QueryRunner): Promise<void> {
+  public async down(): Promise<void> {
     // no-op: do not drop canonical column to avoid data loss
   }
 }

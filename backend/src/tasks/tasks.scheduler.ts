@@ -52,9 +52,7 @@ export class TasksScheduler {
       try {
         await this.autoCompleteTask(task);
       } catch (error) {
-        this.logger.error(
-          `Failed to auto-complete task ${task.id}: ${error}`,
-        );
+        this.logger.error(`Failed to auto-complete task ${task.id}: ${error}`);
       }
     }
   }
@@ -104,13 +102,14 @@ export class TasksScheduler {
   private async updateContractorRatingStats(
     contractorId: string,
   ): Promise<void> {
-    const result = await this.ratingRepository
-      .createQueryBuilder('rating')
-      .select('AVG(rating.rating)', 'avg')
-      .addSelect('COUNT(*)', 'count')
-      .where('rating.toUserId = :contractorId', { contractorId })
-      .andWhere('rating.role = :role', { role: 'contractor' })
-      .getRawOne();
+    const result: { avg: string; count: string } | undefined =
+      await this.ratingRepository
+        .createQueryBuilder('rating')
+        .select('AVG(rating.rating)', 'avg')
+        .addSelect('COUNT(*)', 'count')
+        .where('rating.toUserId = :contractorId', { contractorId })
+        .andWhere('rating.role = :role', { role: 'contractor' })
+        .getRawOne();
 
     if (result) {
       await this.contractorProfileRepository.update(contractorId, {
