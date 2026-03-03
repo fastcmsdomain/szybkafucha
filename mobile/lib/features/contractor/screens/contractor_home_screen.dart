@@ -642,10 +642,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         ),
         _buildStepItem(
           number: '5',
-          title: 'Odbierz wypłatę',
+          title: 'Gotowe!',
           description:
-              'Pieniądze trafiają na Twoje konto — szybko i bezpiecznie',
-          icon: Icons.account_balance_wallet_outlined,
+              'Zlecenie zakończone! Twoja ocena rośnie, a nowe zlecenia czekają',
+          icon: Icons.check_circle_outline,
           color: const Color(0xFF8B5CF6),
           isLast: true,
         ),

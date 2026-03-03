@@ -686,8 +686,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           number: '5',
           title: 'Gotowe!',
           description:
-              'Płatność zostaje przekazana pracownikowi — szybko i bezpiecznie',
-          icon: Icons.account_balance_wallet_outlined,
+              'Zlecenie zakończone! Możesz zlecić kolejne zadanie w każdej chwili',
+          icon: Icons.check_circle_outline,
           color: const Color(0xFF8B5CF6),
           isLast: true,
         ),
