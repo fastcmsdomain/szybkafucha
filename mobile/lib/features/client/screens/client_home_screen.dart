@@ -660,9 +660,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         _buildStepItem(
           number: '2',
-          title: 'Zatwierdź pracownika',
+          title: 'Wybierz pracownika',
           description:
-              'Dopasujemy najlepszą osobę — sprawdź profil i potwierdź',
+              'Pracownicy zgłaszają się z ofertami — wybierz najlepszą osobę',
           icon: Icons.person_search_outlined,
           color: AppColors.warning,
         ),
@@ -676,11 +676,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         _buildStepItem(
           number: '4',
-          title: 'Oceń i zapłać',
+          title: 'Oceń pracownika',
           description:
-              'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
+              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
           icon: Icons.star_outline,
           color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '5',
+          title: 'Gotowe!',
+          description:
+              'Płatność zostaje przekazana pracownikowi — szybko i bezpiecznie',
+          icon: Icons.account_balance_wallet_outlined,
+          color: const Color(0xFF8B5CF6),
           isLast: true,
         ),
       ],

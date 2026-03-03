@@ -618,27 +618,35 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         ),
         _buildStepItem(
           number: '2',
-          title: 'Zaakceptuj zlecenie',
+          title: 'Złóż ofertę',
           description:
-              'Kliknij „Akceptuj" i umów się z szefem na szczegóły',
-          icon: Icons.handshake_outlined,
+              'Zaproponuj swoją cenę i wyślij zgłoszenie do szefa',
+          icon: Icons.local_offer_outlined,
           color: AppColors.warning,
         ),
         _buildStepItem(
           number: '3',
           title: 'Wykonaj zadanie',
           description:
-              'Zrealizuj zlecenie i potwierdź zakończenie pracy',
-          icon: Icons.check_circle_outline,
+              'Szef wybrał Cię! Rozpocznij pracę i zrealizuj zlecenie',
+          icon: Icons.handyman,
           color: AppColors.success,
         ),
         _buildStepItem(
           number: '4',
+          title: 'Oceń szefa',
+          description:
+              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
+          icon: Icons.star_outline,
+          color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '5',
           title: 'Odbierz wypłatę',
           description:
               'Pieniądze trafiają na Twoje konto — szybko i bezpiecznie',
           icon: Icons.account_balance_wallet_outlined,
-          color: AppColors.info,
+          color: const Color(0xFF8B5CF6),
           isLast: true,
         ),
       ],

@@ -8,6 +8,65 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-03] Update "Jak to działa?" section on client home screen to 5 steps
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Updated the "How it works" onboarding section on the client home screen from 4 steps to 5 steps matching the bidding flow. Step 2 now mentions workers submitting bids, step 4 is dedicated to rating, and new step 5 covers payment release with purple color matching rainbow progress.
+
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/client_home_screen.dart` – Updated `_buildHowItWorksSection()`: step 2 changed from "Zatwierdź pracownika" to "Wybierz pracownika" with bid-related description, step 4 split into "Oceń pracownika" (rating only), new step 5 "Gotowe!" with purple color (0xFF8B5CF6) for payment release.
+
+- **System Impact**: UI-only change on client home screen onboarding section. No backend changes.
+- **Related Tasks/PRD**: Bidding system flow alignment, matches contractor home screen 5-step update
+- **Potential Conflicts/Risks**: None — cosmetic UI text change only.
+
+---
+
+## [2026-03-03] Update "Jak zacząć zarabiać?" section to 5-step bidding flow
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Updated the "How to start earning" onboarding section on the contractor home screen from 4 outdated steps (which referenced the old direct-accept flow) to 5 steps matching the current bidding system. New steps: Przeglądaj zlecenia → Złóż ofertę → Wykonaj zadanie → Oceń szefa → Odbierz wypłatę.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Replaced 4 `_buildStepItem()` calls in `_buildHowItWorksSection()` with 5 steps: changed step 2 from "Zaakceptuj zlecenie" to "Złóż ofertę" with bid-related description, updated step 3 description to mention client choosing you, added new step 4 "Oceń szefa" with star icon, moved "Odbierz wypłatę" to step 5 with purple color (0xFF8B5CF6) to match rainbow progress 5th dot.
+
+- **System Impact**: UI-only change on contractor home screen onboarding section. No backend changes.
+- **Related Tasks/PRD**: Bidding system flow alignment
+- **Potential Conflicts/Risks**: None — cosmetic UI text change only.
+
+---
+
+## [2026-03-03] Implement 5-step progress flow with rating step
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Changed the task progress visualization from 4 steps to 5 steps on both client (task_tracking_screen) and contractor (active_task_screen) views. Added a visible "Ocena" (Rating) step between "W trakcie" and "Gotowe" so users clearly see they must rate to finalize. Both screens now use identical labels: Zgłoszenia → Zaakceptowane → W trakcie → Ocena → Gotowe.
+
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `rating` value to `TrackingStatus` enum; updated `TrackingStatusExtension` with title/subtitle/stepIndex for rating (stepIndex=3) and completed (stepIndex=4); `_mapTaskStatus()` now maps `pendingComplete` → `rating`; `_mapStringStatus()` maps `'pending_complete'` → `rating`; progress labels changed from 4 to 5; added `rating` case to `_getStatusIcon()` (star_outline); added amber/warning colors for rating state header; cancel button hidden for both rating and completed states.
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Progress labels updated to 5 steps; step mapping updated: `pendingComplete` → step 3, `completed` → step 4; action button text for `pendingComplete` changed from "Zakończ zlecenie" to "Oceń i zakończ".
+
+- **System Impact**: Visual progress flow now shows 5 steps instead of 4 on both client and contractor task detail screens. PENDING_COMPLETE status is now clearly distinguished from COMPLETED with its own "Ocena" step. No backend changes.
+- **Related Tasks/PRD**: Dual-rating system visibility — both parties must rate for COMPLETED status.
+- **Potential Conflicts/Risks**: None — `SFRainbowProgress` widget already supports 5 colors and dynamic step counts.
+
+---
+
+## [2026-03-03] Add green border to task cards for active statuses
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added a green thick (2px) border to task cards across contractor and client screens when the task is in an active status (accepted, confirmed, inProgress, pendingComplete). Cards in other statuses retain the default gray 1px border.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – `_buildActiveTaskCard`: added green border for accepted/confirmed/inProgress/pendingComplete statuses using `ContractorTaskStatus` enum.
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – `_ContractorTaskCard`: added green border for same active statuses.
+  - `mobile/lib/features/client/screens/task_history_screen.dart` – Task card: added green border for confirmed/inProgress/pendingComplete statuses using `TaskStatus` enum.
+
+- **System Impact**: Visual enhancement — active task cards are now more prominent with green borders. No logic changes.
+- **Related Tasks/PRD**: UI polish for task status visibility
+- **Potential Conflicts/Risks**: None — cosmetic border change only.
+
+---
+
 ## [2026-03-02] Show contact details in profile popups after task acceptance
 
 - **Developer/Agent**: Claude
