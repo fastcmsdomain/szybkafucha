@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -213,14 +214,31 @@ class _ContractorTaskCard extends StatelessWidget {
       button: true,
       child: GestureDetector(
         onTap: isActive
-            ? () => context.push(Routes.contractorTask(task.id))
+            ? () => context.push(
+                  task.status == ContractorTaskStatus.offered
+                      ? Routes.contractorTaskRoomRoute(task.id)
+                      : Routes.contractorTask(task.id),
+                )
             : () => _showTaskDetails(context, task, categoryData),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.paddingMD),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: AppRadius.radiusLG,
-            border: Border.all(color: AppColors.gray200),
+            border: Border.all(
+              color: task.status == ContractorTaskStatus.accepted ||
+                      task.status == ContractorTaskStatus.confirmed ||
+                      task.status == ContractorTaskStatus.inProgress ||
+                      task.status == ContractorTaskStatus.pendingComplete
+                  ? AppColors.success
+                  : AppColors.gray200,
+              width: task.status == ContractorTaskStatus.accepted ||
+                      task.status == ContractorTaskStatus.confirmed ||
+                      task.status == ContractorTaskStatus.inProgress ||
+                      task.status == ContractorTaskStatus.pendingComplete
+                  ? 2.0
+                  : 1.0,
+            ),
             boxShadow: AppShadows.sm,
           ),
           child: Column(
@@ -229,11 +247,22 @@ class _ContractorTaskCard extends StatelessWidget {
               _CardHeader(task: task, categoryData: categoryData),
               const SizedBox(height: AppSpacing.gapMD),
               Text(
-                task.description,
-                style: AppTypography.bodySmall,
-                maxLines: 2,
+                task.title,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (task.description.trim().isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.description,
+                  style: AppTypography.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
               const SizedBox(height: AppSpacing.gapMD),
               _CardFooter(task: task),
               if (isActive) ...[
@@ -337,26 +366,46 @@ class _CardFooter extends StatelessWidget {
   }
 }
 
-class _ActiveTaskActions extends StatelessWidget {
+class _ActiveTaskActions extends ConsumerWidget {
   final ContractorTask task;
 
   const _ActiveTaskActions({required this.task});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => context.push(Routes.contractorTask(task.id)),
+            onPressed: () => context.push(
+              task.status == ContractorTaskStatus.offered
+                  ? Routes.contractorTaskRoomRoute(task.id)
+                  : Routes.contractorTask(task.id),
+            ),
             child: const Text('Szczegóły'),
           ),
         ),
         const SizedBox(width: AppSpacing.gapSM),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () =>
-                context.push(Routes.contractorTaskChatRoute(task.id)),
+            onPressed: () {
+              final currentUser = ref.read(currentUserProvider);
+              context.push(
+                Routes.contractorTaskChatRoute(task.id),
+                extra: {
+                  'otherUserId': task.clientId,
+                  'taskTitle': task.title.trim().isNotEmpty
+                      ? task.title
+                      : (task.description.trim().isNotEmpty
+                            ? task.description
+                            : 'Czat'),
+                  'otherUserName': task.clientName,
+                  'otherUserAvatarUrl': task.clientAvatarUrl,
+                  'currentUserId': currentUser?.id ?? '',
+                  'currentUserName': currentUser?.name ?? 'Ty',
+                },
+              );
+            },
             icon: const Icon(Icons.chat_outlined, size: 18),
             label: const Text('Czat'),
             style: ElevatedButton.styleFrom(
@@ -446,12 +495,30 @@ class _TaskDetailsSheet extends StatelessWidget {
                 _SheetHeader(task: task, categoryData: categoryData),
                 const SizedBox(height: AppSpacing.space4),
                 Text(
+                  'Tytuł',
+                  style: AppTypography.labelMedium
+                      .copyWith(color: AppColors.gray500),
+                ),
+                const SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.title,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space4),
+                Text(
                   'Opis',
                   style: AppTypography.labelMedium
                       .copyWith(color: AppColors.gray500),
                 ),
                 const SizedBox(height: AppSpacing.gapXS),
-                Text(task.description, style: AppTypography.bodyMedium),
+                Text(
+                  task.description.trim().isEmpty
+                      ? 'Brak opisu'
+                      : task.description,
+                  style: AppTypography.bodyMedium,
+                ),
                 const SizedBox(height: AppSpacing.space4),
                 Text(
                   'Lokalizacja',

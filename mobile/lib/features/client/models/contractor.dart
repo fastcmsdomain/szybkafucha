@@ -17,6 +17,8 @@ class Contractor {
   final DateTime? memberSince;
   final DateTime? dateOfBirth;
   final String? bio;
+  final String? email;
+  final String? phone;
 
   const Contractor({
     required this.id,
@@ -34,6 +36,8 @@ class Contractor {
     this.memberSince,
     this.dateOfBirth,
     this.bio,
+    this.email,
+    this.phone,
   });
 
   factory Contractor.fromJson(Map<String, dynamic> json) {
@@ -76,6 +80,8 @@ class Contractor {
               json['description'] ??
               json['about'] ??
               json['bioText']) as String?,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
     );
   }
 
@@ -95,6 +101,8 @@ class Contractor {
         'member_since': memberSince?.toIso8601String(),
         'date_of_birth': dateOfBirth?.toIso8601String(),
         'bio': bio,
+        'email': email,
+        'phone': phone,
       };
 
   static DateTime? _parseDate(dynamic value) {

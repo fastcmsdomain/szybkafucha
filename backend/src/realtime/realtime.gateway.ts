@@ -27,6 +27,12 @@ import { UserType } from '../users/entities/user.entity';
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
 const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
+/** Detects email addresses */
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
+
+/** Detects URLs */
+const URL_REGEX = /(https?:\/\/|www\.)[^\s]+/gi;
+
 // Events emitted by server
 export enum ServerEvent {
   LOCATION_UPDATE = 'location:update',
@@ -49,6 +55,7 @@ export enum ClientEvent {
   LOCATION_UPDATE = 'location:update',
   TASK_JOIN = 'task:join',
   TASK_LEAVE = 'task:leave',
+  CHAT_JOIN = 'chat:join',
   MESSAGE_SEND = 'message:send',
   MESSAGE_READ = 'message:read',
 }
@@ -129,8 +136,7 @@ export class RealtimeGateway
       // Register connection
       this.realtimeService.registerConnection(client.id, userId, userType);
 
-      // Auto-join active task rooms so message:new is delivered
-      // even before the user opens the chat screen (for unread badge)
+      // Auto-join task rooms (for status/application events)
       this.realtimeService
         .getActiveTaskIdsForUser(userId)
         .then(async (taskIds) => {
@@ -147,6 +153,25 @@ export class RealtimeGateway
         .catch((err) => {
           this.logger.error(
             `Failed to auto-join task rooms for ${userId}: ${err}`,
+          );
+        });
+
+      // Auto-join chat rooms (for 1-to-1 message delivery)
+      this.realtimeService
+        .getActiveChatRoomsForUser(userId)
+        .then(async (chatRooms) => {
+          for (const roomName of chatRooms) {
+            await client.join(roomName);
+          }
+          if (chatRooms.length > 0) {
+            this.logger.debug(
+              `User ${userId} auto-joined ${chatRooms.length} chat room(s)`,
+            );
+          }
+        })
+        .catch((err) => {
+          this.logger.error(
+            `Failed to auto-join chat rooms for ${userId}: ${err}`,
           );
         });
 
@@ -214,7 +239,6 @@ export class RealtimeGateway
     await this.realtimeService.updateLocation(locationUpdate);
 
     // Broadcast to task rooms this contractor is in
-    // Get all task rooms and broadcast to those where this contractor is involved
     this.server.emit(ServerEvent.LOCATION_UPDATE, locationUpdate);
 
     this.logger.debug(
@@ -223,7 +247,7 @@ export class RealtimeGateway
   }
 
   /**
-   * Join a task room to receive updates
+   * Join a task room to receive task-level updates (status, applications)
    */
   @SubscribeMessage(ClientEvent.TASK_JOIN)
   async handleTaskJoin(
@@ -246,11 +270,49 @@ export class RealtimeGateway
       return { success: false, error: 'Not authorized for this task' };
     }
 
-    // Join room
+    // Join task room (for status/application events)
     await client.join(`task:${data.taskId}`);
     this.realtimeService.joinTaskRoom(client.id, data.taskId);
 
     this.logger.debug(`User ${userId} joined task room ${data.taskId}`);
+    return { success: true };
+  }
+
+  /**
+   * Join a 1-to-1 chat room within a task
+   */
+  @SubscribeMessage(ClientEvent.CHAT_JOIN)
+  async handleChatJoin(
+    @ConnectedSocket() client: AuthedSocket,
+    @MessageBody() data: { taskId: string; otherUserId: string },
+  ): Promise<{ success: boolean; error?: string }> {
+    const userId = client.data.userId;
+
+    if (!userId) {
+      return { success: false, error: 'Authentication required' };
+    }
+
+    // Check authorization
+    const isAuthorized = await this.realtimeService.isUserAuthorizedForTask(
+      userId,
+      data.taskId,
+    );
+
+    if (!isAuthorized) {
+      return { success: false, error: 'Not authorized for this task' };
+    }
+
+    // Compute deterministic chat room name and join
+    const chatRoom = this.realtimeService.getChatRoomName(
+      data.taskId,
+      userId,
+      data.otherUserId,
+    );
+    await client.join(chatRoom);
+
+    this.logger.debug(
+      `User ${userId} joined chat room ${chatRoom} (task: ${data.taskId}, other: ${data.otherUserId})`,
+    );
     return { success: true };
   }
 
@@ -276,17 +338,22 @@ export class RealtimeGateway
   }
 
   /**
-   * Handle sending chat messages
+   * Handle sending chat messages (1-to-1)
    */
   @SubscribeMessage(ClientEvent.MESSAGE_SEND)
   async handleMessageSend(
     @ConnectedSocket() client: AuthedSocket,
-    @MessageBody() data: { taskId: string; content: string },
+    @MessageBody()
+    data: { taskId: string; recipientId: string; content: string },
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     const userId = client.data.userId;
 
     if (!userId) {
       return { success: false, error: 'Authentication required' };
+    }
+
+    if (!data.recipientId) {
+      return { success: false, error: 'recipientId is required' };
     }
 
     // Check authorization
@@ -307,36 +374,61 @@ export class RealtimeGateway
       };
     }
 
-    // Create and save message
+    // Block email addresses in chat
+    if (EMAIL_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie adresów email w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block URLs in chat
+    if (URL_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie linków w czacie jest niedozwolone.',
+      };
+    }
+
+    // Create and save message with recipientId
     const chatMessage: ChatMessage = {
       taskId: data.taskId,
       senderId: userId,
+      recipientId: data.recipientId,
       content: data.content,
       createdAt: new Date(),
     };
 
     const savedMessage = await this.realtimeService.saveMessage(chatMessage);
 
-    // Broadcast to task room
-    this.server.to(`task:${data.taskId}`).emit(ServerEvent.MESSAGE_NEW, {
+    // Broadcast to 1-to-1 chat room (only sender + recipient see this)
+    const chatRoom = this.realtimeService.getChatRoomName(
+      data.taskId,
+      userId,
+      data.recipientId,
+    );
+    this.server.to(chatRoom).emit(ServerEvent.MESSAGE_NEW, {
       id: savedMessage.id,
       taskId: data.taskId,
       senderId: userId,
+      recipientId: data.recipientId,
       content: data.content,
       createdAt: savedMessage.createdAt,
     });
 
-    this.logger.debug(`Message sent in task ${data.taskId} by ${userId}`);
+    this.logger.debug(
+      `Message sent in task ${data.taskId} from ${userId} to ${data.recipientId}`,
+    );
     return { success: true, messageId: savedMessage.id };
   }
 
   /**
-   * Handle marking messages as read
+   * Handle marking messages as read (1-to-1)
    */
   @SubscribeMessage(ClientEvent.MESSAGE_READ)
   async handleMessageRead(
     @ConnectedSocket() client: AuthedSocket,
-    @MessageBody() data: { taskId: string },
+    @MessageBody() data: { taskId: string; otherUserId: string },
   ): Promise<{ success: boolean }> {
     const userId = client.data.userId;
 
@@ -344,10 +436,19 @@ export class RealtimeGateway
       return { success: false };
     }
 
-    await this.realtimeService.markMessagesRead(data.taskId, userId);
+    await this.realtimeService.markMessagesRead(
+      data.taskId,
+      userId,
+      data.otherUserId,
+    );
 
-    // Notify other users in the task room
-    this.server.to(`task:${data.taskId}`).emit(ServerEvent.MESSAGE_READ, {
+    // Notify the other user via their chat room
+    const chatRoom = this.realtimeService.getChatRoomName(
+      data.taskId,
+      userId,
+      data.otherUserId,
+    );
+    this.server.to(chatRoom).emit(ServerEvent.MESSAGE_READ, {
       taskId: data.taskId,
       readBy: userId,
       readAt: new Date(),

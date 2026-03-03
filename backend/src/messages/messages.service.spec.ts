@@ -9,6 +9,10 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { Message } from './entities/message.entity';
 import { Task, TaskStatus } from '../tasks/entities/task.entity';
+import {
+  ApplicationStatus,
+  TaskApplication,
+} from '../tasks/entities/task-application.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -16,6 +20,7 @@ describe('MessagesService', () => {
   let service: MessagesService;
   let messageRepository: jest.Mocked<Repository<Message>>;
   let taskRepository: jest.Mocked<Repository<Task>>;
+  let taskApplicationRepository: jest.Mocked<Repository<TaskApplication>>;
   let userRepository: jest.Mocked<Repository<User>>;
 
   const mockClient: User = {
@@ -78,6 +83,7 @@ describe('MessagesService', () => {
     taskId: 'task-123',
     task: null as any,
     senderId: 'client-123',
+    recipientId: 'contractor-123',
     sender: mockClient,
     content: 'Hello, when can you start?',
     readAt: null,
@@ -85,6 +91,8 @@ describe('MessagesService', () => {
   };
 
   const createMockQueryBuilder = (getMany: any[] = [], getCount = 0) => ({
+    addSelect: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -92,11 +100,14 @@ describe('MessagesService', () => {
     take: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    addGroupBy: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
     execute: jest.fn().mockResolvedValue({ affected: 1 }),
     getMany: jest.fn().mockResolvedValue(getMany),
     getCount: jest.fn().mockResolvedValue(getCount),
+    getRawMany: jest.fn().mockResolvedValue([]),
   });
 
   beforeEach(async () => {
@@ -111,6 +122,11 @@ describe('MessagesService', () => {
     const mockTaskRepository = {
       findOne: jest.fn(),
       createQueryBuilder: jest.fn(),
+    };
+
+    const mockTaskApplicationRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(),
     };
 
     const mockUserRepository = {
@@ -133,6 +149,10 @@ describe('MessagesService', () => {
         },
         { provide: getRepositoryToken(Task), useValue: mockTaskRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
+        {
+          provide: getRepositoryToken(TaskApplication),
+          useValue: mockTaskApplicationRepository,
+        },
         { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
@@ -140,6 +160,7 @@ describe('MessagesService', () => {
     service = module.get<MessagesService>(MessagesService);
     messageRepository = module.get(getRepositoryToken(Message));
     taskRepository = module.get(getRepositoryToken(Task));
+    taskApplicationRepository = module.get(getRepositoryToken(TaskApplication));
     userRepository = module.get(getRepositoryToken(User));
   });
 
@@ -150,7 +171,11 @@ describe('MessagesService', () => {
         createMockQueryBuilder([mockMessage]) as any,
       );
 
-      const result = await service.getTaskMessages('task-123', 'client-123');
+      const result = await service.getTaskMessages(
+        'task-123',
+        'client-123',
+        'contractor-123',
+      );
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('message-123');
@@ -166,6 +191,7 @@ describe('MessagesService', () => {
       const result = await service.getTaskMessages(
         'task-123',
         'contractor-123',
+        'client-123',
       );
 
       expect(result.length).toBe(1);
@@ -175,7 +201,7 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
 
       await expect(
-        service.getTaskMessages('task-123', 'other-user'),
+        service.getTaskMessages('task-123', 'other-user', 'client-123'),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -183,7 +209,7 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.getTaskMessages('nonexistent', 'client-123'),
+        service.getTaskMessages('nonexistent', 'client-123', 'contractor-123'),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -193,7 +219,11 @@ describe('MessagesService', () => {
         createMockQueryBuilder([{ ...mockMessage, sender: mockClient }]) as any,
       );
 
-      const result = await service.getTaskMessages('task-123', 'client-123');
+      const result = await service.getTaskMessages(
+        'task-123',
+        'client-123',
+        'contractor-123',
+      );
 
       expect(result[0]).toHaveProperty('senderName', 'Jan Kowalski');
       expect(result[0]).toHaveProperty(
@@ -215,6 +245,7 @@ describe('MessagesService', () => {
       await service.getTaskMessages(
         'task-123',
         'client-123',
+        'contractor-123',
         50,
         'before-message',
       );
@@ -230,7 +261,12 @@ describe('MessagesService', () => {
       const qb = createMockQueryBuilder([]);
       messageRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      await service.getTaskMessages('task-123', 'client-123', 25);
+      await service.getTaskMessages(
+        'task-123',
+        'client-123',
+        'contractor-123',
+        25,
+      );
 
       expect(qb.take).toHaveBeenCalledWith(25);
     });
@@ -242,9 +278,14 @@ describe('MessagesService', () => {
       messageRepository.save.mockResolvedValue(mockMessage);
       userRepository.findOne.mockResolvedValue(mockClient);
 
-      const result = await service.sendMessage('task-123', 'client-123', {
-        content: 'Hello, when can you start?',
-      });
+      const result = await service.sendMessage(
+        'task-123',
+        'client-123',
+        'contractor-123',
+        {
+          content: 'Hello, when can you start?',
+        },
+      );
 
       expect(result.id).toBe('message-123');
       expect(result.content).toBe('Hello, when can you start?');
@@ -255,7 +296,9 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
 
       await expect(
-        service.sendMessage('task-123', 'other-user', { content: 'Hi' }),
+        service.sendMessage('task-123', 'other-user', 'client-123', {
+          content: 'Hi',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -263,7 +306,9 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.sendMessage('nonexistent', 'client-123', { content: 'Hi' }),
+        service.sendMessage('nonexistent', 'client-123', 'contractor-123', {
+          content: 'Hi',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -276,9 +321,14 @@ describe('MessagesService', () => {
       });
       userRepository.findOne.mockResolvedValue(mockContractor);
 
-      const result = await service.sendMessage('task-123', 'contractor-123', {
-        content: 'I will start in 10 minutes',
-      });
+      const result = await service.sendMessage(
+        'task-123',
+        'contractor-123',
+        'client-123',
+        {
+          content: 'I will start in 10 minutes',
+        },
+      );
 
       expect(result.senderId).toBe('contractor-123');
       expect(result.senderName).toBe('Marek Szybki');
@@ -292,7 +342,11 @@ describe('MessagesService', () => {
       qb.execute.mockResolvedValue({ affected: 5 });
       messageRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      const result = await service.markAsRead('task-123', 'client-123');
+      const result = await service.markAsRead(
+        'task-123',
+        'client-123',
+        'contractor-123',
+      );
 
       expect(result.updated).toBe(5);
       expect(qb.set).toHaveBeenCalledWith({ readAt: expect.any(Date) });
@@ -302,7 +356,7 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
 
       await expect(
-        service.markAsRead('task-123', 'other-user'),
+        service.markAsRead('task-123', 'other-user', 'client-123'),
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -312,7 +366,11 @@ describe('MessagesService', () => {
       qb.execute.mockResolvedValue({ affected: 0 });
       messageRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      const result = await service.markAsRead('task-123', 'client-123');
+      const result = await service.markAsRead(
+        'task-123',
+        'client-123',
+        'contractor-123',
+      );
 
       expect(result.updated).toBe(0);
     });
@@ -321,9 +379,14 @@ describe('MessagesService', () => {
   describe('getUnreadCount', () => {
     it('should return count of unread messages', async () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
-      messageRepository.count.mockResolvedValue(3);
+      const qb = createMockQueryBuilder([], 3);
+      messageRepository.createQueryBuilder.mockReturnValue(qb as any);
 
-      const result = await service.getUnreadCount('task-123', 'client-123');
+      const result = await service.getUnreadCount(
+        'task-123',
+        'client-123',
+        'contractor-123',
+      );
 
       expect(result).toBe(3);
     });
@@ -332,46 +395,39 @@ describe('MessagesService', () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
 
       await expect(
-        service.getUnreadCount('task-123', 'other-user'),
+        service.getUnreadCount('task-123', 'other-user', 'client-123'),
       ).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('getAllUnreadCounts', () => {
-    it('should return unread counts for all active tasks', async () => {
-      const tasks = [{ id: 'task-1' }, { id: 'task-2' }, { id: 'task-3' }];
-
-      const taskQb = {
-        select: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(tasks),
-      };
-      taskRepository.createQueryBuilder.mockReturnValue(taskQb as any);
-
+    it('should return unread counts for all active conversations', async () => {
       const messageQb = createMockQueryBuilder();
-      messageQb.getCount
-        .mockResolvedValueOnce(5) // task-1: 5 unread
-        .mockResolvedValueOnce(0) // task-2: 0 unread
-        .mockResolvedValueOnce(2); // task-3: 2 unread
+      messageQb.getRawMany.mockResolvedValue([
+        { taskId: 'task-1', otherUserId: 'contractor-123', count: '5' },
+        { taskId: 'task-3', otherUserId: 'contractor-456', count: '2' },
+      ]);
       messageRepository.createQueryBuilder.mockReturnValue(messageQb as any);
 
       const result = await service.getAllUnreadCounts('client-123');
 
-      // Should only return tasks with unread > 0
       expect(result.length).toBe(2);
-      expect(result).toContainEqual({ taskId: 'task-1', count: 5 });
-      expect(result).toContainEqual({ taskId: 'task-3', count: 2 });
+      expect(result).toContainEqual({
+        taskId: 'task-1',
+        otherUserId: 'contractor-123',
+        count: 5,
+      });
+      expect(result).toContainEqual({
+        taskId: 'task-3',
+        otherUserId: 'contractor-456',
+        count: 2,
+      });
     });
 
-    it('should return empty array when no active tasks', async () => {
-      const taskQb = {
-        select: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      };
-      taskRepository.createQueryBuilder.mockReturnValue(taskQb as any);
+    it('should return empty array when no active conversations', async () => {
+      const messageQb = createMockQueryBuilder();
+      messageQb.getRawMany.mockResolvedValue([]);
+      messageRepository.createQueryBuilder.mockReturnValue(messageQb as any);
 
       const result = await service.getAllUnreadCounts('client-123');
 
@@ -379,19 +435,14 @@ describe('MessagesService', () => {
     });
 
     it('should exclude completed and cancelled tasks', async () => {
-      const taskQb = {
-        select: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      };
-      taskRepository.createQueryBuilder.mockReturnValue(taskQb as any);
+      const messageQb = createMockQueryBuilder();
+      messageRepository.createQueryBuilder.mockReturnValue(messageQb as any);
 
       await service.getAllUnreadCounts('client-123');
 
-      expect(taskQb.andWhere).toHaveBeenCalledWith(
-        'task.status NOT IN (:...completedStatuses)',
-        { completedStatuses: ['completed', 'cancelled'] },
+      expect(messageQb.andWhere).toHaveBeenCalledWith(
+        'task.status NOT IN (:...done)',
+        { done: ['completed', 'cancelled'] },
       );
     });
   });
@@ -404,7 +455,7 @@ describe('MessagesService', () => {
       );
 
       await expect(
-        service.getTaskMessages('task-123', 'client-123'),
+        service.getTaskMessages('task-123', 'client-123', 'contractor-123'),
       ).resolves.toBeDefined();
     });
 
@@ -415,7 +466,7 @@ describe('MessagesService', () => {
       );
 
       await expect(
-        service.getTaskMessages('task-123', 'contractor-123'),
+        service.getTaskMessages('task-123', 'contractor-123', 'client-123'),
       ).resolves.toBeDefined();
     });
 
@@ -424,18 +475,39 @@ describe('MessagesService', () => {
         ...mockTask,
         contractorId: null,
       });
+      taskApplicationRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.getTaskMessages('task-123', 'contractor-123'),
+        service.getTaskMessages('task-123', 'contractor-123', 'client-123'),
       ).rejects.toThrow(ForbiddenException);
     });
 
     it('should deny access to random user', async () => {
       taskRepository.findOne.mockResolvedValue(mockTask);
+      taskApplicationRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.getTaskMessages('task-123', 'random-user'),
+        service.getTaskMessages('task-123', 'random-user', 'client-123'),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow pending applicant to access task chat', async () => {
+      taskRepository.findOne.mockResolvedValue({
+        ...mockTask,
+        contractorId: null,
+      });
+      taskApplicationRepository.findOne.mockResolvedValue({
+        taskId: 'task-123',
+        contractorId: 'applicant-123',
+        status: ApplicationStatus.PENDING,
+      });
+      messageRepository.createQueryBuilder.mockReturnValue(
+        createMockQueryBuilder([]) as any,
+      );
+
+      await expect(
+        service.getTaskMessages('task-123', 'applicant-123', 'client-123'),
+      ).resolves.toBeDefined();
     });
   });
 });

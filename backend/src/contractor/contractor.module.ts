@@ -9,9 +9,10 @@ import { ContractorService } from './contractor.service';
 import { ContractorController } from './contractor.controller';
 import { UsersModule } from '../users/users.module';
 import { Rating } from '../tasks/entities/rating.entity';
+import { Task } from '../tasks/entities/task.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ContractorProfile, Rating]), UsersModule],
+  imports: [TypeOrmModule.forFeature([ContractorProfile, Rating, Task]), UsersModule],
   controllers: [ContractorController],
   providers: [ContractorService],
   exports: [ContractorService],

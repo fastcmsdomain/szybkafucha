@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_chat_badge.dart';
 import '../models/task_application.dart';
 
 class ApplicationCard extends StatelessWidget {
@@ -10,6 +11,8 @@ class ApplicationCard extends StatelessWidget {
   final int? taskBudget;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
+  final VoidCallback? onKick;
+  final VoidCallback? onChat;
   final VoidCallback? onViewProfile;
   final VoidCallback? onTap;
 
@@ -19,6 +22,8 @@ class ApplicationCard extends StatelessWidget {
     this.taskBudget,
     this.onAccept,
     this.onReject,
+    this.onKick,
+    this.onChat,
     this.onViewProfile,
     this.onTap,
   });
@@ -38,7 +43,11 @@ class ApplicationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: application.status == ApplicationStatus.accepted
+                ? AppColors.success
+                : AppColors.gray200,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.gray900.withValues(alpha: 0.05),
@@ -185,60 +194,87 @@ class ApplicationCard extends StatelessWidget {
               ),
             ],
 
-            // Contractor profile button
-            if (onViewProfile != null) ...[
-              SizedBox(height: AppSpacing.paddingSM),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onViewProfile,
-                  icon: const Icon(Icons.person_outline, size: 16),
-                  label: const Text('Profil wykonawcy'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
-                  ),
-                ),
-              ),
-            ],
-
             // Action buttons (only for pending applications)
-            if (isPending && (onAccept != null || onReject != null)) ...[
+            if (isPending && (onAccept != null || onReject != null || onKick != null || onChat != null)) ...[
               SizedBox(height: AppSpacing.paddingSM),
-              Row(
-                children: [
-                  if (onReject != null)
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onReject,
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: AppColors.white,
-                          side: BorderSide(color: AppColors.error),
-                          padding: EdgeInsets.symmetric(
-                              vertical: AppSpacing.paddingSM),
+              // Row 1: Profil | Czat
+              if (onViewProfile != null || onChat != null)
+                Row(
+                  children: [
+                    if (onViewProfile != null)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onViewProfile,
+                          icon: const Icon(Icons.person_outline, size: 16),
+                          label: const Text('Profil'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                            padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.paddingSM),
+                          ),
                         ),
-                        child: const Text('Odrzuć'),
                       ),
-                    ),
-                  if (onReject != null && onAccept != null)
-                    SizedBox(width: AppSpacing.paddingSM),
-                  if (onAccept != null)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onAccept,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          foregroundColor: AppColors.white,
-                          padding: EdgeInsets.symmetric(
-                              vertical: AppSpacing.paddingSM),
+                    if (onViewProfile != null && onChat != null)
+                      SizedBox(width: AppSpacing.paddingSM),
+                    if (onChat != null)
+                      Expanded(
+                        child: SFChatBadge(
+                          taskId: application.taskId,
+                          otherUserId: application.contractorId,
+                          child: OutlinedButton.icon(
+                            onPressed: onChat,
+                            icon: Icon(Icons.chat_bubble_outline, size: 16),
+                            label: const Text('Czat'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.success,
+                              side: BorderSide(color: AppColors.success.withValues(alpha: 0.3)),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: AppSpacing.paddingSM),
+                            ),
+                          ),
                         ),
-                        child: const Text('Akceptuj'),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
+              // Row 2: Zwolnij | Akceptuj
+              if (onKick != null || onAccept != null)
+                SizedBox(height: AppSpacing.paddingXS),
+              if (onKick != null || onAccept != null)
+                Row(
+                  children: [
+                    if (onKick != null)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: onKick,
+                          icon: Icon(Icons.person_remove, size: 16),
+                          label: const Text('Zwolnij'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: AppColors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.paddingSM),
+                          ),
+                        ),
+                      ),
+                    if (onKick != null && onAccept != null)
+                      SizedBox(width: AppSpacing.paddingSM),
+                    if (onAccept != null)
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: onAccept,
+                          icon: Icon(Icons.check_circle_outline, size: 18),
+                          label: const Text('Akceptuj'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.success,
+                            foregroundColor: AppColors.white,
+                            padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.paddingSM),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
             ],
 
             // Status badge (for non-pending)
@@ -275,6 +311,8 @@ class ApplicationCard extends StatelessWidget {
       case ApplicationStatus.rejected:
         return AppColors.error;
       case ApplicationStatus.withdrawn:
+        return AppColors.gray500;
+      case ApplicationStatus.kicked:
         return AppColors.gray500;
       case ApplicationStatus.pending:
         return AppColors.warning;

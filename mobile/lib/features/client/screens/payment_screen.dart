@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/providers/credits_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
@@ -26,16 +27,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   String _selectedPaymentMethod = 'card';
   bool _saveCard = true;
 
-  // Platform fee is 17%
-  double get _platformFee {
-    final price = widget.paymentData?.contractor.proposedPrice ?? 0;
-    return price * 0.17;
-  }
-
-  double get _totalAmount {
-    final price = widget.paymentData?.contractor.proposedPrice ?? 0;
-    return price.toDouble();
-  }
+  // Fixed matching fee per side
+  static const double _matchingFee = 10.0;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +260,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Widget _buildPriceBreakdown(int price) {
+    final credits = ref.watch(creditsProvider);
+    final hasSufficientBalance = credits.balance >= _matchingFee;
+    final balanceAfterPayment = credits.balance - _matchingFee;
+
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -282,55 +279,99 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             style: AppTypography.labelLarge,
           ),
           SizedBox(height: AppSpacing.gapMD),
-          _buildPriceRow('Usługa', '$price PLN'),
-          SizedBox(height: AppSpacing.gapSM),
+
+          // Credits balance
           _buildPriceRow(
-            'Opłata platformy',
-            '${_platformFee.toStringAsFixed(2)} PLN',
-            isSubtle: true,
+            'Twoje saldo',
+            '${credits.balance.toStringAsFixed(2)} zł',
+            valueColor: hasSufficientBalance ? AppColors.success : AppColors.error,
           ),
+          SizedBox(height: AppSpacing.gapSM),
+
+          _buildPriceRow(
+            'Opłata za pomocnika',
+            '${_matchingFee.toStringAsFixed(2)} zł',
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+
           Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.gapMD),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.gapSM),
             child: Divider(color: AppColors.gray200),
           ),
+
           _buildPriceRow(
-            'Razem',
-            '${_totalAmount.toStringAsFixed(2)} PLN',
+            'Saldo po akceptacji',
+            '${balanceAfterPayment.toStringAsFixed(2)} zł',
             isBold: true,
+            valueColor: balanceAfterPayment >= 0 ? null : AppColors.error,
           ),
+
           SizedBox(height: AppSpacing.gapMD),
-          Container(
-            padding: EdgeInsets.all(AppSpacing.paddingSM),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: AppRadius.radiusSM,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.shield_outlined,
-                  size: 16,
-                  color: AppColors.success,
-                ),
-                SizedBox(width: AppSpacing.gapSM),
-                Expanded(
-                  child: Text(
-                    'Płatność jest zabezpieczona. Pieniądze zostaną przekazane po zakończeniu zlecenia.',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.success,
+
+          // Insufficient balance warning
+          if (!hasSufficientBalance) ...[
+            Container(
+              padding: EdgeInsets.all(AppSpacing.paddingSM),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: AppRadius.radiusSM,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.error),
+                  SizedBox(width: AppSpacing.gapSM),
+                  Expanded(
+                    child: Text(
+                      'Niewystarczające środki. Potrzebujesz ${_matchingFee.toStringAsFixed(2)} zł.',
+                      style: AppTypography.caption.copyWith(color: AppColors.error),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            SizedBox(height: AppSpacing.gapSM),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push(Routes.clientWallet),
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                label: const Text('Doładuj portfel'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary),
+                ),
+              ),
+            ),
+          ],
+
+          // Info banner
+          if (hasSufficientBalance)
+            Container(
+              padding: EdgeInsets.all(AppSpacing.paddingSM),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.1),
+                borderRadius: AppRadius.radiusSM,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.info),
+                  SizedBox(width: AppSpacing.gapSM),
+                  Expanded(
+                    child: Text(
+                      'Opłata ${_matchingFee.toStringAsFixed(0)} zł zostanie pobrana z Twojego portfela. Wykonawca również płaci ${_matchingFee.toStringAsFixed(0)} zł.',
+                      style: AppTypography.caption.copyWith(color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildPriceRow(String label, String value,
-      {bool isSubtle = false, bool isBold = false}) {
+      {bool isSubtle = false, bool isBold = false, Color? valueColor}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -346,11 +387,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         Text(
           value,
           style: isBold
-              ? AppTypography.h4.copyWith(color: AppColors.primary)
+              ? AppTypography.h4.copyWith(color: valueColor ?? AppColors.primary)
               : isSubtle
-                  ? AppTypography.bodySmall.copyWith(color: AppColors.gray500)
+                  ? AppTypography.bodySmall.copyWith(color: valueColor ?? AppColors.gray500)
                   : AppTypography.bodySmall
-                      .copyWith(fontWeight: FontWeight.w500),
+                      .copyWith(fontWeight: FontWeight.w500, color: valueColor),
         ),
       ],
     );
@@ -526,7 +567,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
 
   Widget _buildTermsNotice() {
     return Text(
-      'Klikając "Zapłać", akceptujesz Regulamin i Politykę Prywatności Szybka Fucha.',
+      'Potwierdzając wybór, akceptujesz pobranie ${_matchingFee.toStringAsFixed(0)} zł z Twojego portfela zgodnie z Regulaminem Szybka Fucha.',
       style: AppTypography.caption.copyWith(
         color: AppColors.gray500,
       ),
@@ -535,6 +576,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   }
 
   Widget _buildBottomBar() {
+    final credits = ref.watch(creditsProvider);
+    final hasSufficientBalance = credits.balance >= _matchingFee;
+
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -554,10 +598,11 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _isProcessing ? null : _processPayment,
+                onPressed: _isProcessing || !hasSufficientBalance ? null : _processPayment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
+                  disabledBackgroundColor: AppColors.gray300,
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppRadius.button,
@@ -573,7 +618,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                         ),
                       )
                     : Text(
-                        'Zapłać ${_totalAmount.toStringAsFixed(2)} PLN',
+                        hasSufficientBalance
+                            ? 'Potwierdź wybór (${_matchingFee.toStringAsFixed(0)} zł)'
+                            : 'Niewystarczające środki',
                         style: AppTypography.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

@@ -60,6 +60,18 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 _buildMenuItem(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Portfel',
+                  subtitle: 'Saldo i historia kredytów',
+                  onTap: () {
+                    if (user?.isContractor == true) {
+                      context.push(Routes.contractorWallet);
+                    } else {
+                      context.push(Routes.clientWallet);
+                    }
+                  },
+                ),
+                _buildMenuItem(
                   icon: Icons.reviews_outlined,
                   title: 'Opinie',
                   onTap: () {

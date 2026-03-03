@@ -363,17 +363,38 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
     );
   }
 
+  String _taskDetailRoute(ContractorTask task) {
+    // Room tasks go to the room screen, others to active task screen
+    if (task.status == ContractorTaskStatus.offered) {
+      return Routes.contractorTaskRoomRoute(task.id);
+    }
+    return Routes.contractorTask(task.id);
+  }
+
   Widget _buildActiveTaskCard(ContractorTask task) {
     final categoryData = TaskCategoryData.fromCategory(task.category);
 
     return GestureDetector(
-      onTap: () => context.push(Routes.contractorTask(task.id)),
+      onTap: () => context.push(_taskDetailRoute(task)),
       child: Container(
         padding: EdgeInsets.all(AppSpacing.paddingMD),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: task.status == ContractorTaskStatus.accepted ||
+                    task.status == ContractorTaskStatus.confirmed ||
+                    task.status == ContractorTaskStatus.inProgress ||
+                    task.status == ContractorTaskStatus.pendingComplete
+                ? AppColors.success
+                : AppColors.gray200,
+            width: task.status == ContractorTaskStatus.accepted ||
+                    task.status == ContractorTaskStatus.confirmed ||
+                    task.status == ContractorTaskStatus.inProgress ||
+                    task.status == ContractorTaskStatus.pendingComplete
+                ? 2.0
+                : 1.0,
+          ),
           boxShadow: AppShadows.sm,
         ),
         child: Column(
@@ -420,13 +441,24 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
 
             SizedBox(height: AppSpacing.gapMD),
 
-            // Description
+            // Title + description preview
             Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
+              task.title,
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (task.description.trim().isNotEmpty) ...[
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
 
             SizedBox(height: AppSpacing.gapMD),
 
@@ -468,7 +500,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => context.push(Routes.contractorTask(task.id)),
+                    onPressed: () => context.push(_taskDetailRoute(task)),
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text('Więcej'),
                   ),
@@ -483,7 +515,12 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
                         context.push(
                           Routes.contractorTaskChatRoute(task.id),
                           extra: {
-                            'taskTitle': task.description,
+                            'otherUserId': task.clientId,
+                            'taskTitle': task.title.trim().isNotEmpty
+                                ? task.title
+                                : (task.description.trim().isNotEmpty
+                                      ? task.description
+                                      : 'Czat'),
                             'otherUserName': task.clientName,
                             'otherUserAvatarUrl': task.clientAvatarUrl,
                             'currentUserId': currentUser?.id ?? '',
@@ -581,27 +618,35 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         ),
         _buildStepItem(
           number: '2',
-          title: 'Zaakceptuj zlecenie',
+          title: 'Złóż ofertę',
           description:
-              'Kliknij „Akceptuj" i umów się z szefem na szczegóły',
-          icon: Icons.handshake_outlined,
+              'Zaproponuj swoją cenę i wyślij zgłoszenie do szefa',
+          icon: Icons.local_offer_outlined,
           color: AppColors.warning,
         ),
         _buildStepItem(
           number: '3',
           title: 'Wykonaj zadanie',
           description:
-              'Zrealizuj zlecenie i potwierdź zakończenie pracy',
-          icon: Icons.check_circle_outline,
+              'Szef wybrał Cię! Rozpocznij pracę i zrealizuj zlecenie',
+          icon: Icons.handyman,
           color: AppColors.success,
         ),
         _buildStepItem(
           number: '4',
-          title: 'Odbierz wypłatę',
+          title: 'Oceń szefa',
           description:
-              'Pieniądze trafiają na Twoje konto — szybko i bezpiecznie',
-          icon: Icons.account_balance_wallet_outlined,
+              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
+          icon: Icons.star_outline,
           color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '5',
+          title: 'Gotowe!',
+          description:
+              'Zlecenie zakończone! Twoja ocena rośnie, a nowe zlecenia czekają',
+          icon: Icons.check_circle_outline,
+          color: const Color(0xFF8B5CF6),
           isLast: true,
         ),
       ],

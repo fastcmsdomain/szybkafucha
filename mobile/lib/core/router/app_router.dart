@@ -9,6 +9,8 @@ import '../../features/client/screens/client_profile_screen.dart';
 import '../../features/contractor/models/contractor_task.dart';
 import '../../features/contractor/screens/screens.dart' as contractor;
 import '../../features/profile/profile.dart';
+import '../../features/client/screens/wallet_screen.dart';
+import '../../features/contractor/screens/contractor_wallet_screen.dart';
 import '../providers/auth_provider.dart';
 import 'routes.dart';
 
@@ -58,6 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboardingRoute = state.matchedLocation == Routes.onboarding;
       final isBrowseRoute = state.matchedLocation == Routes.browse;
       final isPublicHomeRoute = state.matchedLocation == Routes.publicHome;
+      final isPublicProfileRoute = state.matchedLocation == Routes.publicProfile;
       final isLegalRoute =
           state.matchedLocation == Routes.termsOfService ||
           state.matchedLocation == Routes.privacyPolicy;
@@ -82,7 +85,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isAuthRoute ||
             isOnboardingRoute ||
             isBrowseRoute ||
-            isPublicHomeRoute) {
+            isPublicHomeRoute ||
+            isPublicProfileRoute) {
           final user = authNotifier.user;
           final destination = user?.isContractor == true
               ? Routes.contractorHome
@@ -114,11 +118,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         return Routes.publicHome;
       }
 
+      if (state.matchedLocation == Routes.welcome && isProfileTabRoute) {
+        print('  ✅ Root profile tab → redirecting to public profile');
+        return Routes.publicProfile;
+      }
+
       // Allow /browse, auth routes, and email verify (so users can log in / verify)
       if (isBrowseRoute ||
           isAuthRoute ||
           isEmailVerifyRoute ||
           isPublicHomeRoute ||
+          isPublicProfileRoute ||
           isLegalRoute) {
         print('  ✅ On browse or auth route, allow');
         return null;
@@ -140,15 +150,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
-      GoRoute(
-        path: Routes.browse,
-        name: 'browse',
-        builder: (context, state) => const PublicBrowseScreen(),
-      ),
-      GoRoute(
-        path: Routes.publicHome,
-        name: 'publicHome',
-        builder: (context, state) => const PublicHomeScreen(),
+      ShellRoute(
+        builder: (context, state, child) {
+          return _PublicShell(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: Routes.publicHome,
+            name: 'publicHome',
+            builder: (context, state) => const PublicHomeScreen(),
+          ),
+          GoRoute(
+            path: Routes.browse,
+            name: 'browse',
+            builder: (context, state) => const PublicBrowseScreen(),
+          ),
+          GoRoute(
+            path: Routes.publicProfile,
+            name: 'publicProfile',
+            builder: (context, state) => const WelcomeScreen(
+              profileMode: true,
+              showBottomNavigation: false,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.termsOfService,
@@ -265,6 +290,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const PaymentsSettingsScreen(),
           ),
           GoRoute(
+            path: Routes.clientWallet,
+            name: 'clientWallet',
+            builder: (context, state) => const WalletScreen(),
+          ),
+          GoRoute(
             path: Routes.clientReviews,
             name: 'clientReviews',
             builder: (context, state) => const ClientReviewsScreen(),
@@ -311,6 +341,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: Routes.clientTaskEdit,
+            name: 'clientTaskEdit',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return CreateTaskScreen(editTaskId: taskId);
+            },
+          ),
+          GoRoute(
             path: Routes.clientTaskChat,
             name: 'clientTaskChat',
             builder: (context, state) {
@@ -318,6 +356,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
+                otherUserId: extra?['otherUserId'] ?? '',
                 taskTitle: extra?['taskTitle'] ?? 'Czat',
                 otherUserName: extra?['otherUserName'] ?? 'Wykonawca',
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
@@ -375,6 +414,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const contractor.EarningsScreen(),
           ),
           GoRoute(
+            path: Routes.contractorWallet,
+            name: 'contractorWallet',
+            builder: (context, state) => const ContractorWalletScreen(),
+          ),
+          GoRoute(
             path: Routes.contractorProfile,
             name: 'contractorProfile',
             builder: (context, state) => const ProfileScreen(),
@@ -412,6 +456,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: Routes.contractorTaskRoom,
+            name: 'contractorTaskRoom',
+            builder: (context, state) {
+              final taskId = state.pathParameters['taskId']!;
+              return contractor.ContractorTaskRoomScreen(taskId: taskId);
+            },
+          ),
+          GoRoute(
             path: Routes.contractorTaskDetails,
             name: 'contractorTaskDetails',
             builder: (context, state) {
@@ -435,6 +487,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               return chat.ChatScreen(
                 taskId: taskId,
+                otherUserId: extra?['otherUserId'] ?? '',
                 taskTitle: extra?['taskTitle'] ?? 'Czat',
                 otherUserName: extra?['otherUserName'] ?? 'Unknown',
                 otherUserAvatarUrl: extra?['otherUserAvatarUrl'],
@@ -512,6 +565,61 @@ class _AuthStateNotifier extends ChangeNotifier {
   bool get isAuthenticated => _ref.read(authProvider).isAuthenticated;
   bool get onboardingComplete => _ref.read(authProvider).onboardingComplete;
   User? get user => _ref.read(authProvider).user;
+}
+
+/// Public bottom navigation shell for unauthenticated users.
+class _PublicShell extends StatelessWidget {
+  final Widget child;
+  const _PublicShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Główna',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.work_outline),
+            selectedIcon: Icon(Icons.work),
+            label: 'Zlecenia',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
+        selectedIndex: _calculateSelectedIndex(context),
+        onDestinationSelected: (index) => _onItemTapped(index, context),
+      ),
+    );
+  }
+
+  int _calculateSelectedIndex(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    if (location.startsWith(Routes.browse)) return 1;
+    if (location.startsWith(Routes.publicProfile)) return 2;
+    return 0;
+  }
+
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        context.go(Routes.publicHome);
+        return;
+      case 1:
+        context.go(Routes.browse);
+        return;
+      case 2:
+        context.go(Routes.publicProfile);
+        return;
+    }
+  }
 }
 
 /// Client bottom navigation shell

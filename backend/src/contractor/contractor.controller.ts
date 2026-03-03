@@ -11,6 +11,7 @@ import {
   UseGuards,
   Request,
   Param,
+  Query,
 } from '@nestjs/common';
 import { ContractorService } from './contractor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -29,8 +30,16 @@ export class ContractorController {
    * Returns safe public fields: name, avatar, bio, ratings, categories
    */
   @Get(':userId/public')
-  async getPublicProfile(@Param('userId') userId: string) {
-    return this.contractorService.getPublicProfile(userId);
+  async getPublicProfile(
+    @Param('userId') userId: string,
+    @Request() req: AuthenticatedRequest,
+    @Query('taskId') taskId?: string,
+  ) {
+    return this.contractorService.getPublicProfile(
+      userId,
+      req.user.id,
+      taskId,
+    );
   }
 
   /**

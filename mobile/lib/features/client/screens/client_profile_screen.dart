@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/credits_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
@@ -42,6 +43,7 @@ class _ClientProfileScreenState
     _bioController = TextEditingController(text: ''); // Bio loaded from client profile
     _addressController = TextEditingController(text: user?.address ?? '');
     _loadClientProfile();
+    ref.read(creditsProvider.notifier).fetchBalance();
   }
 
   Future<void> _loadClientProfile() async {
@@ -337,6 +339,10 @@ class _ClientProfileScreenState
 
             SizedBox(height: AppSpacing.space6),
 
+            _buildWalletShortcut(),
+
+            SizedBox(height: AppSpacing.space4),
+
             _buildPaymentsShortcut(user),
 
             SizedBox(height: AppSpacing.space4),
@@ -429,6 +435,30 @@ class _ClientProfileScreenState
             borderRadius: AppRadius.radiusMD,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildWalletShortcut() {
+    final credits = ref.watch(creditsProvider);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary),
+        title: Text('Portfel', style: AppTypography.bodyMedium),
+        subtitle: Text(
+          '${credits.balance.toStringAsFixed(2)} zł',
+          style: AppTypography.caption.copyWith(
+            color: credits.balance >= 10 ? AppColors.success : AppColors.warning,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppColors.gray400),
+        onTap: () => context.push(Routes.clientWallet),
       ),
     );
   }

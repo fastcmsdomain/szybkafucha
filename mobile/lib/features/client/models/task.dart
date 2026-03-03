@@ -48,6 +48,7 @@ extension TaskStatusExtension on TaskStatus {
 class Task {
   final String id;
   final TaskCategory category;
+  final String title;
   final String description;
   final String? address;
   final double? latitude;
@@ -70,6 +71,7 @@ class Task {
   const Task({
     required this.id,
     required this.category,
+    required this.title,
     required this.description,
     this.address,
     this.latitude,
@@ -101,37 +103,55 @@ class Task {
         (c) => c.name == json['category'],
         orElse: () => TaskCategory.paczki,
       ),
-      // Backend may send title or description
-      description: json['description'] as String? ?? json['title'] as String? ?? '',
+      title: (json['title'] as String?)?.trim().isNotEmpty == true
+          ? (json['title'] as String).trim()
+          : ((json['description'] as String?)?.trim().isNotEmpty == true
+              ? (json['description'] as String).trim()
+              : 'Zlecenie'),
+      description: json['description'] as String? ?? '',
       // Backend uses camelCase
       address: json['address'] as String?,
       // Backend may return decimal fields as Strings (e.g., "52.2297000")
-      latitude: _parseDouble(json['locationLat']) ?? _parseDouble(json['latitude']),
-      longitude: _parseDouble(json['locationLng']) ?? _parseDouble(json['longitude']),
+      latitude:
+          _parseDouble(json['locationLat']) ?? _parseDouble(json['latitude']),
+      longitude:
+          _parseDouble(json['locationLng']) ?? _parseDouble(json['longitude']),
       // Backend sends budgetAmount as decimal String (e.g., "50.00")
       budget: _parseInt(json['budgetAmount']) ?? _parseInt(json['budget']) ?? 0,
       // Backend sends estimatedDurationHours as decimal (e.g., 2.5)
       estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       scheduledAt: json['scheduledAt'] != null
           ? DateTime.parse(json['scheduledAt'] as String)
-          : (json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at'] as String) : null),
+          : (json['scheduled_at'] != null
+              ? DateTime.parse(json['scheduled_at'] as String)
+              : null),
       isImmediate: json['scheduledAt'] == null && json['scheduled_at'] == null,
       status: status,
-      clientId: json['clientId'] as String? ?? json['client_id'] as String? ?? '',
-      contractorId: json['contractorId'] as String? ?? json['contractor_id'] as String?,
+      clientId:
+          json['clientId'] as String? ?? json['client_id'] as String? ?? '',
+      contractorId:
+          json['contractorId'] as String? ?? json['contractor_id'] as String?,
       contractor: json['contractor'] != null
           ? Contractor.fromJson(json['contractor'] as Map<String, dynamic>)
           : null,
-      createdAt: DateTime.parse(json['createdAt'] as String? ?? json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(json['createdAt'] as String? ??
+          json['created_at'] as String? ??
+          DateTime.now().toIso8601String()),
       acceptedAt: json['acceptedAt'] != null
           ? DateTime.parse(json['acceptedAt'] as String)
-          : (json['accepted_at'] != null ? DateTime.parse(json['accepted_at'] as String) : null),
+          : (json['accepted_at'] != null
+              ? DateTime.parse(json['accepted_at'] as String)
+              : null),
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
-          : (json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null),
+          : (json['completed_at'] != null
+              ? DateTime.parse(json['completed_at'] as String)
+              : null),
       imageUrls: json['imageUrls'] != null
           ? List<String>.from(json['imageUrls'] as List)
-          : (json['image_urls'] != null ? List<String>.from(json['image_urls'] as List) : null),
+          : (json['image_urls'] != null
+              ? List<String>.from(json['image_urls'] as List)
+              : null),
       applicationCount: _parseInt(json['applicationCount']) ?? 0,
       maxApplications: _parseInt(json['maxApplications']) ?? 5,
     );
@@ -181,6 +201,7 @@ class Task {
   Map<String, dynamic> toJson() => {
         'id': id,
         'category': category.name,
+        'title': title,
         'description': description,
         'address': address,
         'latitude': latitude,
@@ -203,6 +224,7 @@ class Task {
   Task copyWith({
     String? id,
     TaskCategory? category,
+    String? title,
     String? description,
     String? address,
     double? latitude,
@@ -225,6 +247,7 @@ class Task {
     return Task(
       id: id ?? this.id,
       category: category ?? this.category,
+      title: title ?? this.title,
       description: description ?? this.description,
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
@@ -234,7 +257,8 @@ class Task {
       isImmediate: isImmediate ?? this.isImmediate,
       status: status ?? this.status,
       clientId: clientId ?? this.clientId,
-      contractorId: clearContractor ? null : (contractorId ?? this.contractorId),
+      contractorId:
+          clearContractor ? null : (contractorId ?? this.contractorId),
       contractor: clearContractor ? null : (contractor ?? this.contractor),
       createdAt: createdAt ?? this.createdAt,
       acceptedAt: acceptedAt ?? this.acceptedAt,

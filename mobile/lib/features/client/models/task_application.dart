@@ -9,6 +9,7 @@ enum ApplicationStatus {
   accepted,
   rejected,
   withdrawn,
+  kicked,
 }
 
 /// Extension for application status display
@@ -23,6 +24,8 @@ extension ApplicationStatusExtension on ApplicationStatus {
         return 'Odrzucone';
       case ApplicationStatus.withdrawn:
         return 'Wycofane';
+      case ApplicationStatus.kicked:
+        return 'Usunięty';
     }
   }
 
@@ -101,6 +104,8 @@ class TaskApplication {
         return ApplicationStatus.rejected;
       case 'withdrawn':
         return ApplicationStatus.withdrawn;
+      case 'kicked':
+        return ApplicationStatus.kicked;
       default:
         return ApplicationStatus.pending;
     }
@@ -143,6 +148,7 @@ class TaskApplication {
 class MyApplication {
   final String id;
   final String taskId;
+  final String clientId;
   final String taskTitle;
   final String taskCategory;
   final String taskAddress;
@@ -156,6 +162,7 @@ class MyApplication {
   const MyApplication({
     required this.id,
     required this.taskId,
+    required this.clientId,
     required this.taskTitle,
     required this.taskCategory,
     required this.taskAddress,
@@ -171,6 +178,7 @@ class MyApplication {
     return MyApplication(
       id: json['id'] as String,
       taskId: json['taskId'] as String,
+      clientId: json['clientId'] as String? ?? '',
       taskTitle: json['taskTitle'] as String? ?? '',
       taskCategory: json['taskCategory'] as String? ?? '',
       taskAddress: json['taskAddress'] as String? ?? '',

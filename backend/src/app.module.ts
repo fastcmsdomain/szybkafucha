@@ -7,6 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { APP_GUARD } from '@nestjs/core';
 import { join } from 'path';
@@ -39,6 +40,7 @@ import { TaskApplication } from './tasks/entities/task-application.entity';
 import { Rating } from './tasks/entities/rating.entity';
 import { Message } from './messages/entities/message.entity';
 import { Payment } from './payments/entities/payment.entity';
+import { CreditTransaction } from './payments/entities/credit-transaction.entity';
 import { KycCheck } from './kyc/entities/kyc-check.entity';
 import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscriber.entity';
 import { DeletedAccount } from './users/entities/deleted-account.entity';
@@ -73,6 +75,7 @@ import { DeletedAccount } from './users/entities/deleted-account.entity';
           Rating,
           Message,
           Payment,
+          CreditTransaction,
           KycCheck,
           NewsletterSubscriber,
           DeletedAccount,
@@ -138,6 +141,7 @@ import { DeletedAccount } from './users/entities/deleted-account.entity';
     HealthModule,
     NotificationsModule,
     SupportModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [

@@ -4,8 +4,9 @@
  */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Rating } from '../tasks/entities/rating.entity';
+import { Task, TaskStatus } from '../tasks/entities/task.entity';
 import { ClientProfile } from './entities/client-profile.entity';
 import { UsersService } from '../users/users.service';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
@@ -29,6 +30,8 @@ export class ClientService {
     private readonly ratingRepository: Repository<Rating>,
     @InjectRepository(ClientProfile)
     private readonly clientProfileRepository: Repository<ClientProfile>,
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -223,7 +226,11 @@ export class ClientService {
    * Get public client profile for contractors viewing client
    * Returns safe public fields: name, avatar, bio, ratings
    */
-  async getPublicProfile(userId: string): Promise<{
+  async getPublicProfile(
+    userId: string,
+    requestingUserId?: string,
+    taskId?: string,
+  ): Promise<{
     id: string;
     name: string;
     avatarUrl: string | null;
@@ -231,11 +238,39 @@ export class ClientService {
     ratingAvg: number;
     ratingCount: number;
     memberSince: Date;
+    email?: string | null;
+    phone?: string | null;
   }> {
     // Get user data
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new NotFoundException('Client not found');
+    }
+
+    // Check if requesting user has active task with this client (for contact info)
+    let contactEmail: string | null = null;
+    let contactPhone: string | null = null;
+
+    if (taskId && requestingUserId) {
+      const task = await this.taskRepository.findOne({
+        where: {
+          id: taskId,
+          clientId: userId,
+          contractorId: requestingUserId,
+          status: In([
+            TaskStatus.ACCEPTED,
+            TaskStatus.CONFIRMED,
+            TaskStatus.IN_PROGRESS,
+            TaskStatus.PENDING_COMPLETE,
+            TaskStatus.COMPLETED,
+          ]),
+        },
+      });
+
+      if (task) {
+        contactEmail = user.email || null;
+        contactPhone = user.phone || null;
+      }
     }
 
     // Get or create client profile (lazy creation)
@@ -256,6 +291,9 @@ export class ClientService {
       ratingAvg: ratingsData.ratingAvg,
       ratingCount: ratingsData.ratingCount,
       memberSince: user.createdAt,
+      ...(contactEmail !== null || contactPhone !== null
+        ? { email: contactEmail, phone: contactPhone }
+        : {}),
     };
   }
 }

@@ -19,6 +19,7 @@ import { ContractorProfile } from '../contractor/entities/contractor-profile.ent
 import { User } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
+import { CreditsService } from './credits.service';
 
 @Injectable()
 export class PaymentsService {
@@ -37,6 +38,7 @@ export class PaymentsService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly creditsService: CreditsService,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
 
@@ -657,9 +659,16 @@ export class PaymentsService {
     this.logger.log(`Received Stripe webhook: ${event.type}`);
 
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        await this.handlePaymentSucceeded(event.data.object);
+      case 'payment_intent.succeeded': {
+        const pi = event.data.object;
+        // Route credits top-ups to CreditsService
+        if (pi.metadata?.purpose === 'credits_topup') {
+          await this.creditsService.handleTopupWebhook(pi);
+        } else {
+          await this.handlePaymentSucceeded(pi);
+        }
         break;
+      }
       case 'payment_intent.payment_failed':
         await this.handlePaymentFailed(event.data.object);
         break;

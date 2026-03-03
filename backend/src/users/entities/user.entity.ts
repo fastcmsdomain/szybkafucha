@@ -90,6 +90,14 @@ export class User {
   @Column({ type: 'text', nullable: true })
   fcmToken: string | null;
 
+  // Credits balance (non-refundable, used for matching fees)
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  credits: number;
+
+  // Strike counter for cancellation tracking (3 strikes = auto-suspend)
+  @Column({ type: 'int', default: 0 })
+  strikes: number;
+
   @Column({
     type: 'jsonb',
     nullable: false,

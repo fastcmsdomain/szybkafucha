@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
@@ -86,11 +87,26 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildSection(
+                    title: 'Tytuł zlecenia',
+                    child: Text(
+                      _task.title,
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.gray800,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
                   // Description section
                   _buildSection(
                     title: 'Opis zlecenia',
                     child: Text(
-                      _task.description,
+                      _task.description.trim().isEmpty
+                          ? 'Brak opisu'
+                          : _task.description,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.gray700,
                         height: 1.5,
@@ -803,19 +819,49 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
       _navigateBack(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        if (e is ForbiddenException) {
+          _showKickedDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Błąd: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) {
         setState(() => _isAccepting = false);
       }
     }
+  }
+
+  void _showKickedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.block, color: AppColors.error, size: 48),
+        title: const Text('Nie możesz dołączyć'),
+        content: const Text(
+          'Zostałeś zwolniony z tego zlecenia przez klienta i nie możesz ponownie aplikować.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _navigateBack(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Rozumiem'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Open navigation to task location in default map app

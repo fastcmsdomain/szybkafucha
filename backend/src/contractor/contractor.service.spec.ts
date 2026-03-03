@@ -12,6 +12,7 @@ import {
   KycStatus,
 } from './entities/contractor-profile.entity';
 import { Rating } from '../tasks/entities/rating.entity';
+import { Task } from '../tasks/entities/task.entity';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 
@@ -76,6 +77,9 @@ describe('ContractorService', () => {
     const mockUsersService = {
       findById: jest.fn().mockResolvedValue(mockUser),
     };
+    const mockTaskRepository = {
+      findOne: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -87,6 +91,10 @@ describe('ContractorService', () => {
         {
           provide: getRepositoryToken(Rating),
           useValue: mockRatingRepository,
+        },
+        {
+          provide: getRepositoryToken(Task),
+          useValue: mockTaskRepository,
         },
         {
           provide: UsersService,

@@ -78,6 +78,13 @@ export class Task {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   commissionAmount: number | null;
 
+  // MVP Phase 1: Flat fee credits model (10 zł client + 10 zł contractor)
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  flatFee: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  matchingFee: number;
+
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   tipAmount: number;
 
