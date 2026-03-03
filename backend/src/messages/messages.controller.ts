@@ -1,6 +1,6 @@
 /**
  * Messages Controller
- * REST endpoints for chat functionality
+ * REST endpoints for 1-to-1 chat functionality
  */
 import {
   Controller,
@@ -26,12 +26,13 @@ export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   /**
-   * GET /tasks/:taskId/messages
-   * Get chat messages for a task
+   * GET /tasks/:taskId/messages/:otherUserId
+   * Get 1-to-1 conversation messages within a task
    */
-  @Get()
+  @Get(':otherUserId')
   async getMessages(
     @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Param('otherUserId', ParseUUIDPipe) otherUserId: string,
     @Request() req: AuthenticatedRequest,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit?: number,
     @Query('before') before?: string,
@@ -39,48 +40,58 @@ export class MessagesController {
     return this.messagesService.getTaskMessages(
       taskId,
       req.user.id,
+      otherUserId,
       limit,
       before,
     );
   }
 
   /**
-   * POST /tasks/:taskId/messages
-   * Send a message in task chat
+   * POST /tasks/:taskId/messages/:otherUserId
+   * Send a message to a specific user in task chat
    */
-  @Post()
+  @Post(':otherUserId')
   async sendMessage(
     @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Param('otherUserId', ParseUUIDPipe) otherUserId: string,
     @Request() req: AuthenticatedRequest,
     @Body() dto: CreateMessageDto,
   ): Promise<MessageResponse> {
-    return this.messagesService.sendMessage(taskId, req.user.id, dto);
+    return this.messagesService.sendMessage(
+      taskId,
+      req.user.id,
+      otherUserId,
+      dto,
+    );
   }
 
   /**
-   * POST /tasks/:taskId/messages/read
-   * Mark all messages as read
+   * POST /tasks/:taskId/messages/:otherUserId/read
+   * Mark conversation messages as read
    */
-  @Post('read')
+  @Post(':otherUserId/read')
   async markAsRead(
     @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Param('otherUserId', ParseUUIDPipe) otherUserId: string,
     @Request() req: AuthenticatedRequest,
   ): Promise<{ updated: number }> {
-    return this.messagesService.markAsRead(taskId, req.user.id);
+    return this.messagesService.markAsRead(taskId, req.user.id, otherUserId);
   }
 
   /**
-   * GET /tasks/:taskId/messages/unread-count
-   * Get unread message count
+   * GET /tasks/:taskId/messages/:otherUserId/unread-count
+   * Get unread message count for a conversation
    */
-  @Get('unread-count')
+  @Get(':otherUserId/unread-count')
   async getUnreadCount(
     @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Param('otherUserId', ParseUUIDPipe) otherUserId: string,
     @Request() req: AuthenticatedRequest,
   ): Promise<{ count: number }> {
     const count = await this.messagesService.getUnreadCount(
       taskId,
       req.user.id,
+      otherUserId,
     );
     return { count };
   }
@@ -96,12 +107,12 @@ export class UnreadMessagesController {
 
   /**
    * GET /messages/unread
-   * Get unread message counts for all user's active tasks
+   * Get unread message counts for all user's active conversations
    */
   @Get('unread')
   async getAllUnreadCounts(
     @Request() req: AuthenticatedRequest,
-  ): Promise<{ taskId: string; count: number }[]> {
+  ): Promise<{ taskId: string; otherUserId: string; count: number }[]> {
     return this.messagesService.getAllUnreadCounts(req.user.id);
   }
 }

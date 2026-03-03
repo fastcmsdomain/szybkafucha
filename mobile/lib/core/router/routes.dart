@@ -3,6 +3,7 @@ abstract class Routes {
   // Auth routes
   static const String welcome = '/';
   static const String publicHome = '/home';
+  static const String publicProfile = '/public/profile';
   static const String termsOfService = '/legal/terms';
   static const String privacyPolicy = '/legal/privacy';
   static const String onboarding = '/onboarding';
@@ -24,6 +25,7 @@ abstract class Routes {
   static const String clientPayment = '/client/task/payment';
   static const String clientTaskDetails = '/client/task/:taskId';
   static const String clientTaskTracking = '/client/task/:taskId/tracking';
+  static const String clientTaskEdit = '/client/task/:taskId/edit';
   static const String clientTaskChat = '/client/task/:taskId/chat';
   static const String clientTaskRating = '/client/task/:taskId/rating';
   static const String clientTaskCompletion = '/client/task/:taskId/complete';
@@ -32,6 +34,7 @@ abstract class Routes {
   static const String clientProfileHelp = '/client/profile/help';
   static const String clientProfileEdit = '/client/profile/edit';
   static const String clientProfilePayments = '/client/profile/payments';
+  static const String clientWallet = '/client/profile/wallet';
   static const String clientReviews = '/client/reviews';
   static const String clientTasks = '/client/tasks';
 
@@ -42,6 +45,7 @@ abstract class Routes {
   static const String contractorTaskList = '/contractor/tasks';
   static const String contractorTaskAlert = '/contractor/task/:taskId/alert';
   static const String contractorTaskDetails = '/contractor/task/:taskId';
+  static const String contractorTaskRoom = '/contractor/task/:taskId/room';
   static const String contractorTaskNavigation =
       '/contractor/task/:taskId/navigation';
   static const String contractorTaskChat = '/contractor/task/:taskId/chat';
@@ -52,6 +56,7 @@ abstract class Routes {
   static const String contractorProfileHelp = '/contractor/profile/help';
   static const String contractorProfilePayments =
       '/contractor/profile/payments';
+  static const String contractorWallet = '/contractor/profile/wallet';
   static const String contractorEarnings = '/contractor/earnings';
   static const String contractorProfile = '/contractor/profile';
   static const String contractorReviews = '/contractor/reviews';
@@ -66,6 +71,8 @@ abstract class Routes {
   static String clientTask(String taskId) => '/client/task/$taskId';
   static String clientTaskTrack(String taskId) =>
       '/client/task/$taskId/tracking';
+  static String clientTaskEditRoute(String taskId) =>
+      '/client/task/$taskId/edit';
   static String clientTaskChatRoute(String taskId) =>
       '/client/task/$taskId/chat';
   static String clientTaskRate(String taskId) => '/client/task/$taskId/rating';
@@ -73,6 +80,8 @@ abstract class Routes {
       '/client/task/$taskId/complete';
 
   static String contractorTask(String taskId) => '/contractor/task/$taskId';
+  static String contractorTaskRoomRoute(String taskId) =>
+      '/contractor/task/$taskId/room';
   static String contractorTaskAlertRoute(String taskId) =>
       '/contractor/task/$taskId/alert';
   static String contractorTaskNav(String taskId) =>

@@ -10,6 +10,7 @@ import {
   Request,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
 import { ClientService } from './client.service';
 import { UpdateClientProfileDto } from './dto/update-client-profile.dto';
@@ -27,8 +28,12 @@ export class ClientController {
    * Returns safe public fields: name, avatar, bio, ratings
    */
   @Get(':userId/public')
-  async getPublicProfile(@Param('userId') userId: string) {
-    return this.clientService.getPublicProfile(userId);
+  async getPublicProfile(
+    @Param('userId') userId: string,
+    @Request() req: AuthenticatedRequest,
+    @Query('taskId') taskId?: string,
+  ) {
+    return this.clientService.getPublicProfile(userId, req.user.id, taskId);
   }
 
   /**

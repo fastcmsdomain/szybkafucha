@@ -4,10 +4,18 @@
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Socket, Server } from 'socket.io';
 import { RealtimeGateway, ServerEvent } from './realtime.gateway';
 import { RealtimeService } from './realtime.service';
-import { TaskStatus } from '../tasks/entities/task.entity';
+import { Task, TaskStatus } from '../tasks/entities/task.entity';
+import {
+  ApplicationStatus,
+  TaskApplication,
+} from '../tasks/entities/task-application.entity';
+import { Message } from '../messages/entities/message.entity';
+import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
+import { User } from '../users/entities/user.entity';
 
 describe('RealtimeGateway', () => {
   let gateway: RealtimeGateway;
@@ -42,6 +50,12 @@ describe('RealtimeGateway', () => {
       markMessagesRead: jest.fn(),
       isUserAuthorizedForTask: jest.fn(),
       getActiveTaskIdsForUser: jest.fn().mockResolvedValue([]),
+      getActiveChatRoomsForUser: jest.fn().mockResolvedValue([]),
+      getChatRoomName: jest
+        .fn()
+        .mockImplementation((taskId: string, userA: string, userB: string) =>
+          `chat:${taskId}:${[userA, userB].sort().join(':')}`,
+        ),
       getSocketForUser: jest.fn(),
       getActiveConnectionsCount: jest.fn(),
     };
@@ -337,6 +351,7 @@ describe('RealtimeGateway', () => {
         id: 'message-123',
         taskId: 'task-123',
         senderId: 'user-123',
+        recipientId: 'user-456',
         content: 'Hello',
         readAt: null,
         createdAt: new Date(),
@@ -346,6 +361,7 @@ describe('RealtimeGateway', () => {
 
       const result = await gateway.handleMessageSend(socket, {
         taskId: 'task-123',
+        recipientId: 'user-456',
         content: 'Hello',
       });
 
@@ -354,16 +370,25 @@ describe('RealtimeGateway', () => {
       expect(realtimeService.saveMessage).toHaveBeenCalledWith({
         taskId: 'task-123',
         senderId: 'user-123',
+        recipientId: 'user-456',
         content: 'Hello',
         createdAt: expect.any(Date),
       });
-      expect(mockServer.to).toHaveBeenCalledWith('task:task-123');
+      expect(realtimeService.getChatRoomName).toHaveBeenCalledWith(
+        'task-123',
+        'user-123',
+        'user-456',
+      );
+      expect(mockServer.to).toHaveBeenCalledWith(
+        'chat:task-123:user-123:user-456',
+      );
       expect(mockServer.emit).toHaveBeenCalledWith(
         ServerEvent.MESSAGE_NEW,
         expect.objectContaining({
           id: 'message-123',
           taskId: 'task-123',
           senderId: 'user-123',
+          recipientId: 'user-456',
           content: 'Hello',
         }),
       );
@@ -377,6 +402,7 @@ describe('RealtimeGateway', () => {
 
       const result = await gateway.handleMessageSend(socket, {
         taskId: 'task-123',
+        recipientId: 'user-456',
         content: 'Hello',
       });
 
@@ -393,14 +419,23 @@ describe('RealtimeGateway', () => {
 
       const result = await gateway.handleMessageRead(socket, {
         taskId: 'task-123',
+        otherUserId: 'user-456',
       });
 
       expect(result.success).toBe(true);
       expect(realtimeService.markMessagesRead).toHaveBeenCalledWith(
         'task-123',
         'user-123',
+        'user-456',
       );
-      expect(mockServer.to).toHaveBeenCalledWith('task:task-123');
+      expect(realtimeService.getChatRoomName).toHaveBeenCalledWith(
+        'task-123',
+        'user-123',
+        'user-456',
+      );
+      expect(mockServer.to).toHaveBeenCalledWith(
+        'chat:task-123:user-123:user-456',
+      );
       expect(mockServer.emit).toHaveBeenCalledWith(
         ServerEvent.MESSAGE_READ,
         expect.objectContaining({
@@ -477,6 +512,7 @@ describe('RealtimeGateway', () => {
 describe('RealtimeService', () => {
   let service: RealtimeService;
   let taskRepository: jest.Mocked<any>;
+  let taskApplicationRepository: jest.Mocked<any>;
   let messageRepository: jest.Mocked<any>;
   let contractorProfileRepository: jest.Mocked<any>;
   let userRepository: jest.Mocked<any>;
@@ -486,14 +522,30 @@ describe('RealtimeService', () => {
       findOne: jest.fn(),
     };
 
+    taskApplicationRepository = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      createQueryBuilder: jest.fn(() => ({
+        innerJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      })),
+    };
+
     messageRepository = {
       save: jest.fn(),
       find: jest.fn(),
       createQueryBuilder: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([]),
         execute: jest.fn().mockResolvedValue({ affected: 1 }),
       })),
     };
@@ -509,28 +561,19 @@ describe('RealtimeService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RealtimeService,
-        { provide: 'TaskRepository', useValue: taskRepository },
-        { provide: 'MessageRepository', useValue: messageRepository },
+        { provide: getRepositoryToken(Task), useValue: taskRepository },
         {
-          provide: 'ContractorProfileRepository',
+          provide: getRepositoryToken(TaskApplication),
+          useValue: taskApplicationRepository,
+        },
+        { provide: getRepositoryToken(Message), useValue: messageRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
           useValue: contractorProfileRepository,
         },
-        { provide: 'UserRepository', useValue: userRepository },
+        { provide: getRepositoryToken(User), useValue: userRepository },
       ],
-    })
-      .overrideProvider(RealtimeService)
-      .useFactory({
-        factory: () => {
-          const srv = new RealtimeService(
-            taskRepository,
-            messageRepository,
-            contractorProfileRepository,
-            userRepository,
-          );
-          return srv;
-        },
-      })
-      .compile();
+    }).compile();
 
     service = module.get<RealtimeService>(RealtimeService);
   });
@@ -683,6 +726,13 @@ describe('RealtimeService', () => {
       );
 
       expect(isAuthorized).toBe(false);
+      expect(taskApplicationRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          taskId: 'task-123',
+          contractorId: 'random-user',
+          status: ApplicationStatus.PENDING,
+        },
+      });
     });
 
     it('should return false for non-existent task', async () => {
@@ -703,6 +753,7 @@ describe('RealtimeService', () => {
         id: 'message-123',
         taskId: 'task-123',
         senderId: 'user-123',
+        recipientId: 'user-456',
         content: 'Hello',
         createdAt: new Date(),
       };
@@ -711,6 +762,7 @@ describe('RealtimeService', () => {
       const result = await service.saveMessage({
         taskId: 'task-123',
         senderId: 'user-123',
+        recipientId: 'user-456',
         content: 'Hello',
         createdAt: new Date(),
       });

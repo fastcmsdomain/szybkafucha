@@ -1,177 +1,168 @@
 #!/bin/bash
 
-# Quick run script for Szybka Fucha iOS app on physical device
-# Usage: ./scripts/run_ios.sh
-# Or from project root: cd mobile && ./scripts/run_ios.sh
+# Quick run script for Szybka Fucha on physical iOS devices (iPhone & iPad)
+# Usage:
+#   ./scripts/run_ios.sh          # auto-selects first physical device
+#   ./scripts/run_ios.sh 2        # selects device #2 from list
+#   DEV_SERVER_URL=http://192.168.1.50:3000 ./scripts/run_ios.sh  # manual IP
 
 set -e
 
-# Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+BOLD='\033[1m'
+NC='\033[0m'
 
-# Check if we're in the right directory
 if [ ! -f "pubspec.yaml" ]; then
-    echo -e "${RED}❌ Error: Please run this script from the mobile directory${NC}"
+    echo -e "${RED}Error: Run this script from the mobile directory${NC}"
     echo "   cd mobile && ./scripts/run_ios.sh"
     exit 1
 fi
 
-echo -e "${BLUE}🚀 Szybka Fucha - iOS Quick Run${NC}"
+echo -e "${BLUE}${BOLD}Szybka Fucha - iOS Physical Device Runner${NC}"
 echo ""
 
-# Step 1: Check Flutter installation
-echo -e "${BLUE}1️⃣ Checking Flutter installation...${NC}"
+# ── 1. Flutter check ─────────────────────────────────────────
+echo -e "${BLUE}1/6 Flutter installation${NC}"
 if ! command -v flutter &> /dev/null; then
-    echo -e "${RED}❌ Flutter is not installed or not in PATH${NC}"
+    echo -e "${RED}Flutter is not installed or not in PATH${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Flutter is installed${NC}"
+echo -e "${GREEN}  Flutter OK${NC}"
+
+# ── 2. Detect physical iOS devices ──────────────────────────
+echo -e "${BLUE}2/6 Connected devices${NC}"
+FLUTTER_DEVICES=$(flutter devices 2>/dev/null)
+
+# Collect physical iOS devices (iPhone and iPad)
+PHYSICAL_LINES=()
+while IFS= read -r line; do
+    PHYSICAL_LINES+=("$line")
+done < <(echo "$FLUTTER_DEVICES" | grep -iE '(iphone|ipad|ios)' | grep -iv simulator || true)
+
+if [ ${#PHYSICAL_LINES[@]} -eq 0 ]; then
+    echo -e "${RED}No physical iOS device found${NC}"
+    echo ""
+    echo -e "${YELLOW}Setup instructions:${NC}"
+    echo "  1. Connect iPhone/iPad to Mac via USB"
+    echo "  2. Unlock the device and tap 'Trust This Computer'"
+    echo "  3. Enable Developer Mode:"
+    echo "     Settings > Privacy & Security > Developer Mode > ON"
+    echo "  4. Run this script again"
+    echo ""
+    echo -e "${YELLOW}Or connect wirelessly:${NC}"
+    echo "  1. Connect via USB first"
+    echo "  2. In Xcode: Window > Devices and Simulators"
+    echo "  3. Select device > Check 'Connect via network'"
+    echo "  4. Disconnect USB cable"
+    exit 1
+fi
+
+# Display devices and let user pick
+echo ""
+for i in "${!PHYSICAL_LINES[@]}"; do
+    echo -e "  ${GREEN}[$((i+1))]${NC} ${PHYSICAL_LINES[$i]}"
+done
 echo ""
 
-# Step 2: Check for connected iOS devices
-echo -e "${BLUE}2️⃣ Checking for connected iOS devices...${NC}"
-FLUTTER_DEVICES=$(flutter devices)
-IOS_DEVICES=$(echo "$FLUTTER_DEVICES" | grep -E "ios.*physical|wireless.*ios" || true)
-
-if [ -z "$IOS_DEVICES" ]; then
-    echo -e "${RED}❌ No physical iOS device found${NC}"
-    echo ""
-    echo -e "${YELLOW}📱 Setup Instructions:${NC}"
-    echo "   1. Connect iPhone to Mac via USB cable"
-    echo "   2. Unlock iPhone and tap 'Trust This Computer'"
-    echo "   3. Enable Developer Mode:"
-    echo "      Settings → Privacy & Security → Developer Mode → ON"
-    echo "      (iPhone will restart)"
-    echo "   4. Run this script again"
-    echo ""
-    echo -e "${YELLOW}   Or connect wirelessly:${NC}"
-    echo "   1. Connect iPhone via USB first"
-    echo "   2. In Xcode: Window → Devices and Simulators"
-    echo "   3. Select your iPhone → Check 'Connect via network'"
-    echo "   4. Disconnect USB cable"
-    echo ""
-    exit 1
+SELECTED_IDX=0
+if [ ${#PHYSICAL_LINES[@]} -gt 1 ]; then
+    if [ -n "${1:-}" ] && [ "$1" -ge 1 ] 2>/dev/null && [ "$1" -le ${#PHYSICAL_LINES[@]} ]; then
+        SELECTED_IDX=$(($1 - 1))
+    else
+        echo -n "Select device [1-${#PHYSICAL_LINES[@]}] (default 1): "
+        read -r CHOICE
+        if [ -n "$CHOICE" ] && [ "$CHOICE" -ge 1 ] 2>/dev/null && [ "$CHOICE" -le ${#PHYSICAL_LINES[@]} ]; then
+            SELECTED_IDX=$((CHOICE - 1))
+        fi
+    fi
 fi
 
-# Extract device ID (first physical/wireless iOS device)
-# Device ID format: 00008140-001574140189801C (UUID format)
-DEVICE_ID=$(echo "$IOS_DEVICES" | head -n 1 | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -n 1)
+SELECTED_LINE="${PHYSICAL_LINES[$SELECTED_IDX]}"
+echo -e "${GREEN}  Selected: ${SELECTED_LINE}${NC}"
+
+# Extract device ID – flutter devices outputs patterns like:
+#   Si phone (mobile) • 00008140-001574140189801C • ios • iOS 18.3.2
+# The ID is between bullet characters (•)
+DEVICE_ID=$(echo "$SELECTED_LINE" | sed 's/•/|/g' | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}')
 
 if [ -z "$DEVICE_ID" ]; then
-    # Try alternative pattern - look for device name and ID
-    DEVICE_ID=$(echo "$IOS_DEVICES" | head -n 1 | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9A-F-]{36,}$/) print $i}' | head -n 1)
-fi
-
-if [ -z "$DEVICE_ID" ]; then
-    echo -e "${YELLOW}⚠️  Could not extract device ID, will use 'ios' selector${NC}"
+    echo -e "${YELLOW}  Could not parse device ID, using 'ios' selector${NC}"
     DEVICE_ID="ios"
-else
-    echo -e "${GREEN}✅ Found iOS device: ${DEVICE_ID}${NC}"
 fi
 
-echo ""
-echo "$FLUTTER_DEVICES"
+echo -e "${GREEN}  Device ID: ${DEVICE_ID}${NC}"
 echo ""
 
-# Step 3: Check Xcode and code signing
-echo -e "${BLUE}3️⃣ Checking Xcode setup...${NC}"
+# ── 3. Xcode & code signing ─────────────────────────────────
+echo -e "${BLUE}3/6 Xcode setup${NC}"
 if ! command -v xcodebuild &> /dev/null; then
-    echo -e "${RED}❌ Xcode is not installed${NC}"
-    echo "   Please install Xcode from the App Store"
+    echo -e "${RED}Xcode is not installed${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Xcode is installed${NC}"
+echo -e "${GREEN}  Xcode OK${NC}"
 
-# Check if signing is configured
-echo -e "${YELLOW}   Checking code signing...${NC}"
-if [ ! -d "ios/Runner.xcworkspace" ] && [ ! -f "ios/Runner.xcworkspace" ]; then
-    echo -e "${RED}❌ iOS workspace not found${NC}"
-    exit 1
-fi
-
-# Try to check signing (this might fail, but that's okay)
-SIGNING_CHECK=$(xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings 2>&1 | grep -i "codeSign" || true)
+SIGNING_CHECK=$(xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings 2>&1 | grep -i "CODE_SIGN" || true)
 if echo "$SIGNING_CHECK" | grep -q "CODE_SIGN"; then
-    echo -e "${GREEN}✅ Code signing configured${NC}"
+    echo -e "${GREEN}  Code signing configured${NC}"
 else
-    echo -e "${YELLOW}⚠️  Code signing may need configuration${NC}"
-    echo -e "${YELLOW}   If build fails, open Xcode and configure signing:${NC}"
-    echo "   open ios/Runner.xcworkspace"
-    echo "   Then: Runner → Signing & Capabilities → Select Team"
+    echo -e "${YELLOW}  Code signing may need configuration${NC}"
+    echo "  If build fails: open ios/Runner.xcworkspace > Runner > Signing & Capabilities > Select Team"
 fi
 echo ""
 
-# Step 4: Get dependencies
-echo -e "${BLUE}4️⃣ Checking dependencies...${NC}"
+# ── 4. Dependencies ─────────────────────────────────────────
+echo -e "${BLUE}4/6 Dependencies${NC}"
 if [ ! -d ".dart_tool" ] || [ ! -f "pubspec.lock" ]; then
-    echo -e "${YELLOW}   Running flutter pub get...${NC}"
+    echo -e "${YELLOW}  Running flutter pub get…${NC}"
     flutter pub get > /dev/null 2>&1
-    echo -e "${GREEN}✅ Dependencies ready${NC}"
-else
-    echo -e "${GREEN}✅ Dependencies already installed${NC}"
 fi
+echo -e "${GREEN}  Dart packages OK${NC}"
 
-# Check iOS pods
 if [ ! -d "ios/Pods" ]; then
-    echo -e "${YELLOW}   Installing iOS pods...${NC}"
-    cd ios
-    pod install > /dev/null 2>&1 || {
-        echo -e "${YELLOW}   Pod install may need manual run: cd ios && pod install${NC}"
-    }
-    cd ..
+    echo -e "${YELLOW}  Installing CocoaPods…${NC}"
+    (cd ios && pod install > /dev/null 2>&1) || echo -e "${YELLOW}  pod install may need manual run: cd ios && pod install${NC}"
 fi
+echo -e "${GREEN}  iOS pods OK${NC}"
 echo ""
 
-# Step 5: Get Mac IP for backend connection (if needed)
-echo -e "${BLUE}5️⃣ Network configuration...${NC}"
+# ── 5. Network / backend URL ────────────────────────────────
+echo -e "${BLUE}5/6 Network configuration${NC}"
 MAC_IP=$(
     ipconfig getifaddr en0 2>/dev/null || \
     ipconfig getifaddr en1 2>/dev/null || \
     ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -n 1
 )
-if [ -n "$MAC_IP" ]; then
-    echo -e "${GREEN}✅ Mac IP address: ${MAC_IP}${NC}"
-    echo -e "${YELLOW}   💡 If backend connection fails, use this IP instead of localhost${NC}"
-    echo -e "${YELLOW}   Backend URL: http://${MAC_IP}:3000${NC}"
-else
-    echo -e "${YELLOW}⚠️  Could not detect Mac IP address${NC}"
-fi
-echo ""
 
-# If running on a physical iPhone, localhost points to the iPhone itself.
-# Pass DEV_SERVER_URL so the app can reach your Mac backend over the network.
 DEV_SERVER_URL_ARG=()
 if [ -n "${DEV_SERVER_URL:-}" ]; then
-    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="${DEV_SERVER_URL}")
+    DEV_SERVER_URL_ARG=(--dart-define="DEV_SERVER_URL=${DEV_SERVER_URL}")
+    echo -e "${GREEN}  Using DEV_SERVER_URL=${DEV_SERVER_URL}${NC}"
 elif [ -n "$MAC_IP" ]; then
-    DEV_SERVER_URL_ARG=(--dart-define=DEV_SERVER_URL="http://${MAC_IP}:3000")
-fi
-if [ ${#DEV_SERVER_URL_ARG[@]} -gt 0 ]; then
-    echo -e "${GREEN}✅ Using DEV_SERVER_URL: ${DEV_SERVER_URL_ARG[0]#--dart-define=DEV_SERVER_URL=}${NC}"
-    echo ""
-fi
-
-# Step 6: Run the app
-echo -e "${BLUE}6️⃣ Launching Szybka Fucha app on iPhone...${NC}"
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-echo -e "${YELLOW}💡 Tips:${NC}"
-echo -e "   • Press 'r' for hot reload"
-echo -e "   • Press 'R' for hot restart"
-echo -e "   • Press 'q' to quit"
-echo ""
-echo -e "${YELLOW}📱 Device: ${DEVICE_ID}${NC}"
-echo ""
-echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-
-# Run Flutter app
-if [ "$DEVICE_ID" = "ios" ]; then
-    flutter run -d ios "${DEV_SERVER_URL_ARG[@]}"
+    DEV_SERVER_URL_ARG=(--dart-define="DEV_SERVER_URL=http://${MAC_IP}:3000")
+    echo -e "${GREEN}  Mac IP: ${MAC_IP}${NC}"
+    echo -e "${GREEN}  Backend URL: http://${MAC_IP}:3000${NC}"
 else
-    flutter run -d "$DEVICE_ID" "${DEV_SERVER_URL_ARG[@]}"
+    echo -e "${YELLOW}  Could not detect Mac IP – the app will auto-discover on LAN${NC}"
 fi
+echo ""
+
+# ── 6. Launch ────────────────────────────────────────────────
+echo -e "${BLUE}6/6 Launching app${NC}"
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo -e "  ${BOLD}Device:${NC} ${DEVICE_ID}"
+if [ ${#DEV_SERVER_URL_ARG[@]} -gt 0 ]; then
+    echo -e "  ${BOLD}Server:${NC} ${DEV_SERVER_URL_ARG[0]#--dart-define=DEV_SERVER_URL=}"
+else
+    echo -e "  ${BOLD}Server:${NC} auto-discover on LAN"
+fi
+echo ""
+echo -e "  ${YELLOW}r${NC} Hot reload   ${YELLOW}R${NC} Hot restart   ${YELLOW}q${NC} Quit"
+echo ""
+echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+flutter run -d "$DEVICE_ID" "${DEV_SERVER_URL_ARG[@]}"

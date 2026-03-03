@@ -244,6 +244,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
   Widget _buildTaskCard(Task task, {required bool isActive}) {
     final category = task.categoryData;
     final isLocked = task.status == TaskStatus.pendingComplete;
+    final hasAssignedContractor =
+        (task.contractorId?.isNotEmpty == true) || task.contractor != null;
 
     return Semantics(
       label: isLocked
@@ -270,7 +272,18 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: task.status == TaskStatus.confirmed ||
+                    task.status == TaskStatus.inProgress ||
+                    task.status == TaskStatus.pendingComplete
+                ? AppColors.success
+                : AppColors.gray200,
+            width: task.status == TaskStatus.confirmed ||
+                    task.status == TaskStatus.inProgress ||
+                    task.status == TaskStatus.pendingComplete
+                ? 2.0
+                : 1.0,
+          ),
           boxShadow: AppShadows.sm,
         ),
         child: Column(
@@ -317,13 +330,24 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
             SizedBox(height: AppSpacing.gapMD),
 
-            // Description
+            // Title + description preview
             Text(
-              task.description,
-              style: AppTypography.bodySmall,
-              maxLines: 2,
+              task.title,
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (task.description.trim().isNotEmpty) ...[
+              SizedBox(height: AppSpacing.gapXS),
+              Text(
+                task.description,
+                style: AppTypography.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
 
             SizedBox(height: AppSpacing.gapMD),
 
@@ -382,17 +406,28 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                       task.status == TaskStatus.confirmed ||
                       task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
-                  // Cancel button (for all active non-completed tasks)
+                  // Chat button for tasks with assigned contractor,
+                  // otherwise keep cancel for open tasks.
                   Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showCancelConfirmation(task),
-                      icon: const Icon(Icons.cancel_outlined, size: 18),
-                      label: const Text('Anuluj'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.error,
-                        foregroundColor: AppColors.white,
-                      ),
-                    ),
+                    child: hasAssignedContractor
+                        ? ElevatedButton.icon(
+                            onPressed: () => _openTaskChat(task),
+                            icon: const Icon(Icons.chat_outlined, size: 18),
+                            label: const Text('Czat'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.success,
+                              foregroundColor: AppColors.white,
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: () => _showCancelConfirmation(task),
+                            icon: const Icon(Icons.cancel_outlined, size: 18),
+                            label: const Text('Anuluj'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: AppColors.white,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -401,6 +436,37 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _openTaskChat(Task task) {
+    final currentUser = ref.read(currentUserProvider);
+    final otherUserId = task.contractor?.id ?? task.contractorId ?? '';
+
+    if (otherUserId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Czat dostępny po przypisaniu wykonawcy'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final title = task.title.trim();
+    final description = task.description.trim();
+    context.push(
+      Routes.clientTaskChatRoute(task.id),
+      extra: {
+        'otherUserId': otherUserId,
+        'taskTitle': title.isNotEmpty
+            ? title
+            : (description.isNotEmpty ? description : 'Czat'),
+        'otherUserName': task.contractor?.name ?? 'Wykonawca',
+        'otherUserAvatarUrl': task.contractor?.avatarUrl,
+        'currentUserId': currentUser?.id ?? '',
+        'currentUserName': currentUser?.name ?? 'Ty',
+      },
     );
   }
 
@@ -524,6 +590,23 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
 
                   SizedBox(height: AppSpacing.space4),
 
+                  // Title
+                  Text(
+                    'Tytuł',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.gapXS),
+                  Text(
+                    task.title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  SizedBox(height: AppSpacing.space4),
+
                   // Description
                   Text(
                     'Opis',
@@ -533,7 +616,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                   ),
                   SizedBox(height: AppSpacing.gapXS),
                   Text(
-                    task.description,
+                    task.description.trim().isEmpty
+                        ? 'Brak opisu'
+                        : task.description,
                     style: AppTypography.bodyMedium,
                   ),
 

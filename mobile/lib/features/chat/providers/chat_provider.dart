@@ -1,7 +1,8 @@
 /// Chat Provider
-/// Real-time chat with offline message queuing and API integration
+/// Real-time 1-to-1 chat with offline message queuing and API integration
 
 import 'dart:async';
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/config/websocket_config.dart';
@@ -11,9 +12,24 @@ import '../../../core/providers/websocket_provider.dart';
 import '../../../core/services/websocket_service.dart';
 import '../models/message.dart';
 
-/// Chat state for a specific task
+/// Composite key for identifying a 1-to-1 conversation
+class ChatKey extends Equatable {
+  final String taskId;
+  final String otherUserId;
+
+  const ChatKey({required this.taskId, required this.otherUserId});
+
+  @override
+  List<Object?> get props => [taskId, otherUserId];
+
+  @override
+  String toString() => '$taskId:$otherUserId';
+}
+
+/// Chat state for a specific 1-to-1 conversation
 class ChatState {
   final String taskId;
+  final String otherUserId;
   final List<Message> messages;
   final List<Message> pendingMessages;
   final bool isLoading;
@@ -23,6 +39,7 @@ class ChatState {
 
   ChatState({
     required this.taskId,
+    required this.otherUserId,
     this.messages = const [],
     this.pendingMessages = const [],
     this.isLoading = false,
@@ -46,6 +63,7 @@ class ChatState {
 
   ChatState copyWith({
     String? taskId,
+    String? otherUserId,
     List<Message>? messages,
     List<Message>? pendingMessages,
     bool? isLoading,
@@ -55,6 +73,7 @@ class ChatState {
   }) {
     return ChatState(
       taskId: taskId ?? this.taskId,
+      otherUserId: otherUserId ?? this.otherUserId,
       messages: messages ?? this.messages,
       pendingMessages: pendingMessages ?? this.pendingMessages,
       isLoading: isLoading ?? this.isLoading,
@@ -91,14 +110,14 @@ class ChatState {
   }
 }
 
-/// Chat notifier for real-time messaging
+/// Chat notifier for real-time 1-to-1 messaging
 class ChatNotifier extends StateNotifier<ChatState> {
   ChatNotifier(
     this._webSocketService,
     this._apiClient,
-    String taskId,
+    ChatKey key,
     this._currentUserId,
-  ) : super(ChatState(taskId: taskId)) {
+  ) : super(ChatState(taskId: key.taskId, otherUserId: key.otherUserId)) {
     _initializeChat();
   }
 
@@ -108,7 +127,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
   StreamSubscription<ChatMessageEvent>? _messageSubscription;
   StreamSubscription<WebSocketState>? _connectionSubscription;
 
-  /// Initialize chat for a task
+  /// Initialize chat for a 1-to-1 conversation
   void _initializeChat() {
     // Listen for incoming messages
     _webSocketService.on(
@@ -116,8 +135,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       _handleIncomingMessage,
     );
 
-    // Join task room to receive updates
-    _webSocketService.joinTask(state.taskId);
+    // Listen for message send errors (moderation blocks)
+    _webSocketService.on(
+      'message:error',
+      _handleMessageError,
+    );
+
+    // Join 1-to-1 chat room (not task room — that's for status events)
+    _webSocketService.joinChat(state.taskId, state.otherUserId);
 
     // Reflect real WebSocket connection state
     state = state.copyWith(isConnected: _webSocketService.isConnected);
@@ -128,10 +153,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
       final connected = wsState == WebSocketState.connected;
       state = state.copyWith(isConnected: connected);
       if (connected) {
-        // Re-join the task room on every (re)connect. Socket.IO rooms are NOT
-        // automatically restored after a disconnect/reconnect cycle, so without
-        // this incoming messages stop arriving after any connection drop.
-        _webSocketService.joinTask(state.taskId);
+        // Re-join the chat room on every (re)connect
+        _webSocketService.joinChat(state.taskId, state.otherUserId);
         if (state.hasPendingMessages) {
           retrySendingPending(currentUserId: _currentUserId);
         }
@@ -139,11 +162,28 @@ class ChatNotifier extends StateNotifier<ChatState> {
     });
   }
 
-  /// Handle incoming message from WebSocket
+  /// Handle message send error from WebSocket (moderation block)
+  void _handleMessageError(dynamic data) {
+    if (data is Map) {
+      final taskId = data['taskId'] as String?;
+      if (taskId == state.taskId) {
+        final error = data['error'] as String? ?? 'Błąd wysyłania wiadomości';
+        state = state.copyWith(error: error);
+        // Remove the last pending message since it was rejected
+        if (state.pendingMessages.isNotEmpty) {
+          final pending = List<Message>.from(state.pendingMessages);
+          pending.removeLast();
+          state = state.copyWith(pendingMessages: pending);
+        }
+      }
+    }
+  }
+
+  /// Handle incoming message from WebSocket (only from the other user in this conversation)
   void _handleIncomingMessage(dynamic data) {
     if (data is ChatMessageEvent &&
         data.taskId == state.taskId &&
-        data.senderId != _currentUserId) {
+        data.senderId == state.otherUserId) {
       final message = Message(
         id: data.id,
         taskId: data.taskId,
@@ -157,7 +197,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  /// Send message to task chat
+  /// Send message to the other user in this conversation
   Future<void> sendMessage({
     required String content,
     required String currentUserId,
@@ -178,10 +218,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.addPendingMessage(message);
 
     try {
-      // Send via WebSocket
+      // Send via WebSocket with recipientId
       if (state.isConnected) {
         _webSocketService.sendMessage(
           taskId: state.taskId,
+          recipientId: state.otherUserId,
           content: content,
         );
 
@@ -211,6 +252,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       try {
         _webSocketService.sendMessage(
           taskId: state.taskId,
+          recipientId: state.otherUserId,
           content: message.content,
         );
 
@@ -223,18 +265,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  /// Mark all messages in task as read
+  /// Mark all messages in this conversation as read
   void markAllAsRead() {
     _webSocketService.markMessagesRead(state.taskId);
   }
 
-  /// Load initial messages from API
+  /// Load initial messages from API (scoped to this conversation)
   Future<void> loadInitialMessages() async {
     state = state.copyWith(isLoading: true);
     try {
-      // Fetch messages from backend API
+      // Fetch messages for this specific 1-to-1 conversation
       final response = await _apiClient.get<List<dynamic>>(
-        '/tasks/${state.taskId}/messages',
+        '/tasks/${state.taskId}/messages/${state.otherUserId}',
       );
 
       final messages = response.map((json) {
@@ -258,12 +300,12 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
   }
 
-  /// Leave task chat
+  /// Leave chat
   void leaveChat() {
     _webSocketService.off(WebSocketConfig.messageNew, _handleIncomingMessage);
-    // NOTE: Do NOT call leaveTask() here. The task room must remain joined
+    _webSocketService.off('message:error', _handleMessageError);
+    // NOTE: Do NOT leave the chat room here. The room must remain joined
     // so that the unread badge continues to work after the chat screen closes.
-    // Rooms are cleaned up automatically on WS disconnect and re-joined on reconnect.
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
   }
@@ -275,36 +317,36 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 }
 
-/// Chat provider for specific task (autoDispose ensures fresh state on each screen entry)
-final chatProvider = StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, String>(
-  (ref, taskId) {
+/// Chat provider for a specific 1-to-1 conversation (keyed by ChatKey)
+final chatProvider = StateNotifierProvider.autoDispose.family<ChatNotifier, ChatState, ChatKey>(
+  (ref, key) {
     final webSocketService = ref.read(webSocketServiceProvider);
     final apiClient = ref.read(apiClientProvider);
     final currentUserId = ref.read(currentUserProvider)?.id ?? '';
-    return ChatNotifier(webSocketService, apiClient, taskId, currentUserId);
+    return ChatNotifier(webSocketService, apiClient, key, currentUserId);
   },
 );
 
-/// Get all messages for a task (sorted)
-final taskMessagesProvider = Provider.autoDispose.family<List<Message>, String>(
-  (ref, taskId) {
-    final chat = ref.watch(chatProvider(taskId));
+/// Get all messages for a conversation (sorted)
+final taskMessagesProvider = Provider.autoDispose.family<List<Message>, ChatKey>(
+  (ref, key) {
+    final chat = ref.watch(chatProvider(key));
     return chat.getAllMessagesSorted();
   },
 );
 
 /// Get pending messages count
-final pendingMessagesCountProvider = Provider.autoDispose.family<int, String>(
-  (ref, taskId) {
-    final chat = ref.watch(chatProvider(taskId));
+final pendingMessagesCountProvider = Provider.autoDispose.family<int, ChatKey>(
+  (ref, key) {
+    final chat = ref.watch(chatProvider(key));
     return chat.pendingMessages.length;
   },
 );
 
 /// Check if chat has pending messages
-final hasPendingMessagesProvider = Provider.autoDispose.family<bool, String>(
-  (ref, taskId) {
-    final chat = ref.watch(chatProvider(taskId));
+final hasPendingMessagesProvider = Provider.autoDispose.family<bool, ChatKey>(
+  (ref, key) {
+    final chat = ref.watch(chatProvider(key));
     return chat.hasPendingMessages;
   },
 );

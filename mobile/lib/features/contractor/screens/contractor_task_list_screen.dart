@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/api/api_exceptions.dart';
+import '../../../core/providers/credits_provider.dart';
 import '../../../core/providers/kyc_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
@@ -37,10 +39,11 @@ class _ContractorTaskListScreenState
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Load tasks and KYC status on screen open
+    // Load tasks, KYC status, and credits balance on screen open
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
       ref.read(kycProvider.notifier).fetchStatus();
+      ref.read(creditsProvider.notifier).fetchBalance();
     });
   }
 
@@ -902,6 +905,9 @@ class _ContractorTaskListScreenState
       return;
     }
 
+    final credits = ref.read(creditsProvider);
+    final hasSufficientBalance = credits.balance >= 10;
+
     final priceController = TextEditingController(
       text: task.price.toString(),
     );
@@ -920,6 +926,58 @@ class _ContractorTaskListScreenState
               style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             ),
             SizedBox(height: AppSpacing.paddingSM),
+
+            // Balance + 10 zł info
+            Container(
+              padding: EdgeInsets.all(AppSpacing.paddingSM),
+              decoration: BoxDecoration(
+                color: hasSufficientBalance
+                    ? AppColors.info.withValues(alpha: 0.1)
+                    : AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: AppRadius.radiusMD,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 16,
+                        color: hasSufficientBalance ? AppColors.info : AppColors.warning,
+                      ),
+                      SizedBox(width: AppSpacing.gapSM),
+                      Text(
+                        'Twoje saldo: ${credits.balance.toStringAsFixed(2)} zł',
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: hasSufficientBalance ? AppColors.info : AppColors.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.gapXS),
+                  Text(
+                    'Przy akceptacji pobierzemy 10 zł z Twojego konta.',
+                    style: AppTypography.caption.copyWith(
+                      color: hasSufficientBalance ? AppColors.info : AppColors.warning,
+                    ),
+                  ),
+                  if (!hasSufficientBalance) ...[
+                    SizedBox(height: AppSpacing.gapSM),
+                    Text(
+                      'Uwaga: Twoje saldo jest niewystarczające. Doładuj portfel przed akceptacją.',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(height: AppSpacing.paddingSM),
+
             TextField(
               controller: priceController,
               keyboardType: TextInputType.number,
@@ -996,14 +1054,37 @@ class _ContractorTaskListScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        if (e is ForbiddenException) {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              icon: Icon(Icons.block, color: AppColors.error, size: 48),
+              title: const Text('Nie możesz dołączyć'),
+              content: const Text(
+                'Zostałeś zwolniony z tego zlecenia przez klienta i nie możesz ponownie aplikować.',
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
+                  child: const Text('Rozumiem'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Błąd: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     }
   }

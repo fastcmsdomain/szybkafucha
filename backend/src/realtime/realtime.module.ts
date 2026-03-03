@@ -12,10 +12,11 @@ import { Task } from '../tasks/entities/task.entity';
 import { Message } from '../messages/entities/message.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { User } from '../users/entities/user.entity';
+import { TaskApplication } from '../tasks/entities/task-application.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Message, ContractorProfile, User]),
+    TypeOrmModule.forFeature([Task, TaskApplication, Message, ContractorProfile, User]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

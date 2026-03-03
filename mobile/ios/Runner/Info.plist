@@ -39,6 +39,8 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>localhost</key>
@@ -48,6 +50,12 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do sieci lokalnej, aby połączyć się z serwerem deweloperskim.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do aparatu, aby zrobić zdjęcie dokumentu tożsamości.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do galerii, aby wybrać zdjęcie dokumentu tożsamości.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby śledzić realizację zlecenia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -347,7 +347,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: AppRadius.radiusLG,
-            border: Border.all(color: AppColors.gray200),
+            border: Border.all(
+              color: task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.pendingComplete
+                  ? AppColors.success
+                  : AppColors.gray200,
+              width: task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.pendingComplete
+                  ? 2.0
+                  : 1.0,
+            ),
             boxShadow: AppShadows.sm,
           ),
           child: Column(
@@ -394,13 +405,24 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
 
               SizedBox(height: AppSpacing.gapMD),
 
-              // Description
+              // Title + description preview
               Text(
-                task.description,
-                style: AppTypography.bodySmall,
-                maxLines: 2,
+                task.title,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (task.description.trim().isNotEmpty) ...[
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.description,
+                  style: AppTypography.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
 
               SizedBox(height: AppSpacing.gapMD),
 
@@ -461,13 +483,21 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       Expanded(
                         child: SFChatBadge(
                           taskId: task.id,
+                          otherUserId: task.contractor?.id ?? task.contractorId,
                           child: OutlinedButton.icon(
                             onPressed: () {
                               final currentUser = ref.read(currentUserProvider);
                               context.push(
                                 Routes.clientTaskChatRoute(task.id),
                                 extra: {
-                                  'taskTitle': task.description,
+                                  'otherUserId': task.contractor?.id ??
+                                      task.contractorId ??
+                                      '',
+                                  'taskTitle': task.title.trim().isNotEmpty
+                                      ? task.title
+                                      : (task.description.trim().isNotEmpty
+                                            ? task.description
+                                            : 'Czat'),
                                   'otherUserName':
                                       task.contractor?.name ?? 'Wykonawca',
                                   'otherUserAvatarUrl':
@@ -630,9 +660,9 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         _buildStepItem(
           number: '2',
-          title: 'Zatwierdź pracownika',
+          title: 'Wybierz pracownika',
           description:
-              'Dopasujemy najlepszą osobę — sprawdź profil i potwierdź',
+              'Pracownicy zgłaszają się z ofertami — wybierz najlepszą osobę',
           icon: Icons.person_search_outlined,
           color: AppColors.warning,
         ),
@@ -646,11 +676,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
         ),
         _buildStepItem(
           number: '4',
-          title: 'Oceń i zapłać',
+          title: 'Oceń pracownika',
           description:
-              'Potwierdź wykonanie, wystaw ocenę i zostaw napiwek',
+              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
           icon: Icons.star_outline,
           color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '5',
+          title: 'Gotowe!',
+          description:
+              'Zlecenie zakończone! Możesz zlecić kolejne zadanie w każdej chwili',
+          icon: Icons.check_circle_outline,
+          color: const Color(0xFF8B5CF6),
           isLast: true,
         ),
       ],

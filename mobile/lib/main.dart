@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/api/api_config.dart';
 import 'core/l10n/l10n.dart';
 import 'core/router/router.dart';
 import 'core/services/notification_service.dart';
@@ -41,6 +42,9 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Auto-discover dev backend URL (physical devices scan LAN, simulators use localhost)
+  await ApiConfig.initialize();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

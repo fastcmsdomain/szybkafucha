@@ -8,6 +8,284 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-03] Update "Jak to działa?" section on client home screen to 5 steps
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Updated the "How it works" onboarding section on the client home screen from 4 steps to 5 steps matching the bidding flow. Step 2 now mentions workers submitting bids, step 4 is dedicated to rating, and new step 5 covers payment release with purple color matching rainbow progress.
+
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/client_home_screen.dart` – Updated `_buildHowItWorksSection()`: step 2 changed from "Zatwierdź pracownika" to "Wybierz pracownika" with bid-related description, step 4 split into "Oceń pracownika" (rating only), new step 5 "Gotowe!" with purple color (0xFF8B5CF6) for payment release.
+
+- **System Impact**: UI-only change on client home screen onboarding section. No backend changes.
+- **Related Tasks/PRD**: Bidding system flow alignment, matches contractor home screen 5-step update
+- **Potential Conflicts/Risks**: None — cosmetic UI text change only.
+
+---
+
+## [2026-03-03] Update "Jak zacząć zarabiać?" section to 5-step bidding flow
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Updated the "How to start earning" onboarding section on the contractor home screen from 4 outdated steps (which referenced the old direct-accept flow) to 5 steps matching the current bidding system. New steps: Przeglądaj zlecenia → Złóż ofertę → Wykonaj zadanie → Oceń szefa → Odbierz wypłatę.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Replaced 4 `_buildStepItem()` calls in `_buildHowItWorksSection()` with 5 steps: changed step 2 from "Zaakceptuj zlecenie" to "Złóż ofertę" with bid-related description, updated step 3 description to mention client choosing you, added new step 4 "Oceń szefa" with star icon, moved "Odbierz wypłatę" to step 5 with purple color (0xFF8B5CF6) to match rainbow progress 5th dot.
+
+- **System Impact**: UI-only change on contractor home screen onboarding section. No backend changes.
+- **Related Tasks/PRD**: Bidding system flow alignment
+- **Potential Conflicts/Risks**: None — cosmetic UI text change only.
+
+---
+
+## [2026-03-03] Implement 5-step progress flow with rating step
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Changed the task progress visualization from 4 steps to 5 steps on both client (task_tracking_screen) and contractor (active_task_screen) views. Added a visible "Ocena" (Rating) step between "W trakcie" and "Gotowe" so users clearly see they must rate to finalize. Both screens now use identical labels: Zgłoszenia → Zaakceptowane → W trakcie → Ocena → Gotowe.
+
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `rating` value to `TrackingStatus` enum; updated `TrackingStatusExtension` with title/subtitle/stepIndex for rating (stepIndex=3) and completed (stepIndex=4); `_mapTaskStatus()` now maps `pendingComplete` → `rating`; `_mapStringStatus()` maps `'pending_complete'` → `rating`; progress labels changed from 4 to 5; added `rating` case to `_getStatusIcon()` (star_outline); added amber/warning colors for rating state header; cancel button hidden for both rating and completed states.
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Progress labels updated to 5 steps; step mapping updated: `pendingComplete` → step 3, `completed` → step 4; action button text for `pendingComplete` changed from "Zakończ zlecenie" to "Oceń i zakończ".
+
+- **System Impact**: Visual progress flow now shows 5 steps instead of 4 on both client and contractor task detail screens. PENDING_COMPLETE status is now clearly distinguished from COMPLETED with its own "Ocena" step. No backend changes.
+- **Related Tasks/PRD**: Dual-rating system visibility — both parties must rate for COMPLETED status.
+- **Potential Conflicts/Risks**: None — `SFRainbowProgress` widget already supports 5 colors and dynamic step counts.
+
+---
+
+## [2026-03-03] Add green border to task cards for active statuses
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added a green thick (2px) border to task cards across contractor and client screens when the task is in an active status (accepted, confirmed, inProgress, pendingComplete). Cards in other statuses retain the default gray 1px border.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – `_buildActiveTaskCard`: added green border for accepted/confirmed/inProgress/pendingComplete statuses using `ContractorTaskStatus` enum.
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – `_ContractorTaskCard`: added green border for same active statuses.
+  - `mobile/lib/features/client/screens/task_history_screen.dart` – Task card: added green border for confirmed/inProgress/pendingComplete statuses using `TaskStatus` enum.
+
+- **System Impact**: Visual enhancement — active task cards are now more prominent with green borders. No logic changes.
+- **Related Tasks/PRD**: UI polish for task status visibility
+- **Potential Conflicts/Risks**: None — cosmetic border change only.
+
+---
+
+## [2026-03-02] Show contact details in profile popups after task acceptance
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: When a client accepts a contractor (task status >= accepted), both parties can now see each other's email and phone number in the profile popup sheet. Contact details are gated by taskId verification on the backend — the requesting user must be a participant on an active task with the target user.
+
+- **Files Changed**:
+  - `backend/src/contractor/contractor.module.ts` – Added Task entity to TypeOrmModule imports
+  - `backend/src/contractor/contractor.service.ts` – Added Task repository injection; `getPublicProfile()` now accepts optional `requestingUserId` and `taskId` params; conditionally includes email/phone when task relationship is verified
+  - `backend/src/contractor/contractor.controller.ts` – Added `@Query('taskId')` and `@Request()` to `getPublicProfile` route handler
+  - `backend/src/client/client.module.ts` – Added Task entity to TypeOrmModule imports
+  - `backend/src/client/client.service.ts` – Added Task repository injection; `getPublicProfile()` now accepts optional `requestingUserId` and `taskId` params; conditionally includes email/phone
+  - `backend/src/client/client.controller.ts` – Added `@Query('taskId')` and `@Request()` to `getPublicProfile` route handler
+  - `mobile/lib/features/client/models/contractor.dart` – Added optional `email` and `phone` fields with JSON parsing
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – `_ContractorProfileSheet` now receives `taskId`, passes it to API call, and displays contact section with congratulatory banner
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – `_ClientProfileSheet` now receives `taskId`, passes it to API call, and displays contact section with congratulatory banner
+
+- **System Impact**: Contact details (email/phone) are now conditionally exposed via public profile endpoints when `?taskId=` query parameter is provided and the requesting user is verified as a task participant. No breaking changes — without the query parameter, behavior is unchanged.
+- **Related Tasks/PRD**: Contact sharing feature for accepted tasks
+- **Potential Conflicts/Risks**: None — backward compatible. Endpoints without `taskId` param return same response as before.
+
+---
+
+## [2026-03-01] Disable user auto-suspension for MVP Phase 1, add post-MVP doc
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Auto-suspension (3 strikes → status SUSPENDED) is disabled for MVP Phase 1. Strikes are still incremented on cancellation; only the status update to SUSPENDED is commented out. Added `docs/todo_post_MVP/user-suspension.md` with re-enable instructions.
+
+- **Files Changed**:
+  - `backend/src/payments/credits.service.ts` – In `processCancellationRefund()`, commented out the block that sets `user.status = 'suspended'` when `canceller.strikes >= 3`. Strike increment and refund logic unchanged.
+  - `docs/todo_post_MVP/user-suspension.md` – New doc: status, description (auto 3-strike + admin manual), where disabled, how to re-enable, related code, priority.
+
+- **System Impact**: Users are no longer auto-suspended after 3 post-matching-fee cancellations. Admin can still set status to SUSPENDED via admin panel. JWT/auth still reject SUSPENDED users. Strike counts continue to be stored for future use.
+- **Related Tasks/PRD**: MVP Phase 1 scope; post-MVP: re-enable per user-suspension.md
+- **Potential Conflicts/Risks**: None. Re-enabling is a simple uncomment in `credits.service.ts`.
+
+## [2026-03-01] Auto-discover dev backend on physical iOS devices (iPhone & iPad)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed "Connection refused" errors when running on physical iOS devices. The app now auto-discovers the dev backend on the local network at startup via a parallel /24 subnet scan, eliminating the need to manually pass `--dart-define=DEV_SERVER_URL`. Also added `NSLocalNetworkUsageDescription` to Info.plist for iOS 14+ LAN permission, and improved `run_ios.sh` with multi-device selection (iPhone + iPad).
+
+- **Files Changed**:
+  - `mobile/lib/core/api/api_config.dart` – Added `initialize()` static async method with 4-layer URL resolution: (1) compile-time `DEV_SERVER_URL`, (2) localhost reachability test (simulator), (3) SharedPreferences cached URL, (4) parallel LAN subnet scan. Caches discovered IP for subsequent launches.
+  - `mobile/lib/main.dart` – Call `ApiConfig.initialize()` before `runApp()` so the resolved URL is ready before any API client is created.
+  - `mobile/ios/Runner/Info.plist` – Added `NSLocalNetworkUsageDescription` (Polish string) required for iOS 14+ local network access permission dialog.
+  - `mobile/scripts/run_ios.sh` – Rewritten with multi-device selection (numbered list when multiple devices connected), better device ID extraction using `•` separator, cleaner output. Still auto-detects Mac LAN IP and passes `DEV_SERVER_URL` as compile-time backup.
+
+- **System Impact**: Physical iOS devices (iPhone and iPad) now automatically find the dev backend on the local WiFi network. No manual IP configuration required. First launch scans the subnet (~500ms), subsequent launches use cached URL.
+- **Related Tasks/PRD**: Development tooling / physical device testing
+- **Potential Conflicts/Risks**:
+  - Subnet scan adds ~0.5–4s to first cold start on physical devices only (cached on subsequent runs)
+  - iOS 14+ will show a "Local Network" permission prompt on first run – user must allow
+  - If multiple machines run backends on port 3000 on the same subnet, the first discovered host wins
+  - `ApiConfig.initialize()` must be called before any `ApiClient` is created (enforced by placement in `main()`)
+
+## [2026-02-27] Per-conversation unread badges, ApplicationCard UX, kick/re-apply logic
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Fixed per-conversation unread badges (was showing total for all conversations on every card), restructured ApplicationCard buttons into 2 rows (Profil|Czat, Zwolnij|Akceptuj), renamed "Wyrzuć" → "Zwolnij", instant task removal from contractor screens on kick, and differentiated re-apply rules (withdrawn → can re-apply, kicked → 403 with popup).
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/tasks/tasks.service.ts` – `applyForTask` now checks existing application status: KICKED → 403 ForbiddenException, WITHDRAWN → reactivate to PENDING. Extracted `_notifyClientAboutApplication()` helper.
+
+  **Mobile:**
+  - `mobile/lib/core/widgets/sf_chat_badge.dart` – Added optional `otherUserId` param; when provided uses `chatUnreadCountProvider(ChatKey)` instead of `taskUnreadCountProvider`
+  - `mobile/lib/features/client/widgets/application_card.dart` – Restructured buttons: Row 1 (Profil | Czat as OutlinedButton green text), Row 2 (Zwolnij red | Akceptuj green). SFChatBadge uses `otherUserId: application.contractorId`
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `otherUserId` to SFChatBadge for confirmed contractor, renamed "Wyrzuć" → "Zwolnij" in kick dialog
+  - `mobile/lib/features/client/screens/client_home_screen.dart` – Added `otherUserId` to SFChatBadge
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `otherUserId` to SFChatBadge
+  - `mobile/lib/core/providers/task_provider.dart` – `ActiveTaskNotifier` handles `kicked`/`rejected` status (clears task, removes from list, reloads applications). Added `removeTask()` to `ContractorActiveTasksNotifier`
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Added `ref.listen` for `applicationResultProvider` to detect kick while viewing room → snackbar + pop
+  - `mobile/lib/features/contractor/screens/task_alert_screen.dart` – Added `ForbiddenException` catch with `_showKickedDialog()` popup
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Added `ForbiddenException` catch with kicked popup
+
+- **System Impact**: Unread badges now correctly show per-conversation counts. Kicked contractors see 403 + popup when trying to re-apply. Withdrawn contractors can re-apply freely. Tasks instantly disappear from contractor screens on kick.
+- **Related Tasks/PRD**: MVP chat UX, task room management
+- **Potential Conflicts/Risks**:
+  - `SFChatBadge` callers must pass `otherUserId` for per-conversation accuracy (falls back to task-level sum if omitted)
+  - Backend `applyForTask` now differentiates application statuses — requires `KICKED` status to exist in `ApplicationStatus` enum
+
+## [2026-02-27] 1-to-1 Private Chat (Replace Group Chat)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Converted the group chat system to private 1-to-1 conversations. Previously, all messages in a task were visible to everyone in the room (group chat). Now each contractor chats privately with the client per task. Added `recipientId` to Message entity, scoped all queries by user pair, introduced per-conversation WebSocket rooms (`chat:{taskId}:{sortedUserA}:{sortedUserB}`), and updated all mobile navigation to pass `otherUserId`.
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/messages/entities/message.entity.ts` – Added `recipientId` column (nullable UUID), `@ManyToOne(() => User)` relation, composite index
+  - `backend/src/realtime/realtime.service.ts` – Added `getChatRoomName()`, `getActiveChatRoomsForUser()`, updated `saveMessage()` with `recipientId`, scoped `markMessagesRead()` by conversation pair
+  - `backend/src/messages/messages.service.ts` – Scoped all queries by `(senderId, recipientId)` pair: `getTaskMessages`, `sendMessage`, `markAsRead`, `getUnreadCount`, `getAllUnreadCounts`
+  - `backend/src/messages/messages.controller.ts` – New routes with `:otherUserId` param: `GET/POST /tasks/:taskId/messages/:otherUserId`, read/unread endpoints
+  - `backend/src/realtime/realtime.gateway.ts` – Added `chat:join` event, chat room naming, scoped broadcast to chat rooms, auto-join chat rooms on connect
+  - `backend/src/tasks/tasks.service.ts` – Added `clientId` to `getMyApplications()` response
+
+  **Mobile:**
+  - `mobile/lib/core/services/websocket_service.dart` – Added `recipientId` to `ChatMessageEvent`, `joinChat()` method, updated `sendMessage()` signature
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Added `ChatKey` composite key (`taskId + otherUserId`), scoped state and all providers
+  - `mobile/lib/features/chat/screens/chat_screen.dart` – Added `otherUserId` param, uses `ChatKey` for providers
+  - `mobile/lib/features/chat/widgets/chat_input.dart` – Changed from `taskId` to `chatKey: ChatKey`
+  - `mobile/lib/core/providers/unread_messages_provider.dart` – `activeChatKeyProvider` (ChatKey), composite key `taskId:otherUserId`, `chatUnreadCountProvider` + `taskUnreadCountProvider`
+  - `mobile/lib/core/router/app_router.dart` – Both client and contractor chat routes extract `otherUserId` from extras
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Pass `otherUserId` in chat navigation (contractor + applicant)
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Pass `clientId` as `otherUserId` in chat navigation
+  - `mobile/lib/features/client/models/task_application.dart` – Added `clientId` field to `MyApplication` model
+
+- **System Impact**: Chat is now private 1-to-1. Each contractor has a separate conversation with the client per task. Unread badges work per-conversation. WebSocket rooms are per-conversation (`chat:{taskId}:{sorted pair}`), task rooms remain for status events.
+- **Related Tasks/PRD**: 1-to-1 chat requirement for MVP
+- **Potential Conflicts/Risks**:
+  - Existing messages in DB have `recipientId = null` (backward compatible, nullable column)
+  - Spec files need updating for new method signatures (pre-existing pattern of spec lag)
+  - Old chat room format (`task:{taskId}`) no longer used for messages; only for status/application events
+
+## [2026-02-26] Contractor Room: Applied tasks visible as active + room detail screen
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: When a contractor applies to a task (enters the room), the task now appears in their active tasks list on both the home screen and task history. Added a dedicated room detail screen with full task info, "Czat z szefem" and "Rezygnuję" buttons. Resigning frees the room slot.
+
+- **Files Changed**:
+  **Mobile (new):**
+  - `mobile/lib/features/contractor/screens/contractor_task_room_screen.dart` – Room detail screen with task info, chat, resign
+
+  **Mobile (modified):**
+  - `mobile/lib/core/providers/task_provider.dart` – `ContractorActiveTasksNotifier.loadTasks()` now includes `pending` applications (room), sets status to `offered` ("W pokoju")
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Added `copyWith()`, updated `offered` displayName to "W pokoju", added `offered` to `isActive`
+  - `mobile/lib/features/contractor/screens/screens.dart` – Exported room screen
+  - `mobile/lib/core/router/routes.dart` – Added `contractorTaskRoom` route + helper
+  - `mobile/lib/core/router/app_router.dart` – Registered room route
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Room tasks route to room screen, added `_taskDetailRoute()` helper
+  - `mobile/lib/features/contractor/screens/contractor_task_history_screen.dart` – Room tasks route to room screen in both card tap and action buttons
+
+- **System Impact**: Contractor now sees applied (room) tasks as active. Room detail screen provides chat + resign flow.
+- **Related Tasks/PRD**: MVP Phase 1 room concept
+- **Potential Conflicts/Risks**: None
+
+---
+
+## [2026-02-26] Room Chat: Enable chat between client and applicants before acceptance
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Implemented the "room" chat concept - client and contractors with pending applications can now chat before the client accepts anyone. Previously chat was only available after contractor was assigned.
+
+- **Files Changed**:
+  **Backend:**
+  - `backend/src/realtime/realtime.service.ts` – Imported TaskApplication, added TaskApplicationRepository injection, updated `isUserAuthorizedForTask()` and `getActiveTaskIdsForUser()` to include pending applicants
+  - `backend/src/realtime/realtime.module.ts` – Registered TaskApplication entity in TypeOrmModule
+  - `backend/src/messages/messages.service.ts` – Updated `verifyTaskAccess()` to allow pending applicants to access chat
+
+  **Mobile:**
+  - `mobile/lib/features/client/widgets/application_card.dart` – Added `onChat` callback, redesigned action buttons: [Czat] + [Wyrzuć] row + full-width [Akceptuj] button
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Added `_openChatWithApplicant()` method, wired `onChat` to ApplicationCard
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `onChat` to `_ApplicationListItem`, chat button navigates to contractor chat route, added go_router/routes/auth imports
+
+- **System Impact**: Both client and contractors can now communicate during the application/bidding phase. WebSocket authorization extended to include applicants.
+- **Related Tasks/PRD**: MVP Phase 1 room concept
+- **Potential Conflicts/Risks**: Chat room is shared per task (not per applicant), so all participants in the room see each other's messages. This is by design for the room concept.
+
+---
+
+## [2026-02-25] MVP Phase 1: Flat-Fee Credits Model (Task Flow & Payment)
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Complete replacement of 17% Stripe escrow commission model with flat-fee credits system. Users top up credits via Stripe, 10 zł deducted from both client and contractor atomically on acceptance. Includes cancellation refunds, kick from room, enhanced chat moderation, auto-7d rating completion, room slots display, balance gates, and wallet screens.
+
+- **Files Changed**:
+  **Backend (new):**
+  - `backend/src/payments/entities/credit-transaction.entity.ts` – New CreditTransaction entity (topup, deduction, refund, bonus types)
+  - `backend/src/payments/credits.service.ts` – Credits business logic (balance, transactions, topup, confirm)
+  - `backend/src/payments/credits.controller.ts` – 4 endpoints: balance, transactions, topup, confirm
+  - `backend/src/payments/dto/topup-credits.dto.ts` – TopUp DTO with min 20 zł validation
+  - `backend/src/tasks/tasks.scheduler.ts` – Auto-7d cron job for stale PENDING_COMPLETE tasks
+
+  **Backend (modified):**
+  - `backend/src/users/entities/user.entity.ts` – Added `credits` (decimal), `strikes` (int) fields
+  - `backend/src/tasks/entities/task.entity.ts` – Added `flatFee`, `matchingFee` fields
+  - `backend/src/tasks/entities/task-application.entity.ts` – Added `KICKED` status, `joinedRoomAt`, `firstMessageSentAt`
+  - `backend/src/messages/entities/message.entity.ts` – Added `flagged` boolean
+  - `backend/src/payments/payments.module.ts` – Registered new entities/services/controllers
+  - `backend/src/payments/payments.service.ts` – Updated webhook routing for credits topup
+  - `backend/src/tasks/tasks.service.ts` – Atomic 10+10 zł payment in acceptApplication(), refund logic in cancelTask(), kickFromRoom(), applicationsCount in browse endpoints
+  - `backend/src/tasks/tasks.controller.ts` – Added kick endpoint (DELETE /tasks/:id/applications/:appId/kick)
+  - `backend/src/messages/messages.service.ts` – Email/URL blocking, company flagging, 5-min first message timeout
+  - `backend/src/realtime/realtime.gateway.ts` – Added EMAIL_REGEX/URL_REGEX blocking in WebSocket handler
+  - `backend/src/tasks/tasks.module.ts` – Registered scheduler
+  - `backend/src/messages/messages.module.ts` – Added TaskApplication entity
+  - `backend/src/app.module.ts` – Added CreditTransaction entity, ScheduleModule
+
+  **Mobile (new):**
+  - `mobile/lib/core/providers/credits_provider.dart` – CreditsNotifier with balance/transactions/topup
+  - `mobile/lib/features/client/screens/wallet_screen.dart` – Client wallet with balance, topup, transaction history
+  - `mobile/lib/features/contractor/screens/contractor_wallet_screen.dart` – Contractor wallet
+
+  **Mobile (modified):**
+  - `mobile/lib/core/providers/providers.dart` – Added credits export
+  - `mobile/lib/core/router/routes.dart` – Added clientWallet, contractorWallet routes
+  - `mobile/lib/core/router/app_router.dart` – Registered wallet routes
+  - `mobile/lib/features/client/screens/payment_screen.dart` – Replaced 17% commission with 10 zł flat fee, balance gate
+  - `mobile/lib/features/client/screens/client_profile_screen.dart` – Added wallet shortcut widget
+  - `mobile/lib/features/contractor/screens/contractor_profile_screen.dart` – Added wallet shortcut widget
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Fixed earnings (no 17% deduction), added applicationsCount/maxApplications
+  - `mobile/lib/features/contractor/widgets/nearby_task_card.dart` – Room slots badge (X/5 miejsca)
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Balance info in apply dialog
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Balance gate on accept, kick button, 10 zł info banner
+  - `mobile/lib/features/client/widgets/application_card.dart` – Added onKick callback, kick button
+  - `mobile/lib/features/client/models/task_application.dart` – Added `kicked` enum value
+  - `mobile/lib/features/contractor/screens/my_applications_screen.dart` – Added `kicked` status color
+  - `mobile/lib/features/chat/providers/chat_provider.dart` – Added message:error listener for moderation blocks
+  - `mobile/lib/core/services/websocket_service.dart` – emitWithAck for message send errors
+
+- **System Impact**: Major payment model change. Commission model replaced with flat credits. New DB columns/tables added. New API endpoints for credits management.
+- **Related Tasks/PRD**: MVP Phase 1, tasks/mvp-phase-1.md
+- **Potential Conflicts/Risks**:
+  - Database migration needed for new columns (credits, strikes, flatFee, matchingFee, joinedRoomAt, firstMessageSentAt, flagged)
+  - Existing Stripe payment flow still exists alongside new credits system
+  - Spec files have TS errors due to new entity fields (pre-existing pattern)
+
+---
+
 ## [2026-02-24] UI: "Zweryfikowany" badge under profile photo at 100%
 
 - **Developer/Agent**: Claude

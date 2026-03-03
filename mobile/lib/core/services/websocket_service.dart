@@ -56,6 +56,7 @@ class ChatMessageEvent {
   final String id;
   final String taskId;
   final String senderId;
+  final String recipientId;
   final String content;
   final DateTime createdAt;
 
@@ -63,6 +64,7 @@ class ChatMessageEvent {
     required this.id,
     required this.taskId,
     required this.senderId,
+    required this.recipientId,
     required this.content,
     required this.createdAt,
   });
@@ -72,6 +74,7 @@ class ChatMessageEvent {
       id: json['id'] as String,
       taskId: json['taskId'] as String,
       senderId: json['senderId'] as String,
+      recipientId: json['recipientId'] as String? ?? '',
       content: json['content'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
@@ -81,6 +84,7 @@ class ChatMessageEvent {
     'id': id,
     'taskId': taskId,
     'senderId': senderId,
+    'recipientId': recipientId,
     'content': content,
     'createdAt': createdAt.toIso8601String(),
   };
@@ -491,6 +495,7 @@ class WebSocketService {
           id: 'mock_msg_${DateTime.now().millisecondsSinceEpoch}',
           taskId: 'mock_task_id',
           senderId: 'mock_contractor_id',
+          recipientId: 'mock_client_id',
           content: randomMessage,
           createdAt: DateTime.now(),
         );
@@ -527,7 +532,7 @@ class WebSocketService {
     _notifyListeners(WebSocketConfig.locationUpdate, event);
   }
 
-  /// Join task room
+  /// Join task room (for status/application events)
   void joinTask(String taskId) {
     if (_state != WebSocketState.connected && !WebSocketConfig.devModeEnabled) {
       _notifyListeners('error', {'message': 'Not connected to WebSocket'});
@@ -536,6 +541,18 @@ class WebSocketService {
 
     if (!WebSocketConfig.devModeEnabled) {
       _socket.emit(WebSocketConfig.taskJoin, {'taskId': taskId});
+    }
+  }
+
+  /// Join 1-to-1 chat room within a task
+  void joinChat(String taskId, String otherUserId) {
+    if (_state != WebSocketState.connected && !WebSocketConfig.devModeEnabled) {
+      _notifyListeners('error', {'message': 'Not connected to WebSocket'});
+      return;
+    }
+
+    if (!WebSocketConfig.devModeEnabled) {
+      _socket.emit('chat:join', {'taskId': taskId, 'otherUserId': otherUserId});
     }
   }
 
@@ -551,9 +568,10 @@ class WebSocketService {
     }
   }
 
-  /// Send chat message
+  /// Send chat message (1-to-1)
   void sendMessage({
     required String taskId,
+    required String recipientId,
     required String content,
   }) {
     if (_state != WebSocketState.connected && !WebSocketConfig.devModeEnabled) {
@@ -562,9 +580,15 @@ class WebSocketService {
     }
 
     if (!WebSocketConfig.devModeEnabled) {
-      _socket.emit(WebSocketConfig.sendMessage, {
+      _socket.emitWithAck(WebSocketConfig.sendMessage, {
         'taskId': taskId,
+        'recipientId': recipientId,
         'content': content,
+      }, ack: (response) {
+        if (response is Map && response['success'] == false) {
+          final error = response['error'] as String? ?? 'Błąd wysyłania wiadomości';
+          _notifyListeners('message:error', {'taskId': taskId, 'error': error});
+        }
       });
     } else {
       // Dev mode only: simulate incoming message for UI testing
@@ -572,6 +596,7 @@ class WebSocketService {
         id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
         taskId: taskId,
         senderId: _jwtToken ?? 'unknown',
+        recipientId: recipientId,
         content: content,
         createdAt: DateTime.now(),
       );

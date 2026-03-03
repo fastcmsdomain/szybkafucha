@@ -108,11 +108,13 @@ async function bootstrap() {
 
   // Start server
   const port = configService.get<number>('PORT', 3000);
-  await app.listen(port);
+  const host = configService.get<string>('HOST', '0.0.0.0');
+  await app.listen(port, host);
 
   console.log(`
   🚀 Szybka Fucha API is running!
   
+  📍 Host:     ${host}
   📍 Local:    http://localhost:${port}/${apiPrefix}
   📍 Health:   http://localhost:${port}/${apiPrefix}/health
   
