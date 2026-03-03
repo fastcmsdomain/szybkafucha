@@ -27,10 +27,7 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
   late TabController _tabController;
   final MapController _mapController = MapController();
   double _currentZoom = 6.0;
-  int _selectedBottomNavIndex = 1; // Start on "Zlecenia"
   Set<TaskCategory> _selectedCategoryFilters = {};
-
-  static const String _profileLoginRoute = '${Routes.welcome}?tab=profile';
 
   @override
   void initState() {
@@ -104,7 +101,6 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -839,36 +835,4 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return NavigationBar(
-      selectedIndex: _selectedBottomNavIndex,
-      onDestinationSelected: (index) {
-        if (index == 0) {
-          setState(() => _selectedBottomNavIndex = 0);
-          context.go(Routes.publicHome);
-        } else if (index == 1) {
-          setState(() => _selectedBottomNavIndex = 1);
-        } else if (index == 2) {
-          context.go(_profileLoginRoute);
-        }
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: AppStrings.menuHome,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.work_outline),
-          selectedIcon: Icon(Icons.work),
-          label: AppStrings.menuTasks,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: AppStrings.menuProfile,
-        ),
-      ],
-    );
-  }
 }

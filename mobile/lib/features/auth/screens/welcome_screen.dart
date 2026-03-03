@@ -14,7 +14,14 @@ import '../widgets/social_login_button.dart';
 /// Welcome screen - first screen users see
 /// Provides options for login (Google, Apple, Phone) or signup
 class WelcomeScreen extends ConsumerStatefulWidget {
-  const WelcomeScreen({super.key});
+  final bool profileMode;
+  final bool showBottomNavigation;
+
+  const WelcomeScreen({
+    super.key,
+    this.profileMode = false,
+    this.showBottomNavigation = true,
+  });
 
   @override
   ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -33,11 +40,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     // Check if Apple Sign-In is available
     final appleAvailable = ref.watch(appleSignInAvailableProvider);
     final selectedRole = ref.watch(authProvider).selectedRole ?? 'client';
-    final isProfileMode =
+    final isProfileMode = widget.profileMode ||
         GoRouterState.of(context).uri.queryParameters['tab'] == 'profile';
 
     return Scaffold(
-      bottomNavigationBar: _buildBottomNavigation(isProfileMode),
+      bottomNavigationBar: widget.showBottomNavigation
+          ? _buildBottomNavigation(isProfileMode)
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingLG),
@@ -382,7 +391,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         } else if (index == 1) {
           context.go(Routes.browse);
         } else if (index == 2) {
-          context.go('${Routes.welcome}?tab=profile');
+          context.go(Routes.publicProfile);
         }
       },
       destinations: const [

@@ -3,6 +3,7 @@ abstract class Routes {
   // Auth routes
   static const String welcome = '/';
   static const String publicHome = '/home';
+  static const String publicProfile = '/public/profile';
   static const String termsOfService = '/legal/terms';
   static const String privacyPolicy = '/legal/privacy';
   static const String onboarding = '/onboarding';

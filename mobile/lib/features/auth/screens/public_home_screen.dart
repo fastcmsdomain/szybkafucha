@@ -10,12 +10,9 @@ import '../../../core/theme/theme.dart';
 class PublicHomeScreen extends StatelessWidget {
   const PublicHomeScreen({super.key});
 
-  static const String _profileLoginRoute = '${Routes.welcome}?tab=profile';
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: _buildBottomNavigation(context),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(AppSpacing.paddingLG),
@@ -64,7 +61,7 @@ class PublicHomeScreen extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.gapMD),
                 OutlinedButton.icon(
-                  onPressed: () => context.go(_profileLoginRoute),
+                  onPressed: () => context.go(Routes.publicProfile),
                   icon: const Icon(Icons.person_outline),
                   label: Text(
                     AppStrings.login,
@@ -120,36 +117,6 @@ class PublicHomeScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavigation(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 0,
-      onDestinationSelected: (index) {
-        if (index == 1) {
-          context.go(Routes.browse);
-        } else if (index == 2) {
-          context.go(_profileLoginRoute);
-        }
-      },
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: AppStrings.menuHome,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.work_outline),
-          selectedIcon: Icon(Icons.work),
-          label: AppStrings.menuTasks,
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: AppStrings.menuProfile,
         ),
       ],
     );
