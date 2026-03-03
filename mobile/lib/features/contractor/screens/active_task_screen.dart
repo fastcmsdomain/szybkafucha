@@ -455,10 +455,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // Keep status step visuals aligned with client tracking screen
-    const steps = ['Zgłoszenia', 'Potwierdzony', 'W trakcie', 'Gotowe'];
+    // Keep status step visuals aligned with client tracking screen (5 steps)
+    const steps = ['Zgłoszenia', 'Zaakceptowane', 'W trakcie', 'Ocena', 'Gotowe'];
 
-    // Map current status to step index (0-3)
+    // Map current status to step index (0-4)
     int currentStep;
     switch (_currentStatus) {
       case ContractorTaskStatus.accepted:
@@ -471,8 +471,10 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         currentStep = 2;
         break;
       case ContractorTaskStatus.pendingComplete:
-      case ContractorTaskStatus.completed:
         currentStep = 3;
+        break;
+      case ContractorTaskStatus.completed:
+        currentStep = 4;
         break;
       default:
         currentStep = 0;
@@ -793,7 +795,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         isWaitingForCompletion = true;
         break;
       case ContractorTaskStatus.pendingComplete:
-        buttonText = 'Zakończ zlecenie';
+        buttonText = 'Oceń i zakończ';
         onPressed = () => _completeTask(task);
         break;
       default:
@@ -1057,12 +1059,13 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => FractionallySizedBox(
-        heightFactor: 0.5,
+        heightFactor: 0.6,
         child: _ClientProfileSheet(
           clientId: task.clientId,
           clientName: task.clientName,
           clientRating: profileRating,
           clientAvatarUrl: task.clientAvatarUrl,
+          taskId: widget.taskId,
         ),
       ),
     );
@@ -1165,12 +1168,14 @@ class _ClientProfileSheet extends ConsumerStatefulWidget {
   final String clientName;
   final double clientRating;
   final String? clientAvatarUrl;
+  final String? taskId;
 
   const _ClientProfileSheet({
     required this.clientId,
     required this.clientName,
     required this.clientRating,
     this.clientAvatarUrl,
+    this.taskId,
   });
 
   @override
@@ -1183,6 +1188,8 @@ class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
   double? _ratingAvg;
   int? _ratingCount;
   String? _avatarUrl;
+  String? _email;
+  String? _phone;
   bool _isLoading = true;
   bool _isReviewsLoading = true;
   String? _error;
@@ -1203,13 +1210,19 @@ class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
     String? error;
     List<_ClientPublicReview> reviews = const [];
 
+    String? email;
+    String? phone;
+
     try {
-      final response = await api.get('/client/${widget.clientId}/public');
+      final taskIdParam = widget.taskId != null ? '?taskId=${widget.taskId}' : '';
+      final response = await api.get('/client/${widget.clientId}/public$taskIdParam');
       final data = response as Map<String, dynamic>;
       bio = data['bio'] as String?;
       ratingAvg = (data['ratingAvg'] as num?)?.toDouble();
       ratingCount = data['ratingCount'] as int?;
       avatarUrl = data['avatarUrl'] as String?;
+      email = data['email'] as String?;
+      phone = data['phone'] as String?;
     } catch (e) {
       error = e.toString();
     }
@@ -1234,6 +1247,8 @@ class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
       _ratingAvg = ratingAvg;
       _ratingCount = ratingCount;
       _avatarUrl = avatarUrl;
+      _email = email;
+      _phone = phone;
       _error = error;
       _reviews = reviews;
       _isLoading = false;
@@ -1290,6 +1305,110 @@ class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildContactSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Congratulatory banner
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.1),
+            borderRadius: AppRadius.radiusMD,
+            border: Border.all(
+              color: AppColors.success.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.celebration, color: AppColors.success, size: 24),
+              SizedBox(width: AppSpacing.gapSM),
+              Expanded(
+                child: Text(
+                  'Gratulacje! Otrzymałeś dostęp do danych kontaktowych szefa',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: AppSpacing.gapMD),
+        Text(
+          'Dane kontaktowe',
+          style: AppTypography.labelLarge.copyWith(
+            color: AppColors.gray700,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        SizedBox(height: AppSpacing.gapXS),
+        if (_email != null)
+          Semantics(
+            label: 'Wyślij email do klienta',
+            button: true,
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri(scheme: 'mailto', path: _email),
+                mode: LaunchMode.externalApplication,
+              ),
+              borderRadius: AppRadius.radiusSM,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                child: Row(
+                  children: [
+                    Icon(Icons.email_outlined, size: 20, color: AppColors.primary),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: Text(
+                        _email!,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, size: 16, color: AppColors.gray400),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (_phone != null)
+          Semantics(
+            label: 'Zadzwoń do klienta',
+            button: true,
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri(scheme: 'tel', path: _phone),
+                mode: LaunchMode.externalApplication,
+              ),
+              borderRadius: AppRadius.radiusSM,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                child: Row(
+                  children: [
+                    Icon(Icons.phone_outlined, size: 20, color: AppColors.primary),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: Text(
+                        _phone!,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, size: 16, color: AppColors.gray400),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1447,6 +1566,11 @@ class _ClientProfileSheetState extends ConsumerState<_ClientProfileSheet> {
                       ),
                     ],
                   ),
+                  // Contact details section (shown after acceptance)
+                  if (_email != null || _phone != null) ...[
+                    SizedBox(height: AppSpacing.gapMD),
+                    _buildContactSection(),
+                  ],
                   SizedBox(height: AppSpacing.gapMD),
                   Text(
                     'Opis',

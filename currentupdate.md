@@ -8,6 +8,28 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-02] Show contact details in profile popups after task acceptance
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: When a client accepts a contractor (task status >= accepted), both parties can now see each other's email and phone number in the profile popup sheet. Contact details are gated by taskId verification on the backend — the requesting user must be a participant on an active task with the target user.
+
+- **Files Changed**:
+  - `backend/src/contractor/contractor.module.ts` – Added Task entity to TypeOrmModule imports
+  - `backend/src/contractor/contractor.service.ts` – Added Task repository injection; `getPublicProfile()` now accepts optional `requestingUserId` and `taskId` params; conditionally includes email/phone when task relationship is verified
+  - `backend/src/contractor/contractor.controller.ts` – Added `@Query('taskId')` and `@Request()` to `getPublicProfile` route handler
+  - `backend/src/client/client.module.ts` – Added Task entity to TypeOrmModule imports
+  - `backend/src/client/client.service.ts` – Added Task repository injection; `getPublicProfile()` now accepts optional `requestingUserId` and `taskId` params; conditionally includes email/phone
+  - `backend/src/client/client.controller.ts` – Added `@Query('taskId')` and `@Request()` to `getPublicProfile` route handler
+  - `mobile/lib/features/client/models/contractor.dart` – Added optional `email` and `phone` fields with JSON parsing
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – `_ContractorProfileSheet` now receives `taskId`, passes it to API call, and displays contact section with congratulatory banner
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – `_ClientProfileSheet` now receives `taskId`, passes it to API call, and displays contact section with congratulatory banner
+
+- **System Impact**: Contact details (email/phone) are now conditionally exposed via public profile endpoints when `?taskId=` query parameter is provided and the requesting user is verified as a task participant. No breaking changes — without the query parameter, behavior is unchanged.
+- **Related Tasks/PRD**: Contact sharing feature for accepted tasks
+- **Potential Conflicts/Risks**: None — backward compatible. Endpoints without `taskId` param return same response as before.
+
+---
+
 ## [2026-03-01] Disable user auto-suspension for MVP Phase 1, add post-MVP doc
 
 - **Developer/Agent**: Claude

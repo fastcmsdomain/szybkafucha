@@ -22,11 +22,12 @@ import '../models/task.dart';
 import '../models/task_application.dart';
 import '../widgets/application_card.dart';
 
-/// Task tracking status (4 states - bidding system, no separate accepted step)
+/// Task tracking status (5 states - bidding system with rating step)
 enum TrackingStatus {
   applications, // Waiting for contractor applications (bidding)
   confirmed, // Client accepted an application - contractor confirmed
   inProgress,
+  rating, // Awaiting ratings from both parties
   completed,
 }
 
@@ -41,6 +42,8 @@ extension TrackingStatusExtension on TrackingStatus {
         return 'Wykonawca potwierdzony';
       case TrackingStatus.inProgress:
         return 'Praca w toku';
+      case TrackingStatus.rating:
+        return 'Ocena';
       case TrackingStatus.completed:
         return 'Zakończone';
     }
@@ -54,6 +57,8 @@ extension TrackingStatusExtension on TrackingStatus {
         return 'Czekamy na rozpoczęcie pracy';
       case TrackingStatus.inProgress:
         return 'Zadanie jest realizowane';
+      case TrackingStatus.rating:
+        return 'Oceń wykonawcę aby zakończyć';
       case TrackingStatus.completed:
         return 'Zadanie zostało ukończone';
     }
@@ -67,8 +72,10 @@ extension TrackingStatusExtension on TrackingStatus {
         return 1;
       case TrackingStatus.inProgress:
         return 2;
-      case TrackingStatus.completed:
+      case TrackingStatus.rating:
         return 3;
+      case TrackingStatus.completed:
+        return 4;
     }
   }
 }
@@ -162,7 +169,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       case TaskStatus.inProgress:
         return TrackingStatus.inProgress;
       case TaskStatus.pendingComplete:
-        return TrackingStatus.completed;
+        return TrackingStatus.rating;
       case TaskStatus.completed:
         return TrackingStatus.completed;
       case TaskStatus.cancelled:
@@ -222,7 +229,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       case 'in_progress':
         return TrackingStatus.inProgress;
       case 'pending_complete':
-        return TrackingStatus.completed;
+        return TrackingStatus.rating;
       case 'completed':
         return TrackingStatus.completed;
       default:
@@ -340,6 +347,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
           child: _ContractorProfileSheet(
             contractorId: contractorId,
             initialContractor: initialContractor,
+            taskId: widget.taskId,
           ),
         );
       },
@@ -496,8 +504,10 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             // Complete button (when in progress)
             if (_status == TrackingStatus.inProgress) _buildCompleteButton(),
 
-            // Cancel button (for all non-completed tasks)
-            if (_status != TrackingStatus.completed) _buildCancelButton(),
+            // Cancel button (hide for rating and completed stages)
+            if (_status != TrackingStatus.completed &&
+                _status != TrackingStatus.rating)
+              _buildCancelButton(),
           ],
         ),
       ),
@@ -621,7 +631,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         Container(
           padding: EdgeInsets.all(AppSpacing.paddingSM),
           decoration: BoxDecoration(
-            color: _status == TrackingStatus.applications
+            color: _status == TrackingStatus.applications ||
+                    _status == TrackingStatus.rating
                 ? AppColors.warning.withValues(alpha: 0.1)
                 : AppColors.success.withValues(alpha: 0.1),
             shape: BoxShape.circle,
@@ -635,7 +646,13 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
                     valueColor: AlwaysStoppedAnimation(AppColors.warning),
                   ),
                 )
-              : Icon(_getStatusIcon(), color: AppColors.success, size: 24),
+              : Icon(
+                  _getStatusIcon(),
+                  color: _status == TrackingStatus.rating
+                      ? AppColors.warning
+                      : AppColors.success,
+                  size: 24,
+                ),
         ),
         SizedBox(width: AppSpacing.gapMD),
         Expanded(
@@ -664,14 +681,16 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
         return Icons.check_circle;
       case TrackingStatus.inProgress:
         return Icons.handyman;
+      case TrackingStatus.rating:
+        return Icons.star_outline;
       case TrackingStatus.completed:
         return Icons.check_circle;
     }
   }
 
   Widget _buildProgressSteps() {
-    // 5 steps including confirmation - rainbow colored
-    const steps = ['Zgłoszenia', 'Potwierdzony', 'W trakcie', 'Gotowe'];
+    // 5 steps - rainbow colored
+    const steps = ['Zgłoszenia', 'Zaakceptowane', 'W trakcie', 'Ocena', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
     return SFRainbowProgress(steps: steps, currentStep: currentStep);
@@ -1688,10 +1707,12 @@ class _TaskLocationMapScreen extends StatelessWidget {
 class _ContractorProfileSheet extends ConsumerStatefulWidget {
   final String contractorId;
   final Contractor initialContractor;
+  final String? taskId;
 
   const _ContractorProfileSheet({
     required this.contractorId,
     required this.initialContractor,
+    this.taskId,
   });
 
   @override
@@ -1724,8 +1745,9 @@ class _ContractorProfileSheetState
     List<_ContractorPublicReview> reviews = const [];
 
     try {
+      final taskIdParam = widget.taskId != null ? '?taskId=${widget.taskId}' : '';
       final response = await api.get(
-        '/contractor/${widget.contractorId}/public',
+        '/contractor/${widget.contractorId}/public$taskIdParam',
       );
       final data = response as Map<String, dynamic>;
       fullProfile = Contractor.fromJson(data);
@@ -2018,12 +2040,115 @@ class _ContractorProfileSheetState
     );
   }
 
+  Widget _buildContactSection(Contractor contractor) {
+    final hasContact = contractor.email != null || contractor.phone != null;
+    if (!hasContact) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Congratulatory banner
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.1),
+            borderRadius: AppRadius.radiusMD,
+            border: Border.all(
+              color: AppColors.success.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.celebration, color: AppColors.success, size: 24),
+              SizedBox(width: AppSpacing.gapSM),
+              Expanded(
+                child: Text(
+                  'Gratulacje! Otrzymałeś dostęp do danych kontaktowych pracownika',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildSectionTitle('Dane kontaktowe'),
+        SizedBox(height: AppSpacing.gapXS),
+        if (contractor.email != null)
+          Semantics(
+            label: 'Wyślij email do wykonawcy',
+            button: true,
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri(scheme: 'mailto', path: contractor.email),
+                mode: LaunchMode.externalApplication,
+              ),
+              borderRadius: AppRadius.radiusSM,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                child: Row(
+                  children: [
+                    Icon(Icons.email_outlined, size: 20, color: AppColors.primary),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: Text(
+                        contractor.email!,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, size: 16, color: AppColors.gray400),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (contractor.phone != null)
+          Semantics(
+            label: 'Zadzwoń do wykonawcy',
+            button: true,
+            child: InkWell(
+              onTap: () => launchUrl(
+                Uri(scheme: 'tel', path: contractor.phone),
+                mode: LaunchMode.externalApplication,
+              ),
+              borderRadius: AppRadius.radiusSM,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                child: Row(
+                  children: [
+                    Icon(Icons.phone_outlined, size: 20, color: AppColors.primary),
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: Text(
+                        contractor.phone!,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.open_in_new, size: 16, color: AppColors.gray400),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildProfileContent(Contractor contractor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: AppSpacing.gapMD),
         _buildAvatarAndNameRow(contractor),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildContactSection(contractor),
         SizedBox(height: AppSpacing.gapMD),
         _buildBioSection(contractor),
         if (contractor.dateOfBirth != null) ...[

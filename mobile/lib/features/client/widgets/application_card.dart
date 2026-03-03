@@ -43,7 +43,11 @@ class ApplicationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: application.status == ApplicationStatus.accepted
+                ? AppColors.success
+                : AppColors.gray200,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.gray900.withValues(alpha: 0.05),

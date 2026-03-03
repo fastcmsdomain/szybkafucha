@@ -17,6 +17,8 @@ import { UpdateContractorProfileDto } from './dto/update-contractor-profile.dto'
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { UsersService } from '../users/users.service';
 import { Rating } from '../tasks/entities/rating.entity';
+import { Task, TaskStatus } from '../tasks/entities/task.entity';
+import { In } from 'typeorm';
 
 type RatingAggregateRow = {
   avg: string | null;
@@ -30,6 +32,8 @@ export class ContractorService {
     private readonly contractorRepository: Repository<ContractorProfile>,
     @InjectRepository(Rating)
     private readonly ratingRepository: Repository<Rating>,
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
     private readonly usersService: UsersService,
   ) {}
 
@@ -390,7 +394,11 @@ export class ContractorService {
    * Combines User + ContractorProfile data, excluding sensitive fields
    * Falls back to User data if no contractor profile exists
    */
-  async getPublicProfile(userId: string): Promise<{
+  async getPublicProfile(
+    userId: string,
+    requestingUserId?: string,
+    taskId?: string,
+  ): Promise<{
     id: string;
     name: string;
     avatarUrl: string | null;
@@ -402,7 +410,38 @@ export class ContractorService {
     isVerified: boolean;
     memberSince: Date;
     dateOfBirth: string | null;
+    email?: string | null;
+    phone?: string | null;
   }> {
+    // Check if requesting user has active task with this contractor (for contact info)
+    let contactEmail: string | null = null;
+    let contactPhone: string | null = null;
+
+    if (taskId && requestingUserId) {
+      const task = await this.taskRepository.findOne({
+        where: {
+          id: taskId,
+          clientId: requestingUserId,
+          contractorId: userId,
+          status: In([
+            TaskStatus.ACCEPTED,
+            TaskStatus.CONFIRMED,
+            TaskStatus.IN_PROGRESS,
+            TaskStatus.PENDING_COMPLETE,
+            TaskStatus.COMPLETED,
+          ]),
+        },
+      });
+
+      if (task) {
+        const contractorUser = await this.usersService.findById(userId);
+        if (contractorUser) {
+          contactEmail = contractorUser.email || null;
+          contactPhone = contractorUser.phone || null;
+        }
+      }
+    }
+
     // Try to find contractor profile with user relation
     const profile = await this.contractorRepository.findOne({
       where: { userId },
@@ -439,6 +478,9 @@ export class ContractorService {
         isVerified: profile.kycStatus === KycStatus.VERIFIED,
         memberSince: profile.createdAt,
         dateOfBirth: profile.user.dateOfBirth || null,
+        ...(contactEmail !== null || contactPhone !== null
+          ? { email: contactEmail, phone: contactPhone }
+          : {}),
       };
     }
 
@@ -461,6 +503,9 @@ export class ContractorService {
       isVerified: false,
       memberSince: user.createdAt,
       dateOfBirth: user.dateOfBirth || null,
+      ...(contactEmail !== null || contactPhone !== null
+        ? { email: contactEmail, phone: contactPhone }
+        : {}),
     };
   }
 

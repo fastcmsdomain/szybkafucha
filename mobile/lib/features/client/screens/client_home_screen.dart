@@ -347,7 +347,18 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: AppRadius.radiusLG,
-            border: Border.all(color: AppColors.gray200),
+            border: Border.all(
+              color: task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.pendingComplete
+                  ? AppColors.success
+                  : AppColors.gray200,
+              width: task.status == TaskStatus.confirmed ||
+                      task.status == TaskStatus.inProgress ||
+                      task.status == TaskStatus.pendingComplete
+                  ? 2.0
+                  : 1.0,
+            ),
             boxShadow: AppShadows.sm,
           ),
           child: Column(

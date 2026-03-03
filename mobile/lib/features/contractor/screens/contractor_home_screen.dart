@@ -381,7 +381,20 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: AppRadius.radiusLG,
-          border: Border.all(color: AppColors.gray200),
+          border: Border.all(
+            color: task.status == ContractorTaskStatus.accepted ||
+                    task.status == ContractorTaskStatus.confirmed ||
+                    task.status == ContractorTaskStatus.inProgress ||
+                    task.status == ContractorTaskStatus.pendingComplete
+                ? AppColors.success
+                : AppColors.gray200,
+            width: task.status == ContractorTaskStatus.accepted ||
+                    task.status == ContractorTaskStatus.confirmed ||
+                    task.status == ContractorTaskStatus.inProgress ||
+                    task.status == ContractorTaskStatus.pendingComplete
+                ? 2.0
+                : 1.0,
+          ),
           boxShadow: AppShadows.sm,
         ),
         child: Column(
