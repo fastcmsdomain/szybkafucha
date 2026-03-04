@@ -482,7 +482,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                         icon: const Icon(Icons.arrow_forward),
                         label: const Text('Więcej'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
+                          backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.white,
                         ),
                       ),
