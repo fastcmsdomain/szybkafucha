@@ -259,7 +259,7 @@ abstract class AppStrings {
   static const String onboardingTitle3 = 'Zarabiaj lub zlecaj';
   static const String onboardingSubtitle3 = 'Wybór należy do Ciebie';
   static const String onboardingDescription3 =
-      'Przeglądaj dostępne zlecenia i zacznij działać już teraz';
+      'Przeglądaj dostępne zlecenia, płacisz tylko za dopasowanie';
 
   static const String onboardingSkip = 'Pomiń';
   static const String onboardingNext = 'Dalej';

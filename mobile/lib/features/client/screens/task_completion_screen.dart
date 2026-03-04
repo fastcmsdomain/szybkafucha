@@ -24,12 +24,9 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     with SingleTickerProviderStateMixin {
   int _rating = 0;
   final _reviewController = TextEditingController();
-  int? _selectedTip;
   bool _isSubmitting = false;
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-
-  final List<int> _tipOptions = [0, 5, 10, 15, 20];
 
   @override
   void initState() {
@@ -85,11 +82,6 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
 
               // Review section
               _buildReviewSection(),
-
-              SizedBox(height: AppSpacing.space6),
-
-              // Tip section
-              _buildTipSection(),
 
               SizedBox(height: AppSpacing.space8),
 
@@ -317,91 +309,6 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
     );
   }
 
-  Widget _buildTipSection() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.radiusLG,
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.favorite,
-                color: AppColors.primary,
-                size: 20,
-              ),
-              SizedBox(width: AppSpacing.gapSM),
-              Text(
-                'Chcesz dodać napiwek?',
-                style: AppTypography.labelLarge,
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            '100% napiwku trafia do wykonawcy',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.gray500,
-            ),
-          ),
-          SizedBox(height: AppSpacing.space4),
-          Row(
-            children: _tipOptions.map((tip) {
-              final isSelected = _selectedTip == tip;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.gapXS),
-                  child: Semantics(
-                    label: tip == 0 ? 'Bez napiwku' : 'Napiwek $tip zł',
-                    button: true,
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedTip = tip),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppSpacing.paddingMD,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.gray50,
-                          borderRadius: AppRadius.radiusMD,
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.gray200,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              tip == 0 ? 'Bez' : '$tip zł',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: isSelected
-                                    ? AppColors.white
-                                    : AppColors.gray700,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSubmitButton() {
     return ElevatedButton(
       onPressed: _rating > 0 && !_isSubmitting ? _submitRating : null,
@@ -424,9 +331,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
               ),
             )
           : Text(
-              _selectedTip != null && _selectedTip! > 0
-                  ? 'Wyślij ocenę i napiwek'
-                  : 'Wyślij ocenę',
+              'Wyślij ocenę',
               style: AppTypography.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: AppColors.white,
@@ -450,11 +355,6 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
         rating: _rating,
         comment: _reviewController.text.isNotEmpty ? _reviewController.text : null,
       );
-
-      // 3) Optional tip
-      if (_selectedTip != null && _selectedTip! > 0) {
-        await tasksNotifier.addTip(widget.taskId, _selectedTip!.toDouble());
-      }
 
       // Refresh cached tasks
       await tasksNotifier.refresh();
@@ -506,9 +406,7 @@ class _TaskCompletionScreenState extends ConsumerState<TaskCompletionScreen>
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              _selectedTip != null && _selectedTip! > 0
-                  ? 'Twoja ocena i napiwek zostały wysłane'
-                  : 'Twoja ocena została wysłana',
+              'Twoja ocena została wysłana',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.gray600,
               ),

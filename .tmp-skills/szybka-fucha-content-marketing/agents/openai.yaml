@@ -1,0 +1,4 @@
+interface:
+  display_name: "Szybka Fucha Marketing"
+  short_description: "Signup-focused content for Szybka Fucha"
+  default_prompt: "Use $szybka-fucha-content-marketing to draft conversion-focused content that drives Szybka Fucha signups."

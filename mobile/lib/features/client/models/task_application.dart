@@ -43,7 +43,6 @@ class TaskApplication {
   final int contractorReviewCount;
   final int contractorCompletedTasks;
   final String? contractorBio;
-  final double? distanceKm;
   final double proposedPrice;
   final String? message;
   final ApplicationStatus status;
@@ -60,7 +59,6 @@ class TaskApplication {
     this.contractorReviewCount = 0,
     this.contractorCompletedTasks = 0,
     this.contractorBio,
-    this.distanceKm,
     required this.proposedPrice,
     this.message,
     this.status = ApplicationStatus.pending,
@@ -82,7 +80,6 @@ class TaskApplication {
       contractorCompletedTasks:
           _parseInt(json['contractorCompletedTasks']) ?? 0,
       contractorBio: json['contractorBio'] as String?,
-      distanceKm: _parseDouble(json['distanceKm']),
       proposedPrice: _parseDouble(json['proposedPrice']) ?? 0.0,
       message: json['message'] as String?,
       status: _mapStatus(json['status'] as String? ?? 'pending'),
@@ -130,15 +127,6 @@ class TaskApplication {
 
   /// Get formatted rating with one decimal
   String get formattedRating => contractorRating.toStringAsFixed(1);
-
-  /// Get formatted distance
-  String get formattedDistance {
-    if (distanceKm == null) return '';
-    if (distanceKm! < 1) {
-      return '${(distanceKm! * 1000).round()} m';
-    }
-    return '${distanceKm!.toStringAsFixed(1)} km';
-  }
 
   /// Get formatted price
   String get formattedPrice => '${proposedPrice.toStringAsFixed(0)} zł';

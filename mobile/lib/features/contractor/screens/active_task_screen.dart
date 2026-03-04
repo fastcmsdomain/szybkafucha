@@ -414,42 +414,6 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
         ),
 
-        // Distance badge
-        Positioned(
-          top: AppSpacing.paddingMD,
-          left: AppSpacing.paddingMD,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.paddingMD,
-              vertical: AppSpacing.paddingSM,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: AppRadius.radiusMD,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.gray900.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.directions_car,
-                  size: 16,
-                  color: AppColors.gray600,
-                ),
-                SizedBox(width: AppSpacing.gapSM),
-                Text(
-                  '${task.formattedDistance} • ${task.formattedEta}',
-                  style: AppTypography.labelMedium,
-                ),
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }

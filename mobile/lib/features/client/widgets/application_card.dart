@@ -143,23 +143,6 @@ class ApplicationCard extends StatelessWidget {
               ],
             ),
 
-            // Distance
-            if (application.distanceKm != null) ...[
-              SizedBox(height: AppSpacing.paddingXS),
-              Row(
-                children: [
-                  SizedBox(width: 56), // Align with text after avatar
-                  Icon(Icons.location_on, size: 14, color: AppColors.gray400),
-                  SizedBox(width: 2),
-                  Text(
-                    application.formattedDistance,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
 
             // Message
             if (application.message != null &&

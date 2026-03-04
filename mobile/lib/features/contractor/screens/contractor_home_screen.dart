@@ -80,6 +80,17 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
       });
     });
 
+    // Listen for application accepted/rejected events
+    ref.listen<AsyncValue<Map<String, dynamic>>>(applicationResultProvider, (previous, next) {
+      next.whenData((event) {
+        final status = event['status']?.toString().toLowerCase();
+        final taskId = event['taskId']?.toString();
+        if (status == 'accepted' && taskId != null) {
+          _showAcceptedAlert(taskId, event);
+        }
+      });
+    });
+
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
@@ -730,6 +741,217 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAcceptedAlert(String taskId, Map<String, dynamic> event) {
+    HapticFeedback.heavyImpact();
+
+    final taskTitle = event['taskTitle']?.toString() ?? '';
+    final taskCategory = event['taskCategory']?.toString() ?? '';
+    final clientName = event['clientName']?.toString() ?? 'Szef';
+
+    final category = TaskCategory.values.firstWhere(
+      (c) => c.name.toLowerCase() == taskCategory.toLowerCase(),
+      orElse: () => TaskCategory.paczki,
+    );
+    final categoryData = TaskCategoryData.fromCategory(category);
+
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        margin: EdgeInsets.all(AppSpacing.paddingMD),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: AppRadius.radiusXL,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gray900.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: EdgeInsets.only(top: AppSpacing.paddingSM),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.gray300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.success.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Text(
+                    'Zostałeś wybrany!',
+                    style: AppTypography.h4.copyWith(
+                      color: AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+              child: Column(
+                children: [
+                  // Category + task info
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(AppSpacing.paddingMD),
+                        decoration: BoxDecoration(
+                          color: categoryData.color.withValues(alpha: 0.1),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                        child: Icon(
+                          categoryData.icon,
+                          color: categoryData.color,
+                          size: 32,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(categoryData.name, style: AppTypography.h5),
+                            if (taskTitle.isNotEmpty) ...[
+                              SizedBox(height: AppSpacing.gapXS),
+                              Text(
+                                taskTitle,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.gray600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.gapMD),
+
+                  // Info banner
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(AppSpacing.paddingMD),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.celebration, color: AppColors.success, size: 24),
+                        SizedBox(width: AppSpacing.gapSM),
+                        Expanded(
+                          child: Text(
+                            '$clientName wybrał Cię do realizacji tego zlecenia!',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Action buttons
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.push(Routes.contractorTask(taskId));
+                      },
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text('Więcej'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        final currentUser = ref.read(currentUserProvider);
+                        context.push(
+                          Routes.contractorTaskChatRoute(taskId),
+                          extra: {
+                            'otherUserId': event['clientId']?.toString() ?? '',
+                            'taskTitle': taskTitle.isNotEmpty ? taskTitle : 'Czat',
+                            'otherUserName': clientName,
+                            'currentUserId': currentUser?.id ?? '',
+                            'currentUserName': currentUser?.name ?? 'Ty',
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: const Text('Czat'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: AppColors.white,
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusLG,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: MediaQuery.of(ctx).padding.bottom),
+          ],
+        ),
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../client/models/task_application.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
@@ -350,23 +351,6 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                       color: AppColors.gray700,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.directions_walk,
-                                        size: 14,
-                                        color: AppColors.gray500,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '${_task.formattedDistance} • ${_task.formattedEta}',
-                                        style: AppTypography.caption.copyWith(
-                                          color: AppColors.gray500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                 ],
                               ),
                             ),
@@ -642,6 +626,12 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   }
 
   Widget _buildBottomBar() {
+    final myApps = ref.watch(myApplicationsProvider);
+    final hasApplied = myApps.applications.any(
+      (a) => a.taskId == _task.id &&
+          (a.status == ApplicationStatus.pending || a.status == ApplicationStatus.accepted),
+    );
+
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
       decoration: BoxDecoration(
@@ -658,9 +648,16 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _isAccepting ? null : _handleAccept,
+            onPressed: _isAccepting
+                ? null
+                : hasApplied
+                    ? () => context.push(
+                          Routes.contractorTaskRoomRoute(_task.id),
+                          extra: _task,
+                        )
+                    : _handleAccept,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
+              backgroundColor: hasApplied ? AppColors.primary : AppColors.success,
               foregroundColor: AppColors.white,
               padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
               shape: RoundedRectangleBorder(
@@ -680,10 +677,10 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.send, size: 24),
+                      Icon(hasApplied ? Icons.visibility : Icons.send, size: 24),
                       SizedBox(width: AppSpacing.gapMD),
                       Text(
-                        'ZGŁOŚ SIĘ DO ZLECENIA',
+                        hasApplied ? 'ZOBACZ ZLECENIE' : 'ZGŁOŚ SIĘ DO ZLECENIA',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -809,6 +806,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
           );
 
       if (!mounted) return;
+      ref.read(myApplicationsProvider.notifier).loadApplications();
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -819,7 +817,15 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
       _navigateBack(context);
     } catch (e) {
       if (mounted) {
-        if (e is ForbiddenException) {
+        final errorMsg = e.toString().toLowerCase();
+        if (errorMsg.contains('already applied')) {
+          ref.read(myApplicationsProvider.notifier).loadApplications();
+          context.push(
+            Routes.contractorTaskRoomRoute(_task.id),
+            extra: _task,
+          );
+          return;
+        } else if (e is ForbiddenException) {
           _showKickedDialog();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

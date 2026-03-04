@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
+import '../../../core/widgets/sf_task_location_map.dart';
 import '../models/contractor_task.dart';
 import '../../client/models/task_category.dart';
 
@@ -474,24 +476,25 @@ class _TaskDetailsSheet extends StatelessWidget {
           top: Radius.circular(AppRadius.radiusXL.topLeft.x),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: AppSpacing.paddingSM),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.gray300,
-              borderRadius: AppRadius.radiusFull,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.paddingLG),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.paddingLG),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.paddingMD),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray300,
+                    borderRadius: AppRadius.radiusFull,
+                  ),
+                ),
+              ),
                 _SheetHeader(task: task, categoryData: categoryData),
                 const SizedBox(height: AppSpacing.space4),
                 Text(
@@ -525,19 +528,34 @@ class _TaskDetailsSheet extends StatelessWidget {
                   style: AppTypography.labelMedium
                       .copyWith(color: AppColors.gray500),
                 ),
-                const SizedBox(height: AppSpacing.gapXS),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined,
-                        size: 18, color: AppColors.gray600),
-                    const SizedBox(width: AppSpacing.gapSM),
-                    Expanded(
-                      child: Text(task.address,
-                          style: AppTypography.bodyMedium),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.space4),
+                if (task.address.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.gapXS),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 18, color: AppColors.gray600),
+                      const SizedBox(width: AppSpacing.gapSM),
+                      Expanded(
+                        child: Text(task.address,
+                            style: AppTypography.bodyMedium),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                ] else ...[
+                  const SizedBox(height: AppSpacing.gapXS),
+                  Text(
+                    'Dokładna pozycja zadania',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                ],
+                if (_hasLocation(task)) ...[
+                  SFTaskLocationMap(
+                    taskLocation: LatLng(task.latitude, task.longitude),
+                  ),
+                  const SizedBox(height: AppSpacing.space4),
+                ],
                 _DetailRow(label: 'Zlecono', value: _formatDate(task.createdAt)),
                 if (task.acceptedAt != null)
                   _DetailRow(
@@ -559,13 +577,16 @@ class _TaskDetailsSheet extends StatelessWidget {
                     child: const Text('Zamknij'),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+bool _hasLocation(ContractorTask task) {
+  return task.latitude != 0 && task.longitude != 0;
 }
 
 class _SheetHeader extends StatelessWidget {

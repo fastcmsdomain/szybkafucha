@@ -317,7 +317,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       reviewCount: application.contractorReviewCount,
       isVerified: true,
       isOnline: true,
-      distanceKm: application.distanceKm,
       proposedPrice: application.proposedPrice.round(),
       bio: application.contractorBio,
     );
@@ -855,7 +854,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
               taskBudget: _task!.budget,
               onViewProfile: () => _showApplicationContractorProfile(app),
               onChat: () => _openChatWithApplicant(app),
-              onAccept: () => _acceptApplication(app.id),
+              onAccept: () => _acceptApplication(app),
               onKick: () => _kickFromRoom(app.id, app.contractorName),
             ),
           ),
@@ -943,8 +942,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     }
   }
 
-  /// Accept an application (bidding system) — with balance gate
-  Future<void> _acceptApplication(String applicationId) async {
+  /// Accept an application (bidding system) — with balance gate + confirmation
+  Future<void> _acceptApplication(TaskApplication application) async {
     // Balance gate: check if client has at least 10 zł
     final credits = ref.read(creditsProvider);
     if (credits.balance < 10) {
@@ -979,10 +978,120 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       return;
     }
 
+    // Confirmation dialog
+    if (!mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Potwierdź wybór wykonawcy'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Contractor info
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.gray200,
+                  backgroundImage: application.contractorAvatarUrl != null
+                      ? NetworkImage(application.contractorAvatarUrl!)
+                      : null,
+                  child: application.contractorAvatarUrl == null
+                      ? Text(
+                          application.contractorName[0].toUpperCase(),
+                          style: AppTypography.h5.copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        )
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.gapMD),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.contractorName,
+                        style: AppTypography.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.gapXS),
+                      Text(
+                        'Proponowana cena: ${application.formattedPrice}',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+            Divider(color: AppColors.gray200),
+            SizedBox(height: AppSpacing.gapMD),
+            // Fee info
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.account_balance_wallet_outlined,
+                    size: 20, color: AppColors.warning),
+                SizedBox(width: AppSpacing.gapSM),
+                Expanded(
+                  child: Text(
+                    'Za połączenie z wykonawcą zostanie pobrana opłata 10 zł z Twojego portfela.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.gray700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+            // Contact data info
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.contact_phone_outlined,
+                    size: 20, color: AppColors.success),
+                SizedBox(width: AppSpacing.gapSM),
+                Expanded(
+                  child: Text(
+                    'Po akceptacji dane kontaktowe wykonawcy (telefon, email) będą dostępne w zakładce Profil.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.gray700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Anuluj'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Potwierdź wybór'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     try {
       await ref
           .read(taskApplicationsProvider(widget.taskId).notifier)
-          .acceptApplication(applicationId);
+          .acceptApplication(application.id);
 
       // Refresh credits balance after acceptance deduction
       ref.read(creditsProvider.notifier).fetchBalance();

@@ -226,34 +226,6 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    contractor.formattedEta,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'Szacowany czas',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray400,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

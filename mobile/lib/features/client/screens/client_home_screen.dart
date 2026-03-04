@@ -399,7 +399,15 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                       ],
                     ),
                   ),
-                  _buildStatusBadge(task.status),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _buildStatusBadge(task.status),
+                      SizedBox(height: AppSpacing.gapXS),
+                      _buildApplicationsBadge(task),
+                    ],
+                  ),
                 ],
               ),
 
@@ -468,11 +476,15 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
                   children: [
                     // Track button
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: ElevatedButton.icon(
                         onPressed: () =>
                             context.push(Routes.clientTaskTrack(task.id)),
                         icon: const Icon(Icons.arrow_forward),
                         label: const Text('Więcej'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.white,
+                        ),
                       ),
                     ),
                     // Chat button — visible when contractor is assigned (including pendingComplete)
@@ -566,6 +578,39 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           color: color,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+
+  Widget _buildApplicationsBadge(Task task) {
+    final isFull = task.applicationCount >= task.maxApplications;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.paddingSM,
+        vertical: AppSpacing.paddingXS,
+      ),
+      decoration: BoxDecoration(
+        color: isFull ? AppColors.gray200 : AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: AppRadius.radiusSM,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.people_outline,
+            size: 12,
+            color: isFull ? AppColors.gray500 : AppColors.primary,
+          ),
+          SizedBox(width: AppSpacing.gapXS),
+          Text(
+            '${task.applicationCount}/${task.maxApplications}',
+            style: AppTypography.caption.copyWith(
+              color: isFull ? AppColors.gray500 : AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

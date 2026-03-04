@@ -14,74 +14,67 @@ class PublicHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: EdgeInsets.all(AppSpacing.paddingLG),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top -
-                  MediaQuery.of(context).padding.bottom,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: AppSpacing.space12),
-                _buildLogo(),
-                SizedBox(height: AppSpacing.space8),
-                Text(
-                  AppStrings.welcomeTitle,
-                  style: AppTypography.h3,
-                  textAlign: TextAlign.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              _buildLogo(),
+              SizedBox(height: AppSpacing.space8),
+              Text(
+                AppStrings.welcomeTitle,
+                style: AppTypography.h3,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space3),
+              Text(
+                AppStrings.welcomeSubtitle,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.gray600,
                 ),
-                SizedBox(height: AppSpacing.space3),
-                Text(
-                  AppStrings.welcomeSubtitle,
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.gray600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: AppSpacing.space12),
-                FilledButton.icon(
-                  onPressed: () => context.go(Routes.browse),
-                  icon: const Icon(Icons.work_outline),
-                  label: Text(
-                    AppStrings.menuTasks,
-                    style: AppTypography.buttonMedium.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.radiusMD,
-                    ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.space12),
+              FilledButton.icon(
+                onPressed: () => context.go(Routes.browse),
+                icon: const Icon(Icons.work_outline),
+                label: Text(
+                  AppStrings.menuTasks,
+                  style: AppTypography.buttonMedium.copyWith(
+                    color: Colors.white,
                   ),
                 ),
-                SizedBox(height: AppSpacing.gapMD),
-                OutlinedButton.icon(
-                  onPressed: () => context.go(Routes.publicProfile),
-                  icon: const Icon(Icons.person_outline),
-                  label: Text(
-                    AppStrings.login,
-                    style: AppTypography.buttonMedium.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.radiusMD,
-                    ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.radiusMD,
                   ),
                 ),
-                SizedBox(height: AppSpacing.space6),
-                _buildLegalConsent(context),
-              ],
-            ),
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+              OutlinedButton.icon(
+                onPressed: () => context.go(Routes.publicProfile),
+                icon: const Icon(Icons.person_outline),
+                label: Text(
+                  AppStrings.login,
+                  style: AppTypography.buttonMedium.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary),
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.radiusMD,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              _buildLegalConsent(context),
+            ],
           ),
         ),
       ),
@@ -137,13 +130,13 @@ class PublicHomeScreen extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-            'Dołączając, akceptując ',
+            'Dołączając, akceptujesz ',
             style: baseStyle,
             textAlign: TextAlign.center,
           ),
           GestureDetector(
             onTap: () => context.push(Routes.termsOfService),
-            child: Text('Regulamin', style: linkStyle),
+            child: Text(' Regulamin', style: linkStyle),
           ),
           Text(' i ', style: baseStyle),
           GestureDetector(

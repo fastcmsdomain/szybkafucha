@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/router/routes.dart';
+import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
@@ -29,6 +31,8 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
   final MapController _mapController = MapController();
   double _currentZoom = 6.0; // Start zoomed out to show the whole country
   Set<TaskCategory> _selectedCategoryFilters = {};
+  LatLng? _userLocation;
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -109,7 +113,6 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endContained,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateTask,
         backgroundColor: AppColors.primary,
@@ -446,6 +449,20 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                 cachingProvider: const DisabledMapCachingProvider(),
               ),
             ),
+            // User location circle (10km radius)
+            if (_userLocation != null)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _userLocation!,
+                    radius: 10000,
+                    useRadiusInMeter: true,
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderColor: AppColors.primary.withValues(alpha: 0.3),
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
             // Markers layer
             MarkerLayer(
               markers: clusters.map((cluster) {
@@ -482,6 +499,31 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
                 }
               }).toList(),
             ),
+            // User location marker
+            if (_userLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _userLocation!,
+                    width: 24,
+                    height: 24,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
 
@@ -558,6 +600,13 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
               ),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
+                icon: Icons.my_location,
+                onPressed: _isLocating ? null : _goToMyLocation,
+                isActive: _userLocation != null,
+                isLoading: _isLocating,
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              _buildZoomButton(
                 icon: Icons.center_focus_strong,
                 onPressed: _resetView,
               ),
@@ -598,10 +647,12 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
 
   Widget _buildZoomButton({
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
+    bool isActive = false,
+    bool isLoading = false,
   }) {
     return Material(
-      color: AppColors.white,
+      color: isActive ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white,
       elevation: 2,
       borderRadius: AppRadius.radiusSM,
       child: InkWell(
@@ -610,10 +661,21 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
         child: SizedBox(
           width: 44,
           height: 44,
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.gray700,
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    size: 22,
+                    color: isActive ? AppColors.primary : AppColors.gray700,
+                  ),
           ),
         ),
       ),
@@ -634,7 +696,62 @@ class _ClientTaskListScreenState extends ConsumerState<ClientTaskListScreen>
 
   void _resetView() {
     _mapController.move(TaskClusterManager.polandCenter, 6.0);
-    setState(() => _currentZoom = 6.0);
+    setState(() {
+      _currentZoom = 6.0;
+      _userLocation = null;
+    });
+  }
+
+  Future<void> _goToMyLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      final service = ref.read(locationServiceProvider);
+
+      final permission = await service.checkPermission();
+      if (permission != LocationPermissionStatus.granted) {
+        final requested = await service.requestPermission();
+        if (requested != LocationPermissionStatus.granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Brak dostępu do lokalizacji. Włącz w ustawieniach.'),
+                backgroundColor: AppColors.warning,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Ustawienia',
+                  textColor: AppColors.white,
+                  onPressed: () => service.openAppSettings(),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final latLng = await service.getCurrentLatLng();
+      if (latLng == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Nie udało się pobrać lokalizacji'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      const zoomFor10km = 12.0;
+      _mapController.move(latLng, zoomFor10km);
+      setState(() {
+        _userLocation = latLng;
+        _currentZoom = zoomFor10km;
+      });
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
+    }
   }
 
   void _zoomToCluster(TaskCluster cluster) {
