@@ -103,13 +103,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     videoPath: 'assets/videos/SzybkaFuchaHero.mp4',
                   ),
                   _OnboardingPage(
-                    icon: Icons.verified_user,
+                    imagePath: 'assets/images/szybkafucha_zleceniodawca.jpeg',
                     title: AppStrings.onboardingTitle2,
                     subtitle: AppStrings.onboardingSubtitle2,
                     description: AppStrings.onboardingDescription2,
                   ),
                   _OnboardingPage(
-                    icon: Icons.bolt,
+                    imagePath: 'assets/images/szybkafucha_pomoc_domowa.jpeg',
                     title: AppStrings.onboardingTitle3,
                     subtitle: AppStrings.onboardingSubtitle3,
                     description: AppStrings.onboardingDescription3,
@@ -177,17 +177,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _OnboardingPage extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? imagePath;
   final String title;
   final String subtitle;
   final String description;
 
   const _OnboardingPage({
-    required this.icon,
+    this.icon,
+    this.imagePath,
     required this.title,
     required this.subtitle,
     required this.description,
-  });
+  }) : assert(icon != null || imagePath != null);
 
   @override
   Widget build(BuildContext context) {
@@ -229,12 +231,6 @@ class _OnboardingPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 40),
-          Icon(
-            icon,
-            size: 120,
-            color: AppColors.primary,
-          ),
-          const SizedBox(height: 48),
           Text(
             title,
             style: const TextStyle(
@@ -254,6 +250,27 @@ class _OnboardingPage extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 24),
+          if (imagePath != null)
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 280,
+                maxHeight: 210,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  imagePath!,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
+          else
+            Icon(
+              icon,
+              size: 120,
+              color: AppColors.primary,
+            ),
           const SizedBox(height: 24),
           Text(
             description,

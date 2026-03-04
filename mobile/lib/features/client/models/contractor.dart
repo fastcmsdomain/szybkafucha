@@ -10,8 +10,6 @@ class Contractor {
   final int reviewCount;
   final bool isVerified;
   final bool isOnline;
-  final double? distanceKm;
-  final int? etaMinutes;
   final int? proposedPrice;
   final List<String> categories;
   final DateTime? memberSince;
@@ -29,8 +27,6 @@ class Contractor {
     this.reviewCount = 0,
     this.isVerified = false,
     this.isOnline = false,
-    this.distanceKm,
-    this.etaMinutes,
     this.proposedPrice,
     this.categories = const [],
     this.memberSince,
@@ -61,8 +57,6 @@ class Contractor {
           json['isVerified'] as bool? ??
           false,
       isOnline: json['is_online'] as bool? ?? json['isOnline'] as bool? ?? false,
-      distanceKm: (json['distance_km'] as num?)?.toDouble(),
-      etaMinutes: json['eta_minutes'] as int?,
       proposedPrice: json['proposed_price'] as int?,
       categories: (json['categories'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -94,8 +88,6 @@ class Contractor {
         'review_count': reviewCount,
         'is_verified': isVerified,
         'is_online': isOnline,
-        'distance_km': distanceKm,
-        'eta_minutes': etaMinutes,
         'proposed_price': proposedPrice,
         'categories': categories,
         'member_since': memberSince?.toIso8601String(),
@@ -114,26 +106,6 @@ class Contractor {
 
   /// Get formatted rating with one decimal
   String get formattedRating => rating.toStringAsFixed(1);
-
-  /// Get formatted distance
-  String get formattedDistance {
-    if (distanceKm == null) return '';
-    if (distanceKm! < 1) {
-      return '${(distanceKm! * 1000).round()} m';
-    }
-    return '${distanceKm!.toStringAsFixed(1)} km';
-  }
-
-  /// Get formatted ETA
-  String get formattedEta {
-    if (etaMinutes == null) return '';
-    if (etaMinutes! < 60) {
-      return '$etaMinutes min';
-    }
-    final hours = etaMinutes! ~/ 60;
-    final mins = etaMinutes! % 60;
-    return mins > 0 ? '${hours}h ${mins}min' : '${hours}h';
-  }
 
   String get formattedDateOfBirth {
     if (dateOfBirth == null) return '';
@@ -157,8 +129,7 @@ class MockContractors {
         reviewCount: 98,
         isVerified: true,
         isOnline: true,
-        distanceKm: 0.8,
-        etaMinutes: 12,
+
         proposedPrice: budget ?? 50,
         categories: ['paczki', 'zakupy'],
         memberSince: DateTime(2023, 3, 15),
@@ -172,8 +143,7 @@ class MockContractors {
         reviewCount: 67,
         isVerified: true,
         isOnline: true,
-        distanceKm: 1.2,
-        etaMinutes: 18,
+
         proposedPrice: budget != null ? (budget * 0.9).round() : 45,
         categories: ['paczki', 'przeprowadzki'],
         memberSince: DateTime(2023, 6, 22),
@@ -187,8 +157,7 @@ class MockContractors {
         reviewCount: 32,
         isVerified: true,
         isOnline: true,
-        distanceKm: 2.1,
-        etaMinutes: 25,
+
         proposedPrice: budget != null ? (budget * 0.85).round() : 42,
         categories: ['paczki', 'montaz', 'zakupy'],
         memberSince: DateTime(2024, 1, 10),
@@ -202,8 +171,7 @@ class MockContractors {
         reviewCount: 18,
         isVerified: false,
         isOnline: true,
-        distanceKm: 3.5,
-        etaMinutes: 35,
+
         proposedPrice: budget != null ? (budget * 0.8).round() : 40,
         categories: ['paczki'],
         memberSince: DateTime(2024, 6, 1),

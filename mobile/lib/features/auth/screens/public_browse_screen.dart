@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/public_tasks_provider.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
@@ -24,10 +26,14 @@ class PublicBrowseScreen extends ConsumerStatefulWidget {
 
 class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
     with SingleTickerProviderStateMixin {
+  static const double _myLocationZoom = 10.0;
+
   late TabController _tabController;
   final MapController _mapController = MapController();
   double _currentZoom = 6.0;
   Set<TaskCategory> _selectedCategoryFilters = {};
+  LatLng? _currentUserLocation;
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -422,35 +428,46 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
               ),
             ),
             MarkerLayer(
-              markers: clusters.map((cluster) {
-                if (cluster.isSingleTask) {
-                  final task = tasks.firstWhere(
-                    (t) => t.id == cluster.tasks.first.id,
-                    orElse: () => tasks.first,
+              markers: [
+                ...clusters.map((cluster) {
+                  if (cluster.isSingleTask) {
+                    final task = tasks.firstWhere(
+                      (t) => t.id == cluster.tasks.first.id,
+                      orElse: () => tasks.first,
+                    );
+                    return Marker(
+                      point: cluster.center,
+                      width: 44,
+                      height: 54,
+                      child: GestureDetector(
+                        onTap: () => _showTaskBottomSheet(task),
+                        child: TaskMarker(position: cluster.center).build(context),
+                      ),
+                    );
+                  }
+
+                  final clusterMarker = ClusterMarker(
+                    position: cluster.center,
+                    count: cluster.count,
+                    onTap: () => _zoomToCluster(cluster),
                   );
                   return Marker(
                     point: cluster.center,
-                    width: 44,
-                    height: 54,
-                    child: GestureDetector(
-                      onTap: () => _showTaskBottomSheet(task),
-                      child: TaskMarker(position: cluster.center).build(context),
-                    ),
+                    width: clusterMarker.width,
+                    height: clusterMarker.height,
+                    child: clusterMarker.build(context),
                   );
-                }
-
-                final clusterMarker = ClusterMarker(
-                  position: cluster.center,
-                  count: cluster.count,
-                  onTap: () => _zoomToCluster(cluster),
-                );
-                return Marker(
-                  point: cluster.center,
-                  width: clusterMarker.width,
-                  height: clusterMarker.height,
-                  child: clusterMarker.build(context),
-                );
-              }).toList(),
+                }),
+                if (_currentUserLocation != null)
+                  Marker(
+                    point: _currentUserLocation!,
+                    width: 24,
+                    height: 24,
+                    child: CurrentLocationMarker(
+                      position: _currentUserLocation!,
+                    ).build(context),
+                  ),
+              ],
             ),
           ],
         ),
@@ -523,6 +540,12 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
                 icon: Icons.remove,
                 onPressed: _zoomOut,
               ),
+              SizedBox(height: AppSpacing.gapXS),
+              _buildZoomButton(
+                icon: Icons.my_location,
+                onPressed: _moveToCurrentLocation,
+                isLoading: _isLocating,
+              ),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
                 icon: Icons.center_focus_strong,
@@ -537,44 +560,118 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
 
   Widget _buildZoomButton({
     required IconData icon,
-    required VoidCallback onPressed,
+    required Future<void> Function() onPressed,
+    bool isLoading = false,
   }) {
     return Material(
       color: AppColors.white,
       elevation: 2,
       borderRadius: AppRadius.radiusSM,
       child: InkWell(
-        onTap: onPressed,
+        onTap: isLoading ? null : onPressed,
         borderRadius: AppRadius.radiusSM,
         child: Container(
           width: 40,
           height: 40,
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.gray700,
-          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 22,
+                  color: AppColors.gray700,
+                ),
         ),
       ),
     );
   }
 
-  void _zoomIn() {
+  Future<void> _zoomIn() async {
     final newZoom = (_currentZoom + 1).clamp(5.0, 18.0);
     _mapController.move(_mapController.camera.center, newZoom);
     setState(() => _currentZoom = newZoom);
   }
 
-  void _zoomOut() {
+  Future<void> _zoomOut() async {
     final newZoom = (_currentZoom - 1).clamp(5.0, 18.0);
     _mapController.move(_mapController.camera.center, newZoom);
     setState(() => _currentZoom = newZoom);
   }
 
-  void _resetView() {
+  Future<void> _resetView() async {
     _mapController.move(TaskClusterManager.polandCenter, 6.0);
     setState(() => _currentZoom = 6.0);
+  }
+
+  Future<void> _moveToCurrentLocation() async {
+    if (_isLocating) return;
+
+    setState(() => _isLocating = true);
+
+    final service = ref.read(locationServiceProvider);
+    final permissionStatus = await service.checkPermission();
+
+    if (!mounted) return;
+
+    if (permissionStatus == LocationPermissionStatus.deniedForever) {
+      setState(() => _isLocating = false);
+      _showLocationMessage(
+        'Dostęp do lokalizacji jest zablokowany. Włącz go w ustawieniach aplikacji.',
+      );
+      return;
+    }
+
+    if (permissionStatus == LocationPermissionStatus.serviceDisabled) {
+      setState(() => _isLocating = false);
+      _showLocationMessage('Włącz usługi lokalizacji, aby użyć tej funkcji.');
+      return;
+    }
+
+    if (permissionStatus != LocationPermissionStatus.granted) {
+      final newStatus = await service.requestPermission();
+      if (!mounted) return;
+
+      if (newStatus != LocationPermissionStatus.granted) {
+        setState(() => _isLocating = false);
+        _showLocationMessage('Udostępnij lokalizację, aby wycentrować mapę.');
+        return;
+      }
+    }
+
+    final latLng = await service.getCurrentLatLng();
+    if (!mounted) return;
+
+    if (latLng == null) {
+      setState(() => _isLocating = false);
+      _showLocationMessage('Nie udało się pobrać lokalizacji. Spróbuj ponownie.');
+      return;
+    }
+
+    if (!LocationService.isInPoland(latLng)) {
+      setState(() => _isLocating = false);
+      _showLocationMessage('Lokalizacja jest poza obszarem działania aplikacji.');
+      return;
+    }
+
+    _mapController.move(latLng, _myLocationZoom);
+    setState(() {
+      _currentUserLocation = latLng;
+      _currentZoom = _myLocationZoom;
+      _isLocating = false;
+    });
+  }
+
+  void _showLocationMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void _zoomToCluster(TaskCluster cluster) {
@@ -606,6 +703,8 @@ class _PublicBrowseScreenState extends ConsumerState<PublicBrowseScreen>
           task: task,
           showActions: true,
           showClientInfo: false,
+          equalWidthActions: true,
+          acceptButtonLabel: 'Zaloguj się',
           onTap: () => _showTaskBottomSheet(task),
           onDetails: () => _showTaskBottomSheet(task),
           onAccept: () => _showTaskBottomSheet(task),

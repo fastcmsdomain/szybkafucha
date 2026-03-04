@@ -8,6 +8,74 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-04] Show "Zobacz zlecenie" for already-applied tasks + GPS location button + bracket fix
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Three groups of changes: (1) Fixed bracket mismatch in task_history_screen.dart causing hot restart errors. (2) Added GPS location button to contractor and client task list maps — shares location and zooms to 10km radius with a blue dot marker and circle overlay. (3) When contractor has already applied to a task, show "Zobacz zlecenie" instead of "Zgłoś się" on task cards and task alert screen; gracefully handle "already applied" 400 error by navigating to task room.
+
+- **Files Changed**:
+  - `mobile/lib/features/client/screens/task_history_screen.dart` – Fixed extra `)` bracket mismatch at line 761
+  - `mobile/lib/features/contractor/screens/contractor_task_list_screen.dart` – Added GPS location button, CircleLayer/MarkerLayer for user location, "Zobacz zlecenie" for applied tasks, "already applied" 400 error handling, refresh myApplicationsProvider after apply
+  - `mobile/lib/features/client/screens/client_task_list_screen.dart` – Added GPS location button with same location features, moved FAB to default position (matching client_home_screen)
+  - `mobile/lib/features/contractor/screens/task_alert_screen.dart` – Updated _buildBottomBar to show "ZOBACZ ZLECENIE" when already applied, added "already applied" error handling in _submitApplication, refresh myApplicationsProvider after successful apply
+
+- **System Impact**: Contractor UX improvement — clearly distinguishes between new tasks and already-applied tasks. GPS location feature helps users orient on the map. No backend changes.
+- **Related Tasks/PRD**: Contractor task browsing UX, bidding system flow
+- **Potential Conflicts/Risks**: None — additive changes using existing providers (myApplicationsProvider, locationServiceProvider)
+
+## [2026-03-03] Remove distance/ETA display and model fields from mobile app
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Removed all distance/ETA display elements and underlying model fields across the entire mobile app. These were placeholder values (distanceKm: 0.0, estimatedMinutes: 30) hardcoded in `fromPublicJson()` since the backend doesn't provide real distance/ETA data. Removed from UI widgets, screens, models, and providers.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/widgets/nearby_task_card.dart` – Removed distance/ETA chip widget
+  - `mobile/lib/features/contractor/screens/task_alert_screen.dart` – Removed distance/ETA row
+  - `mobile/lib/features/contractor/screens/active_task_screen.dart` – Removed distance badge Positioned widget
+  - `mobile/lib/features/client/widgets/application_card.dart` – Removed distance display section
+  - `mobile/lib/features/client/screens/payment_screen.dart` – Removed ETA display column
+  - `mobile/lib/features/client/screens/contractor_selection_screen.dart` – Removed ETA from price, distance/ETA bar, confirmation text, profile stats, sort chip
+  - `mobile/lib/features/contractor/models/contractor_task.dart` – Removed distanceKm/estimatedMinutes fields, constructor params, fromJson parsing, getters, mock data
+  - `mobile/lib/features/client/models/contractor.dart` – Removed distanceKm/etaMinutes fields, constructor params, fromJson/toJson, getters, mock data
+  - `mobile/lib/features/client/models/task_application.dart` – Removed distanceKm field, constructor param, fromJson, getter
+  - `mobile/lib/core/providers/task_provider.dart` – Removed distanceKm/estimatedMinutes from copyWith and ContractorTask constructor calls
+  - `mobile/lib/features/client/screens/task_tracking_screen.dart` – Removed distanceKm from Contractor constructor call
+
+- **System Impact**: UI cleanup — removed placeholder distance/ETA values that showed "0m • 30m" on task cards. No backend changes. Note: `task_category.dart` has its own `estimatedMinutes` field for task duration estimates per category — this is a different concept and was intentionally kept.
+- **Related Tasks/PRD**: Data accuracy cleanup
+- **Potential Conflicts/Risks**: None — removed unused placeholder data only.
+
+---
+
+## [2026-03-03] Fix step 5 payment references on both home screens
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Updated step 5 on both contractor and client home screens to remove payment references. The platform does NOT pay contractors — contractors only pay for client contact details. Step 5 now says "Gotowe!" with completion messaging instead of payment.
+
+- **Files Changed**:
+  - `mobile/lib/features/contractor/screens/contractor_home_screen.dart` – Step 5 changed from "Odbierz wypłatę" to "Gotowe!" with description "Zlecenie zakończone! Twoja ocena rośnie, a nowe zlecenia czekają"
+  - `mobile/lib/features/client/screens/client_home_screen.dart` – Step 5 changed from payment text to "Gotowe!" with description "Zlecenie zakończone! Możesz zlecić kolejne zadanie w każdej chwili"
+
+- **System Impact**: UI text change only. Corrects misleading payment information.
+- **Related Tasks/PRD**: Business model accuracy
+- **Potential Conflicts/Risks**: None — cosmetic UI text change only.
+
+---
+
+## [2026-03-03] Fix contractor.service.spec.ts missing TaskRepository mock
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Added missing TaskRepository mock to contractor service tests. The TaskRepository dependency was added to ContractorService during the contact details feature but the test file wasn't updated.
+
+- **Files Changed**:
+  - `backend/src/contractor/contractor.service.spec.ts` – Added Task entity import and TaskRepository mock provider
+
+- **System Impact**: Test fix — all 321 backend tests now pass (15/15 suites green).
+- **Related Tasks/PRD**: Test maintenance
+- **Potential Conflicts/Risks**: None.
+
+---
+
 ## [2026-03-03] Update "Jak to działa?" section on client home screen to 5 steps
 
 - **Developer/Agent**: Claude

@@ -7,12 +7,15 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/credits_provider.dart';
 import '../../../core/providers/kyc_provider.dart';
+import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_cluster_marker.dart';
 import '../../../core/widgets/sf_location_marker.dart';
+import '../../client/models/task_application.dart';
 import '../../client/models/task_category.dart';
 import '../models/contractor_task.dart';
 import '../widgets/nearby_task_card.dart';
@@ -33,17 +36,20 @@ class _ContractorTaskListScreenState
   final MapController _mapController = MapController();
   double _currentZoom = 6.0; // Start zoomed out to see all of Poland
   Set<TaskCategory> _selectedCategoryFilters = {};
+  LatLng? _userLocation;
+  bool _isLocating = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Load tasks, KYC status, and credits balance on screen open
+    // Load tasks, KYC status, credits balance, and applications on screen open
     Future.microtask(() {
       ref.read(availableTasksProvider.notifier).loadTasks();
       ref.read(kycProvider.notifier).fetchStatus();
       ref.read(creditsProvider.notifier).fetchBalance();
+      ref.read(myApplicationsProvider.notifier).loadApplications();
     });
   }
 
@@ -60,6 +66,11 @@ class _ContractorTaskListScreenState
   @override
   Widget build(BuildContext context) {
     final tasksState = ref.watch(availableTasksProvider);
+    final myApps = ref.watch(myApplicationsProvider);
+    final appliedTaskIds = myApps.applications
+        .where((a) => a.status == ApplicationStatus.pending || a.status == ApplicationStatus.accepted)
+        .map((a) => a.taskId)
+        .toSet();
     final baseTasks = tasksState.tasks
         .where(_isActiveOrNew)
         .toList();
@@ -124,6 +135,7 @@ class _ContractorTaskListScreenState
                     tasksState,
                     filteredTasks,
                     hasActiveFilter: effectiveSelectedFilters.isNotEmpty,
+                    appliedTaskIds: appliedTaskIds,
                   ),
                 ),
               ),
@@ -496,6 +508,20 @@ class _ContractorTaskListScreenState
                 cachingProvider: const DisabledMapCachingProvider(),
               ),
             ),
+            // User location circle (10km radius)
+            if (_userLocation != null)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _userLocation!,
+                    radius: 10000, // 10km in meters
+                    useRadiusInMeter: true,
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderColor: AppColors.primary.withValues(alpha: 0.3),
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
             // Markers layer
             MarkerLayer(
               markers: clusters.map((cluster) {
@@ -530,6 +556,31 @@ class _ContractorTaskListScreenState
                 }
               }).toList(),
             ),
+            // User location marker
+            if (_userLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _userLocation!,
+                    width: 24,
+                    height: 24,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
 
@@ -611,6 +662,13 @@ class _ContractorTaskListScreenState
               ),
               SizedBox(height: AppSpacing.gapMD),
               _buildZoomButton(
+                icon: Icons.my_location,
+                onPressed: _isLocating ? null : () => _goToMyLocation(),
+                isActive: _userLocation != null,
+                isLoading: _isLocating,
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              _buildZoomButton(
                 icon: Icons.center_focus_strong,
                 onPressed: () => _resetView(),
               ),
@@ -623,10 +681,12 @@ class _ContractorTaskListScreenState
 
   Widget _buildZoomButton({
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
+    bool isActive = false,
+    bool isLoading = false,
   }) {
     return Material(
-      color: AppColors.white,
+      color: isActive ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white,
       elevation: 2,
       borderRadius: AppRadius.radiusSM,
       child: InkWell(
@@ -636,11 +696,20 @@ class _ContractorTaskListScreenState
           width: 40,
           height: 40,
           alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: AppColors.gray700,
-          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 22,
+                  color: isActive ? AppColors.primary : AppColors.gray700,
+                ),
         ),
       ),
     );
@@ -660,7 +729,63 @@ class _ContractorTaskListScreenState
 
   void _resetView() {
     _mapController.move(TaskClusterManager.polandCenter, 6.0);
-    setState(() => _currentZoom = 6.0);
+    setState(() {
+      _currentZoom = 6.0;
+      _userLocation = null;
+    });
+  }
+
+  Future<void> _goToMyLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      final service = ref.read(locationServiceProvider);
+
+      final permission = await service.checkPermission();
+      if (permission != LocationPermissionStatus.granted) {
+        final requested = await service.requestPermission();
+        if (requested != LocationPermissionStatus.granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Brak dostępu do lokalizacji. Włącz w ustawieniach.'),
+                backgroundColor: AppColors.warning,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Ustawienia',
+                  textColor: AppColors.white,
+                  onPressed: () => service.openAppSettings(),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final latLng = await service.getCurrentLatLng();
+      if (latLng == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Nie udało się pobrać lokalizacji'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // ~10km radius ≈ zoom level 12
+      const zoomFor10km = 12.0;
+      _mapController.move(latLng, zoomFor10km);
+      setState(() {
+        _userLocation = latLng;
+        _currentZoom = zoomFor10km;
+      });
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
+    }
   }
 
   void _zoomToCluster(TaskCluster cluster) {
@@ -709,6 +834,7 @@ class _ContractorTaskListScreenState
     List<ContractorTask> tasks,
     {
       required bool hasActiveFilter,
+      required Set<String> appliedTaskIds,
     }
   ) {
     // Loading state
@@ -733,11 +859,17 @@ class _ContractorTaskListScreenState
       separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
       itemBuilder: (context, index) {
         final task = tasks[index];
+        final hasApplied = appliedTaskIds.contains(task.id);
         return NearbyTaskCard(
           task: task,
-          onTap: () => _showTaskDetails(task),
+          onTap: () => hasApplied
+              ? _goToTaskRoom(task)
+              : _showTaskDetails(task),
           onDetails: () => _showTaskDetails(task),
-          onAccept: () => _showApplyDialog(task),
+          onAccept: () => hasApplied
+              ? _goToTaskRoom(task)
+              : _showApplyDialog(task),
+          acceptButtonLabel: hasApplied ? 'Zobacz zlecenie' : 'Zgłoś się',
         );
       },
     );
@@ -858,6 +990,13 @@ class _ContractorTaskListScreenState
   void _showTaskDetails(ContractorTask task) {
     context.push(
       Routes.contractorTaskAlertRoute(task.id),
+      extra: task,
+    );
+  }
+
+  void _goToTaskRoom(ContractorTask task) {
+    context.push(
+      Routes.contractorTaskRoomRoute(task.id),
       extra: task,
     );
   }
@@ -1043,6 +1182,9 @@ class _ContractorTaskListScreenState
                 : null,
           );
 
+      // Refresh applications so the card updates to "Wejdź do pokoju"
+      ref.read(myApplicationsProvider.notifier).loadApplications();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1054,7 +1196,13 @@ class _ContractorTaskListScreenState
       }
     } catch (e) {
       if (mounted) {
-        if (e is ForbiddenException) {
+        final errorMsg = e.toString().toLowerCase();
+        if (errorMsg.contains('already applied')) {
+          // Already applied — refresh applications and navigate to task room
+          ref.read(myApplicationsProvider.notifier).loadApplications();
+          _goToTaskRoom(task);
+          return;
+        } else if (e is ForbiddenException) {
           showDialog(
             context: context,
             builder: (ctx) => AlertDialog(

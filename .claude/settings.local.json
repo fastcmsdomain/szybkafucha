@@ -89,7 +89,9 @@
       "Bash(/usr/local/share/flutter/bin/flutter build:*)",
       "Bash(/usr/local/share/flutter/bin/flutter pub:*)",
       "Bash(/usr/local/share/flutter/bin/flutter analyze:*)",
-      "Bash(/usr/local/share/flutter/bin/flutter devices)"
+      "Bash(/usr/local/share/flutter/bin/flutter devices)",
+      "Bash(xxd lib/features/client/screens/task_history_screen.dart)",
+      "Bash(xxd)"
     ]
   }
 }

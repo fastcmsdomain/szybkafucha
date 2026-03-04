@@ -14,8 +14,6 @@ class ContractorTask {
   final String address;
   final double latitude;
   final double longitude;
-  final double distanceKm;
-  final int estimatedMinutes;
   final double? estimatedDurationHours; // Client's estimated duration in hours
   final int price;
   final ContractorTaskStatus status;
@@ -42,8 +40,6 @@ class ContractorTask {
     required this.address,
     required this.latitude,
     required this.longitude,
-    required this.distanceKm,
-    required this.estimatedMinutes,
     this.estimatedDurationHours,
     required this.price,
     required this.status,
@@ -118,14 +114,6 @@ class ContractorTask {
       longitude: _parseDouble(json['locationLng']) ??
           _parseDouble(json['longitude']) ??
           0.0,
-      // Distance may not be provided by backend - default to 0
-      distanceKm: _parseDouble(json['distanceKm']) ??
-          _parseDouble(json['distance_km']) ??
-          0.0,
-      // Estimated minutes - default to 15
-      estimatedMinutes: _parseInt(json['estimatedMinutes']) ??
-          _parseInt(json['estimated_minutes']) ??
-          15,
       // Estimated duration in hours from client
       estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       // Budget from backend - may be String like "50.00"
@@ -201,8 +189,6 @@ class ContractorTask {
       latitude: _parseDouble(json['locationLat']) ?? 0.0,
       longitude: _parseDouble(json['locationLng']) ?? 0.0,
       price: _parseInt(json['budgetAmount']) ?? 0,
-      distanceKm: 0.0, // Unknown for public tasks
-      estimatedMinutes: 30, // Default estimate
       estimatedDurationHours: _parseDouble(json['estimatedDurationHours']),
       status: ContractorTaskStatus.available,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -256,22 +242,6 @@ class ContractorTask {
     }
   }
 
-  String get formattedDistance {
-    if (distanceKm < 1) {
-      return '${(distanceKm * 1000).round()} m';
-    }
-    return '${distanceKm.toStringAsFixed(1)} km';
-  }
-
-  String get formattedEta {
-    if (estimatedMinutes < 60) {
-      return '$estimatedMinutes min';
-    }
-    final hours = estimatedMinutes ~/ 60;
-    final mins = estimatedMinutes % 60;
-    return '${hours}h ${mins}m';
-  }
-
   String get formattedPrice => '$price PLN';
 
   double get earnings =>
@@ -296,8 +266,6 @@ class ContractorTask {
       address: address,
       latitude: latitude,
       longitude: longitude,
-      distanceKm: distanceKm,
-      estimatedMinutes: estimatedMinutes,
       estimatedDurationHours: estimatedDurationHours,
       price: price,
       status: status ?? this.status,
@@ -329,8 +297,7 @@ class ContractorTask {
         address: 'ul. Marszałkowska 100, Warszawa',
         latitude: 52.2297,
         longitude: 21.0122,
-        distanceKm: 1.2,
-        estimatedMinutes: 8,
+
         price: 180,
         status: ContractorTaskStatus.available,
         createdAt: now.subtract(const Duration(minutes: 5)),
@@ -348,8 +315,7 @@ class ContractorTask {
         address: 'ul. Puławska 45, Warszawa',
         latitude: 52.2050,
         longitude: 21.0230,
-        distanceKm: 2.5,
-        estimatedMinutes: 15,
+
         price: 50,
         status: ContractorTaskStatus.available,
         createdAt: now.subtract(const Duration(minutes: 12)),
@@ -366,8 +332,7 @@ class ContractorTask {
         address: 'ul. Żelazna 28, Warszawa',
         latitude: 52.2320,
         longitude: 20.9850,
-        distanceKm: 0.8,
-        estimatedMinutes: 5,
+
         price: 250,
         status: ContractorTaskStatus.available,
         createdAt: now.subtract(const Duration(minutes: 20)),
@@ -384,8 +349,7 @@ class ContractorTask {
         address: 'ul. Hoża 15, Warszawa',
         latitude: 52.2230,
         longitude: 21.0180,
-        distanceKm: 3.1,
-        estimatedMinutes: 20,
+
         price: 200,
         status: ContractorTaskStatus.available,
         createdAt: now.subtract(const Duration(minutes: 35)),
@@ -407,8 +371,7 @@ class ContractorTask {
       address: 'ul. Nowy Świat 22/5, Warszawa',
       latitude: 52.2320,
       longitude: 21.0180,
-      distanceKm: 1.5,
-      estimatedMinutes: 10,
+
       price: 200,
       status: ContractorTaskStatus.inProgress,
       createdAt: DateTime.now().subtract(const Duration(hours: 1)),

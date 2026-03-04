@@ -82,14 +82,11 @@ class _ContractorSelectionScreenState
         case 'price':
           _contractors.sort((a, b) =>
               (a.proposedPrice ?? 0).compareTo(b.proposedPrice ?? 0));
-        case 'eta':
-          _contractors.sort(
-              (a, b) => (a.etaMinutes ?? 0).compareTo(b.etaMinutes ?? 0));
         default: // recommended
           _contractors.sort((a, b) {
-            // Score based on rating, distance, and completion
-            final scoreA = a.rating * 20 - (a.distanceKm ?? 10) * 2;
-            final scoreB = b.rating * 20 - (b.distanceKm ?? 10) * 2;
+            // Score based on rating and completion
+            final scoreA = a.rating * 20 + a.completedTasks * 0.5;
+            final scoreB = b.rating * 20 + b.completedTasks * 0.5;
             return scoreB.compareTo(scoreA);
           });
       }
@@ -208,8 +205,6 @@ class _ContractorSelectionScreenState
             _buildSortChip('rating', 'Ocena', Icons.star_outline),
             SizedBox(width: AppSpacing.gapSM),
             _buildSortChip('price', 'Cena', Icons.attach_money),
-            SizedBox(width: AppSpacing.gapSM),
-            _buildSortChip('eta', 'Czas', Icons.access_time),
           ],
         ),
       ),
@@ -452,51 +447,14 @@ class _ContractorSelectionScreenState
                         color: AppColors.primary,
                       ),
                     ),
-                    if (contractor.etaMinutes != null)
-                      Text(
-                        contractor.formattedEta,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                      ),
                   ],
                 ),
               ],
             ),
 
-            // Distance and ETA bar
             SizedBox(height: AppSpacing.gapMD),
             Row(
               children: [
-                if (contractor.distanceKm != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    contractor.formattedDistance,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapMD),
-                ],
-                if (contractor.etaMinutes != null) ...[
-                  Icon(
-                    Icons.directions_walk,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Text(
-                    'Dotrze za ${contractor.formattedEta}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.gray600,
-                    ),
-                  ),
-                ],
                 const Spacer(),
                 TextButton(
                   onPressed: () => _showContractorProfile(contractor),
@@ -558,7 +516,7 @@ class _ContractorSelectionScreenState
                     ),
                   ),
                   Text(
-                    '${_selectedContractor!.proposedPrice} PLN • ${_selectedContractor!.formattedEta}',
+                    '${_selectedContractor!.proposedPrice} PLN',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.gray600,
                     ),
@@ -711,12 +669,6 @@ class _ContractorProfileSheet extends StatelessWidget {
                       '${contractor.completedTasks}',
                       'zleceń',
                       AppColors.success,
-                    ),
-                    _buildStat(
-                      Icons.access_time,
-                      contractor.formattedEta,
-                      'przybycie',
-                      AppColors.primary,
                     ),
                   ],
                 ),

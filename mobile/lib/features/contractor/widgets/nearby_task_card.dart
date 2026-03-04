@@ -16,6 +16,10 @@ class NearbyTaskCard extends ConsumerStatefulWidget {
   final bool showActions;
   /// Show client info row (avatar, name, rating, reviews).
   final bool showClientInfo;
+  /// Use equal-width action buttons stretched across the card.
+  final bool equalWidthActions;
+  /// Override label for the primary action button.
+  final String acceptButtonLabel;
 
   const NearbyTaskCard({
     super.key,
@@ -25,6 +29,8 @@ class NearbyTaskCard extends ConsumerStatefulWidget {
     this.onDetails,
     this.showActions = true,
     this.showClientInfo = true,
+    this.equalWidthActions = false,
+    this.acceptButtonLabel = 'Zgłoś się',
   });
 
   @override
@@ -251,133 +257,143 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.paddingSM,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.gray100,
-                    borderRadius: AppRadius.radiusSM,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.directions_walk,
-                        size: 12,
-                        color: AppColors.gray600,
-                      ),
-                      SizedBox(width: 2),
-                      Text(
-                        '${task.formattedDistance} • ${task.formattedEta}',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
 
             if (widget.showClientInfo || widget.showActions) ...[
               SizedBox(height: AppSpacing.gapMD),
 
-              // Client info and accept button
-              Row(
-                children: [
-                  if (widget.showClientInfo) ...[
-                    // Client info
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.gray200,
-                      child: Text(
-                        task.clientName[0],
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray600,
-                          fontWeight: FontWeight.w600,
+              if (widget.equalWidthActions && widget.showActions)
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: widget.onDetails,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.gray700,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.paddingSM,
+                            vertical: AppSpacing.paddingSM,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                          side: BorderSide(color: AppColors.gray300),
                         ),
+                        child: const Text('Więcej'),
                       ),
                     ),
                     SizedBox(width: AppSpacing.gapSM),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            task.clientName,
-                            style: AppTypography.bodySmall.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
+                      child: ElevatedButton(
+                        onPressed: widget.onAccept,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.paddingMD,
+                            vertical: AppSpacing.paddingSM,
                           ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.star,
-                                size: 12,
-                                color: AppColors.warning,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                        ),
+                        child: Text(widget.acceptButtonLabel),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    if (widget.showClientInfo) ...[
+                      // Client info
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: AppColors.gray200,
+                        child: Text(
+                          task.clientName[0],
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray600,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.gapSM),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              task.clientName,
+                              style: AppTypography.bodySmall.copyWith(
+                                fontWeight: FontWeight.w500,
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                rating.toStringAsFixed(1),
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.gray600,
+                            ),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  size: 12,
+                                  color: AppColors.warning,
                                 ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '$reviewCount opinii',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.gray500,
+                                SizedBox(width: 4),
+                                Text(
+                                  rating.toStringAsFixed(1),
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.gray600,
+                                  ),
+                                ),
+                              ],
                             ),
+                            Text(
+                              '$reviewCount opinii',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.gray500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    if (!widget.showClientInfo) const Spacer(),
+
+                    if (widget.showActions) ...[
+                      OutlinedButton(
+                        onPressed: widget.onDetails,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.gray700,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.paddingSM,
+                            vertical: AppSpacing.paddingSM,
                           ),
-                        ],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                          side: BorderSide(color: AppColors.gray300),
+                        ),
+                        child: const Text('Więcej'),
                       ),
-                    ),
+                      SizedBox(width: AppSpacing.gapSM),
+                      ElevatedButton(
+                        onPressed: widget.onAccept,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.paddingMD,
+                            vertical: AppSpacing.paddingSM,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                        ),
+                        child: Text(widget.acceptButtonLabel),
+                      ),
+                    ],
                   ],
-
-                  if (!widget.showClientInfo) const Spacer(),
-
-                  if (widget.showActions) ...[
-                    // More info button
-                    OutlinedButton(
-                      onPressed: widget.onDetails,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.gray700,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.paddingSM,
-                          vertical: AppSpacing.paddingSM,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.radiusMD,
-                        ),
-                        side: BorderSide(color: AppColors.gray300),
-                      ),
-                      child: const Text('Więcej'),
-                    ),
-                    SizedBox(width: AppSpacing.gapSM),
-                    // Accept button
-                    ElevatedButton(
-                      onPressed: widget.onAccept,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.white,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.paddingMD,
-                          vertical: AppSpacing.paddingSM,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.radiusMD,
-                        ),
-                      ),
-                      child: const Text('Zgłoś się'),
-                    ),
-                  ],
-                ],
-              ),
+                ),
             ],
           ],
         ),

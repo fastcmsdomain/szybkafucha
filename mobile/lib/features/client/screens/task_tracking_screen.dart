@@ -317,7 +317,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
       reviewCount: application.contractorReviewCount,
       isVerified: true,
       isOnline: true,
-      distanceKm: application.distanceKm,
       proposedPrice: application.proposedPrice.round(),
       bio: application.contractorBio,
     );
