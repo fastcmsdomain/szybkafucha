@@ -89,7 +89,8 @@
       "Bash(/usr/local/share/flutter/bin/flutter build:*)",
       "Bash(/usr/local/share/flutter/bin/flutter pub:*)",
       "Bash(/usr/local/share/flutter/bin/flutter analyze:*)",
-      "Bash(/usr/local/share/flutter/bin/flutter devices)"
+      "Bash(/usr/local/share/flutter/bin/flutter devices)",
+      "Bash(php -l /Users/simacbook/Development/Development/szybkafucha/api/subscribe.php)"
     ]
   }
 }

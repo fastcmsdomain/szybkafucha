@@ -11,7 +11,8 @@
  *   "city": "Warszawa",
  *   "userType": "client" | "contractor",
  *   "consent": true,
- *   "source": "formularz_ulepszen_apki" | "landing_page_hero",
+ *   "source": "formularz_ulepszen_apki" | "landing_page_hero" | "promo",
+ *   "website": "",  // honeypot field - must be empty (bots fill this)
  *   "services": ["cleaning", "shopping", "repairs"],
  *   "comments": "Chciałbym mieć możliwość..."
  * }
@@ -56,6 +57,20 @@ if ($data === null) {
     exit();
 }
 
+// Honeypot check - bots fill hidden fields, real users leave them empty
+if (!empty($data['website'])) {
+    // Silently accept to not tip off bots, but don't save anything
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'message' => 'Dziękujemy za zapisanie się!'
+    ]);
+    exit();
+}
+
+// Extract source early (needed for conditional validation)
+$source = isset($data['source']) ? trim($data['source']) : 'formularz_ulepszen_apki';
+
 // Validate required fields
 $errors = [];
 
@@ -69,10 +84,12 @@ if (empty($data['email']) || !filter_var($data['email'], FILTER_VALIDATE_EMAIL))
     $errors[] = 'Proszę podać poprawny adres e-mail.';
 }
 
-// UserType validation
+// UserType validation - optional for promo source (popup only collects name + email)
 $allowedTypes = ['client', 'contractor'];
-if (empty($data['userType']) || !in_array($data['userType'], $allowedTypes)) {
-    $errors[] = 'Proszę wybrać typ użytkownika (client lub contractor).';
+if ($source !== 'promo') {
+    if (empty($data['userType']) || !in_array($data['userType'], $allowedTypes)) {
+        $errors[] = 'Proszę wybrać typ użytkownika (client lub contractor).';
+    }
 }
 
 // Consent validation
@@ -94,8 +111,8 @@ if (!empty($errors)) {
 // Sanitize input
 $name = trim(htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8'));
 $email = strtolower(trim($data['email']));
-$userType = $data['userType'];
-$source = isset($data['source']) ? trim(htmlspecialchars($data['source'], ENT_QUOTES, 'UTF-8')) : 'formularz_ulepszen_apki';
+$userType = !empty($data['userType']) && in_array($data['userType'], $allowedTypes) ? $data['userType'] : 'promo';
+$source = htmlspecialchars($source, ENT_QUOTES, 'UTF-8');
 
 // Handle optional city field
 $city = null;
