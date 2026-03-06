@@ -8,6 +8,18 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-06] Enhanced chat moderation — block phone numbers, social media, @handles, contact phrases
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Significantly expanded chat message moderation to prevent users from sharing contact information outside the platform. Added new blocking rules and promoted social media mentions from flagging to hard blocking.
+- **Files Changed**:
+  - `backend/src/messages/messages.service.ts` – Added hidden phone number detection (7+ digits stripped), @handle regex, social media hard block (was flag-only), Polish contact phrase detection. Separated company names (still flagged) from social media (now blocked).
+  - `backend/src/realtime/realtime.gateway.ts` – Mirrored all new moderation patterns from messages.service.ts for WebSocket message validation.
+  - `mobile/lib/features/chat/widgets/chat_input.dart` – Added client-side validation for email, URL, @handle, social media, and contact phrases (previously only had phone number check). Unified into `_checkModeration()` function.
+- **System Impact**: Chat moderation is now much stricter. Messages containing any of the following are blocked: phone numbers (including spread digits like "5 1 2 3 4 5 6 7 8"), emails, URLs, @handles, social media platform names (instagram, facebook, tiktok, linkedin, whatsapp, telegram, signal, snapchat, viber, discord, twitter, youtube, skype, messenger, gg, x.com), and Polish contact-sharing phrases ("napisz na", "mój numer", "dodaj mnie", etc.). Company name patterns (sp. z o.o., s.a., firma, spółka) remain flagged for admin review but not blocked.
+- **Related Tasks/PRD**: Platform safety — preventing off-platform communication to protect commission model
+- **Potential Conflicts/Risks**: The hidden phone number check (7+ total digits in message) may be aggressive for messages containing dates, prices, or task IDs. Monitor false positives and adjust threshold if needed.
+
 ## [2026-03-04] Show "Zobacz zlecenie" for already-applied tasks + GPS location button + bracket fix
 
 - **Developer/Agent**: Claude

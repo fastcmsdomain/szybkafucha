@@ -27,11 +27,31 @@ import { UserType } from '../users/entities/user.entity';
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
 const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
 
+/**
+ * Detects digits spread across the message (e.g. "5 1 2 3 4 5 6 7 8").
+ * Strips all non-digit characters and checks if 7+ digits remain.
+ */
+function containsHiddenPhoneNumber(text: string): boolean {
+  const digitsOnly = text.replace(/\D/g, '');
+  return digitsOnly.length >= 7;
+}
+
 /** Detects email addresses */
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
 
 /** Detects URLs */
 const URL_REGEX = /(https?:\/\/|www\.)[^\s]+/gi;
+
+/** Detects @username handles (social media style, min 3 chars after @) */
+const AT_HANDLE_REGEX = /(?<!\w)@[a-zA-Z0-9._]{3,}/gi;
+
+/** Blocks social media / messaging platform mentions */
+const SOCIAL_MEDIA_REGEX =
+  /\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b/gi;
+
+/** Detects Polish contact-sharing phrases */
+const CONTACT_PHRASE_REGEX =
+  /\b(napisz (do mnie |)na|mój profil|znajdź mnie|dodaj mnie|zadzwoń (do mnie |)na|mój numer|mój mail|mój email|kontakt do mnie|prywatna wiadomość)\b/gi;
 
 // Events emitted by server
 export enum ServerEvent {
@@ -366,8 +386,8 @@ export class RealtimeGateway
       return { success: false, error: 'Not authorized for this task' };
     }
 
-    // Block phone numbers in chat
-    if (PHONE_NUMBER_REGEX.test(data.content)) {
+    // Block phone numbers in chat (direct pattern + hidden digits)
+    if (PHONE_NUMBER_REGEX.test(data.content) || containsHiddenPhoneNumber(data.content)) {
       return {
         success: false,
         error: 'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
@@ -387,6 +407,30 @@ export class RealtimeGateway
       return {
         success: false,
         error: 'Udostępnianie linków w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block @username handles
+    if (AT_HANDLE_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie nazw użytkowników (@handle) w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block social media / messaging platform mentions
+    if (SOCIAL_MEDIA_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Wspominanie platform społecznościowych w czacie jest niedozwolone.',
+      };
+    }
+
+    // Block Polish contact-sharing phrases
+    if (CONTACT_PHRASE_REGEX.test(data.content)) {
+      return {
+        success: false,
+        error: 'Udostępnianie danych kontaktowych w czacie jest niedozwolone.',
       };
     }
 

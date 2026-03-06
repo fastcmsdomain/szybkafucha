@@ -23,8 +23,18 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
 
 // MVP Phase 1: Chat moderation regex patterns
+
 /** Detects phone number patterns: +48 123 456 789, 0048123456789, 123-456-789, etc. */
 const PHONE_NUMBER_REGEX = /(\+?(?:\d[\s\-.()]?){8,}\d)/;
+
+/**
+ * Detects digits spread across the message (e.g. "5 1 2 3 4 5 6 7 8").
+ * Strips all non-digit characters and checks if 7+ digits remain.
+ */
+function containsHiddenPhoneNumber(text: string): boolean {
+  const digitsOnly = text.replace(/\D/g, '');
+  return digitsOnly.length >= 7;
+}
 
 /** Detects email addresses */
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
@@ -32,9 +42,20 @@ const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
 /** Detects URLs and links */
 const URL_REGEX = /(https?:\/\/|www\.)[^\s]+/gi;
 
-/** Flags company/social media mentions (not blocked, just flagged for admin review) */
-const COMPANY_FLAG_REGEX =
-  /\b(sp\.?\s*z\.?\s*o\.?\s*o|s\.?\s*a\.|firma|spółka|instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal)\b/gi;
+/** Detects @username handles (social media style, min 3 chars after @) */
+const AT_HANDLE_REGEX = /(?<!\w)@[a-zA-Z0-9._]{3,}/gi;
+
+/** Blocks social media / messaging platform mentions */
+const SOCIAL_MEDIA_REGEX =
+  /\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b/gi;
+
+/** Blocks company name patterns */
+const COMPANY_REGEX =
+  /\b(sp\.?\s*z\.?\s*o\.?\s*o|s\.?\s*a\.|firma|spółka)\b/gi;
+
+/** Detects Polish contact-sharing phrases */
+const CONTACT_PHRASE_REGEX =
+  /\b(napisz (do mnie |)na|mój profil|znajdź mnie|dodaj mnie|zadzwoń (do mnie |)na|mój numer|mój mail|mój email|kontakt do mnie|prywatna wiadomość)\b/gi;
 
 /** 5 minutes in milliseconds */
 const FIRST_MESSAGE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -134,7 +155,7 @@ export class MessagesService {
     await this.verifyTaskAccess(taskId, senderId);
 
     // MVP Phase 1: Enhanced chat moderation
-    if (PHONE_NUMBER_REGEX.test(dto.content)) {
+    if (PHONE_NUMBER_REGEX.test(dto.content) || containsHiddenPhoneNumber(dto.content)) {
       throw new BadRequestException(
         'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
       );
@@ -152,8 +173,26 @@ export class MessagesService {
       );
     }
 
-    // Check for company/social media mentions (flag, don't block)
-    const isFlagged = COMPANY_FLAG_REGEX.test(dto.content);
+    if (AT_HANDLE_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Udostępnianie nazw użytkowników (@handle) w czacie jest niedozwolone.',
+      );
+    }
+
+    if (SOCIAL_MEDIA_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Wspominanie platform społecznościowych w czacie jest niedozwolone.',
+      );
+    }
+
+    if (CONTACT_PHRASE_REGEX.test(dto.content)) {
+      throw new BadRequestException(
+        'Udostępnianie danych kontaktowych w czacie jest niedozwolone.',
+      );
+    }
+
+    // Check for company name mentions (flag for admin review)
+    const isFlagged = COMPANY_REGEX.test(dto.content);
 
     // Fetch task for timeout check
     const task = await this.taskRepository.findOne({ where: { id: taskId } });

@@ -25,6 +25,8 @@ class ChatInput extends ConsumerStatefulWidget {
   ConsumerState<ChatInput> createState() => _ChatInputState();
 }
 
+// --- Chat moderation patterns (client-side, mirrors backend) ---
+
 /// Detects phone number patterns in text.
 /// Matches: +48 123 456 789, 0048123456789, 123-456-789, (12) 345 6789, etc.
 final _phoneRegex = RegExp(
@@ -32,7 +34,64 @@ final _phoneRegex = RegExp(
   caseSensitive: false,
 );
 
-bool _containsPhoneNumber(String text) => _phoneRegex.hasMatch(text);
+/// Detects digits spread across the message (e.g. "5 1 2 3 4 5 6 7 8").
+bool _containsHiddenPhone(String text) {
+  final digitsOnly = text.replaceAll(RegExp(r'\D'), '');
+  return digitsOnly.length >= 7;
+}
+
+/// Detects email addresses.
+final _emailRegex = RegExp(
+  r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
+  caseSensitive: false,
+);
+
+/// Detects URLs and links.
+final _urlRegex = RegExp(
+  r'(https?://|www\.)\S+',
+  caseSensitive: false,
+);
+
+/// Detects @username handles (min 3 chars after @).
+final _atHandleRegex = RegExp(
+  r'(?<!\w)@[a-zA-Z0-9._]{3,}',
+  caseSensitive: false,
+);
+
+/// Detects social media / messaging platform names.
+final _socialMediaRegex = RegExp(
+  r'\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b',
+  caseSensitive: false,
+);
+
+/// Detects Polish contact-sharing phrases.
+final _contactPhraseRegex = RegExp(
+  r'\b(napisz (do mnie )?na|mój profil|znajdź mnie|dodaj mnie|zadzwoń (do mnie )?na|mój numer|mój mail|mój email|kontakt do mnie|prywatna wiadomość)\b',
+  caseSensitive: false,
+);
+
+/// Returns a Polish error message if content violates moderation rules, or null if OK.
+String? _checkModeration(String text) {
+  if (_phoneRegex.hasMatch(text) || _containsHiddenPhone(text)) {
+    return 'Udostępnianie numerów telefonu w czacie jest niedozwolone.';
+  }
+  if (_emailRegex.hasMatch(text)) {
+    return 'Udostępnianie adresów email w czacie jest niedozwolone.';
+  }
+  if (_urlRegex.hasMatch(text)) {
+    return 'Udostępnianie linków w czacie jest niedozwolone.';
+  }
+  if (_atHandleRegex.hasMatch(text)) {
+    return 'Udostępnianie nazw użytkowników (@handle) w czacie jest niedozwolone.';
+  }
+  if (_socialMediaRegex.hasMatch(text)) {
+    return 'Wspominanie platform społecznościowych w czacie jest niedozwolone.';
+  }
+  if (_contactPhraseRegex.hasMatch(text)) {
+    return 'Udostępnianie danych kontaktowych w czacie jest niedozwolone.';
+  }
+  return null;
+}
 
 class _ChatInputState extends ConsumerState<ChatInput> {
   late TextEditingController _messageController;
@@ -55,14 +114,13 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
 
-    if (_containsPhoneNumber(content)) {
+    final moderationError = _checkModeration(content);
+    if (moderationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
-          ),
+        SnackBar(
+          content: Text(moderationError),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
