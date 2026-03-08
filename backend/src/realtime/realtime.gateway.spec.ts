@@ -53,8 +53,9 @@ describe('RealtimeGateway', () => {
       getActiveChatRoomsForUser: jest.fn().mockResolvedValue([]),
       getChatRoomName: jest
         .fn()
-        .mockImplementation((taskId: string, userA: string, userB: string) =>
-          `chat:${taskId}:${[userA, userB].sort().join(':')}`,
+        .mockImplementation(
+          (taskId: string, userA: string, userB: string) =>
+            `chat:${taskId}:${[userA, userB].sort().join(':')}`,
         ),
       getSocketForUser: jest.fn(),
       getActiveConnectionsCount: jest.fn(),

@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/category_pricing_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -72,7 +73,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory;
+
+    // Fetch category pricing from API
+    Future.microtask(() {
+      ref.read(categoryPricingProvider.notifier).fetchPricing();
+    });
+
     if (_selectedCategory != null) {
+      // Use hardcoded default initially, will update when API data arrives
       _budgetController.text =
           TaskCategoryData.fromCategory(_selectedCategory!).suggestedPrice.toString();
     }
@@ -341,10 +349,13 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           }).toList(),
           onChanged: (category) {
             if (category == null) return;
-            final selectedData = TaskCategoryData.fromCategory(category);
+            // Use API pricing if available, otherwise hardcoded defaults
+            final pricingData = ref
+                .read(categoryPricingProvider.notifier)
+                .getEffectivePricing(category);
             setState(() {
               _selectedCategory = category;
-              _budgetController.text = selectedData.suggestedPrice.toString();
+              _budgetController.text = pricingData.suggestedPrice.toString();
             });
           },
         ),
@@ -787,8 +798,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Widget _buildBudgetSection() {
+    // Get pricing from API provider (with hardcoded fallback)
     final category = _selectedCategory != null
-        ? TaskCategoryData.fromCategory(_selectedCategory!)
+        ? ref.read(categoryPricingProvider.notifier).getEffectivePricing(_selectedCategory!)
         : null;
 
     return Column(
@@ -917,7 +929,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         if (category != null) ...[
           SizedBox(height: AppSpacing.gapXS),
           Text(
-            'Sugerowana cena dla "${category.name}": ${category.suggestedPrice} PLN',
+            category.displayPriceInfo,
             style: AppTypography.caption.copyWith(
               color: AppColors.gray600,
               fontStyle: FontStyle.italic,

@@ -12,7 +12,10 @@ import { ClientController } from './client.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Rating, ClientProfile, Task]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Rating, ClientProfile, Task]),
+    UsersModule,
+  ],
   controllers: [ClientController],
   providers: [ClientService],
   exports: [ClientService],

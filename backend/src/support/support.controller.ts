@@ -11,10 +11,7 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auth/types/authenticated-request.type';
 import { ContactSupportDto } from './dto/contact-support.dto';
-import {
-  ContactSupportResponse,
-  SupportService,
-} from './support.service';
+import { ContactSupportResponse, SupportService } from './support.service';
 
 @Controller('support')
 export class SupportController {

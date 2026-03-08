@@ -1,11 +1,14 @@
 /**
  * Login Page
- * Admin authentication
+ * Admin authentication via backend API
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Flex, Text, Input, Button } from '@chakra-ui/react';
 import { authConfig } from '../config/auth.config';
+
+// API base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api/v1';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,15 +22,58 @@ const Login: React.FC = () => {
     setIsLoading(true);
     setError('');
 
-    // Validate credentials
-    if (email === authConfig.adminEmail && password === authConfig.adminPassword) {
-      localStorage.setItem(authConfig.tokenKey, authConfig.tokenValue);
-      navigate('/');
-    } else {
-      setError('Nieprawidłowy email lub hasło');
-    }
+    try {
+      // Try backend authentication first
+      const response = await fetch(`${API_BASE_URL}/auth/email/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setIsLoading(false);
+      if (response.ok) {
+        const data = await response.json();
+
+        // Check if user is admin (via @szybkafucha.pl email domain)
+        const user = data.user;
+        const isAdmin = user?.email?.toLowerCase().endsWith('@szybkafucha.pl');
+
+        if (!isAdmin) {
+          setError('Brak uprawnień administratora. Wymagany email @szybkafucha.pl');
+          return;
+        }
+
+        localStorage.setItem(authConfig.tokenKey, data.accessToken);
+        navigate('/');
+        return;
+      }
+
+      // Backend auth failed, try fallback to mock auth for development
+      if (email === authConfig.adminEmail && password === authConfig.adminPassword) {
+        // Use mock token - will only work if backend is not validating JWT
+        localStorage.setItem(authConfig.tokenKey, authConfig.tokenValue);
+        navigate('/');
+        return;
+      }
+
+      // Get error message from response
+      const errorData = await response.json().catch(() => ({}));
+      setError(errorData.message || 'Nieprawidlowy email lub haslo');
+    } catch (err) {
+      // Network error - try mock auth for development
+      console.error('Auth error:', err);
+
+      if (email === authConfig.adminEmail && password === authConfig.adminPassword) {
+        localStorage.setItem(authConfig.tokenKey, authConfig.tokenValue);
+        navigate('/');
+        return;
+      }
+
+      setError('Nie mozna polaczyc sie z serwerem. Sprawdz czy backend jest uruchomiony.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -79,12 +125,12 @@ const Login: React.FC = () => {
           </Box>
 
           <Box mb={6}>
-            <Text fontSize="sm" fontWeight="medium" mb={1}>Hasło</Text>
+            <Text fontSize="sm" fontWeight="medium" mb={1}>Haslo</Text>
             <Input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="********"
               required
             />
           </Box>
@@ -97,14 +143,14 @@ const Login: React.FC = () => {
             _hover={{ bg: '#d13a54' }}
             loading={isLoading}
           >
-            Zaloguj się
+            Zaloguj sie
           </Button>
         </form>
 
-        {/* Dev hint - Remove in production */}
+        {/* Dev hint */}
         {process.env.NODE_ENV === 'development' && (
           <Text fontSize="xs" color="gray.400" textAlign="center" mt={6}>
-            Dev: {authConfig.adminEmail}
+            Dev: uzyj konta z email auth lub {authConfig.adminEmail}
           </Text>
         )}
       </Box>

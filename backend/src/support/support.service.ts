@@ -37,9 +37,7 @@ export class SupportService {
     const message = dto.message.trim();
 
     if (!reporterName || !message) {
-      throw new BadRequestException(
-        'Imię i treść wiadomości są wymagane.',
-      );
+      throw new BadRequestException('Imię i treść wiadomości są wymagane.');
     }
 
     try {

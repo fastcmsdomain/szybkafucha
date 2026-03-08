@@ -124,6 +124,25 @@ const Layout: React.FC = () => {
               </HStack>
             )}
           </NavLink>
+
+          <NavLink to="/category-pricing">
+            {({ isActive }) => (
+              <HStack
+                px={4}
+                py={3}
+                mb={1}
+                borderRadius="lg"
+                bg={isActive ? '#E9456010' : 'transparent'}
+                color={isActive ? '#E94560' : 'gray.600'}
+                fontWeight={isActive ? 'semibold' : 'normal'}
+                _hover={{ bg: isActive ? '#E9456010' : 'gray.50' }}
+                gap={3}
+              >
+                <span>💰</span>
+                <Text>Cennik kategorii</Text>
+              </HStack>
+            )}
+          </NavLink>
         </Box>
 
         {/* Logout button at bottom */}

@@ -8,7 +8,10 @@ export type NotificationPreferenceKey =
   | 'newNearbyTasks'
   | 'kycUpdates';
 
-export type NotificationPreferences = Record<NotificationPreferenceKey, boolean>;
+export type NotificationPreferences = Record<
+  NotificationPreferenceKey,
+  boolean
+>;
 
 export const NOTIFICATION_PREFERENCE_KEYS: NotificationPreferenceKey[] = [
   'messages',
@@ -60,7 +63,9 @@ export const NOTIFICATION_TYPE_TO_PREFERENCE_KEY: Record<
 export function normalizeNotificationPreferences(
   value?: Partial<NotificationPreferences> | null,
 ): NotificationPreferences {
-  const normalized: NotificationPreferences = { ...DEFAULT_NOTIFICATION_PREFERENCES };
+  const normalized: NotificationPreferences = {
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+  };
   if (!value) {
     return normalized;
   }

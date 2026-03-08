@@ -14,6 +14,7 @@ import { TaskApplication } from '../../tasks/entities/task-application.entity';
 import { Rating } from '../../tasks/entities/rating.entity';
 import { Message } from '../../messages/entities/message.entity';
 import { Payment } from '../../payments/entities/payment.entity';
+import { CategoryPricing } from '../../tasks/entities/category-pricing.entity';
 import { SeedModule } from './seed.module';
 import { SeedService } from './seed.service';
 
@@ -43,6 +44,7 @@ import { SeedService } from './seed.service';
           Rating,
           Message,
           Payment,
+          CategoryPricing,
         ],
         synchronize: true,
       }),
