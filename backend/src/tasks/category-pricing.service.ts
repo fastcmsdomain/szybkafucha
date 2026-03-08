@@ -24,7 +24,7 @@ import {
 export const DEFAULT_CATEGORY_PRICING: Partial<CategoryPricing>[] = [
   {
     category: 'paczki',
-    minPrice: 30,
+    minPrice: 35,
     maxPrice: 60,
     priceUnit: 'PLN',
     estimatedMinutes: 30,
