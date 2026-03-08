@@ -167,7 +167,9 @@ export class SeedService {
     this.logger.log('Client 2:   anna.nowak@test.pl / +48111111112');
     this.logger.log('Contractor: marek.kurier@test.pl / +48222222221');
     this.logger.log('');
-    this.logger.log('💡 Use OTP code "123456" for all test accounts (phone auth)');
+    this.logger.log(
+      '💡 Use OTP code "123456" for all test accounts (phone auth)',
+    );
     this.logger.log('');
   }
 }

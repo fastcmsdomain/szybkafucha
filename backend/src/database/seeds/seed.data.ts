@@ -2,7 +2,7 @@
  * Seed Data for Development
  * Test users, contractors, and sample tasks
  */
-import { UserType, UserStatus } from '../../users/entities/user.entity';
+import { UserStatus } from '../../users/entities/user.entity';
 import {
   KycStatus,
   TaskCategory,

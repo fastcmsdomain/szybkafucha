@@ -20,7 +20,8 @@ export class CategoryPricingController {
   @Get('pricing')
   async getAllPricing(): Promise<CategoryPricingListResponseDto> {
     const data = await this.categoryPricingService.getAllActive();
-    const updatedAt = await this.categoryPricingService.getLatestUpdateTimestamp();
+    const updatedAt =
+      await this.categoryPricingService.getLatestUpdateTimestamp();
 
     return {
       success: true,

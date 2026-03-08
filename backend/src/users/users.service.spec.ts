@@ -63,10 +63,19 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: mockRepository },
-        { provide: getRepositoryToken(DeletedAccount), useValue: mockDeletedAccountRepository },
+        {
+          provide: getRepositoryToken(DeletedAccount),
+          useValue: mockDeletedAccountRepository,
+        },
         { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
-        { provide: getRepositoryToken(ContractorProfile), useValue: mockContractorProfileRepository },
-        { provide: getRepositoryToken(ClientProfile), useValue: mockClientProfileRepository },
+        {
+          provide: getRepositoryToken(ContractorProfile),
+          useValue: mockContractorProfileRepository,
+        },
+        {
+          provide: getRepositoryToken(ClientProfile),
+          useValue: mockClientProfileRepository,
+        },
       ],
     }).compile();
 

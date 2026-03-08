@@ -12,7 +12,10 @@ import { Rating } from '../tasks/entities/rating.entity';
 import { Task } from '../tasks/entities/task.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ContractorProfile, Rating, Task]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([ContractorProfile, Rating, Task]),
+    UsersModule,
+  ],
   controllers: [ContractorController],
   providers: [ContractorService],
   exports: [ContractorService],

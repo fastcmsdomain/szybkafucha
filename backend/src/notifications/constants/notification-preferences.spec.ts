@@ -8,9 +8,9 @@ import {
 
 describe('notification-preferences constants', () => {
   it('maps notification types to preference categories', () => {
-    expect(getPreferenceKeyForNotificationType(NotificationType.NEW_MESSAGE)).toBe(
-      'messages',
-    );
+    expect(
+      getPreferenceKeyForNotificationType(NotificationType.NEW_MESSAGE),
+    ).toBe('messages');
     expect(
       getPreferenceKeyForNotificationType(NotificationType.PAYMENT_FAILED),
     ).toBe('payments');

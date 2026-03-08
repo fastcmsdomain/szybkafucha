@@ -50,8 +50,7 @@ const SOCIAL_MEDIA_REGEX =
   /\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b/gi;
 
 /** Blocks company name patterns */
-const COMPANY_REGEX =
-  /\b(sp\.?\s*z\.?\s*o\.?\s*o|s\.?\s*a\.|firma|spółka)\b/gi;
+const COMPANY_REGEX = /\b(sp\.?\s*z\.?\s*o\.?\s*o|s\.?\s*a\.|firma|spółka)\b/gi;
 
 /** Detects Polish contact-sharing phrases */
 const CONTACT_PHRASE_REGEX =
@@ -155,7 +154,10 @@ export class MessagesService {
     await this.verifyTaskAccess(taskId, senderId);
 
     // MVP Phase 1: Enhanced chat moderation
-    if (PHONE_NUMBER_REGEX.test(dto.content) || containsHiddenPhoneNumber(dto.content)) {
+    if (
+      PHONE_NUMBER_REGEX.test(dto.content) ||
+      containsHiddenPhoneNumber(dto.content)
+    ) {
       throw new BadRequestException(
         'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
       );
@@ -253,9 +255,7 @@ export class MessagesService {
         messagePreview,
       })
       .catch((err) =>
-        this.logger.error(
-          `Failed to send NEW_MESSAGE notification: ${err}`,
-        ),
+        this.logger.error(`Failed to send NEW_MESSAGE notification: ${err}`),
       );
 
     return {
@@ -383,8 +383,6 @@ export class MessagesService {
       return task;
     }
 
-    throw new ForbiddenException(
-      'You are not authorized to access this chat',
-    );
+    throw new ForbiddenException('You are not authorized to access this chat');
   }
 }

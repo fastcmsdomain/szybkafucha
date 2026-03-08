@@ -29,7 +29,9 @@ describe('Users notification preferences (e2e)', () => {
     );
     await app.init();
 
-    userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
+    userRepository = moduleFixture.get<Repository<User>>(
+      getRepositoryToken(User),
+    );
     jwtService = moduleFixture.get(JwtService);
 
     await userRepository.delete({ id: testUserId });

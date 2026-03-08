@@ -16,7 +16,13 @@ import { TaskApplication } from '../tasks/entities/task-application.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, TaskApplication, Message, ContractorProfile, User]),
+    TypeOrmModule.forFeature([
+      Task,
+      TaskApplication,
+      Message,
+      ContractorProfile,
+      User,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

@@ -28,7 +28,9 @@ describe('CategoryPricingService', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     getEffectiveSuggestedPrice: function () {
-      return this.suggestedPrice ?? Math.round((this.minPrice + this.maxPrice) / 2);
+      return (
+        this.suggestedPrice ?? Math.round((this.minPrice + this.maxPrice) / 2)
+      );
     },
   };
 

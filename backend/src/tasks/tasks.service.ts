@@ -121,9 +121,7 @@ export class TasksService {
       task.status === TaskStatus.CANCELLED ||
       task.status === TaskStatus.COMPLETED
     ) {
-      throw new BadRequestException(
-        'Cannot edit cancelled or completed task',
-      );
+      throw new BadRequestException('Cannot edit cancelled or completed task');
     }
 
     if (dto.category !== undefined) task.category = dto.category;
@@ -156,33 +154,41 @@ export class TasksService {
       task.clientId,
     );
     if (task.contractorId) {
-      this.realtimeGateway.sendToUser(task.contractorId, ServerEvent.TASK_STATUS, {
-        taskId: task.id,
-        status: task.status,
-        updatedAt: new Date(),
-        updatedBy: clientId,
-      });
+      this.realtimeGateway.sendToUser(
+        task.contractorId,
+        ServerEvent.TASK_STATUS,
+        {
+          taskId: task.id,
+          status: task.status,
+          updatedAt: new Date(),
+          updatedBy: clientId,
+        },
+      );
     }
 
     // If task is still open for applications, refresh contractor lists in real time.
     if (task.status === TaskStatus.CREATED) {
       const rankedContractors = await this.findAndRankContractors(task);
       for (const ranked of rankedContractors) {
-        this.realtimeGateway.sendToUser(ranked.contractorId, 'task:new_available', {
-          type: 'task:new_available',
-          task: {
-            id: task.id,
-            category: task.category,
-            title: task.title,
-            budgetAmount: task.budgetAmount,
-            address: task.address,
-            locationLat: task.locationLat,
-            locationLng: task.locationLng,
-            createdAt: task.createdAt,
+        this.realtimeGateway.sendToUser(
+          ranked.contractorId,
+          'task:new_available',
+          {
+            type: 'task:new_available',
+            task: {
+              id: task.id,
+              category: task.category,
+              title: task.title,
+              budgetAmount: task.budgetAmount,
+              address: task.address,
+              locationLat: task.locationLat,
+              locationLng: task.locationLng,
+              createdAt: task.createdAt,
+            },
+            score: ranked.score,
+            distance: ranked.distance,
           },
-          score: ranked.score,
-          distance: ranked.distance,
-        });
+        );
       }
     }
 
@@ -1190,8 +1196,9 @@ export class TasksService {
 
     if (wasMatchingFeePaid) {
       const cancellerId = userId;
-      const injuredPartyId =
-        isClientCancelling ? task.contractorId! : task.clientId;
+      const injuredPartyId = isClientCancelling
+        ? task.contractorId!
+        : task.clientId;
 
       await this.creditsService.processCancellationRefund(
         cancellerId,

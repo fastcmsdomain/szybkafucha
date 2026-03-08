@@ -342,10 +342,9 @@ export class RealtimeService {
           'otherUserId',
         )
         .innerJoin('msg.task', 'task')
-        .where(
-          '(msg.senderId = :userId OR msg.recipientId = :userId)',
-          { userId },
-        )
+        .where('(msg.senderId = :userId OR msg.recipientId = :userId)', {
+          userId,
+        })
         .andWhere('msg.recipientId IS NOT NULL')
         .andWhere('task.status NOT IN (:...done)', {
           done: ['completed', 'cancelled'],
@@ -399,11 +398,7 @@ export class RealtimeService {
         .getMany();
 
       for (const app of applicantApps) {
-        const room = this.getChatRoomName(
-          app.taskId,
-          userId,
-          app.contractorId,
-        );
+        const room = this.getChatRoomName(app.taskId, userId, app.contractorId);
         if (!roomNames.includes(room)) {
           roomNames.push(room);
         }

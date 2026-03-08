@@ -36,7 +36,11 @@ import { PaymentsModule } from '../payments/payments.module';
     NotificationsModule,
     PaymentsModule,
   ],
-  controllers: [TasksController, PublicTasksController, CategoryPricingController],
+  controllers: [
+    TasksController,
+    PublicTasksController,
+    CategoryPricingController,
+  ],
   providers: [TasksService, TasksScheduler, CategoryPricingService],
   exports: [TasksService, CategoryPricingService],
 })
