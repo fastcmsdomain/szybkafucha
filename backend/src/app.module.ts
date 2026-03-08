@@ -44,6 +44,7 @@ import { CreditTransaction } from './payments/entities/credit-transaction.entity
 import { KycCheck } from './kyc/entities/kyc-check.entity';
 import { NewsletterSubscriber } from './newsletter/entities/newsletter-subscriber.entity';
 import { DeletedAccount } from './users/entities/deleted-account.entity';
+import { CategoryPricing } from './tasks/entities/category-pricing.entity';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { DeletedAccount } from './users/entities/deleted-account.entity';
           KycCheck,
           NewsletterSubscriber,
           DeletedAccount,
+          CategoryPricing,
         ],
         synchronize: configService.get<string>('NODE_ENV') === 'development', // Auto-sync in dev only
         logging: configService.get<string>('NODE_ENV') === 'development',

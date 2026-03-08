@@ -8,6 +8,46 @@ Each entry documents:
 - System impact
 - Potential conflicts or risks
 
+## [2026-03-08] Dynamic category pricing system — admin-managed prices per category
+
+- **Developer/Agent**: Claude
+- **Scope of Changes**: Implemented a complete category pricing system that allows admins to manage suggested prices (min, max, suggested) per task category through the admin panel. Prices are stored in the database, served via public API, and cached locally in the mobile app with hardcoded fallback.
+
+- **Files Changed**:
+  - Backend (new files):
+    - `backend/src/tasks/entities/category-pricing.entity.ts` – New entity for category_pricing table
+    - `backend/src/tasks/dto/category-pricing.dto.ts` – DTOs for CRUD operations
+    - `backend/src/tasks/category-pricing.service.ts` – Business logic with default data and seed methods
+    - `backend/src/tasks/category-pricing.controller.ts` – Public endpoint GET /categories/pricing
+    - `backend/src/tasks/category-pricing.service.spec.ts` – Unit tests
+  - Backend (modified):
+    - `backend/src/tasks/tasks.module.ts` – Registered new entity, service, controller
+    - `backend/src/admin/admin.module.ts` – Added CategoryPricing entity and service
+    - `backend/src/admin/admin.controller.ts` – Added admin CRUD endpoints (GET/PUT/POST)
+    - `backend/src/database/seeds/seed.module.ts` – Added CategoryPricing for seeding
+    - `backend/src/database/seeds/seed.service.ts` – Added seedCategoryPricing method
+  - Admin Panel:
+    - `admin/src/pages/CategoryPricing.tsx` – New page with table, edit modal, stats
+    - `admin/src/services/api.ts` – Added categoryPricingApi functions
+    - `admin/src/App.tsx` – Added /category-pricing route
+    - `admin/src/components/Layout.tsx` – Added navigation link
+  - Mobile App:
+    - `mobile/lib/core/providers/category_pricing_provider.dart` – New provider with API fetch + cache
+    - `mobile/lib/core/providers/providers.dart` – Added export
+    - `mobile/lib/features/client/screens/create_task_screen.dart` – Integrated provider, new display format
+
+- **System Impact**:
+  - Admin can now edit category prices without app updates
+  - Mobile app fetches prices from API, caches for 24h, falls back to hardcoded defaults
+  - New display format: "Sugerowana: 140 PLN (zakres 80-200 PLN)"
+  - Public endpoint: GET /api/v1/categories/pricing (no auth required)
+  - Admin endpoints: GET/PUT /admin/category-pricing, POST /admin/category-pricing/seed|reset
+
+- **Related Tasks/PRD**: Task creation UX improvement, dynamic pricing management
+- **Potential Conflicts/Risks**:
+  - Mobile app requires API access for updated prices (gracefully falls back to hardcoded)
+  - Database must be seeded with initial prices (run npm run seed or use admin panel)
+
 ## [2026-03-06] Enhanced chat moderation — block phone numbers, social media, @handles, contact phrases
 
 - **Developer/Agent**: Claude

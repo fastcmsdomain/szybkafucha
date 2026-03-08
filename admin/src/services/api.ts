@@ -142,10 +142,62 @@ export const dashboardApi = {
   getMetrics: () => apiFetch('/admin/dashboard'),
 };
 
+// Category Pricing types
+export interface CategoryPricing {
+  id: string;
+  category: string;
+  minPrice: number;
+  maxPrice: number;
+  suggestedPrice: number;
+  priceUnit: string;
+  estimatedMinutes: number;
+  isActive: boolean;
+  updatedAt: string;
+}
+
+export interface UpdateCategoryPricingDto {
+  minPrice: number;
+  maxPrice: number;
+  suggestedPrice?: number | null;
+  priceUnit: string;
+  estimatedMinutes: number;
+  isActive?: boolean;
+}
+
+// Category Pricing API functions
+export const categoryPricingApi = {
+  getAll: (): Promise<CategoryPricing[]> => {
+    return apiFetch('/admin/category-pricing');
+  },
+
+  update: (
+    category: string,
+    data: UpdateCategoryPricingDto
+  ): Promise<CategoryPricing> => {
+    return apiFetch(`/admin/category-pricing/${category}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  seed: (): Promise<{ created: number; skipped: number }> => {
+    return apiFetch('/admin/category-pricing/seed', {
+      method: 'POST',
+    });
+  },
+
+  reset: (): Promise<{ updated: number; created: number }> => {
+    return apiFetch('/admin/category-pricing/reset', {
+      method: 'POST',
+    });
+  },
+};
+
 const apiService = {
   tasks: tasksApi,
   disputes: disputesApi,
   dashboard: dashboardApi,
+  categoryPricing: categoryPricingApi,
 };
 
 export default apiService;
