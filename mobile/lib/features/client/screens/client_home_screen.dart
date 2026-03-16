@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
-import '../../../core/l10n/l10n.dart';
-import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/location_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
+import '../../../core/services/location_service.dart';
 import '../../../core/theme/theme.dart';
+import '../../../core/widgets/sf_cluster_marker.dart';
+import '../../../core/widgets/sf_location_marker.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
-import '../../../core/widgets/sf_chat_badge.dart';
-import '../models/task.dart';
-// import '../models/task_category.dart';
-// import '../widgets/category_card.dart';
+import '../models/task_category.dart';
+import '../../contractor/models/contractor_task.dart';
+import '../../contractor/widgets/nearby_task_card.dart';
 
-/// Client home screen - main dashboard for clients
-/// Shows welcome message, quick actions, and active/recent tasks
+/// Client home screen - main dashboard with map/list tabs
+/// Shows welcome header and available tasks on map or list
 class ClientHomeScreen extends ConsumerStatefulWidget {
   const ClientHomeScreen({super.key});
 
@@ -23,61 +26,103 @@ class ClientHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<ClientHomeScreen> createState() => _ClientHomeScreenState();
 }
 
-class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
+class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final MapController _mapController = MapController();
+  double _currentZoom = 6.0;
+  Set<TaskCategory> _selectedCategoryFilters = {};
+  LatLng? _userLocation;
+  bool _isLocating = false;
+
   @override
   void initState() {
     super.initState();
-    // Tasks are auto-loaded by clientTasksProvider when created
-    // Only load if not already loaded or data is stale
+    _tabController = TabController(length: 2, vsync: this);
+
     Future.microtask(() {
-      final state = ref.read(clientTasksProvider);
-      if (state.tasks.isEmpty && !state.isLoading) {
-        ref.read(clientTasksProvider.notifier).loadTasks();
-      }
+      ref.read(availableTasksProvider.notifier).loadTasks();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refreshTasks() async {
+    await ref.read(availableTasksProvider.notifier).refresh();
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Dzień dobry';
+    if (hour < 18) return 'Cześć';
+    return 'Dobry wieczór';
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
-    final bottomNavPadding = AppSpacing.paddingLG + kBottomNavigationBarHeight;
+    final tasksState = ref.watch(availableTasksProvider);
+    final baseTasks = tasksState.tasks.where(_isActiveOrNew).toList();
+    final filteredTasks = _getFilteredTasks(baseTasks);
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.paddingLG,
-            AppSpacing.paddingLG,
-            AppSpacing.paddingLG,
-            bottomNavPadding + AppSpacing.paddingMD,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Welcome header
-              _buildWelcomeHeader(user?.name),
-
-              // SizedBox(height: AppSpacing.space8),
-
-              // Quick action - Create task
-              // _buildQuickActionCard(context),
-
-              // SizedBox(height: AppSpacing.space8),
-
-              // Popular categories
-              // _buildPopularCategories(context),
-
-              // SizedBox(height: AppSpacing.space8),
-
-              // Active tasks section
-              _buildActiveTasksSection(context),
-
-              SizedBox(height: AppSpacing.space4),
-
-              // How it works section
-              _buildHowItWorksSection(),
-            ],
-          ),
+        child: Column(
+          children: [
+            // Welcome header
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.paddingLG,
+                AppSpacing.paddingLG,
+                AppSpacing.paddingLG,
+                AppSpacing.paddingSM,
+              ),
+              child: _buildWelcomeHeader(user?.name),
+            ),
+            // Tab bar
+            Container(
+              color: AppColors.white,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.gray500,
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 3,
+                labelStyle: AppTypography.labelLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: AppTypography.labelLarge,
+                tabs: const [
+                  Tab(text: 'MAPA'),
+                  Tab(text: 'LISTA'),
+                ],
+              ),
+            ),
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildMapTab(tasksState, filteredTasks),
+                  Column(
+                    children: [
+                      _buildListCategoryFilterBar(),
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: _refreshTasks,
+                          child: _buildListTab(tasksState, filteredTasks),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -94,7 +139,6 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
   Widget _buildWelcomeHeader(String? userName) {
     final greeting = _getGreeting();
     final name = userName ?? 'Użytkowniku';
-    final tasksState = ref.watch(clientTasksProvider);
 
     return Row(
       children: [
@@ -117,198 +161,786 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
           ),
         ),
         IconButton(
-          icon: tasksState.isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primary,
-                  ),
-                )
-              : Icon(Icons.refresh, color: AppColors.primary),
-          onPressed: tasksState.isLoading ? null : _refreshTasks,
+          icon: Icon(Icons.refresh, color: AppColors.primary),
+          onPressed: _refreshTasks,
           tooltip: 'Odśwież',
         ),
       ],
     );
   }
 
-  Future<void> _refreshTasks() async {
-    await ref.read(clientTasksProvider.notifier).refresh();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Odświeżono'),
-          duration: const Duration(seconds: 1),
-          backgroundColor: AppColors.success,
-        ),
-      );
+  List<ContractorTask> _getFilteredTasks(List<ContractorTask> tasks) {
+    if (_selectedCategoryFilters.isEmpty) {
+      return tasks;
     }
+    return tasks
+        .where((task) => _selectedCategoryFilters.contains(task.category))
+        .toList();
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Dzień dobry';
-    if (hour < 18) return 'Cześć';
-    return 'Dobry wieczór';
+  String _getSelectedFiltersLabel() {
+    if (_selectedCategoryFilters.isEmpty) {
+      return 'Filtry';
+    }
+    if (_selectedCategoryFilters.length == 1) {
+      final category = _selectedCategoryFilters.first;
+      return TaskCategoryData.fromCategory(category).name;
+    }
+    return '${_selectedCategoryFilters.length} wybrane';
   }
 
-  Widget _buildQuickActionCard(BuildContext context) {
+  Widget _buildMapFiltersButton() {
     return Semantics(
-      label: 'Utwórz nowe zlecenie',
+      label: 'Filtruj kategorie',
       button: true,
-      child: GestureDetector(
-        onTap: () => context.push(Routes.clientCategories),
-        child: Container(
-          padding: EdgeInsets.all(AppSpacing.paddingLG),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openCategoryFilterDropdown,
+          borderRadius: AppRadius.radiusMD,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.paddingMD,
+              vertical: AppSpacing.paddingSM,
             ),
-            borderRadius: AppRadius.radiusXL,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: AppRadius.radiusMD,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gray900.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.filter_list,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: AppSpacing.gapSM),
+                Text(
+                  _getSelectedFiltersLabel(),
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.gray700,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.gapXS),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: AppColors.gray600,
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              Expanded(
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListCategoryFilterBar() {
+    return Container(
+      color: AppColors.white,
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.gapXS),
+      child: SizedBox(
+        height: 42,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+          itemCount: TaskCategoryData.all.length,
+          separatorBuilder: (context, index) =>
+              SizedBox(width: AppSpacing.gapSM),
+          itemBuilder: (context, index) {
+            final data = TaskCategoryData.all[index];
+            final isSelected =
+                _selectedCategoryFilters.contains(data.category);
+            return FilterChip(
+              showCheckmark: true,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              avatar: Icon(
+                data.icon,
+                size: 14,
+                color: data.color,
+              ),
+              label: Text(
+                data.name,
+                style: AppTypography.caption.copyWith(
+                  color: isSelected ? data.color : AppColors.gray700,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: data.color.withValues(alpha: 0.12),
+              checkmarkColor: data.color,
+              side: BorderSide(
+                color: isSelected ? data.color : AppColors.gray300,
+              ),
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedCategoryFilters.add(data.category);
+                  } else {
+                    _selectedCategoryFilters.remove(data.category);
+                  }
+                });
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openCategoryFilterDropdown() async {
+    final draft = Set<TaskCategory>.from(_selectedCategoryFilters);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final maxHeight = MediaQuery.of(context).size.height * 0.72;
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.paddingMD),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Potrzebujesz pomocy?',
-                      style: AppTypography.h4.copyWith(
-                        color: AppColors.white,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Wybierz kategorie',
+                            style: AppTypography.h4,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: draft.isEmpty
+                              ? null
+                              : () {
+                                  setModalState(() {
+                                    draft.clear();
+                                  });
+                                },
+                          child: const Text('Wyczyść'),
+                        ),
+                      ],
                     ),
                     SizedBox(height: AppSpacing.gapSM),
                     Text(
-                      'Znajdź kogoś, kto pomoże Ci w codziennych zadaniach',
+                      'Możesz zaznaczyć wiele kategorii',
                       style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.white.withValues(alpha: 0.9),
+                        color: AppColors.gray600,
                       ),
                     ),
                     SizedBox(height: AppSpacing.gapMD),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.paddingMD,
-                        vertical: AppSpacing.paddingSM,
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: TaskCategoryData.all.length,
+                        itemBuilder: (context, index) {
+                          final data = TaskCategoryData.all[index];
+                          final isSelected = draft.contains(data.category);
+                          return Semantics(
+                            label: 'Filtr kategorii ${data.name}',
+                            button: true,
+                            child: InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  if (isSelected) {
+                                    draft.remove(data.category);
+                                  } else {
+                                    draft.add(data.category);
+                                  }
+                                });
+                              },
+                              borderRadius: AppRadius.radiusSM,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: AppSpacing.gapXS,
+                                  horizontal: AppSpacing.paddingXS,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Checkbox(
+                                      value: isSelected,
+                                      visualDensity: VisualDensity.compact,
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      onChanged: (value) {
+                                        setModalState(() {
+                                          if (value == true) {
+                                            draft.add(data.category);
+                                          } else {
+                                            draft.remove(data.category);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    SizedBox(width: AppSpacing.gapSM),
+                                    Icon(
+                                      data.icon,
+                                      color: data.color,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: AppSpacing.gapSM),
+                                    Expanded(
+                                      child: Text(
+                                        data.name,
+                                        style: AppTypography.bodyMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: AppRadius.radiusFull,
-                      ),
-                      child: Text(
-                        'Utwórz zlecenie',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    SizedBox(height: AppSpacing.gapMD),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => context.pop(),
+                            child: const Text('Anuluj'),
+                          ),
                         ),
-                      ),
+                        SizedBox(width: AppSpacing.gapMD),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedCategoryFilters = draft;
+                              });
+                              context.pop();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.white,
+                            ),
+                            child: const Text('Zatwierdź'),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: AppSpacing.gapMD),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.radiusMD,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMapTab(
+      AvailableTasksState tasksState, List<ContractorTask> tasks) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    const fabHeightWithMargin = 72.0;
+    final overlayBottom =
+        AppSpacing.paddingMD + fabHeightWithMargin + bottomInset;
+
+    if (tasksState.isLoading && tasks.isEmpty) {
+      return _buildLoadingState();
+    }
+
+    if (tasksState.error != null) {
+      return _buildErrorState(tasksState.error!);
+    }
+
+    final clusterableTasks = tasks
+        .map((task) => ClusterableTask(
+              id: task.id,
+              position: LatLng(task.latitude, task.longitude),
+              category: task.category.name,
+              price: task.price.toDouble(),
+            ))
+        .toList();
+
+    final clusters =
+        TaskClusterManager.clusterTasks(clusterableTasks, _currentZoom);
+
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: TaskClusterManager.polandCenter,
+            initialZoom: _currentZoom,
+            minZoom: 5,
+            maxZoom: 18,
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture) {
+                setState(() => _currentZoom = position.zoom);
+              }
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'pl.szybkafucha.mobile',
+              maxZoom: 19,
+              tileProvider: NetworkTileProvider(
+                cachingProvider: const DisabledMapCachingProvider(),
+              ),
+            ),
+            if (_userLocation != null)
+              CircleLayer(
+                circles: [
+                  CircleMarker(
+                    point: _userLocation!,
+                    radius: 10000,
+                    useRadiusInMeter: true,
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderColor: AppColors.primary.withValues(alpha: 0.3),
+                    borderStrokeWidth: 2,
+                  ),
+                ],
+              ),
+            MarkerLayer(
+              markers: clusters.map((cluster) {
+                if (cluster.isSingleTask) {
+                  final task = tasks.firstWhere(
+                    (t) => t.id == cluster.tasks.first.id,
+                    orElse: () => tasks.first,
+                  );
+                  return Marker(
+                    point: cluster.center,
+                    width: 44,
+                    height: 54,
+                    child: Semantics(
+                      label: 'Otwórz szczegóły zlecenia',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () => _showTaskDetails(task),
+                        child:
+                            TaskMarker(position: cluster.center).build(context),
+                      ),
+                    ),
+                  );
+                } else {
+                  final clusterMarker = ClusterMarker(
+                    position: cluster.center,
+                    count: cluster.count,
+                    onTap: () => _zoomToCluster(cluster),
+                  );
+                  return Marker(
+                    point: cluster.center,
+                    width: clusterMarker.width,
+                    height: clusterMarker.height,
+                    child: clusterMarker.build(context),
+                  );
+                }
+              }).toList(),
+            ),
+            if (_userLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _userLocation!,
+                    width: 24,
+                    height: 24,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+
+        if (tasks.isEmpty)
+          Positioned.fill(
+            child: Container(
+              color: AppColors.white.withValues(alpha: 0.8),
+              child: _buildEmptyMapState(),
+            ),
+          ),
+
+        // Task count badge
+        Positioned(
+          top: AppSpacing.paddingMD,
+          left: AppSpacing.paddingMD,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.paddingMD,
+              vertical: AppSpacing.paddingSM,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: AppRadius.radiusMD,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gray900.withValues(alpha: 0.1),
+                  blurRadius: 8,
                 ),
-                child: Icon(
-                  Icons.handshake_outlined,
-                  size: 48,
-                  color: AppColors.white,
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.work_outline,
+                  size: 18,
+                  color: AppColors.primary,
                 ),
+                SizedBox(width: AppSpacing.gapSM),
+                Text(
+                  '${tasks.length} zleceń',
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Filters button
+        Positioned(
+          top: AppSpacing.paddingMD + 56,
+          left: AppSpacing.paddingMD,
+          child: _buildMapFiltersButton(),
+        ),
+
+        // Zoom controls
+        Positioned(
+          right: AppSpacing.paddingMD,
+          bottom: overlayBottom,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildZoomButton(
+                icon: Icons.add,
+                onPressed: _zoomIn,
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              _buildZoomButton(
+                icon: Icons.remove,
+                onPressed: _zoomOut,
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+              _buildZoomButton(
+                icon: Icons.my_location,
+                onPressed: _isLocating ? null : _goToMyLocation,
+                isActive: _userLocation != null,
+                isLoading: _isLocating,
+              ),
+              SizedBox(height: AppSpacing.gapXS),
+              _buildZoomButton(
+                icon: Icons.center_focus_strong,
+                onPressed: _resetView,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildActiveTasksSection(BuildContext context) {
-    final tasksState = ref.watch(clientTasksProvider);
-    final activeTasks = tasksState.activeTasks;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SFRainbowText(AppStrings.activeTasks, style: AppTypography.h5),
-            TextButton(
-              onPressed: () => context.go(Routes.clientHistory),
-              child: Text(
-                AppStrings.viewHistory,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.gapMD),
-        
-        // Loading state
-        if (tasksState.isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.paddingXL),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        // Empty state
-        else if (activeTasks.isEmpty)
-          _buildEmptyState()
-        // List of active tasks
-        else
-          ...activeTasks.take(3).map((task) => Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
-                child: _buildTaskCard(context, task),
-              )),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.paddingXL),
-      decoration: BoxDecoration(
-        color: AppColors.gray50,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(color: AppColors.gray200),
+  Widget _buildListTab(
+      AvailableTasksState tasksState, List<ContractorTask> tasks) {
+    if (tasksState.isLoading && tasks.isEmpty) {
+      return _buildLoadingState();
+    }
+
+    if (tasksState.error != null) {
+      return _buildErrorState(tasksState.error!);
+    }
+
+    if (tasks.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      itemCount: tasks.length,
+      separatorBuilder: (context, index) => SizedBox(height: AppSpacing.gapMD),
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        return NearbyTaskCard(
+          task: task,
+          showActions: false,
+          onTap: null,
+        );
+      },
+    );
+  }
+
+  Widget _buildZoomButton({
+    required IconData icon,
+    required VoidCallback? onPressed,
+    bool isActive = false,
+    bool isLoading = false,
+  }) {
+    return Material(
+      color:
+          isActive ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white,
+      elevation: 2,
+      borderRadius: AppRadius.radiusSM,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: AppRadius.radiusSM,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    size: 22,
+                    color: isActive ? AppColors.primary : AppColors.gray700,
+                  ),
+          ),
+        ),
       ),
+    );
+  }
+
+  void _zoomIn() {
+    final newZoom = (_currentZoom + 1).clamp(5.0, 18.0);
+    _mapController.move(_mapController.camera.center, newZoom);
+    setState(() => _currentZoom = newZoom);
+  }
+
+  void _zoomOut() {
+    final newZoom = (_currentZoom - 1).clamp(5.0, 18.0);
+    _mapController.move(_mapController.camera.center, newZoom);
+    setState(() => _currentZoom = newZoom);
+  }
+
+  void _resetView() {
+    _mapController.move(TaskClusterManager.polandCenter, 6.0);
+    setState(() {
+      _currentZoom = 6.0;
+      _userLocation = null;
+    });
+  }
+
+  Future<void> _goToMyLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      final service = ref.read(locationServiceProvider);
+
+      final permission = await service.checkPermission();
+      if (permission != LocationPermissionStatus.granted) {
+        final requested = await service.requestPermission();
+        if (requested != LocationPermissionStatus.granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'Brak dostępu do lokalizacji. Włącz w ustawieniach.'),
+                backgroundColor: AppColors.warning,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Ustawienia',
+                  textColor: AppColors.white,
+                  onPressed: () => service.openAppSettings(),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final latLng = await service.getCurrentLatLng();
+      if (latLng == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Nie udało się pobrać lokalizacji'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      const zoomFor10km = 12.0;
+      _mapController.move(latLng, zoomFor10km);
+      setState(() {
+        _userLocation = latLng;
+        _currentZoom = zoomFor10km;
+      });
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
+    }
+  }
+
+  void _zoomToCluster(TaskCluster cluster) {
+    final newZoom = (_currentZoom + 2).clamp(5.0, 15.0);
+    _mapController.move(cluster.center, newZoom);
+    setState(() => _currentZoom = newZoom);
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(),
+            SizedBox(height: AppSpacing.gapMD),
+            Text(
+              'Ładowanie zleceń...',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.gray600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingLG),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.error,
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+            Text(
+              'Wystąpił błąd',
+              style: AppTypography.h5.copyWith(
+                color: AppColors.gray600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            Text(
+              error,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppSpacing.space6),
+            ElevatedButton.icon(
+              onPressed: _refreshTasks,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Spróbuj ponownie'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final hasActiveFilter = _selectedCategoryFilters.isNotEmpty;
+
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.paddingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: AppColors.gray400,
+            ),
+            SizedBox(height: AppSpacing.gapMD),
+            Text(
+              'Brak dostępnych zleceń',
+              style: AppTypography.h5.copyWith(
+                color: AppColors.gray600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.gapSM),
+            Text(
+              hasActiveFilter
+                  ? 'Brak zleceń dla wybranych kategorii.'
+                  : 'Obecnie nie ma żadnych dostępnych zleceń. '
+                      'Sprawdź ponownie później.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.gray500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: AppSpacing.space6),
+            ElevatedButton.icon(
+              onPressed: _refreshTasks,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Odśwież'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyMapState() {
+    final hasActiveFilter = _selectedCategoryFilters.isNotEmpty;
+
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.task_alt_outlined,
-            size: 48,
+            Icons.map_outlined,
+            size: 64,
             color: AppColors.gray400,
           ),
           SizedBox(height: AppSpacing.gapMD),
           Text(
-            AppStrings.noActiveTasks,
-            style: AppTypography.bodyMedium.copyWith(
+            'Brak dostępnych zleceń',
+            style: AppTypography.h5.copyWith(
               color: AppColors.gray600,
             ),
-            textAlign: TextAlign.center,
           ),
           SizedBox(height: AppSpacing.gapSM),
           Text(
-            'Utwórz swoje pierwsze zlecenie, aby znaleźć pomocnika',
+            hasActiveFilter
+                ? 'Brak zleceń dla wybranych kategorii.'
+                : 'Na mapie pojawią się zlecenia, gdy będą dostępne.',
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.gray500,
             ),
@@ -319,504 +951,37 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
     );
   }
 
-  Widget _buildTaskCard(BuildContext context, Task task) {
-    final category = task.categoryData;
-
-    // pendingComplete is still interactive — chat must stay accessible until
-    // the contractor rates and the task transitions to COMPLETED.
-    const isLocked = false;
-
-    return Semantics(
-      label: isLocked
-          ? 'Zlecenie ${category.name}, ${task.status.displayName}, obecnie niedostępne'
-          : 'Otwórz szczegóły zlecenia ${category.name}',
-      button: true,
-      enabled: !isLocked,
-      child: GestureDetector(
-        onTap: isLocked
-            ? null
-            : () {
-                if (task.status.isActive) {
-                  context.push(Routes.clientTaskTrack(task.id));
-                } else {
-                  context.go(Routes.clientHistory);
-                }
-              },
-        child: Container(
-          padding: EdgeInsets.all(AppSpacing.paddingMD),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: AppRadius.radiusLG,
-            border: Border.all(
-              color: task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.pendingComplete
-                  ? AppColors.success
-                  : AppColors.gray200,
-              width: task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.pendingComplete
-                  ? 2.0
-                  : 1.0,
-            ),
-            boxShadow: AppShadows.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.paddingSM),
-                    decoration: BoxDecoration(
-                      color: category.color.withValues(alpha: 0.1),
-                      borderRadius: AppRadius.radiusMD,
-                    ),
-                    child: Icon(
-                      category.icon,
-                      color: category.color,
-                      size: 24,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapMD),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          category.name,
-                          style: AppTypography.labelMedium.copyWith(
-                            color: category.color,
-                          ),
-                        ),
-                        Text(
-                          _formatDate(task.createdAt),
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.gray500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildStatusBadge(task.status),
-                      SizedBox(height: AppSpacing.gapXS),
-                      _buildApplicationsBadge(task),
-                    ],
-                  ),
-                ],
-              ),
-
-              SizedBox(height: AppSpacing.gapMD),
-
-              // Title + description preview
-              Text(
-                task.title,
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (task.description.trim().isNotEmpty) ...[
-                SizedBox(height: AppSpacing.gapXS),
-                Text(
-                  task.description,
-                  style: AppTypography.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-
-              SizedBox(height: AppSpacing.gapMD),
-
-              // Footer row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (task.address != null) ...[
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 14,
-                      color: AppColors.gray500,
-                    ),
-                    SizedBox(width: AppSpacing.gapXS),
-                    Expanded(
-                      child: Text(
-                        task.address!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.gapSM),
-                  ] else
-                    const Spacer(),
-                  Text(
-                    '${task.budget} PLN',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Action buttons for all active tasks, including pendingComplete.
-              // Chat must remain usable until the contractor rates and task becomes COMPLETED.
-              if (task.status.isActive) ...[
-                SizedBox(height: AppSpacing.gapMD),
-                Row(
-                  children: [
-                    // Track button
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () =>
-                            context.push(Routes.clientTaskTrack(task.id)),
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Więcej'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.white,
-                        ),
-                      ),
-                    ),
-                    // Chat button — visible when contractor is assigned (including pendingComplete)
-                    if (task.status == TaskStatus.confirmed ||
-                        task.status == TaskStatus.inProgress ||
-                        task.status == TaskStatus.pendingComplete) ...[
-                      SizedBox(width: AppSpacing.gapSM),
-                      Expanded(
-                        child: SFChatBadge(
-                          taskId: task.id,
-                          otherUserId: task.contractor?.id ?? task.contractorId,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              final currentUser = ref.read(currentUserProvider);
-                              context.push(
-                                Routes.clientTaskChatRoute(task.id),
-                                extra: {
-                                  'otherUserId': task.contractor?.id ??
-                                      task.contractorId ??
-                                      '',
-                                  'taskTitle': task.title.trim().isNotEmpty
-                                      ? task.title
-                                      : (task.description.trim().isNotEmpty
-                                            ? task.description
-                                            : 'Czat'),
-                                  'otherUserName':
-                                      task.contractor?.name ?? 'Wykonawca',
-                                  'otherUserAvatarUrl':
-                                      task.contractor?.avatarUrl,
-                                  'currentUserId': currentUser?.id ?? '',
-                                  'currentUserName': currentUser?.name ?? 'Ty',
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.chat_outlined, size: 16),
-                            label: const Text('Czat'),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              foregroundColor: AppColors.white,
-                              side: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(TaskStatus status) {
-    Color color;
-    String text = status.displayName;
-
-    switch (status) {
-      case TaskStatus.posted:
-        color = AppColors.warning;
-      case TaskStatus.accepted:
-        color = AppColors.info;
-      case TaskStatus.confirmed:
-        color = AppColors.success;
-      case TaskStatus.inProgress:
-        color = AppColors.primary;
-      case TaskStatus.pendingComplete:
-        color = AppColors.info;
-      case TaskStatus.completed:
-        color = AppColors.success;
-      case TaskStatus.cancelled:
-        color = AppColors.gray500;
-      case TaskStatus.disputed:
-        color = AppColors.error;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.paddingSM,
-        vertical: AppSpacing.paddingXS,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: AppRadius.radiusSM,
-      ),
-      child: Text(
-        text,
-        style: AppTypography.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildApplicationsBadge(Task task) {
-    final isFull = task.applicationCount >= task.maxApplications;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.paddingSM,
-        vertical: AppSpacing.paddingXS,
-      ),
-      decoration: BoxDecoration(
-        color: isFull ? AppColors.gray200 : AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: AppRadius.radiusSM,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.people_outline,
-            size: 12,
-            color: isFull ? AppColors.gray500 : AppColors.primary,
-          ),
-          SizedBox(width: AppSpacing.gapXS),
-          Text(
-            '${task.applicationCount}/${task.maxApplications}',
-            style: AppTypography.caption.copyWith(
-              color: isFull ? AppColors.gray500 : AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return 'Dzisiaj, ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays == 1) {
-      return 'Wczoraj';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} dni temu';
-    } else {
-      return '${date.day}.${date.month}.${date.year}';
-    }
-  }
-
-  void _showCancelConfirmation(BuildContext context, Task task) {
-    showDialog(
+  void _showTaskDetails(ContractorTask task) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Anuluj zlecenie?'),
-        content: Text(
-          'Czy na pewno chcesz anulować to zlecenie? '
-          '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('Nie'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.pop();
-              _cancelTask(task);
-            },
-            child: Text(
-              'Tak, anuluj',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.error,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              child: NearbyTaskCard(
+                task: task,
+                showActions: false,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _cancelTask(Task task) async {
-    try {
-      final api = ref.read(apiClientProvider);
-      await api.put('/tasks/${task.id}/cancel');
-
-      // Refresh tasks list
-      await ref.read(clientTasksProvider.notifier).refresh();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zlecenie zostało anulowane'),
-            backgroundColor: AppColors.warning,
-          ),
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd anulowania: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildHowItWorksSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SFRainbowText('Jak to działa?', style: AppTypography.h5),
-        SizedBox(height: AppSpacing.gapMD),
-        _buildStepItem(
-          number: '1',
-          title: 'Opisz zadanie',
-          description:
-              'Wybierz kategorię, dodaj opis i ustal budżet — to zajmie chwilę',
-          icon: Icons.edit_note_outlined,
-          color: AppColors.primary,
-        ),
-        _buildStepItem(
-          number: '2',
-          title: 'Wybierz pracownika',
-          description:
-              'Pracownicy zgłaszają się z ofertami — wybierz najlepszą osobę',
-          icon: Icons.person_search_outlined,
-          color: AppColors.warning,
-        ),
-        _buildStepItem(
-          number: '3',
-          title: 'Śledź postęp',
-          description:
-              'Obserwuj realizację na żywo i bądź w kontakcie przez czat',
-          icon: Icons.location_on_outlined,
-          color: AppColors.success,
-        ),
-        _buildStepItem(
-          number: '4',
-          title: 'Oceń pracownika',
-          description:
-              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
-          icon: Icons.star_outline,
-          color: AppColors.info,
-        ),
-        _buildStepItem(
-          number: '5',
-          title: 'Gotowe!',
-          description:
-              'Zlecenie zakończone! Możesz zlecić kolejne zadanie w każdej chwili',
-          icon: Icons.check_circle_outline,
-          color: const Color(0xFF8B5CF6),
-          isLast: true,
-        ),
-      ],
+      },
     );
   }
 
-  Widget _buildStepItem({
-    required String number,
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    bool isLast = false,
-  }) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    number,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: AppColors.gray200,
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(width: AppSpacing.gapMD),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.paddingMD),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.gapXS),
-                        Text(
-                          description,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.gray600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    icon,
-                    color: color,
-                    size: 24,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  bool _isActiveOrNew(ContractorTask task) {
+    return task.status == ContractorTaskStatus.available ||
+        task.status == ContractorTaskStatus.accepted ||
+        task.status == ContractorTaskStatus.confirmed ||
+        task.status == ContractorTaskStatus.inProgress ||
+        task.status == ContractorTaskStatus.pendingComplete;
   }
 }
