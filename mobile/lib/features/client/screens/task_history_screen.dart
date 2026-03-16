@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
-import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../../core/router/routes.dart';
@@ -13,7 +12,7 @@ import '../../../core/widgets/sf_rainbow_text.dart';
 import '../../../core/widgets/sf_task_location_map.dart';
 import '../models/task.dart';
 
-/// Task history screen showing past tasks
+/// Task history screen showing past (completed/cancelled) tasks only
 /// Uses real API data via clientTasksProvider
 class TaskHistoryScreen extends ConsumerStatefulWidget {
   const TaskHistoryScreen({super.key});
@@ -22,24 +21,13 @@ class TaskHistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<TaskHistoryScreen> createState() => _TaskHistoryScreenState();
 }
 
-class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
+class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    // Load tasks on screen open
     Future.microtask(() {
       ref.read(clientTasksProvider.notifier).loadTasks();
     });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _refreshTasks() async {
@@ -55,8 +43,8 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         : tasksState.tasks
             .where((task) => task.clientId == currentUserId)
             .toList();
-    final activeTasks = clientTasks.where((task) => task.status.isActive).toList();
-    final completedTasks = clientTasks.where((task) => !task.status.isActive).toList();
+    final completedTasks =
+        clientTasks.where((task) => !task.status.isActive).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -78,55 +66,12 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
             tooltip: 'Odśwież',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.gray500,
-          indicatorColor: AppColors.primary,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Aktywne'),
-                  if (activeTasks.isNotEmpty) ...[
-                    SizedBox(width: AppSpacing.gapSM),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.paddingXS,
-                        vertical: AppSpacing.gapXS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: AppRadius.radiusFull,
-                      ),
-                      child: Text(
-                        '${activeTasks.length}',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Tab(text: 'Historia'),
-          ],
-        ),
       ),
       body: tasksState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : tasksState.error != null
               ? _buildErrorState(tasksState.error!)
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildTaskList(activeTasks, isActive: true),
-                    _buildTaskList(completedTasks, isActive: false),
-                  ],
-                ),
+              : _buildTaskList(completedTasks),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go(Routes.clientCreateTask),
         backgroundColor: AppColors.primary,
@@ -182,9 +127,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     );
   }
 
-  Widget _buildTaskList(List<Task> tasks, {required bool isActive}) {
+  Widget _buildTaskList(List<Task> tasks) {
     if (tasks.isEmpty) {
-      return _buildEmptyState(isActive);
+      return _buildEmptyState();
     }
 
     return RefreshIndicator(
@@ -195,13 +140,13 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         separatorBuilder: (context, index) =>
             SizedBox(height: AppSpacing.gapMD),
         itemBuilder: (context, index) {
-          return _buildTaskCard(tasks[index], isActive: isActive);
+          return _buildTaskCard(tasks[index]);
         },
       ),
     );
   }
 
-  Widget _buildEmptyState(bool isActive) {
+  Widget _buildEmptyState() {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.paddingXL),
@@ -209,15 +154,13 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isActive ? Icons.pending_actions : Icons.history,
+              Icons.history,
               size: 64,
               color: AppColors.gray300,
             ),
             SizedBox(height: AppSpacing.space4),
             Text(
-              isActive
-                  ? 'Brak aktywnych zleceń'
-                  : 'Brak historii zleceń',
+              'Brak historii zleceń',
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.gray600,
               ),
@@ -225,9 +168,7 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
             ),
             SizedBox(height: AppSpacing.gapSM),
             Text(
-              isActive
-                  ? 'Utwórz nowe zlecenie, aby znaleźć pomocnika'
-                  : 'Tutaj pojawią się Twoje zakończone zlecenia',
+              'Tutaj pojawią się Twoje zakończone zlecenia',
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.gray500,
               ),
@@ -239,245 +180,132 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
     );
   }
 
-  Widget _buildTaskCard(Task task, {required bool isActive}) {
+  Widget _buildTaskCard(Task task) {
     final category = task.categoryData;
-    final isLocked = task.status == TaskStatus.pendingComplete;
-    final hasAssignedContractor =
-        (task.contractorId?.isNotEmpty == true) || task.contractor != null;
 
     return Semantics(
-      label: isLocked
-          ? 'Zlecenie ${category.name}, ${task.status.displayName}, obecnie niedostępne'
-          : 'Otwórz szczegóły zlecenia ${category.name}',
+      label: 'Otwórz szczegóły zlecenia ${category.name}',
       button: true,
-      enabled: !isLocked,
       child: GestureDetector(
-        onTap: isLocked
-            ? null
-            : () {
-                if (isActive &&
-                    (task.status == TaskStatus.inProgress ||
-                        task.status == TaskStatus.accepted ||
-                        task.status == TaskStatus.confirmed)) {
-                  context.push(Routes.clientTaskTrack(task.id));
-                } else {
-                  // Show task details in a bottom sheet
-                  _showTaskDetails(task);
-                }
-              },
+        onTap: () => _showTaskDetails(task),
         child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: AppRadius.radiusLG,
-          border: Border.all(
-            color: task.status == TaskStatus.confirmed ||
-                    task.status == TaskStatus.inProgress ||
-                    task.status == TaskStatus.pendingComplete
-                ? AppColors.success
-                : AppColors.gray200,
-            width: task.status == TaskStatus.confirmed ||
-                    task.status == TaskStatus.inProgress ||
-                    task.status == TaskStatus.pendingComplete
-                ? 2.0
-                : 1.0,
+          padding: EdgeInsets.all(AppSpacing.paddingMD),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(color: AppColors.gray200),
+            boxShadow: AppShadows.sm,
           ),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(AppSpacing.paddingSM),
-                  decoration: BoxDecoration(
-                    color: category.color.withValues(alpha: 0.1),
-                    borderRadius: AppRadius.radiusMD,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.paddingSM),
+                    decoration: BoxDecoration(
+                      color: category.color.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.radiusMD,
+                    ),
+                    child: Icon(
+                      category.icon,
+                      color: category.color,
+                      size: 24,
+                    ),
                   ),
-                  child: Icon(
-                    category.icon,
-                    color: category.color,
-                    size: 24,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: category.color,
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: AppTypography.labelMedium.copyWith(
+                            color: category.color,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _formatDate(task.createdAt),
+                        Text(
+                          _formatDate(task.createdAt),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _buildStatusBadge(task.status),
+                      SizedBox(height: AppSpacing.gapXS),
+                      _buildApplicationsBadge(task),
+                    ],
+                  ),
+                ],
+              ),
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Title + description preview
+              Text(
+                task.title,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (task.description.trim().isNotEmpty) ...[
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.description,
+                  style: AppTypography.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+
+              SizedBox(height: AppSpacing.gapMD),
+
+              // Footer row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (task.address != null) ...[
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: AppColors.gray500,
+                    ),
+                    SizedBox(width: AppSpacing.gapXS),
+                    Expanded(
+                      child: Text(
+                        task.address!,
                         style: AppTypography.caption.copyWith(
                           color: AppColors.gray500,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _buildStatusBadge(task.status),
-                    SizedBox(height: AppSpacing.gapXS),
-                    _buildApplicationsBadge(task),
-                  ],
-                ),
-              ],
-            ),
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Title + description preview
-            Text(
-              task.title,
-              style: AppTypography.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (task.description.trim().isNotEmpty) ...[
-              SizedBox(height: AppSpacing.gapXS),
-              Text(
-                task.description,
-                style: AppTypography.bodySmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-
-            SizedBox(height: AppSpacing.gapMD),
-
-            // Footer row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (task.address != null) ...[
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.gray500,
-                  ),
-                  SizedBox(width: AppSpacing.gapXS),
-                  Expanded(
-                    child: Text(
-                      task.address!,
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.gray500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.gapSM),
-                ] else
-                  const Spacer(),
-                Text(
-                  '${task.budget} PLN',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-
-            // Action buttons for active tasks (skip waiting-for-contractor-confirmation)
-            if (isActive && task.status != TaskStatus.pendingComplete) ...[
-              SizedBox(height: AppSpacing.gapMD),
-              Row(
-                children: [
-                  // Track button (for in progress tasks)
-                  if (task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.pendingComplete)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => context.push(Routes.clientTaskTrack(task.id)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          foregroundColor: AppColors.white,
-                        ),
-                        child: Text('Więcej'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  if (task.status == TaskStatus.inProgress ||
-                      task.status == TaskStatus.accepted ||
-                      task.status == TaskStatus.confirmed ||
-                      task.status == TaskStatus.pendingComplete)
                     SizedBox(width: AppSpacing.gapSM),
-                  // Chat button for tasks with assigned contractor,
-                  // otherwise keep cancel for open tasks.
-                  Expanded(
-                    child: hasAssignedContractor
-                        ? ElevatedButton.icon(
-                            onPressed: () => _openTaskChat(task),
-                            icon: const Icon(Icons.chat_outlined, size: 18),
-                            label: const Text('Czat'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              foregroundColor: AppColors.white,
-                            ),
-                          )
-                        : ElevatedButton.icon(
-                            onPressed: () =>
-                                context.push(Routes.clientTaskTrack(task.id)),
-                            icon: const Icon(Icons.arrow_forward, size: 18),
-                            label: const Text('Więcej'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              foregroundColor: AppColors.white,
-                            ),
-                          ),
+                  ] else
+                    const Spacer(),
+                  Text(
+                    '${task.budget} PLN',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ],
-            ],
           ),
         ),
       ),
-    );
-  }
-
-  void _openTaskChat(Task task) {
-    final currentUser = ref.read(currentUserProvider);
-    final otherUserId = task.contractor?.id ?? task.contractorId ?? '';
-
-    if (otherUserId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Czat dostępny po przypisaniu wykonawcy'),
-          backgroundColor: AppColors.warning,
-        ),
-      );
-      return;
-    }
-
-    final title = task.title.trim();
-    final description = task.description.trim();
-    context.push(
-      Routes.clientTaskChatRoute(task.id),
-      extra: {
-        'otherUserId': otherUserId,
-        'taskTitle': title.isNotEmpty
-            ? title
-            : (description.isNotEmpty ? description : 'Czat'),
-        'otherUserName': task.contractor?.name ?? 'Wykonawca',
-        'otherUserAvatarUrl': task.contractor?.avatarUrl,
-        'currentUserId': currentUser?.id ?? '',
-        'currentUserName': currentUser?.name ?? 'Ty',
-      },
     );
   }
 
@@ -523,7 +351,9 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         vertical: AppSpacing.paddingXS,
       ),
       decoration: BoxDecoration(
-        color: isFull ? AppColors.gray200 : AppColors.primary.withValues(alpha: 0.1),
+        color: isFull
+            ? AppColors.gray200
+            : AppColors.primary.withValues(alpha: 0.1),
         borderRadius: AppRadius.radiusSM,
       ),
       child: Row(
@@ -595,197 +425,148 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
                     ),
                   ),
                 ),
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(AppSpacing.paddingMD),
-                        decoration: BoxDecoration(
-                          color: category.color.withValues(alpha: 0.1),
-                          borderRadius: AppRadius.radiusMD,
-                        ),
-                        child: Icon(
-                          category.icon,
-                          color: category.color,
-                          size: 32,
-                        ),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.paddingMD),
+                      decoration: BoxDecoration(
+                        color: category.color.withValues(alpha: 0.1),
+                        borderRadius: AppRadius.radiusMD,
                       ),
-                      SizedBox(width: AppSpacing.gapMD),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              category.name,
-                              style: AppTypography.h4,
-                            ),
-                            _buildStatusBadge(task.status),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${task.budget} PLN',
-                        style: AppTypography.h3.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Title
-                  Text(
-                    'Tytuł',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  Text(
-                    task.title,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Description
-                  Text(
-                    'Opis',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.gray500,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.gapXS),
-                  Text(
-                    task.description.trim().isEmpty
-                        ? 'Brak opisu'
-                        : task.description,
-                    style: AppTypography.bodyMedium,
-                  ),
-
-                  SizedBox(height: AppSpacing.space4),
-
-                  // Location
-                  if (task.address != null || _hasLocation(task)) ...[
-                    Text(
-                      'Lokalizacja',
-                      style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.gray500,
+                      child: Icon(
+                        category.icon,
+                        color: category.color,
+                        size: 32,
                       ),
                     ),
-                    if (task.address != null) ...[
-                      SizedBox(height: AppSpacing.gapXS),
-                      Row(
+                    SizedBox(width: AppSpacing.gapMD),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 18,
-                            color: AppColors.gray600,
+                          Text(
+                            category.name,
+                            style: AppTypography.h4,
                           ),
-                          SizedBox(width: AppSpacing.gapSM),
-                          Expanded(
-                            child: Text(
-                              task.address!,
-                              style: AppTypography.bodyMedium,
-                            ),
-                          ),
+                          _buildStatusBadge(task.status),
                         ],
                       ),
-                      SizedBox(height: AppSpacing.space4),
-                    ] else ...[
-                      SizedBox(height: AppSpacing.gapXS),
-                      Text(
-                        'Dokładna pozycja zadania',
-                        style: AppTypography.bodyMedium,
+                    ),
+                    Text(
+                      '${task.budget} PLN',
+                      style: AppTypography.h3.copyWith(
+                        color: AppColors.primary,
                       ),
-                      SizedBox(height: AppSpacing.space4),
-                    ],
-                    if (_hasLocation(task)) ...[
-                      SFTaskLocationMap(
-                        taskLocation: LatLng(task.latitude!, task.longitude!),
-                      ),
-                      SizedBox(height: AppSpacing.space4),
-                    ],
+                    ),
                   ],
+                ),
 
-                  // Dates
-                  _buildDetailRow('Utworzono', _formatDate(task.createdAt)),
-                  if (task.acceptedAt != null)
-                    _buildDetailRow('Przyjęto', _formatDate(task.acceptedAt!)),
-                  if (task.completedAt != null)
-                    _buildDetailRow('Zakończono', _formatDate(task.completedAt!)),
+                SizedBox(height: AppSpacing.space4),
 
-                  SizedBox(height: AppSpacing.space6),
-
-                  // Action buttons row
-                  Row(
-                    children: [
-                  // More button (active tasks) -> task details (skip pendingComplete)
-                      if (task.status.isActive && task.status != TaskStatus.pendingComplete) ...[
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              context.pop();
-                              context.push(Routes.clientTaskTrack(task.id));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              foregroundColor: AppColors.white,
-                            ),
-                            child: Text('Więcej'),
-                          ),
-                        ),
-                        SizedBox(width: AppSpacing.gapMD),
-                      ],
-                      // Close button (red)
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => context.pop(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.error,
-                            foregroundColor: AppColors.white,
-                          ),
-                          child: Text(AppStrings.close),
-                        ),
-                      ),
-                    ],
+                // Title
+                Text(
+                  'Tytuł',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.gray500,
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-    );
-  }
+                ),
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.title,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
 
-  void _showCancelConfirmation(Task task) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Anuluj zlecenie?'),
-        content: Text(
-          'Czy na pewno chcesz anulować to zlecenie? '
-          '${task.status == TaskStatus.posted ? '' : 'Może to wiązać się z opłatą.'}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text('Nie'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.pop();
-              _cancelTask(task);
-            },
-            child: Text(
-              'Tak, anuluj',
-              style: AppTypography.bodySmall.copyWith(color: AppColors.error),
+                SizedBox(height: AppSpacing.space4),
+
+                // Description
+                Text(
+                  'Opis',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  task.description.trim().isEmpty
+                      ? 'Brak opisu'
+                      : task.description,
+                  style: AppTypography.bodyMedium,
+                ),
+
+                SizedBox(height: AppSpacing.space4),
+
+                // Location
+                if (task.address != null || _hasLocation(task)) ...[
+                  Text(
+                    'Lokalizacja',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.gray500,
+                    ),
+                  ),
+                  if (task.address != null) ...[
+                    SizedBox(height: AppSpacing.gapXS),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 18,
+                          color: AppColors.gray600,
+                        ),
+                        SizedBox(width: AppSpacing.gapSM),
+                        Expanded(
+                          child: Text(
+                            task.address!,
+                            style: AppTypography.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: AppSpacing.space4),
+                  ] else ...[
+                    SizedBox(height: AppSpacing.gapXS),
+                    Text(
+                      'Dokładna pozycja zadania',
+                      style: AppTypography.bodyMedium,
+                    ),
+                    SizedBox(height: AppSpacing.space4),
+                  ],
+                  if (_hasLocation(task)) ...[
+                    SFTaskLocationMap(
+                      taskLocation: LatLng(task.latitude!, task.longitude!),
+                    ),
+                    SizedBox(height: AppSpacing.space4),
+                  ],
+                ],
+
+                // Dates
+                _buildDetailRow('Utworzono', _formatDate(task.createdAt)),
+                if (task.acceptedAt != null)
+                  _buildDetailRow('Przyjęto', _formatDate(task.acceptedAt!)),
+                if (task.completedAt != null)
+                  _buildDetailRow(
+                      'Zakończono', _formatDate(task.completedAt!)),
+
+                SizedBox(height: AppSpacing.space6),
+
+                // Close button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => context.pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: AppColors.white,
+                    ),
+                    child: Text(AppStrings.close),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -795,34 +576,6 @@ class _TaskHistoryScreenState extends ConsumerState<TaskHistoryScreen>
         task.longitude != null &&
         task.latitude != 0 &&
         task.longitude != 0;
-  }
-
-  Future<void> _cancelTask(Task task) async {
-    try {
-      final api = ref.read(apiClientProvider);
-      await api.put('/tasks/${task.id}/cancel');
-
-      // Refresh tasks list
-      await ref.read(clientTasksProvider.notifier).refresh();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Zlecenie zostało anulowane'),
-            backgroundColor: AppColors.warning,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Błąd anulowania: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
   }
 
   Widget _buildDetailRow(String label, String value) {
