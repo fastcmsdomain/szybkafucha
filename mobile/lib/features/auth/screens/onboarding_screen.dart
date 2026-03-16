@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:video_player/video_player.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/providers/auth_provider.dart';
@@ -96,20 +95,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   setState(() => _currentPage = index);
                 },
                 children: const [
-                  _OnboardingPageWithVideo(
+                  _OnboardingPage(
+                    imagePath: 'assets/images/SzybkaFuchaHero.jpeg',
                     title: AppStrings.onboardingTitle1,
                     subtitle: AppStrings.onboardingSubtitle1,
                     description: AppStrings.onboardingDescription1,
-                    videoPath: 'assets/videos/SzybkaFuchaHero.mp4',
                   ),
                   _OnboardingPage(
-                    imagePath: 'assets/images/szybkafucha_zleceniodawca.jpeg',
+                    imagePath: 'assets/images/SzybkaFuchaZleceniodawca.jpeg',
                     title: AppStrings.onboardingTitle2,
                     subtitle: AppStrings.onboardingSubtitle2,
                     description: AppStrings.onboardingDescription2,
                   ),
                   _OnboardingPage(
-                    imagePath: 'assets/images/szybkafucha_pomoc_domowa.jpeg',
+                    imagePath: 'assets/images/SzybkaFuchaPomocDomowa.jpeg',
                     title: AppStrings.onboardingTitle3,
                     subtitle: AppStrings.onboardingSubtitle3,
                     description: AppStrings.onboardingDescription3,
@@ -274,150 +273,6 @@ class _OnboardingPage extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             description,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OnboardingPageWithVideo extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final String description;
-  final String videoPath;
-
-  const _OnboardingPageWithVideo({
-    required this.title,
-    required this.subtitle,
-    required this.description,
-    required this.videoPath,
-  });
-
-  @override
-  State<_OnboardingPageWithVideo> createState() => _OnboardingPageWithVideoState();
-}
-
-class _OnboardingPageWithVideoState extends State<_OnboardingPageWithVideo> {
-  late VideoPlayerController _controller;
-  bool _isInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeVideo();
-  }
-
-  Future<void> _initializeVideo() async {
-    _controller = VideoPlayerController.asset(widget.videoPath);
-    try {
-      await _controller.initialize();
-      await _controller.setVolume(0.0); // Mute the video
-      await _controller.setLooping(true);
-      await _controller.play();
-      if (mounted) {
-        setState(() => _isInitialized = true);
-      }
-    } catch (e) {
-      print('❌ Error initializing video: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Logo
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/images/szybkafucha_logo_1024.png',
-                  height: 48,
-                  width: 48,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Szybka',
-                      style: AppTypography.h3,
-                    ),
-                    TextSpan(
-                      text: 'Fucha',
-                      style: AppTypography.h3.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Text(
-            widget.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            widget.subtitle,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          // Video player
-          if (_isInitialized)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
-              ),
-            )
-          else
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          const SizedBox(height: 32),
-          Text(
-            widget.description,
             style: TextStyle(
               fontSize: 16,
               color: AppColors.textSecondary,
