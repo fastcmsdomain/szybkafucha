@@ -368,7 +368,10 @@ export class NotificationsService {
     const preferenceKey = getPreferenceKeyForNotificationType(type);
     const preferences = applyRoleRestrictions(
       normalizeNotificationPreferences(
-        user.notificationPreferences as Record<string, boolean> | null | undefined,
+        user.notificationPreferences as
+          | Record<string, boolean>
+          | null
+          | undefined,
       ),
       user.types,
     );

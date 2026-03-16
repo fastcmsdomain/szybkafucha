@@ -6,6 +6,7 @@ import {
   Controller,
   Get,
   Put,
+  Post,
   Body,
   Param,
   Query,
@@ -15,6 +16,7 @@ import {
   DefaultValuePipe,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
+import { CategoryPricingService } from '../tasks/category-pricing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { UserStatus, UserType, User } from '../users/entities/user.entity';
@@ -27,11 +29,18 @@ import {
   ContractorStats,
 } from './dto/admin.dto';
 import type { DisputeResolution } from './dto/admin.dto';
+import {
+  UpdateCategoryPricingDto,
+  AdminCategoryPricingResponseDto,
+} from '../tasks/dto/category-pricing.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly categoryPricingService: CategoryPricingService,
+  ) {}
 
   /**
    * GET /admin/dashboard
@@ -148,5 +157,48 @@ export class AdminController {
     @Body('notes') notes: string,
   ): Promise<Task> {
     return this.adminService.resolveDispute(id, resolution, notes);
+  }
+
+  // ============================================
+  // Category Pricing Endpoints
+  // ============================================
+
+  /**
+   * GET /admin/category-pricing
+   * Returns all category pricing (including inactive)
+   */
+  @Get('category-pricing')
+  async getCategoryPricing(): Promise<AdminCategoryPricingResponseDto[]> {
+    return this.categoryPricingService.getAllForAdmin();
+  }
+
+  /**
+   * PUT /admin/category-pricing/:category
+   * Update pricing for a specific category
+   */
+  @Put('category-pricing/:category')
+  async updateCategoryPricing(
+    @Param('category') category: string,
+    @Body() dto: UpdateCategoryPricingDto,
+  ): Promise<AdminCategoryPricingResponseDto> {
+    return this.categoryPricingService.update(category, dto);
+  }
+
+  /**
+   * POST /admin/category-pricing/seed
+   * Seed database with default pricing (creates missing categories)
+   */
+  @Post('category-pricing/seed')
+  async seedCategoryPricing(): Promise<{ created: number; skipped: number }> {
+    return this.categoryPricingService.seedDefaults();
+  }
+
+  /**
+   * POST /admin/category-pricing/reset
+   * Reset all pricing to default values
+   */
+  @Post('category-pricing/reset')
+  async resetCategoryPricing(): Promise<{ updated: number; created: number }> {
+    return this.categoryPricingService.resetToDefaults();
   }
 }

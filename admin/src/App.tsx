@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Tasks from './pages/Tasks';
 import Disputes from './pages/Disputes';
+import CategoryPricing from './pages/CategoryPricing';
 import Login from './pages/Login';
 
 import { authConfig } from './config/auth.config';
@@ -51,6 +52,7 @@ const App: React.FC = () => {
           <Route path="users" element={<Users />} />
           <Route path="tasks" element={<Tasks />} />
           <Route path="disputes" element={<Disputes />} />
+          <Route path="category-pricing" element={<CategoryPricing />} />
         </Route>
 
         {/* Catch all */}

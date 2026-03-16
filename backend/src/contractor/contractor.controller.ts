@@ -35,11 +35,7 @@ export class ContractorController {
     @Request() req: AuthenticatedRequest,
     @Query('taskId') taskId?: string,
   ) {
-    return this.contractorService.getPublicProfile(
-      userId,
-      req.user.id,
-      taskId,
-    );
+    return this.contractorService.getPublicProfile(userId, req.user.id, taskId);
   }
 
   /**

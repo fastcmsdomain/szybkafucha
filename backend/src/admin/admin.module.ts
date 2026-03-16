@@ -11,13 +11,22 @@ import { ContractorProfile } from '../contractor/entities/contractor-profile.ent
 import { Task } from '../tasks/entities/task.entity';
 import { Rating } from '../tasks/entities/rating.entity';
 import { Payment } from '../payments/entities/payment.entity';
+import { CategoryPricing } from '../tasks/entities/category-pricing.entity';
+import { CategoryPricingService } from '../tasks/category-pricing.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, ContractorProfile, Task, Rating, Payment]),
+    TypeOrmModule.forFeature([
+      User,
+      ContractorProfile,
+      Task,
+      Rating,
+      Payment,
+      CategoryPricing,
+    ]),
   ],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [AdminService, CategoryPricingService],
   exports: [AdminService],
 })
 export class AdminModule {}

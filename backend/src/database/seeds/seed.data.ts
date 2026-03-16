@@ -2,7 +2,7 @@
  * Seed Data for Development
  * Test users, contractors, and sample tasks
  */
-import { UserType, UserStatus } from '../../users/entities/user.entity';
+import { UserStatus } from '../../users/entities/user.entity';
 import {
   KycStatus,
   TaskCategory,
@@ -558,12 +558,16 @@ export const seedRatings = [
 ];
 
 // Admin user for dashboard
+// Password: AdminPass123!
+// Note: Admin access is granted via @szybkafucha.pl email domain (see AdminGuard)
 export const seedAdmin = {
   id: '00000000-0000-0000-0000-000000000001',
-  type: UserType.CLIENT, // Admin is a special client
+  types: ['client'], // Admin is a special client - admin access via email domain
   phone: '+48000000001',
   email: 'admin@szybkafucha.pl',
   name: 'Administrator',
   status: UserStatus.ACTIVE,
   avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+  passwordHash: '$2b$12$EvsH9J6wfUaDEmCvYIoiLOpeRbXYk/69RSvopHnpHbFROvksQPAJW',
+  emailVerified: true,
 };

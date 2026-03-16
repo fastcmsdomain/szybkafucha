@@ -387,7 +387,10 @@ export class RealtimeGateway
     }
 
     // Block phone numbers in chat (direct pattern + hidden digits)
-    if (PHONE_NUMBER_REGEX.test(data.content) || containsHiddenPhoneNumber(data.content)) {
+    if (
+      PHONE_NUMBER_REGEX.test(data.content) ||
+      containsHiddenPhoneNumber(data.content)
+    ) {
       return {
         success: false,
         error: 'Udostępnianie numerów telefonu w czacie jest niedozwolone.',
@@ -414,7 +417,8 @@ export class RealtimeGateway
     if (AT_HANDLE_REGEX.test(data.content)) {
       return {
         success: false,
-        error: 'Udostępnianie nazw użytkowników (@handle) w czacie jest niedozwolone.',
+        error:
+          'Udostępnianie nazw użytkowników (@handle) w czacie jest niedozwolone.',
       };
     }
 
@@ -422,7 +426,8 @@ export class RealtimeGateway
     if (SOCIAL_MEDIA_REGEX.test(data.content)) {
       return {
         success: false,
-        error: 'Wspominanie platform społecznościowych w czacie jest niedozwolone.',
+        error:
+          'Wspominanie platform społecznościowych w czacie jest niedozwolone.',
       };
     }
 

@@ -172,7 +172,9 @@ export class CreditsService {
         }
 
         if (paymentIntent.metadata.userId !== userId) {
-          throw new BadRequestException('Payment intent does not belong to you');
+          throw new BadRequestException(
+            'Payment intent does not belong to you',
+          );
         }
 
         const amount = Number(paymentIntent.metadata.creditsAmount);

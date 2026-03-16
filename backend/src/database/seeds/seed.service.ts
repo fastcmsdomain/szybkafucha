@@ -9,6 +9,7 @@ import { User } from '../../users/entities/user.entity';
 import { ContractorProfile } from '../../contractor/entities/contractor-profile.entity';
 import { Task } from '../../tasks/entities/task.entity';
 import { Rating } from '../../tasks/entities/rating.entity';
+import { CategoryPricingService } from '../../tasks/category-pricing.service';
 import {
   seedClients,
   seedContractors,
@@ -30,6 +31,7 @@ export class SeedService {
     private readonly taskRepository: Repository<Task>,
     @InjectRepository(Rating)
     private readonly ratingRepository: Repository<Rating>,
+    private readonly categoryPricingService: CategoryPricingService,
   ) {}
 
   async seed(): Promise<void> {
@@ -49,6 +51,7 @@ export class SeedService {
       await this.seedContractorProfiles();
       await this.seedTasks();
       await this.seedRatings();
+      await this.seedCategoryPricing();
 
       this.logger.log('✅ Database seeding completed successfully!');
       this.logSummary();
@@ -133,6 +136,16 @@ export class SeedService {
     this.logger.log(`   Created ${seedRatings.length} ratings`);
   }
 
+  private async seedCategoryPricing(): Promise<void> {
+    this.logger.log('💰 Seeding category pricing...');
+
+    const result = await this.categoryPricingService.seedDefaults();
+
+    this.logger.log(
+      `   Created ${result.created} category pricing entries (${result.skipped} skipped)`,
+    );
+  }
+
   private logSummary(): void {
     this.logger.log('');
     this.logger.log('📊 Seed Summary:');
@@ -145,15 +158,18 @@ export class SeedService {
     this.logger.log(`   - Contractors: ${seedContractors.length}`);
     this.logger.log(`📋 Tasks: ${seedTasks.length}`);
     this.logger.log(`⭐ Ratings: ${seedRatings.length}`);
+    this.logger.log(`💰 Category Pricing: 17 categories`);
     this.logger.log('');
     this.logger.log('🔑 Test Credentials:');
     this.logger.log('================');
-    this.logger.log('Admin:      admin@szybkafucha.pl / +48000000001');
+    this.logger.log('Admin:      admin@szybkafucha.pl / AdminPass123!');
     this.logger.log('Client 1:   jan.kowalski@test.pl / +48111111111');
     this.logger.log('Client 2:   anna.nowak@test.pl / +48111111112');
     this.logger.log('Contractor: marek.kurier@test.pl / +48222222221');
     this.logger.log('');
-    this.logger.log('💡 Use OTP code "123456" for all test accounts');
+    this.logger.log(
+      '💡 Use OTP code "123456" for all test accounts (phone auth)',
+    );
     this.logger.log('');
   }
 }
