@@ -50,16 +50,37 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Szybka Fucha potrzebuje dostępu do sieci lokalnej, aby połączyć się z serwerem deweloperskim.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Szybka Fucha potrzebuje dostępu do aparatu, aby zrobić zdjęcie dokumentu tożsamości.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Szybka Fucha potrzebuje dostępu do galerii, aby wybrać zdjęcie dokumentu tożsamości.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do sieci lokalnej, aby połączyć się z serwerem deweloperskim.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby śledzić realizację zlecenia.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Szybka Fucha potrzebuje dostępu do Twojej lokalizacji, aby znaleźć pomocników w pobliżu.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Szybka Fucha potrzebuje dostępu do galerii, aby wybrać zdjęcie dokumentu tożsamości.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
