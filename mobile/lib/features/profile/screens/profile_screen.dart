@@ -236,7 +236,7 @@ class ProfileScreen extends ConsumerWidget {
             borderRadius: AppRadius.radiusSM,
           ),
           child: Text(
-            user?.isContractor == true ? 'Wykonawca' : 'Klient',
+            user?.isContractor == true ? 'Wykonawca' : 'Pracodawca',
             style: AppTypography.caption.copyWith(
               color: user?.isContractor == true
                   ? AppColors.primary
