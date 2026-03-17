@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/api_provider.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
 import '../../client/models/task_application.dart';
 import '../../../core/router/routes.dart';
@@ -795,6 +796,38 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   }
 
   Future<void> _submitApplication(double proposedPrice, String? message) async {
+    final user = ref.read(authProvider).user;
+    if (user?.phone?.trim().isEmpty ?? true) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Dodaj numer telefonu'),
+          content: const Text(
+            'Aby zgłosić się do zlecenia, dodaj i potwierdź numer telefonu kodem SMS.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Później'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push(Routes.phoneLink);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+              child: const Text('Dodaj numer'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     if (_isAccepting) return;
     setState(() => _isAccepting = true);
 

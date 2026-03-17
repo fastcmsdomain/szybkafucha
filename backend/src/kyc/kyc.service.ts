@@ -553,8 +553,7 @@ export class KycService {
 
     if (
       profile.kycIdVerified &&
-      profile.kycSelfieVerified &&
-      profile.kycBankVerified
+      profile.kycSelfieVerified
     ) {
       profile.kycStatus = KycStatus.VERIFIED;
       await this.profileRepository.save(profile);

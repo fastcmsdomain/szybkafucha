@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/category_pricing_provider.dart';
 import '../../../core/providers/task_provider.dart';
@@ -1503,6 +1504,41 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     );
   }
 
+  Future<bool> _ensureVerifiedPhoneForTaskPosting() async {
+    final user = ref.read(authProvider).user;
+    if (user?.phone?.trim().isNotEmpty == true) return true;
+    if (!mounted) return false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dodaj numer telefonu'),
+        content: const Text(
+          'Aby opublikować pierwsze zlecenie, dodaj i potwierdź numer telefonu kodem SMS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Później'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push(Routes.phoneLink);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Dodaj numer'),
+          ),
+        ],
+      ),
+    );
+
+    return false;
+  }
+
   String? _validateTitle(String? value) {
     final title = value?.trim() ?? '';
     if (title.isEmpty) {
@@ -1596,6 +1632,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Future<void> _createTask() async {
+    if (!await _ensureVerifiedPhoneForTaskPosting()) return;
+
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

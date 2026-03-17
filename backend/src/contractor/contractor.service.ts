@@ -382,8 +382,7 @@ export class ContractorService {
   private updateKycStatus(profile: ContractorProfile): void {
     if (
       profile.kycIdVerified &&
-      profile.kycSelfieVerified &&
-      profile.kycBankVerified
+      profile.kycSelfieVerified
     ) {
       profile.kycStatus = KycStatus.VERIFIED;
     }

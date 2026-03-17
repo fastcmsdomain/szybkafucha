@@ -456,7 +456,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     } catch (e) {
       state = state.copyWith(
-        status: AuthStatus.error,
         error: e.toString(),
       );
       rethrow;
@@ -469,6 +468,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final api = _ref.read(apiClientProvider);
       await api.post<Map<String, dynamic>>(
         '/auth/phone/request-otp',
+        data: {'phone': phone},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> requestPhoneLinkOtp(String phone) async {
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/phone/link/request-otp',
         data: {'phone': phone},
       );
     } catch (e) {
@@ -510,7 +521,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     } catch (e) {
       state = state.copyWith(
-        status: AuthStatus.error,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> verifyPhoneLinkOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    state = state.copyWith(clearError: true);
+
+    try {
+      final api = _ref.read(apiClientProvider);
+      await api.post<Map<String, dynamic>>(
+        '/auth/phone/link/verify',
+        data: {'phone': phone, 'code': otp},
+      );
+
+      await refreshUser();
+      state = state.copyWith(status: AuthStatus.authenticated, clearError: true);
+    } catch (e) {
+      state = state.copyWith(
         error: e.toString(),
       );
       rethrow;

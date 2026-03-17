@@ -505,19 +505,6 @@ class AvailableTasksNotifier extends StateNotifier<AvailableTasksState> {
     String? message,
   }) async {
     try {
-      // Check if contractor profile is complete
-      final profileCheckResponse = await _api.get<Map<String, dynamic>>(
-        '/contractor/profile/complete',
-      );
-
-      final isComplete = profileCheckResponse['complete'] as bool? ?? false;
-
-      if (!isComplete) {
-        throw Exception(
-          'Dokończ swój profil wykonawcy, aby zgłosić się do zlecenia',
-        );
-      }
-
       // Submit application
       await _api.post<Map<String, dynamic>>(
         '/tasks/$taskId/apply',

@@ -119,6 +119,43 @@ export class AuthService {
     };
   }
 
+  async requestPhoneLinkOtp(
+    userId: string,
+    phone: string,
+  ): Promise<{ message: string; expiresIn: number }> {
+    const normalizedPhone = this.normalizePhone(phone);
+    const existingUser = await this.usersService.findByPhone(normalizedPhone);
+
+    if (existingUser && existingUser.id !== userId) {
+      throw new ConflictException('Ten numer telefonu jest już używany.');
+    }
+
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
+    const code = isDev ? OTP_CONFIG.DEV_CODE : this.generateOtp();
+    const expiresAt = new Date(
+      Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+
+    await this.cacheManager.set(
+      `phone_link:${userId}:${normalizedPhone}`,
+      { code, expiresAt },
+      OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+
+    if (!isDev) {
+      await this.sendOtpSms(normalizedPhone, code);
+    } else {
+      this.logger.debug(
+        `[DEV] Phone link OTP for ${userId}/${normalizedPhone}: ${code}`,
+      );
+    }
+
+    return {
+      message: 'Phone verification code sent successfully',
+      expiresIn: OTP_CONFIG.EXPIRES_IN_MINUTES * 60,
+    };
+  }
+
   /**
    * Verify phone OTP and authenticate user
    * Retrieves OTP from Redis and validates it
@@ -170,6 +207,52 @@ export class AuthService {
 
     const token = this.generateToken(user);
     return { ...token, isNewUser };
+  }
+
+  async verifyPhoneLinkOtp(
+    userId: string,
+    phone: string,
+    code: string,
+  ): Promise<Partial<User>> {
+    const normalizedPhone = this.normalizePhone(phone);
+    const cacheKey = `phone_link:${userId}:${normalizedPhone}`;
+    const storedOtp = await this.cacheManager.get<{
+      code: string;
+      expiresAt: Date;
+    }>(cacheKey);
+
+    if (!storedOtp) {
+      throw new BadRequestException('OTP not found or expired');
+    }
+
+    if (new Date() > new Date(storedOtp.expiresAt)) {
+      await this.cacheManager.del(cacheKey);
+      throw new BadRequestException('OTP expired. Please request a new one.');
+    }
+
+    if (storedOtp.code !== code) {
+      throw new BadRequestException('Invalid OTP code');
+    }
+
+    const existingUser = await this.usersService.findByPhone(normalizedPhone);
+    if (existingUser && existingUser.id !== userId) {
+      throw new ConflictException('Ten numer telefonu jest już używany.');
+    }
+
+    await this.cacheManager.del(cacheKey);
+    const updatedUser = await this.usersService.update(userId, {
+      phone: normalizedPhone,
+    });
+
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      avatarUrl: updatedUser.avatarUrl,
+      status: updatedUser.status,
+      types: updatedUser.types,
+    };
   }
 
   /**

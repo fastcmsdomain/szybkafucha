@@ -14,11 +14,13 @@ import '../../../core/theme/theme.dart';
 class OtpScreen extends ConsumerStatefulWidget {
   final String phoneNumber;
   final String userType;
+  final bool linkMode;
 
   const OtpScreen({
     super.key,
     required this.phoneNumber,
     this.userType = 'client',
+    this.linkMode = false,
   });
 
   @override
@@ -80,7 +82,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          AppStrings.verificationCode,
+          widget.linkMode ? 'Potwierdź numer telefonu' : AppStrings.verificationCode,
           style: AppTypography.h4,
         ),
         centerTitle: true,
@@ -95,7 +97,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
               // Instructions
               Text(
-                'Wpisz 6-cyfrowy kod wysłany na numer',
+                widget.linkMode
+                    ? 'Wpisz 6-cyfrowy kod SMS, aby potwierdzić numer telefonu'
+                    : 'Wpisz 6-cyfrowy kod wysłany na numer',
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.gray600,
                 ),
@@ -253,12 +257,18 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Verify OTP via auth provider
-      await ref.read(authProvider.notifier).verifyPhoneOtp(
-            phone: widget.phoneNumber,
-            otp: otp,
-            userType: _selectedUserType,
-          );
+      if (widget.linkMode) {
+        await ref.read(authProvider.notifier).verifyPhoneLinkOtp(
+              phone: widget.phoneNumber,
+              otp: otp,
+            );
+      } else {
+        await ref.read(authProvider.notifier).verifyPhoneOtp(
+              phone: widget.phoneNumber,
+              otp: otp,
+              userType: _selectedUserType,
+            );
+      }
 
       // Navigation is handled by auth state change in router
     } catch (e) {
@@ -284,7 +294,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   Future<void> _resendCode() async {
     try {
-      await ref.read(authProvider.notifier).requestPhoneOtp(widget.phoneNumber);
+      if (widget.linkMode) {
+        await ref.read(authProvider.notifier).requestPhoneLinkOtp(widget.phoneNumber);
+      } else {
+        await ref.read(authProvider.notifier).requestPhoneOtp(widget.phoneNumber);
+      }
       _startResendTimer();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

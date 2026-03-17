@@ -13,10 +13,12 @@ import '../../../core/theme/theme.dart';
 class PhoneLoginScreen extends ConsumerStatefulWidget {
   /// User type passed from WelcomeScreen ('client' or 'contractor')
   final String userType;
+  final bool linkMode;
 
   const PhoneLoginScreen({
     super.key,
     this.userType = 'client',
+    this.linkMode = false,
   });
 
   @override
@@ -52,7 +54,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          AppStrings.phoneNumber,
+          widget.linkMode ? 'Dodaj numer telefonu' : AppStrings.phoneNumber,
           style: AppTypography.h4,
         ),
         centerTitle: true,
@@ -67,38 +69,42 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
               children: [
                 SizedBox(height: AppSpacing.space4),
 
-                // Role selector
-                Row(
-                  children: [
-                    Expanded(
-                      child: _PhoneRoleBox(
-                        selected: _selectedUserType == 'client',
-                        icon: Icons.manage_search_outlined,
-                        title: 'Pracodawca',
-                        subtitle: 'Szukam pomocy',
-                        onTap: () =>
-                            setState(() => _selectedUserType = 'client'),
+                if (!widget.linkMode) ...[
+                  // Role selector
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PhoneRoleBox(
+                          selected: _selectedUserType == 'client',
+                          icon: Icons.manage_search_outlined,
+                          title: 'Pracodawca',
+                          subtitle: 'Szukam pomocy',
+                          onTap: () =>
+                              setState(() => _selectedUserType = 'client'),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: AppSpacing.gapMD),
-                    Expanded(
-                      child: _PhoneRoleBox(
-                        selected: _selectedUserType == 'contractor',
-                        icon: Icons.handyman_outlined,
-                        title: 'Wykonawca',
-                        subtitle: 'Chcę pomagać',
-                        onTap: () =>
-                            setState(() => _selectedUserType = 'contractor'),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: _PhoneRoleBox(
+                          selected: _selectedUserType == 'contractor',
+                          icon: Icons.handyman_outlined,
+                          title: 'Wykonawca',
+                          subtitle: 'Chcę pomagać',
+                          onTap: () =>
+                              setState(() => _selectedUserType = 'contractor'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                SizedBox(height: AppSpacing.space8),
+                  SizedBox(height: AppSpacing.space8),
+                ],
 
                 // Instructions
                 Text(
-                  'Podaj swój numer telefonu, a wyślemy Ci kod weryfikacyjny',
+                  widget.linkMode
+                      ? 'Dodaj numer telefonu i potwierdź go kodem SMS, aby dokończyć konfigurację konta'
+                      : 'Podaj swój numer telefonu, a wyślemy Ci kod weryfikacyjny',
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.gray600,
                   ),
@@ -180,11 +186,6 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
             ),
             child: Row(
               children: [
-                const Text(
-                  '🇵🇱',
-                  style: TextStyle(fontSize: 20),
-                ),
-                SizedBox(width: AppSpacing.gapSM),
                 Text(
                   '+48',
                   style: AppTypography.bodyMedium.copyWith(
@@ -242,19 +243,20 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen> {
     try {
       final phone = '+48${_phoneController.text.replaceAll(' ', '')}';
 
-      // TODO: Call API to send OTP
-      // await ref.read(authProvider.notifier).requestPhoneOtp(phone);
-
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
+      if (widget.linkMode) {
+        await ref.read(authProvider.notifier).requestPhoneLinkOtp(phone);
+      } else {
+        await ref.read(authProvider.notifier).requestPhoneOtp(phone);
+      }
 
       if (mounted) {
         // Navigate to OTP screen with phone number and user type
         context.push(
-          Routes.phoneOtp,
+          widget.linkMode ? Routes.phoneLinkOtp : Routes.phoneOtp,
           extra: {
             'phone': phone,
             'userType': _selectedUserType,
+            'linkMode': widget.linkMode,
           },
         );
       }
