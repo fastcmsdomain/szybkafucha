@@ -214,6 +214,17 @@ class _ClientProfileScreenState
   }
 
   Future<void> _saveProfile() async {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Imię i nazwisko jest wymagane'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final api = ref.read(apiClientProvider);
@@ -223,6 +234,8 @@ class _ClientProfileScreenState
       final name = _nameController.text.trim();
       if (name.isNotEmpty) userPayload['name'] = name;
       userPayload['phone'] = _phoneController.text.trim();
+      final email = _emailController.text.trim();
+      if (email.isNotEmpty) userPayload['email'] = email;
       userPayload['address'] = _addressController.text.trim();
 
       debugPrint('=== SAVING CLIENT PROFILE ===');
@@ -275,6 +288,9 @@ class _ClientProfileScreenState
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final trimmedName = user?.name?.trim() ?? '';
+    final userInitial =
+        (trimmedName.isNotEmpty ? trimmedName[0] : 'K').toUpperCase();
 
     return Scaffold(
       appBar: AppBar(
@@ -302,9 +318,7 @@ class _ClientProfileScreenState
                           )
                         : user?.avatarUrl == null
                             ? Text(
-                                (user?.name ?? 'K').isNotEmpty
-                                    ? user!.name![0].toUpperCase()
-                                    : 'K',
+                                userInitial,
                                 style: AppTypography.h3.copyWith(
                                   color: AppColors.gray600,
                                   fontWeight: FontWeight.w700,
@@ -353,7 +367,7 @@ class _ClientProfileScreenState
 
             _buildTextField(
               controller: _nameController,
-              label: 'Imię i nazwisko',
+              label: 'Imię i nazwisko *',
               icon: Icons.person_outline,
             ),
             _buildTextField(
@@ -367,7 +381,6 @@ class _ClientProfileScreenState
               label: 'Adres email',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
-              readOnly: true,
             ),
             _buildTextField(
               controller: _addressController,
@@ -407,8 +420,137 @@ class _ClientProfileScreenState
                 ),
               ),
             ),
+
+            SizedBox(height: AppSpacing.space8),
+
+            _buildHowItWorksSection(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHowItWorksSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SFRainbowText('Jak to działa?', style: AppTypography.h5),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildStepItem(
+          number: '1',
+          title: 'Utwórz zlecenie',
+          description:
+              'Opisz zadanie, podaj lokalizację i ustal budżet — zajmie to dosłownie chwilę',
+          icon: Icons.add_task,
+          color: AppColors.primary,
+        ),
+        _buildStepItem(
+          number: '2',
+          title: 'Przeglądaj oferty',
+          description:
+              'Wykonawcy sami się zgłoszą — porównaj ich profile i oceny',
+          icon: Icons.people_outline,
+          color: AppColors.warning,
+        ),
+        _buildStepItem(
+          number: '3',
+          title: 'Wybierz najlepszego',
+          description:
+              'Dzięki zintegrowanemu czatowi możesz dopytać o szczegóły i wybrać najlepszą ofertę',
+          icon: Icons.chat_outlined,
+          color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '4',
+          title: 'Zlecenie w toku',
+          description:
+              'Wykonawca przystępuje do pracy — śledź postęp na bieżąco',
+          icon: Icons.handyman,
+          color: AppColors.success,
+        ),
+        _buildStepItem(
+          number: '5',
+          title: 'Oceń i gotowe!',
+          description:
+              'Potwierdź wykonanie i zostaw opinię — pomagasz innym szefom',
+          icon: Icons.star_outline,
+          color: const Color(0xFF8B5CF6),
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepItem({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    bool isLast = false,
+  }) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    number,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(width: 2, color: AppColors.gray200),
+                ),
+            ],
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Padding(
+              padding:
+                  EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          description,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(icon, color: color, size: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

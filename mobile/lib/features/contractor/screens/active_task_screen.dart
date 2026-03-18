@@ -509,7 +509,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.gapMD),
+          SizedBox(height: AppSpacing.gapSM),
           Text(
             task.title,
             style: AppTypography.bodyMedium.copyWith(
@@ -520,6 +520,20 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           if (task.description.trim().isNotEmpty) ...[
             SizedBox(height: AppSpacing.gapXS),
             Text(
+              'Opis zlecenia',
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.gray700,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Opisz krotko zakres pracy, oczekiwany efekt i wazne szczegoly do wykonania.',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.gray500,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
               task.description,
               style: AppTypography.bodySmall.copyWith(
                 color: AppColors.gray600,
@@ -528,7 +542,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ],
 
           // Scheduled time
-          SizedBox(height: AppSpacing.gapMD),
+          SizedBox(height: AppSpacing.gapSM),
           Row(
             children: [
               Icon(
@@ -551,14 +565,14 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
 
           // Images
           if (task.imageUrls != null && task.imageUrls!.isNotEmpty) ...[
-            SizedBox(height: AppSpacing.gapMD),
+            SizedBox(height: AppSpacing.gapSM),
             Text(
               'Zdjęcia',
               style: AppTypography.caption.copyWith(
                 color: AppColors.gray500,
               ),
             ),
-            SizedBox(height: AppSpacing.gapSM),
+            SizedBox(height: AppSpacing.gapXS),
             SizedBox(
               height: 80,
               child: ListView.builder(

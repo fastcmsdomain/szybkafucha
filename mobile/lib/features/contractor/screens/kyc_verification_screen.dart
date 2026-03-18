@@ -9,7 +9,7 @@ import '../../../core/providers/kyc_provider.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
 
-/// KYC Verification screen for contractors — ID document, selfie, and bank account
+/// KYC Verification screen for contractors — ID document and selfie
 class KycVerificationScreen extends ConsumerStatefulWidget {
   const KycVerificationScreen({super.key});
 
@@ -23,8 +23,6 @@ class _KycVerificationScreenState
   File? _idFront;
   File? _idBack;
   File? _selfie;
-  final _ibanController = TextEditingController();
-  final _accountHolderController = TextEditingController();
 
   int _currentStep = 0;
 
@@ -35,22 +33,12 @@ class _KycVerificationScreenState
       await ref.read(kycProvider.notifier).fetchStatus();
       if (!mounted) return;
       final kycState = ref.read(kycProvider);
-      if (kycState.bankVerified) {
-        // Already fully verified — shouldn't normally happen
+      if (kycState.selfieVerified) {
         _showSuccessDialog();
-      } else if (kycState.selfieVerified) {
-        setState(() => _currentStep = 2);
       } else if (kycState.idVerified) {
         setState(() => _currentStep = 1);
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _ibanController.dispose();
-    _accountHolderController.dispose();
-    super.dispose();
   }
 
   @override
@@ -66,8 +54,6 @@ class _KycVerificationScreenState
       } else if (!previous.selfieVerified &&
           next.selfieVerified &&
           _currentStep == 1) {
-        setState(() => _currentStep = 2);
-      } else if (!previous.bankVerified && next.bankVerified) {
         _showSuccessDialog();
       }
 
@@ -150,7 +136,6 @@ class _KycVerificationScreenState
     final steps = [
       _KycStep('Dokument', Icons.badge_outlined),
       _KycStep('Selfie', Icons.face),
-      _KycStep('Konto', Icons.account_balance),
     ];
 
     return Container(
@@ -228,8 +213,6 @@ class _KycVerificationScreenState
         return kycState.idVerified;
       case 1:
         return kycState.selfieVerified;
-      case 2:
-        return kycState.bankVerified;
       default:
         return false;
     }
@@ -241,8 +224,6 @@ class _KycVerificationScreenState
         return _buildDocumentStep();
       case 1:
         return _buildSelfieStep();
-      case 2:
-        return _buildBankAccountStep();
       default:
         return const SizedBox();
     }
@@ -553,134 +534,6 @@ class _KycVerificationScreenState
     );
   }
 
-  Widget _buildBankAccountStep() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(AppSpacing.paddingLG),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Dane do wypłat',
-            style: AppTypography.h3,
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Podaj numer konta, na które będziemy przelewać Twoje zarobki',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray500,
-            ),
-          ),
-          SizedBox(height: AppSpacing.gapXL),
-
-          // IBAN field
-          Text(
-            'Numer konta (IBAN)',
-            style: AppTypography.labelMedium,
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          TextFormField(
-            controller: _ibanController,
-            keyboardType: TextInputType.text,
-            textCapitalization: TextCapitalization.characters,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'PL61 1090 1014 0000 0712 1981 2874',
-              prefixIcon: Icon(Icons.account_balance, color: AppColors.gray400),
-              filled: true,
-              fillColor: AppColors.gray50,
-              border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.gray200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.gray200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
-            ),
-          ),
-
-          SizedBox(height: AppSpacing.gapLG),
-
-          // Account holder name
-          Text(
-            'Imię i nazwisko właściciela konta',
-            style: AppTypography.labelMedium,
-          ),
-          SizedBox(height: AppSpacing.gapSM),
-          TextFormField(
-            controller: _accountHolderController,
-            textCapitalization: TextCapitalization.words,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'Jan Kowalski',
-              prefixIcon: Icon(Icons.person, color: AppColors.gray400),
-              filled: true,
-              fillColor: AppColors.gray50,
-              border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.gray200),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.gray200),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
-            ),
-          ),
-
-          SizedBox(height: AppSpacing.gapXL),
-
-          // Security info
-          Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.1),
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: AppColors.success.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.lock_outline,
-                  color: AppColors.success,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Twoje dane są bezpieczne',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.success,
-                        ),
-                      ),
-                      Text(
-                        'Korzystamy z szyfrowania end-to-end i nie udostępniamy danych osobom trzecim.',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTipsCard(List<String> tips) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
@@ -797,11 +650,9 @@ class _KycVerificationScreenState
                               AlwaysStoppedAnimation(AppColors.white),
                         ),
                       )
-                    : Text(
-                        _currentStep < 2
-                            ? 'Wyślij i weryfikuj'
-                            : 'Zweryfikuj konto',
-                        style: const TextStyle(
+                    : const Text(
+                        'Wyślij i weryfikuj',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -820,9 +671,6 @@ class _KycVerificationScreenState
         return _idFront != null;
       case 1:
         return _selfie != null;
-      case 2:
-        return _ibanController.text.isNotEmpty &&
-            _accountHolderController.text.isNotEmpty;
       default:
         return false;
     }
@@ -837,11 +685,6 @@ class _KycVerificationScreenState
             );
       case 1:
         await ref.read(kycProvider.notifier).uploadSelfie(_selfie!);
-      case 2:
-        await ref.read(kycProvider.notifier).verifyBankAccount(
-              iban: _ibanController.text,
-              accountHolderName: _accountHolderController.text,
-            );
     }
   }
 
@@ -931,14 +774,6 @@ class _KycVerificationScreenState
               Text(
                 'Weryfikacja zakończona!',
                 style: AppTypography.h3,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppSpacing.gapSM),
-              Text(
-                'Gratulacje! Twoja tożsamość została zweryfikowana. Możesz teraz przyjmować zlecenia.',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.gray500,
-                ),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.gapXL),

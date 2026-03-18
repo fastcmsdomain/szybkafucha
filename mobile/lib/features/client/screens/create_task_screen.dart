@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/category_pricing_provider.dart';
 import '../../../core/providers/task_provider.dart';
@@ -37,9 +39,13 @@ class CreateTaskScreen extends ConsumerStatefulWidget {
   ConsumerState<CreateTaskScreen> createState() => _CreateTaskScreenState();
 }
 
+enum _TaskScheduleMode { now, flexible, scheduled }
+
 class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   static const String _defaultBudgetPln = '100';
   static const String _defaultEstimatedDurationHours = '1';
+  static const String _remoteWorkAddress = 'Praca zdalna';
+  static const LatLng _remoteWorkLatLng = LatLng(0, 0);
 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -50,7 +56,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   );
 
   TaskCategory? _selectedCategory;
-  bool _isNow = true;
+  _TaskScheduleMode _scheduleMode = _TaskScheduleMode.now;
   DateTime _scheduledDate = DateTime.now().add(const Duration(hours: 1));
   TimeOfDay _scheduledTime = TimeOfDay.now();
   bool _isLoading = false;
@@ -60,6 +66,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   LatLng? _selectedLatLng;
   String? _selectedAddress;
   String? _locationError;
+  bool _isRemoteWork = false;
 
   // Task images (max 5)
   final List<XFile> _selectedImages = [];
@@ -138,19 +145,26 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         task.estimatedDurationHours,
       );
 
-      if (task.latitude != null && task.longitude != null) {
-        _selectedLatLng = LatLng(task.latitude!, task.longitude!);
+      final isRemoteTask = task.address == _remoteWorkAddress;
+      _isRemoteWork = isRemoteTask;
+      if (isRemoteTask) {
+        _selectedLatLng = _remoteWorkLatLng;
+        _selectedAddress = _remoteWorkAddress;
+      } else {
+        if (task.latitude != null && task.longitude != null) {
+          _selectedLatLng = LatLng(task.latitude!, task.longitude!);
+        }
+        _selectedAddress = task.address;
       }
-      _selectedAddress = task.address;
       _existingImageUrls
         ..clear()
         ..addAll(task.imageUrls ?? const <String>[]);
 
       if (task.scheduledAt == null) {
-        _isNow = true;
+        _scheduleMode = _TaskScheduleMode.now;
       } else {
         final scheduled = task.scheduledAt!;
-        _isNow = false;
+        _scheduleMode = _TaskScheduleMode.scheduled;
         _scheduledDate = DateTime(
           scheduled.year,
           scheduled.month,
@@ -228,42 +242,42 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               children: [
                 // Category selection
                 _buildCategorySection(),
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Title
                 _buildTitleSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Description
                 _buildDescriptionSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Images (optional)
                 _buildImageSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Location
                 _buildLocationSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Budget
                 _buildBudgetSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Schedule
                 _buildScheduleSection(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Summary
                 _buildSummaryCard(),
 
-                SizedBox(height: AppSpacing.space8),
+                SizedBox(height: AppSpacing.space6),
 
                 // Create button
                 ElevatedButton(
@@ -319,7 +333,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.selectCategory,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapSM),
+        SizedBox(height: AppSpacing.gapXS),
         DropdownButtonFormField<TaskCategory>(
           initialValue: _selectedCategory,
           isExpanded: true,
@@ -360,7 +374,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           },
         ),
         if (selectedCategoryData != null) ...[
-          SizedBox(height: AppSpacing.gapSM),
+          SizedBox(height: AppSpacing.gapXS),
           Text(
             selectedCategoryData.description,
             style: AppTypography.caption.copyWith(
@@ -388,7 +402,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.taskTitle,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapSM),
+        SizedBox(height: AppSpacing.gapXS),
         TextFormField(
           controller: _titleController,
           maxLines: 1,
@@ -415,7 +429,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.taskDescription,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapSM),
+        SizedBox(height: AppSpacing.gapXS),
         TextFormField(
           controller: _descriptionController,
           maxLines: 4,
@@ -469,7 +483,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             color: AppColors.gray500,
           ),
         ),
-        SizedBox(height: AppSpacing.gapMD),
+        SizedBox(height: AppSpacing.gapSM),
 
         // Image grid
         SizedBox(
@@ -754,24 +768,34 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.location,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapMD),
+        SizedBox(height: AppSpacing.gapSM),
 
         // Address input with GPS option
         SFAddressInput(
           onLocationSelected: (latLng, address) {
             setState(() {
+              _isRemoteWork = false;
               _selectedLatLng = latLng;
               _selectedAddress = address;
               _locationError = null;
             });
           },
-          initialAddress: _selectedAddress,
-          initialLatLng: _selectedLatLng,
+          onRemoteSelected: () {
+            setState(() {
+              _isRemoteWork = true;
+              _selectedLatLng = _remoteWorkLatLng;
+              _selectedAddress = _remoteWorkAddress;
+              _locationError = null;
+            });
+          },
+          initialAddress: _isRemoteWork ? null : _selectedAddress,
+          initialLatLng: _isRemoteWork ? null : _selectedLatLng,
           errorText: _locationError,
+          isRemoteSelected: _isRemoteWork,
         ),
 
         // Map preview when location is selected
-        if (_selectedLatLng != null) ...[
+        if (!_isRemoteWork && _selectedLatLng != null) ...[
           SizedBox(height: AppSpacing.gapMD),
           Container(
             decoration: BoxDecoration(
@@ -820,7 +844,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     AppStrings.budget,
                     style: AppTypography.labelLarge,
                   ),
-                  SizedBox(height: AppSpacing.gapMD),
+                  SizedBox(height: AppSpacing.gapSM),
                   TextFormField(
                     controller: _budgetController,
                     keyboardType: TextInputType.number,
@@ -868,7 +892,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                     'Szacowany czas',
                     style: AppTypography.labelLarge,
                   ),
-                  SizedBox(height: AppSpacing.gapMD),
+                  SizedBox(height: AppSpacing.gapSM),
                   TextFormField(
                     controller: _estimatedDurationController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -941,6 +965,10 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Widget _buildScheduleSection() {
+    final isNow = _scheduleMode == _TaskScheduleMode.now;
+    final isFlexible = _scheduleMode == _TaskScheduleMode.flexible;
+    final isScheduled = _scheduleMode == _TaskScheduleMode.scheduled;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -948,75 +976,53 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           AppStrings.schedule,
           style: AppTypography.labelLarge,
         ),
-        SizedBox(height: AppSpacing.gapMD),
+        SizedBox(height: AppSpacing.gapSM),
 
-        // Now option
-        Semantics(
-          label: 'Wybierz realizację teraz',
-          button: true,
-          child: GestureDetector(
-            onTap: () => setState(() => _isNow = true),
-            child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
-            decoration: BoxDecoration(
-              color: _isNow
-                  ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.gray50,
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: _isNow ? AppColors.primary : AppColors.gray200,
+        Row(
+          children: [
+            Expanded(
+              child: _buildScheduleChoice(
+                label: AppStrings.now,
+                icon: Icons.flash_on,
+                isSelected: isNow,
+                semanticsLabel: 'Wybierz realizację teraz',
+                onTap: () => setState(() => _scheduleMode = _TaskScheduleMode.now),
               ),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.flash_on,
-                  color: _isNow ? AppColors.primary : AppColors.gray600,
-                ),
-                SizedBox(width: AppSpacing.gapMD),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.now,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: _isNow ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                      Text(
-                        'Znajdź pomocnika jak najszybciej',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.gray500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildRadioIndicator(_isNow),
-              ],
+            SizedBox(width: AppSpacing.gapMD),
+            Expanded(
+              child: _buildScheduleChoice(
+                label: 'Elastyczny',
+                icon: Icons.autorenew,
+                isSelected: isFlexible,
+                semanticsLabel: 'Wybierz realizację elastycznie',
+                onTap: () =>
+                    setState(() => _scheduleMode = _TaskScheduleMode.flexible),
+              ),
             ),
-            ),
-          ),
+          ],
         ),
 
-        SizedBox(height: AppSpacing.gapMD),
+        SizedBox(height: AppSpacing.gapSM),
 
         // Schedule for later
         Semantics(
           label: 'Wybierz realizację na później',
           button: true,
           child: GestureDetector(
-            onTap: () => setState(() => _isNow = false),
+            onTap: () => setState(() => _scheduleMode = _TaskScheduleMode.scheduled),
             child: Container(
-            padding: EdgeInsets.all(AppSpacing.paddingMD),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.paddingXS,
+              vertical: AppSpacing.paddingMD,
+            ),
             decoration: BoxDecoration(
-              color: !_isNow
+              color: isScheduled
                   ? AppColors.primary.withValues(alpha: 0.1)
                   : AppColors.gray50,
               borderRadius: AppRadius.radiusMD,
               border: Border.all(
-                color: !_isNow ? AppColors.primary : AppColors.gray200,
+                color: isScheduled ? AppColors.primary : AppColors.gray200,
               ),
             ),
             child: Column(
@@ -1025,21 +1031,22 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   children: [
                     Icon(
                       Icons.schedule,
-                      color: !_isNow ? AppColors.primary : AppColors.gray600,
+                      size: 18,
+                      color: isScheduled ? AppColors.primary : AppColors.gray600,
                     ),
-                    SizedBox(width: AppSpacing.gapMD),
+                    SizedBox(width: AppSpacing.gapSM),
                     Expanded(
                       child: Text(
                         AppStrings.scheduleForLater,
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: !_isNow ? FontWeight.w600 : FontWeight.normal,
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: isScheduled ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                     ),
-                    _buildRadioIndicator(!_isNow),
+                    _buildRadioIndicator(isScheduled),
                   ],
                 ),
-                if (!_isNow) ...[
+                if (isScheduled) ...[
                   SizedBox(height: AppSpacing.gapMD),
                   Row(
                     children: [
@@ -1059,6 +1066,58 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildScheduleChoice({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required String semanticsLabel,
+    required VoidCallback onTap,
+  }) {
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.paddingXS,
+            vertical: AppSpacing.paddingMD,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.gray50,
+            borderRadius: AppRadius.radiusMD,
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.gray200,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? AppColors.primary : AppColors.gray600,
+              ),
+              SizedBox(width: AppSpacing.gapSM),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+              _buildRadioIndicator(isSelected),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1093,15 +1152,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   Widget _buildTimeButton() {
     return OutlinedButton.icon(
-      onPressed: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: _scheduledTime,
-        );
-        if (picked != null) {
-          setState(() => _scheduledTime = picked);
-        }
-      },
+      onPressed: _showTimePickerSheet,
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.gray700,
         side: BorderSide(color: AppColors.gray300),
@@ -1116,6 +1167,227 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         style: AppTypography.bodySmall,
       ),
     );
+  }
+
+  Future<void> _showTimePickerSheet() async {
+    DateTime tempDateTime = DateTime(
+      _scheduledDate.year,
+      _scheduledDate.month,
+      _scheduledDate.day,
+      _scheduledTime.hour,
+      _scheduledTime.minute,
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.paddingLG,
+              AppSpacing.paddingMD,
+              AppSpacing.paddingLG,
+              AppSpacing.paddingLG,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.gray300,
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                Text(
+                  'Wybierz godzinę',
+                  style: AppTypography.labelLarge,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: AppSpacing.gapXS),
+                Text(
+                  'Przewin godziny i minuty lub wpisz czas recznie.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                SizedBox(
+                  height: 180,
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.time,
+                    use24hFormat: true,
+                    initialDateTime: tempDateTime,
+                    onDateTimeChanged: (value) {
+                      tempDateTime = value;
+                    },
+                  ),
+                ),
+                SizedBox(height: AppSpacing.gapMD),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final manualTime = await _showManualTimeDialog();
+                    if (!context.mounted || manualTime == null) return;
+                    tempDateTime = DateTime(
+                      _scheduledDate.year,
+                      _scheduledDate.month,
+                      _scheduledDate.day,
+                      manualTime.hour,
+                      manualTime.minute,
+                    );
+                    setState(() => _scheduledTime = manualTime);
+                    Navigator.of(context).pop();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.gray700,
+                    side: BorderSide(color: AppColors.gray300),
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                  ),
+                  icon: const Icon(Icons.keyboard_alt_outlined),
+                  label: const Text('Wpisz godzinę ręcznie'),
+                ),
+                SizedBox(height: AppSpacing.gapSM),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _scheduledTime = TimeOfDay(
+                        hour: tempDateTime.hour,
+                        minute: tempDateTime.minute,
+                      );
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingSM),
+                  ),
+                  child: const Text('Gotowe'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<TimeOfDay?> _showManualTimeDialog() async {
+    final hourController = TextEditingController(
+      text: _scheduledTime.hour.toString().padLeft(2, '0'),
+    );
+    final minuteController = TextEditingController(
+      text: _scheduledTime.minute.toString().padLeft(2, '0'),
+    );
+    String? validationMessage;
+
+    final result = await showDialog<TimeOfDay>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Wpisz godzinę'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: hourController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Godzina',
+                            hintText: '08',
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.gapMD),
+                      Expanded(
+                        child: TextField(
+                          controller: minuteController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Minuty',
+                            hintText: '30',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (validationMessage != null) ...[
+                    SizedBox(height: AppSpacing.gapSM),
+                    Text(
+                      validationMessage!,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Anuluj'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final hour = int.tryParse(hourController.text);
+                    final minute = int.tryParse(minuteController.text);
+
+                    if (hour == null ||
+                        minute == null ||
+                        hour < 0 ||
+                        hour > 23 ||
+                        minute < 0 ||
+                        minute > 59) {
+                      setDialogState(() {
+                        validationMessage = 'Wpisz poprawny czas w formacie 00:00-23:59.';
+                      });
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(
+                      TimeOfDay(hour: hour, minute: minute),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
+                  child: const Text('Zapisz'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    hourController.dispose();
+    minuteController.dispose();
+    return result;
   }
 
   Widget _buildSummaryCard() {
@@ -1155,13 +1427,17 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
           ),
           _buildSummaryRow(
             'Kiedy',
-            _isNow
+            _scheduleMode == _TaskScheduleMode.now
                 ? 'Teraz'
-                : '${_scheduledDate.day}.${_scheduledDate.month} o ${_scheduledTime.hour}:${_scheduledTime.minute.toString().padLeft(2, '0')}',
+                : _scheduleMode == _TaskScheduleMode.flexible
+                    ? 'Elastyczny'
+                    : '${_scheduledDate.day}.${_scheduledDate.month} o ${_scheduledTime.hour}:${_scheduledTime.minute.toString().padLeft(2, '0')}',
           ),
           _buildSummaryRow(
             'Lokalizacja',
-            _selectedAddress ?? 'Nie wybrano',
+            _isRemoteWork
+                ? _remoteWorkAddress
+                : (_selectedAddress ?? 'Nie wybrano'),
             wrapValue: true,
           ),
           if (_estimatedDurationController.text.isNotEmpty) ...[
@@ -1226,6 +1502,41 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
               ],
             ),
     );
+  }
+
+  Future<bool> _ensureVerifiedPhoneForTaskPosting() async {
+    final user = ref.read(authProvider).user;
+    if (user?.phone?.trim().isNotEmpty == true) return true;
+    if (!mounted) return false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dodaj numer telefonu'),
+        content: const Text(
+          'Aby opublikować pierwsze zlecenie, dodaj i potwierdź numer telefonu kodem SMS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Później'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push(Routes.phoneLink);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Dodaj numer'),
+          ),
+        ],
+      ),
+    );
+
+    return false;
   }
 
   String? _validateTitle(String? value) {
@@ -1321,6 +1632,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Future<void> _createTask() async {
+    if (!await _ensureVerifiedPhoneForTaskPosting()) return;
+
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1358,8 +1671,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
-    // Validate location is selected
-    if (_selectedLatLng == null || _selectedAddress == null) {
+    // Validate location is selected unless this is remote work.
+    if (!_isRemoteWork &&
+        (_selectedLatLng == null || _selectedAddress == null)) {
       setState(() {
         _locationError = 'Wybierz lokalizację zlecenia';
       });
@@ -1379,7 +1693,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     try {
       // Build scheduled datetime if not immediate
       DateTime? scheduledAt;
-      if (!_isNow) {
+      if (_scheduleMode == _TaskScheduleMode.scheduled) {
         scheduledAt = DateTime(
           _scheduledDate.year,
           _scheduledDate.month,
@@ -1410,9 +1724,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         category: _selectedCategory!,
         title: title,
         description: description,
-        locationLat: _selectedLatLng!.latitude,
-        locationLng: _selectedLatLng!.longitude,
-        address: _selectedAddress!,
+        locationLat: (_isRemoteWork ? _remoteWorkLatLng : _selectedLatLng!).latitude,
+        locationLng: (_isRemoteWork ? _remoteWorkLatLng : _selectedLatLng!).longitude,
+        address: _isRemoteWork ? _remoteWorkAddress : _selectedAddress!,
         budgetAmount: budgetAmount,
         estimatedDurationHours: estimatedDurationHours,
         scheduledAt: scheduledAt,
@@ -1489,7 +1803,8 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
       return;
     }
 
-    if (_selectedLatLng == null || _selectedAddress == null) {
+    if (!_isRemoteWork &&
+        (_selectedLatLng == null || _selectedAddress == null)) {
       setState(() {
         _locationError = 'Wybierz lokalizację zlecenia';
       });
@@ -1508,7 +1823,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
     try {
       DateTime? scheduledAt;
-      if (!_isNow) {
+      if (_scheduleMode == _TaskScheduleMode.scheduled) {
         scheduledAt = DateTime(
           _scheduledDate.year,
           _scheduledDate.month,
@@ -1535,9 +1850,9 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
         category: _selectedCategory!,
         title: title,
         description: description,
-        locationLat: _selectedLatLng!.latitude,
-        locationLng: _selectedLatLng!.longitude,
-        address: _selectedAddress!,
+        locationLat: (_isRemoteWork ? _remoteWorkLatLng : _selectedLatLng!).latitude,
+        locationLng: (_isRemoteWork ? _remoteWorkLatLng : _selectedLatLng!).longitude,
+        address: _isRemoteWork ? _remoteWorkAddress : _selectedAddress!,
         budgetAmount: budgetAmount,
         estimatedDurationHours: estimatedDurationHours,
         scheduledAt: scheduledAt,

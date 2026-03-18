@@ -48,18 +48,6 @@ class ProfileScreen extends ConsumerWidget {
                   },
                 ),
                 _buildMenuItem(
-                  icon: Icons.payments_outlined,
-                  title: 'Płatności',
-                  subtitle: 'Karty i konto do wypłat',
-                  onTap: () {
-                    if (user?.isContractor == true) {
-                      context.push(Routes.contractorProfilePayments);
-                    } else {
-                      context.push(Routes.clientProfilePayments);
-                    }
-                  },
-                ),
-                _buildMenuItem(
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'Portfel',
                   subtitle: 'Saldo i historia kredytów',
@@ -95,25 +83,6 @@ class ProfileScreen extends ConsumerWidget {
                     _showComingSoon(context, 'Bezpieczeństwo');
                   },
                 ),
-              ],
-            ),
-
-            SizedBox(height: AppSpacing.space4),
-
-            // Preferences section
-            _buildSection(
-              title: 'Preferencje',
-              children: [
-                _buildMenuItem(
-                  icon: Icons.language_outlined,
-                  title: 'Język',
-                  subtitle: 'Polski',
-                  onTap: () {
-                    // TODO: Language selection
-                    _showComingSoon(context, 'Wybór języka');
-                  },
-                ),
-                // MVP: Dark mode hidden - not needed for MVP
               ],
             ),
 
@@ -236,7 +205,7 @@ class ProfileScreen extends ConsumerWidget {
             borderRadius: AppRadius.radiusSM,
           ),
           child: Text(
-            user?.isContractor == true ? 'Wykonawca' : 'Klient',
+            user?.isContractor == true ? 'Wykonawca' : 'Pracodawca',
             style: AppTypography.caption.copyWith(
               color: user?.isContractor == true
                   ? AppColors.primary

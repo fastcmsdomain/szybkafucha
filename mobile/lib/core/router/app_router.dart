@@ -61,6 +61,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isBrowseRoute = state.matchedLocation == Routes.browse;
       final isPublicHomeRoute = state.matchedLocation == Routes.publicHome;
       final isPublicProfileRoute = state.matchedLocation == Routes.publicProfile;
+      final isPhoneLinkRoute = state.matchedLocation == Routes.phoneLink;
+      final isPhoneLinkOtpRoute = state.matchedLocation == Routes.phoneLinkOtp;
       final isLegalRoute =
           state.matchedLocation == Routes.termsOfService ||
           state.matchedLocation == Routes.privacyPolicy;
@@ -78,6 +80,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // === AUTHENTICATED USERS ===
       // Always redirect to home (skip onboarding/browse)
       if (isAuthenticated) {
+        final user = authNotifier.user;
+
         // Allow email verification screen for authenticated users
         if (isEmailVerifyRoute) return null;
 
@@ -87,7 +91,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             isBrowseRoute ||
             isPublicHomeRoute ||
             isPublicProfileRoute) {
-          final user = authNotifier.user;
           final destination = user?.isContractor == true
               ? Routes.contractorHome
               : Routes.clientHome;
@@ -200,8 +203,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.phoneLogin,
         name: 'phoneLogin',
         builder: (context, state) {
-          final userType = state.extra as String? ?? 'client';
-          return PhoneLoginScreen(userType: userType);
+          final extra = state.extra;
+          final userType = extra is Map<String, dynamic>
+              ? extra['userType'] as String? ?? 'client'
+              : extra as String? ?? 'client';
+          final linkMode = extra is Map<String, dynamic>
+              ? extra['linkMode'] as bool? ?? false
+              : false;
+          return PhoneLoginScreen(userType: userType, linkMode: linkMode);
         },
       ),
       GoRoute(
@@ -211,7 +220,36 @@ final routerProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final phoneNumber = extra['phone'] as String? ?? '';
           final userType = extra['userType'] as String? ?? 'client';
-          return OtpScreen(phoneNumber: phoneNumber, userType: userType);
+          final linkMode = extra['linkMode'] as bool? ?? false;
+          return OtpScreen(
+            phoneNumber: phoneNumber,
+            userType: userType,
+            linkMode: linkMode,
+          );
+        },
+      ),
+      GoRoute(
+        path: Routes.phoneLink,
+        name: 'phoneLink',
+        builder: (context, state) {
+          final userType = authNotifier.user?.isContractor == true
+              ? 'contractor'
+              : 'client';
+          return PhoneLoginScreen(userType: userType, linkMode: true);
+        },
+      ),
+      GoRoute(
+        path: Routes.phoneLinkOtp,
+        name: 'phoneLinkOtp',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final phoneNumber = extra['phone'] as String? ?? '';
+          final userType = extra['userType'] as String? ?? 'client';
+          return OtpScreen(
+            phoneNumber: phoneNumber,
+            userType: userType,
+            linkMode: true,
+          );
         },
       ),
       GoRoute(

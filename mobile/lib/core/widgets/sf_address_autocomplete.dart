@@ -389,6 +389,9 @@ class SFAddressInput extends ConsumerStatefulWidget {
   /// Callback when location is selected (from GPS or address search)
   final void Function(LatLng latLng, String address) onLocationSelected;
 
+  /// Callback when remote work is selected
+  final VoidCallback? onRemoteSelected;
+
   /// Initial address to display
   final String? initialAddress;
 
@@ -398,12 +401,17 @@ class SFAddressInput extends ConsumerStatefulWidget {
   /// Error text to display
   final String? errorText;
 
+  /// Whether remote work is currently selected
+  final bool isRemoteSelected;
+
   const SFAddressInput({
     super.key,
     required this.onLocationSelected,
+    this.onRemoteSelected,
     this.initialAddress,
     this.initialLatLng,
     this.errorText,
+    this.isRemoteSelected = false,
   });
 
   @override
@@ -422,6 +430,23 @@ class _SFAddressInputState extends ConsumerState<SFAddressInput> {
     super.initState();
     _currentAddress = widget.initialAddress;
     _currentLatLng = widget.initialLatLng;
+  }
+
+  @override
+  void didUpdateWidget(covariant SFAddressInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.isRemoteSelected && !oldWidget.isRemoteSelected) {
+      _useCurrentLocation = false;
+      _gpsError = null;
+      return;
+    }
+
+    if (widget.initialAddress != oldWidget.initialAddress ||
+        widget.initialLatLng != oldWidget.initialLatLng) {
+      _currentAddress = widget.initialAddress;
+      _currentLatLng = widget.initialLatLng;
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -542,6 +567,8 @@ class _SFAddressInputState extends ConsumerState<SFAddressInput> {
 
   @override
   Widget build(BuildContext context) {
+    final showRemoteOption = widget.onRemoteSelected != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -630,42 +657,102 @@ class _SFAddressInputState extends ConsumerState<SFAddressInput> {
           ),
         ),
 
-        SizedBox(height: AppSpacing.gapMD),
-
-        // Divider with "lub"
-        Row(
-          children: [
-            Expanded(child: Divider(color: AppColors.gray200)),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
-              child: Text(
-                'lub',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray400,
+        if (showRemoteOption) ...[
+          SizedBox(height: AppSpacing.gapMD),
+          GestureDetector(
+            onTap: widget.onRemoteSelected,
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.paddingMD),
+              decoration: BoxDecoration(
+                color: widget.isRemoteSelected
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.gray50,
+                borderRadius: AppRadius.radiusMD,
+                border: Border.all(
+                  color: widget.isRemoteSelected
+                      ? AppColors.primary
+                      : AppColors.gray200,
                 ),
               ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.language_outlined,
+                    color: widget.isRemoteSelected
+                        ? AppColors.primary
+                        : AppColors.gray600,
+                  ),
+                  SizedBox(width: AppSpacing.gapMD),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Praca zdalna',
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: widget.isRemoteSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        Text(
+                          'Zlecenie moze byc wykonane online lub bez wskazanej lokalizacji',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.gray500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (widget.isRemoteSelected)
+                    Icon(
+                      Icons.check_circle,
+                      color: AppColors.primary,
+                    ),
+                ],
+              ),
             ),
-            Expanded(child: Divider(color: AppColors.gray200)),
-          ],
-        ),
-
-        SizedBox(height: AppSpacing.gapMD),
-
-        // Address autocomplete
-        Text(
-          'Wpisz adres',
-          style: AppTypography.labelMedium.copyWith(
-            color: AppColors.gray600,
           ),
-        ),
-        SizedBox(height: AppSpacing.gapSM),
-        SFAddressAutocomplete(
-          onAddressSelected: _onAddressSelected,
-          initialAddress:
-              !_useCurrentLocation ? widget.initialAddress : null,
-          enabled: !_isLoadingGps,
-          errorText: widget.errorText,
-        ),
+        ],
+
+        if (!widget.isRemoteSelected) ...[
+          SizedBox(height: AppSpacing.gapMD),
+
+          // Divider with "lub"
+          Row(
+            children: [
+              Expanded(child: Divider(color: AppColors.gray200)),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+                child: Text(
+                  'lub',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.gray400,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(color: AppColors.gray200)),
+            ],
+          ),
+
+          SizedBox(height: AppSpacing.gapMD),
+
+          // Address autocomplete
+          Text(
+            'Wpisz adres',
+            style: AppTypography.labelMedium.copyWith(
+              color: AppColors.gray600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.gapSM),
+          SFAddressAutocomplete(
+            onAddressSelected: _onAddressSelected,
+            initialAddress:
+                !_useCurrentLocation ? widget.initialAddress : null,
+            enabled: !_isLoadingGps,
+            errorText: widget.errorText,
+          ),
+        ],
       ],
     );
   }

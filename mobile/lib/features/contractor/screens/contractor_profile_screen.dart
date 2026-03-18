@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/credits_provider.dart';
+import '../../../core/providers/kyc_provider.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/sf_rainbow_text.dart';
@@ -66,6 +67,7 @@ class _ContractorProfileScreenState
     _hadEmailOnLoad = user?.email?.isNotEmpty == true;
     _loadContractorProfile();
     ref.read(creditsProvider.notifier).fetchBalance();
+    ref.read(kycProvider.notifier).fetchStatus();
   }
 
   Future<void> _loadContractorProfile() async {
@@ -105,7 +107,7 @@ class _ContractorProfileScreenState
           final serviceRadiusKm = data['serviceRadiusKm'];
           debugPrint('DEBUG: Loading serviceRadiusKm = $serviceRadiusKm');
           if (serviceRadiusKm != null) {
-            _serviceRadius = double.tryParse(serviceRadiusKm.toString()) ?? 10.0;
+            _serviceRadius = (double.tryParse(serviceRadiusKm.toString()) ?? 10.0).clamp(5.0, 50.0);
             debugPrint('DEBUG: Set serviceRadius to: $_serviceRadius');
           }
 
@@ -297,6 +299,16 @@ class _ContractorProfileScreenState
     return '${date.year}-$month-$day';
   }
 
+  String? _normalizePhoneForApi(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+
+    final normalized = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
+    if (normalized.startsWith('+')) return normalized;
+    if (normalized.length == 9) return '+48$normalized';
+    return normalized;
+  }
+
   Future<void> _pickDateOfBirth() async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
@@ -323,30 +335,19 @@ class _ContractorProfileScreenState
       _showError('Imię i nazwisko jest wymagane');
       return;
     }
-    if (_addressController.text.trim().isEmpty) {
-      _showError('Adres jest wymagany');
-      return;
-    }
-    if (_bioController.text.trim().isEmpty) {
-      _showError('Opis jest wymagany');
-      return;
-    }
-    if (_selectedCategories.isEmpty) {
-      _showError('Wybierz co najmniej jedną kategorię');
-      return;
-    }
 
     setState(() => _isSaving = true);
     try {
       final api = ref.read(apiClientProvider);
 
-      // Update user data — phone is read-only (auth credential),
-      // email only sent when user is adding it for the first time
+      // Update shared user data.
+      final normalizedPhone = _normalizePhoneForApi(_phoneController.text);
+      final email = _emailController.text.trim();
       final userPayload = <String, dynamic>{
         'name': _nameController.text.trim(),
+        if (normalizedPhone != null) 'phone': normalizedPhone,
         'address': _addressController.text.trim(),
-        if (!_hadEmailOnLoad && _emailController.text.trim().isNotEmpty)
-          'email': _emailController.text.trim(),
+        if (email.isNotEmpty) 'email': email,
         if (_dateOfBirth != null) 'dateOfBirth': _formatDateForApi(_dateOfBirth!),
         if (_dateOfBirth == null && _hadDateOfBirthOnLoad) 'dateOfBirth': null,
       };
@@ -413,16 +414,15 @@ class _ContractorProfileScreenState
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final kycState = ref.watch(kycProvider);
 
     // Compute whether profile is 100% complete (mirrors _buildProfileProgress logic)
-    int completedCount = 0;
-    if (user?.name?.isNotEmpty == true) completedCount++;
-    if (user?.address?.isNotEmpty == true) completedCount++;
-    if (_bioController.text.isNotEmpty) completedCount++;
-    if (_selectedCategories.isNotEmpty) completedCount++;
-    if (_serviceRadius > 0) completedCount++;
-    if (_isKycVerified) completedCount++;
-    final isProfileComplete = completedCount == 6;
+    // 5 real items: name, address, bio, categories, kyc (serviceRadius always has a value)
+    final isProfileComplete = user?.name?.isNotEmpty == true &&
+        user?.address?.isNotEmpty == true &&
+        _bioController.text.isNotEmpty &&
+        _selectedCategories.isNotEmpty &&
+        kycState.selfieVerified;
 
     return Scaffold(
       appBar: AppBar(
@@ -510,15 +510,11 @@ class _ContractorProfileScreenState
 
             _buildWalletShortcut(),
 
-            SizedBox(height: AppSpacing.space4),
-
-            _buildPaymentsShortcut(),
-
             SizedBox(height: AppSpacing.space6),
 
             _buildTextField(
               controller: _nameController,
-              label: 'Imię i nazwisko',
+              label: 'Imię i nazwisko *',
               icon: Icons.person_outline,
             ),
             _buildTextField(
@@ -526,19 +522,14 @@ class _ContractorProfileScreenState
               label: 'Numer telefonu',
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
-              readOnly: true,
               helperText:
-                  'Aby zmienić numer, napisz na kontakt@szybkafucha.app',
+                  'Dodaj numer telefonu. Numer 9-cyfrowy zapiszemy automatycznie z prefixem +48.',
             ),
             _buildTextField(
               controller: _emailController,
               label: 'Adres email',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
-              readOnly: _hadEmailOnLoad,
-              helperText: _hadEmailOnLoad
-                  ? 'Aby zmienić email, napisz na kontakt@szybkafucha.app'
-                  : null,
             ),
             _buildTextField(
               controller: _addressController,
@@ -610,8 +601,136 @@ class _ContractorProfileScreenState
                 ),
               ),
             ),
+
+            SizedBox(height: AppSpacing.space8),
+
+            _buildHowItWorksSection(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHowItWorksSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SFRainbowText('Jak zacząć zarabiać?', style: AppTypography.h5),
+        SizedBox(height: AppSpacing.gapMD),
+        _buildStepItem(
+          number: '1',
+          title: 'Przeglądaj zlecenia',
+          description:
+              'Nowe zadania pojawiają się w Twojej okolicy — wybierz to, co Ci odpowiada',
+          icon: Icons.search,
+          color: AppColors.primary,
+        ),
+        _buildStepItem(
+          number: '2',
+          title: 'Złóż ofertę',
+          description: 'Zaproponuj swoją cenę i wyślij zgłoszenie do szefa',
+          icon: Icons.local_offer_outlined,
+          color: AppColors.warning,
+        ),
+        _buildStepItem(
+          number: '3',
+          title: 'Wykonaj zadanie',
+          description:
+              'Szef wybrał Cię! Rozpocznij pracę i zrealizuj zlecenie',
+          icon: Icons.handyman,
+          color: AppColors.success,
+        ),
+        _buildStepItem(
+          number: '4',
+          title: 'Oceń szefa',
+          description:
+              'Po zakończeniu oceń współpracę — to pomaga całej społeczności',
+          icon: Icons.star_outline,
+          color: AppColors.info,
+        ),
+        _buildStepItem(
+          number: '5',
+          title: 'Gotowe!',
+          description:
+              'Zlecenie zakończone! Twoja ocena rośnie, a nowe zlecenia czekają',
+          icon: Icons.check_circle_outline,
+          color: const Color(0xFF8B5CF6),
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepItem({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    bool isLast = false,
+  }) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    number,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(width: 2, color: AppColors.gray200),
+                ),
+            ],
+          ),
+          SizedBox(width: AppSpacing.gapMD),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: isLast ? 0 : AppSpacing.paddingMD),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTypography.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          description,
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.gray600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(icon, color: color, size: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -659,72 +778,95 @@ class _ContractorProfileScreenState
   }
 
   Widget _buildProfileProgress() {
-    final user = ref.read(authProvider).user;
+    final user = ref.watch(authProvider).user;
+    final kycState = ref.watch(kycProvider);
 
-    int completedFields = 0;
-    int totalFields = 6; // name, address, bio, categories, radius, kyc
+    // Hide entirely while KYC status is being fetched — prevents flash of progress bar
+    if (kycState.isLoading) return const SizedBox.shrink();
 
-    if (user?.name?.isNotEmpty == true) completedFields++;
-    if (user?.address?.isNotEmpty == true) completedFields++;
-    if (_bioController.text.isNotEmpty) completedFields++;
-    if (_selectedCategories.isNotEmpty) completedFields++;
-    if (_serviceRadius > 0) completedFields++;
-    if (_isKycVerified == true) completedFields++;
+    // Build list of missing items (5 real checks; serviceRadius always has a value)
+    final missing = <({String label, IconData icon, VoidCallback? onTap})>[];
 
-    final percent = (completedFields / totalFields * 100).toInt();
-    final isComplete = percent == 100;
+    if (user?.name?.isNotEmpty != true)
+      missing.add((label: 'Imię i nazwisko', icon: Icons.person_outline, onTap: null));
+    if (user?.address?.isNotEmpty != true)
+      missing.add((label: 'Adres zamieszkania', icon: Icons.home_outlined, onTap: null));
+    if (_bioController.text.isEmpty)
+      missing.add((label: 'Opis (o mnie)', icon: Icons.description_outlined, onTap: null));
+    if (_selectedCategories.isEmpty)
+      missing.add((label: 'Kategorie usług', icon: Icons.category_outlined, onTap: null));
+    if (!kycState.selfieVerified)
+      missing.add((
+        label: 'Weryfikacja tożsamości (ID + selfie)',
+        icon: Icons.badge_outlined,
+        onTap: () => context.push(Routes.contractorKyc),
+      ));
 
-    // When 100% — the verified badge is shown under the photo instead
-    if (isComplete) return const SizedBox.shrink();
+    // All done — verified badge shown under photo instead
+    if (missing.isEmpty) return const SizedBox.shrink();
 
-    return InkWell(
-      borderRadius: AppRadius.radiusMD,
-      onTap: () => context.push(Routes.contractorKyc),
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.paddingMD),
-        decoration: BoxDecoration(
-          color: isComplete
-              ? AppColors.success.withValues(alpha: 0.1)
-              : AppColors.warning.withValues(alpha: 0.1),
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: isComplete ? AppColors.success : AppColors.warning,
+    const total = 5;
+    final completed = total - missing.length;
+    final percent = (completed / total * 100).toInt();
+
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.paddingMD),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(color: AppColors.warning),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Uzupełnij profil', style: AppTypography.h4),
+              Text(
+                '$percent%',
+                style: AppTypography.h3.copyWith(color: AppColors.warning),
+              ),
+            ],
           ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Weryfikacja',
-                  style: AppTypography.h4,
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+          SizedBox(height: AppSpacing.gapSM),
+          LinearProgressIndicator(
+            value: completed / total,
+            backgroundColor: AppColors.gray200,
+            valueColor: AlwaysStoppedAnimation(AppColors.warning),
+          ),
+          SizedBox(height: AppSpacing.gapMD),
+          Text(
+            'Brakuje:',
+            style: AppTypography.caption.copyWith(color: AppColors.gray600),
+          ),
+          SizedBox(height: AppSpacing.gapXS),
+          ...missing.map(
+            (item) => InkWell(
+              onTap: item.onTap,
+              borderRadius: AppRadius.radiusSM,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
                   children: [
-                    Text(
-                      '$percent%',
-                      style: AppTypography.h3.copyWith(
-                        color: isComplete ? AppColors.success : AppColors.warning,
+                    Icon(item.icon, size: 14, color: AppColors.gray600),
+                    SizedBox(width: AppSpacing.gapSM),
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.gray700,
+                        ),
                       ),
                     ),
-                    SizedBox(width: AppSpacing.gapSM),
-                    Icon(Icons.chevron_right, color: AppColors.gray400),
+                    if (item.onTap != null)
+                      Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.gray400),
                   ],
                 ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.gapSM),
-            LinearProgressIndicator(
-              value: completedFields / totalFields,
-              backgroundColor: AppColors.gray200,
-              valueColor: AlwaysStoppedAnimation(
-                isComplete ? AppColors.success : AppColors.warning,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -753,25 +895,6 @@ class _ContractorProfileScreenState
     );
   }
 
-  Widget _buildPaymentsShortcut() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: ListTile(
-        leading: Icon(Icons.payments_outlined, color: AppColors.gray600),
-        title: Text('Płatności', style: AppTypography.bodyMedium),
-        subtitle: Text(
-          'Zmień karty oraz numer konta do wypłat',
-          style: AppTypography.caption.copyWith(color: AppColors.gray500),
-        ),
-        trailing: Icon(Icons.chevron_right, color: AppColors.gray400),
-        onTap: () => context.push(Routes.contractorProfilePayments),
-      ),
-    );
-  }
 
   Widget _buildCategoriesSection() {
     return Container(

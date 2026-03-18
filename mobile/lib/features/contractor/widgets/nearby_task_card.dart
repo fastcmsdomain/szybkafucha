@@ -118,66 +118,6 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                             categoryData.name,
                             style: AppTypography.labelMedium,
                           ),
-                          if (task.isUrgent) ...[
-                            SizedBox(width: AppSpacing.gapSM),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.warning,
-                                borderRadius: AppRadius.radiusSM,
-                              ),
-                              child: Text(
-                                'PILNE',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                          ],
-                          // Room slots badge
-                          SizedBox(width: AppSpacing.gapSM),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: task.applicationsCount >= task.maxApplications
-                                  ? AppColors.gray200
-                                  : AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: AppRadius.radiusSM,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  size: 10,
-                                  color: task.applicationsCount >= task.maxApplications
-                                      ? AppColors.gray500
-                                      : AppColors.primary,
-                                ),
-                                SizedBox(width: 2),
-                                Text(
-                                  task.applicationsCount >= task.maxApplications
-                                      ? 'Pełny'
-                                      : '${task.applicationsCount}/${task.maxApplications}',
-                                  style: AppTypography.caption.copyWith(
-                                    color: task.applicationsCount >= task.maxApplications
-                                        ? AppColors.gray500
-                                        : AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                       Text(
@@ -186,6 +126,71 @@ class _NearbyTaskCardState extends ConsumerState<NearbyTaskCard> {
                           color: AppColors.gray500,
                         ),
                       ),
+                      if (task.isUrgent || task.applicationsCount >= 0) ...[
+                        SizedBox(height: AppSpacing.gapXS),
+                        Wrap(
+                          spacing: AppSpacing.gapXS,
+                          runSpacing: AppSpacing.gapXS,
+                          children: [
+                            if (task.isUrgent)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warning,
+                                  borderRadius: AppRadius.radiusSM,
+                                ),
+                                child: Text(
+                                  'PILNE',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: task.applicationsCount >= task.maxApplications
+                                    ? AppColors.gray200
+                                    : AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: AppRadius.radiusSM,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.people_outline,
+                                    size: 10,
+                                    color: task.applicationsCount >= task.maxApplications
+                                        ? AppColors.gray500
+                                        : AppColors.primary,
+                                  ),
+                                  SizedBox(width: 2),
+                                  Text(
+                                    task.applicationsCount >= task.maxApplications
+                                        ? 'Pełny'
+                                        : '${task.applicationsCount}/${task.maxApplications}',
+                                    style: AppTypography.caption.copyWith(
+                                      color: task.applicationsCount >= task.maxApplications
+                                          ? AppColors.gray500
+                                          : AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

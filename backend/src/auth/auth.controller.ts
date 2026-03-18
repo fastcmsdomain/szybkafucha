@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -21,7 +22,9 @@ import { LoginEmailDto } from './dto/login-email.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyLinkedPhoneDto } from './dto/verify-linked-phone.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from './types/authenticated-request.type';
 
 @Controller('auth')
 export class AuthController {
@@ -49,6 +52,32 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyPhoneOtp(dto.phone, dto.code, dto.userType);
+  }
+
+  @Post('phone/link/request-otp')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async requestPhoneLinkOtp(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: RequestOtpDto,
+  ) {
+    return this.authService.requestPhoneLinkOtp(req.user.id, dto.phone);
+  }
+
+  @Post('phone/link/verify')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async verifyPhoneLinkOtp(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: VerifyLinkedPhoneDto,
+  ) {
+    return this.authService.verifyPhoneLinkOtp(
+      req.user.id,
+      dto.phone,
+      dto.code,
+    );
   }
 
   /**
