@@ -2,7 +2,7 @@
  * Users Module
  * Handles user management and profile operations
  */
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { DeletedAccount } from './entities/deleted-account.entity';
@@ -12,9 +12,11 @@ import { FileStorageService } from './file-storage.service';
 import { Rating } from '../tasks/entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { ClientProfile } from '../client/entities/client-profile.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    forwardRef(() => AuthModule),
     TypeOrmModule.forFeature([
       User,
       DeletedAccount,

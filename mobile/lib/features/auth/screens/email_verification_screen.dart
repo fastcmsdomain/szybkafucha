@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/theme.dart';
 
@@ -13,10 +13,7 @@ import '../../../core/theme/theme.dart';
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String email;
 
-  const EmailVerificationScreen({
-    super.key,
-    required this.email,
-  });
+  const EmailVerificationScreen({super.key, required this.email});
 
   @override
   ConsumerState<EmailVerificationScreen> createState() =>
@@ -25,13 +22,17 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
 
 class _EmailVerificationScreenState
     extends ConsumerState<EmailVerificationScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
   bool _isResending = false;
   String? _errorMessage;
   int _resendCountdown = 60;
+  int _attemptsLeft = 4;
+  bool _attemptLimitReached = false;
   Timer? _resendTimer;
 
   @override
@@ -53,8 +54,13 @@ class _EmailVerificationScreenState
   }
 
   void _startResendTimer() {
-    _resendCountdown = 60;
     _resendTimer?.cancel();
+    setState(() {
+      _resendCountdown = 60;
+      _attemptsLeft = 4;
+      _attemptLimitReached = false;
+      _errorMessage = null;
+    });
     _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendCountdown > 0) {
         setState(() => _resendCountdown--);
@@ -68,6 +74,7 @@ class _EmailVerificationScreenState
 
   Future<void> _verify() async {
     if (_code.length != 6) return;
+    if (_attemptLimitReached) return;
 
     setState(() {
       _isLoading = true;
@@ -75,10 +82,9 @@ class _EmailVerificationScreenState
     });
 
     try {
-      await ref.read(authProvider.notifier).verifyEmail(
-            email: widget.email,
-            code: _code,
-          );
+      await ref
+          .read(authProvider.notifier)
+          .verifyEmail(email: widget.email, code: _code);
 
       if (!mounted) return;
 
@@ -92,8 +98,13 @@ class _EmailVerificationScreenState
       await ref.read(authProvider.notifier).activateSession();
     } catch (e) {
       if (!mounted) return;
+      final feedback = _mapOtpError(e);
       setState(() {
-        _errorMessage = 'Nieprawidłowy kod. Spróbuj ponownie.';
+        _errorMessage = feedback.message;
+        if (feedback.attemptsLeft != null) {
+          _attemptsLeft = feedback.attemptsLeft!;
+        }
+        _attemptLimitReached = feedback.locked;
         // Clear inputs
         for (final c in _controllers) {
           c.clear();
@@ -119,9 +130,9 @@ class _EmailVerificationScreenState
 
       if (!mounted) return;
       _startResendTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nowy kod został wysłany')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nowy kod został wysłany')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -199,6 +210,24 @@ class _EmailVerificationScreenState
                   ),
                 ),
 
+              Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.paddingMD),
+                child: Text(
+                  _attemptLimitReached
+                      ? _resendCountdown > 0
+                            ? 'Limit prób wykorzystany. Poczekaj ${_resendCountdown}s lub wyślij nowy kod.'
+                            : 'Limit prób wykorzystany. Wyślij nowy kod.'
+                      : 'Pozostałe próby: $_attemptsLeft',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: _attemptLimitReached
+                        ? AppColors.warning
+                        : AppColors.gray500,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
               // OTP input
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -210,13 +239,16 @@ class _EmailVerificationScreenState
                     child: TextFormField(
                       controller: _controllers[index],
                       focusNode: _focusNodes[index],
+                      enabled: !_attemptLimitReached,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
+                      textAlignVertical: TextAlignVertical.center,
                       maxLength: 1,
-                      style: AppTypography.h5,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      style: AppTypography.h4.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.0,
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         counterText: '',
                         border: OutlineInputBorder(
@@ -229,6 +261,10 @@ class _EmailVerificationScreenState
                             width: 2,
                           ),
                         ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                       onChanged: (value) {
                         if (value.isNotEmpty && index < 5) {
@@ -238,7 +274,7 @@ class _EmailVerificationScreenState
                           _focusNodes[index - 1].requestFocus();
                         }
                         // Auto-submit when all 6 digits entered
-                        if (_code.length == 6) {
+                        if (!_attemptLimitReached && _code.length == 6) {
                           _verify();
                         }
                       },
@@ -253,7 +289,10 @@ class _EmailVerificationScreenState
               SizedBox(
                 height: 52,
                 child: FilledButton(
-                  onPressed: _isLoading || _code.length != 6 ? null : _verify,
+                  onPressed:
+                      _isLoading || _code.length != 6 || _attemptLimitReached
+                      ? null
+                      : _verify,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
@@ -295,7 +334,9 @@ class _EmailVerificationScreenState
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(
                                 'Wyślij kod ponownie',
@@ -329,4 +370,42 @@ class _EmailVerificationScreenState
       ),
     );
   }
+
+  _OtpErrorFeedback _mapOtpError(Object error) {
+    if (error is ValidationException) {
+      final data = error.data;
+      final attemptsLeft = data is Map<String, dynamic>
+          ? data['attemptsLeft'] as int?
+          : null;
+      final code = data is Map<String, dynamic>
+          ? data['code'] as String?
+          : null;
+
+      return _OtpErrorFeedback(
+        message: error.message,
+        attemptsLeft: attemptsLeft,
+        locked: code == 'EMAIL_OTP_ATTEMPTS_EXCEEDED' || attemptsLeft == 0,
+      );
+    }
+
+    if (error is ApiException) {
+      return _OtpErrorFeedback(message: error.message);
+    }
+
+    return const _OtpErrorFeedback(
+      message: 'Nie udało się zweryfikować kodu. Spróbuj ponownie.',
+    );
+  }
+}
+
+class _OtpErrorFeedback {
+  final String message;
+  final int? attemptsLeft;
+  final bool locked;
+
+  const _OtpErrorFeedback({
+    required this.message,
+    this.attemptsLeft,
+    this.locked = false,
+  });
 }

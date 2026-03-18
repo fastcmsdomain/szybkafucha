@@ -40,12 +40,7 @@ class _ContractorProfileScreenState
   Set<String> _selectedCategories = {};
   double _serviceRadius = 10.0;
 
-  // KYC verification status
-  bool _isKycVerified = false;
-
-  // Whether the user originally had an email set — determines if field is editable
   // Phone is always read-only (auth credential, requires OTP to change)
-  bool _hadEmailOnLoad = false;
   bool _hadDateOfBirthOnLoad = false;
   DateTime? _dateOfBirth;
 
@@ -56,7 +51,9 @@ class _ContractorProfileScreenState
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _bioController = TextEditingController(text: ''); // Bio loaded from contractor profile
+    _bioController = TextEditingController(
+      text: '',
+    ); // Bio loaded from contractor profile
     _addressController = TextEditingController(text: user?.address ?? '');
     _dateOfBirthController = TextEditingController();
     _dateOfBirth = user?.dateOfBirth;
@@ -64,7 +61,6 @@ class _ContractorProfileScreenState
         ? _formatDateForDisplay(user!.dateOfBirth!)
         : '';
     _hadDateOfBirthOnLoad = user?.dateOfBirth != null;
-    _hadEmailOnLoad = user?.email?.isNotEmpty == true;
     _loadContractorProfile();
     ref.read(creditsProvider.notifier).fetchBalance();
     ref.read(kycProvider.notifier).fetchStatus();
@@ -83,7 +79,9 @@ class _ContractorProfileScreenState
       debugPrint('Categories: ${data['categories']}');
       debugPrint('ServiceRadiusKm: ${data['serviceRadiusKm']}');
       debugPrint('KYC Status: ${data['kycStatus']}');
-      debugPrint('DateOfBirth: ${data['dateOfBirth'] ?? data['date_of_birth']}');
+      debugPrint(
+        'DateOfBirth: ${data['dateOfBirth'] ?? data['date_of_birth']}',
+      );
       debugPrint('======================================');
 
       if (mounted) {
@@ -93,37 +91,41 @@ class _ContractorProfileScreenState
           debugPrint('DEBUG: Loading bio = $bio');
           // Always set controller text to match backend state (even if null/empty)
           _bioController.text = bio ?? '';
-          debugPrint('DEBUG: Set bioController.text to: ${_bioController.text}');
+          debugPrint(
+            'DEBUG: Set bioController.text to: ${_bioController.text}',
+          );
 
           // Load categories and service radius
           final categories = data['categories'] as List?;
           debugPrint('DEBUG: Loading categories = $categories');
           if (categories != null) {
             _selectedCategories = Set<String>.from(categories);
-            debugPrint('DEBUG: Set selectedCategories to: $_selectedCategories');
+            debugPrint(
+              'DEBUG: Set selectedCategories to: $_selectedCategories',
+            );
           }
 
           // Handle serviceRadiusKm which might come as string or number
           final serviceRadiusKm = data['serviceRadiusKm'];
           debugPrint('DEBUG: Loading serviceRadiusKm = $serviceRadiusKm');
           if (serviceRadiusKm != null) {
-            _serviceRadius = (double.tryParse(serviceRadiusKm.toString()) ?? 10.0).clamp(5.0, 50.0);
+            _serviceRadius =
+                (double.tryParse(serviceRadiusKm.toString()) ?? 10.0).clamp(
+                  5.0,
+                  50.0,
+                );
             debugPrint('DEBUG: Set serviceRadius to: $_serviceRadius');
           }
 
-          // Load KYC verification status
-          final kycStatus = data['kycStatus'] as String?;
-          _isKycVerified = (kycStatus == 'verified');
-          debugPrint('DEBUG: Set isKycVerified to: $_isKycVerified');
-
           final userData = data['user'];
-          final dateOfBirthRaw = data['dateOfBirth'] ??
+          final dateOfBirthRaw =
+              data['dateOfBirth'] ??
               data['date_of_birth'] ??
               data['birthDate'] ??
               (userData is Map<String, dynamic>
                   ? (userData['dateOfBirth'] ??
-                      userData['date_of_birth'] ??
-                      userData['birthDate'])
+                        userData['date_of_birth'] ??
+                        userData['birthDate'])
                   : null);
           final parsedDateOfBirth = dateOfBirthRaw is String
               ? DateTime.tryParse(dateOfBirthRaw)
@@ -159,10 +161,7 @@ class _ContractorProfileScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Wybierz zdjęcie',
-                style: AppTypography.h4,
-              ),
+              Text('Wybierz zdjęcie', style: AppTypography.h4),
               SizedBox(height: AppSpacing.gapMD),
               ListTile(
                 leading: Container(
@@ -221,9 +220,11 @@ class _ContractorProfileScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(source == ImageSource.camera
-                ? 'Nie można uzyskać dostępu do aparatu'
-                : 'Nie można uzyskać dostępu do galerii'),
+            content: Text(
+              source == ImageSource.camera
+                  ? 'Nie można uzyskać dostępu do aparatu'
+                  : 'Nie można uzyskać dostępu do galerii',
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -299,16 +300,6 @@ class _ContractorProfileScreenState
     return '${date.year}-$month-$day';
   }
 
-  String? _normalizePhoneForApi(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return null;
-
-    final normalized = trimmed.replaceAll(RegExp(r'[^\d+]'), '');
-    if (normalized.startsWith('+')) return normalized;
-    if (normalized.length == 9) return '+48$normalized';
-    return normalized;
-  }
-
   Future<void> _pickDateOfBirth() async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
@@ -341,14 +332,13 @@ class _ContractorProfileScreenState
       final api = ref.read(apiClientProvider);
 
       // Update shared user data.
-      final normalizedPhone = _normalizePhoneForApi(_phoneController.text);
       final email = _emailController.text.trim();
       final userPayload = <String, dynamic>{
         'name': _nameController.text.trim(),
-        if (normalizedPhone != null) 'phone': normalizedPhone,
         'address': _addressController.text.trim(),
         if (email.isNotEmpty) 'email': email,
-        if (_dateOfBirth != null) 'dateOfBirth': _formatDateForApi(_dateOfBirth!),
+        if (_dateOfBirth != null)
+          'dateOfBirth': _formatDateForApi(_dateOfBirth!),
         if (_dateOfBirth == null && _hadDateOfBirthOnLoad) 'dateOfBirth': null,
       };
 
@@ -411,6 +401,10 @@ class _ContractorProfileScreenState
     );
   }
 
+  void _goToPhoneChangeFlow() {
+    context.push(Routes.phoneLink);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
@@ -418,17 +412,15 @@ class _ContractorProfileScreenState
 
     // Compute whether profile is 100% complete (mirrors _buildProfileProgress logic)
     // 5 real items: name, address, bio, categories, kyc (serviceRadius always has a value)
-    final isProfileComplete = user?.name?.isNotEmpty == true &&
+    final isProfileComplete =
+        user?.name?.isNotEmpty == true &&
         user?.address?.isNotEmpty == true &&
         _bioController.text.isNotEmpty &&
         _selectedCategories.isNotEmpty &&
-        kycState.selfieVerified;
+        kycState.canAcceptTasks;
 
     return Scaffold(
-      appBar: AppBar(
-        title: SFRainbowText('Mój profil'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: SFRainbowText('Mój profil'), centerTitle: true),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppSpacing.paddingLG),
         child: Column(
@@ -444,37 +436,46 @@ class _ContractorProfileScreenState
                       CircleAvatar(
                         radius: 48,
                         backgroundColor: AppColors.gray200,
-                        backgroundImage:
-                            user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                        backgroundImage: user?.avatarUrl != null
+                            ? NetworkImage(user!.avatarUrl!)
+                            : null,
                         child: _isUploadingAvatar
                             ? const CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: AppColors.primary,
                               )
                             : user?.avatarUrl == null
-                                ? Text(
-                                    (user?.name?.isNotEmpty ?? false)
-                                        ? user!.name![0].toUpperCase()
-                                        : 'W',
-                                    style: AppTypography.h3.copyWith(
-                                      color: AppColors.gray600,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  )
-                                : null,
+                            ? Text(
+                                (user?.name?.isNotEmpty ?? false)
+                                    ? user!.name![0].toUpperCase()
+                                    : 'W',
+                                style: AppTypography.h3.copyWith(
+                                  color: AppColors.gray600,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
                       ),
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: Material(
-                          color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
+                          color: _isUploadingAvatar
+                              ? AppColors.gray400
+                              : AppColors.primary,
                           shape: const CircleBorder(),
                           child: InkWell(
                             customBorder: const CircleBorder(),
-                            onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
+                            onTap: _isUploadingAvatar
+                                ? null
+                                : _showPhotoSourceOptions,
                             child: const Padding(
                               padding: EdgeInsets.all(10),
-                              child: Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: AppColors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -486,7 +487,11 @@ class _ContractorProfileScreenState
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.verified, color: AppColors.success, size: 18),
+                        Icon(
+                          Icons.verified,
+                          color: AppColors.success,
+                          size: 18,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Zweryfikowany',
@@ -522,8 +527,18 @@ class _ContractorProfileScreenState
               label: 'Numer telefonu',
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
-              helperText:
-                  'Dodaj numer telefonu. Numer 9-cyfrowy zapiszemy automatycznie z prefixem +48.',
+              helperText: 'Aby zmienić numer telefonu, użyj weryfikacji SMS.',
+              readOnly: true,
+              showReadOnlyLock: false,
+              onTap: _goToPhoneChangeFlow,
+              suffixIcon: IconButton(
+                tooltip: 'Zmień numer telefonu',
+                onPressed: _goToPhoneChangeFlow,
+                icon: Icon(
+                  Icons.verified_user_outlined,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
             _buildTextField(
               controller: _emailController,
@@ -558,7 +573,11 @@ class _ContractorProfileScreenState
                           _dateOfBirthController.clear();
                         });
                       },
-                      icon: Icon(Icons.clear, size: 18, color: AppColors.gray500),
+                      icon: Icon(
+                        Icons.clear,
+                        size: 18,
+                        color: AppColors.gray500,
+                      ),
                     )
                   : Icon(
                       Icons.calendar_today_outlined,
@@ -595,9 +614,7 @@ class _ContractorProfileScreenState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppSpacing.paddingMD,
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                 ),
               ),
             ),
@@ -635,8 +652,7 @@ class _ContractorProfileScreenState
         _buildStepItem(
           number: '3',
           title: 'Wykonaj zadanie',
-          description:
-              'Szef wybrał Cię! Rozpocznij pracę i zrealizuj zlecenie',
+          description: 'Szef wybrał Cię! Rozpocznij pracę i zrealizuj zlecenie',
           icon: Icons.handyman,
           color: AppColors.success,
         ),
@@ -678,10 +694,7 @@ class _ContractorProfileScreenState
               Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     number,
@@ -693,16 +706,15 @@ class _ContractorProfileScreenState
                 ),
               ),
               if (!isLast)
-                Expanded(
-                  child: Container(width: 2, color: AppColors.gray200),
-                ),
+                Expanded(child: Container(width: 2, color: AppColors.gray200)),
             ],
           ),
           SizedBox(width: AppSpacing.gapMD),
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                  bottom: isLast ? 0 : AppSpacing.paddingMD),
+                bottom: isLast ? 0 : AppSpacing.paddingMD,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -763,13 +775,12 @@ class _ContractorProfileScreenState
           prefixIcon: Icon(icon),
           helperText: helperText,
           helperStyle: AppTypography.caption.copyWith(color: AppColors.gray400),
-          suffixIcon: suffixIcon ??
+          suffixIcon:
+              suffixIcon ??
               (readOnly && showReadOnlyLock
                   ? Icon(Icons.lock_outline, size: 16, color: AppColors.gray400)
                   : null),
-          border: OutlineInputBorder(
-            borderRadius: AppRadius.radiusMD,
-          ),
+          border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
           filled: readOnly,
           fillColor: readOnly ? AppColors.gray50 : null,
         ),
@@ -788,14 +799,30 @@ class _ContractorProfileScreenState
     final missing = <({String label, IconData icon, VoidCallback? onTap})>[];
 
     if (user?.name?.isNotEmpty != true)
-      missing.add((label: 'Imię i nazwisko', icon: Icons.person_outline, onTap: null));
+      missing.add((
+        label: 'Imię i nazwisko',
+        icon: Icons.person_outline,
+        onTap: null,
+      ));
     if (user?.address?.isNotEmpty != true)
-      missing.add((label: 'Adres zamieszkania', icon: Icons.home_outlined, onTap: null));
+      missing.add((
+        label: 'Adres zamieszkania',
+        icon: Icons.home_outlined,
+        onTap: null,
+      ));
     if (_bioController.text.isEmpty)
-      missing.add((label: 'Opis (o mnie)', icon: Icons.description_outlined, onTap: null));
+      missing.add((
+        label: 'Opis (o mnie)',
+        icon: Icons.description_outlined,
+        onTap: null,
+      ));
     if (_selectedCategories.isEmpty)
-      missing.add((label: 'Kategorie usług', icon: Icons.category_outlined, onTap: null));
-    if (!kycState.selfieVerified)
+      missing.add((
+        label: 'Kategorie usług',
+        icon: Icons.category_outlined,
+        onTap: null,
+      ));
+    if (kycState.needsIdentityVerification)
       missing.add((
         label: 'Weryfikacja tożsamości (ID + selfie)',
         icon: Icons.badge_outlined,
@@ -860,7 +887,11 @@ class _ContractorProfileScreenState
                       ),
                     ),
                     if (item.onTap != null)
-                      Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.gray400),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppColors.gray400,
+                      ),
                   ],
                 ),
               ),
@@ -880,12 +911,17 @@ class _ContractorProfileScreenState
         border: Border.all(color: AppColors.gray200),
       ),
       child: ListTile(
-        leading: Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary),
+        leading: Icon(
+          Icons.account_balance_wallet_outlined,
+          color: AppColors.primary,
+        ),
         title: Text('Portfel', style: AppTypography.bodyMedium),
         subtitle: Text(
           '${credits.balance.toStringAsFixed(2)} zł',
           style: AppTypography.caption.copyWith(
-            color: credits.balance >= 10 ? AppColors.success : AppColors.warning,
+            color: credits.balance >= 10
+                ? AppColors.success
+                : AppColors.warning,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -894,7 +930,6 @@ class _ContractorProfileScreenState
       ),
     );
   }
-
 
   Widget _buildCategoriesSection() {
     return Container(
@@ -907,10 +942,7 @@ class _ContractorProfileScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Kategorie usług:',
-            style: AppTypography.h4,
-          ),
+          Text('Kategorie usług:', style: AppTypography.h4),
           SizedBox(height: AppSpacing.gapMD),
           Wrap(
             spacing: 8,
@@ -975,5 +1007,4 @@ class _ContractorProfileScreenState
       ),
     );
   }
-
 }

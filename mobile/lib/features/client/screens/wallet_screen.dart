@@ -137,7 +137,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   Widget _buildTopUpButton(CreditsState credits) {
     return SizedBox(
       width: double.infinity,
-      height: 48,
+      height: 56,
       child: ElevatedButton.icon(
         onPressed: credits.isTopUpLoading ? null : () => _showTopUpSheet(),
         icon: credits.isTopUpLoading
@@ -147,7 +147,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : const Icon(Icons.add),
-        label: const Text('Doladuj konto'),
+        label: const Text('Doładuj konto'),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,

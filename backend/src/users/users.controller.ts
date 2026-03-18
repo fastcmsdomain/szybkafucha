@@ -62,6 +62,21 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
     @Body() updateUserDto: UpdateUserDto,
   ) {
+    if (updateUserDto.phone !== undefined) {
+      const currentUser = await this.usersService.findByIdOrFail(req.user.id);
+      const normalizedIncomingPhone = updateUserDto.phone?.trim() ?? '';
+      const normalizedCurrentPhone = currentUser.phone?.trim() ?? '';
+
+      if (
+        normalizedIncomingPhone.length > 0 &&
+        normalizedIncomingPhone !== normalizedCurrentPhone
+      ) {
+        throw new BadRequestException(
+          'Zmiana numeru telefonu wymaga weryfikacji SMS. Użyj dedykowanego przepływu zmiany numeru.',
+        );
+      }
+    }
+
     return this.usersService.update(req.user.id, updateUserDto);
   }
 

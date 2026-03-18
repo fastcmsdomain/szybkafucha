@@ -12,10 +12,27 @@ import { DeletedAccount } from './entities/deleted-account.entity';
 import { Rating } from '../tasks/entities/rating.entity';
 import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
 import { ClientProfile } from '../client/entities/client-profile.entity';
+import { EmailService } from '../auth/email.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let repository: jest.Mocked<Repository<User>>;
+  let deletedAccountRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+  };
+  let ratingRepository: {
+    find: jest.Mock;
+  };
+  let contractorProfileRepository: {
+    findOne: jest.Mock;
+  };
+  let clientProfileRepository: {
+    findOne: jest.Mock;
+  };
+  let emailService: {
+    sendAccountDeletionGoodbye: jest.Mock;
+  };
 
   const mockUser: User = {
     id: 'user-123',
@@ -42,21 +59,25 @@ describe('UsersService', () => {
       createQueryBuilder: jest.fn(),
     };
 
-    const mockDeletedAccountRepository = {
+    deletedAccountRepository = {
       create: jest.fn(),
       save: jest.fn(),
     };
 
-    const mockRatingRepository = {
+    ratingRepository = {
       find: jest.fn(),
     };
 
-    const mockContractorProfileRepository = {
+    contractorProfileRepository = {
       findOne: jest.fn(),
     };
 
-    const mockClientProfileRepository = {
+    clientProfileRepository = {
       findOne: jest.fn(),
+    };
+
+    emailService = {
+      sendAccountDeletionGoodbye: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -65,17 +86,18 @@ describe('UsersService', () => {
         { provide: getRepositoryToken(User), useValue: mockRepository },
         {
           provide: getRepositoryToken(DeletedAccount),
-          useValue: mockDeletedAccountRepository,
+          useValue: deletedAccountRepository,
         },
-        { provide: getRepositoryToken(Rating), useValue: mockRatingRepository },
+        { provide: getRepositoryToken(Rating), useValue: ratingRepository },
         {
           provide: getRepositoryToken(ContractorProfile),
-          useValue: mockContractorProfileRepository,
+          useValue: contractorProfileRepository,
         },
         {
           provide: getRepositoryToken(ClientProfile),
-          useValue: mockClientProfileRepository,
+          useValue: clientProfileRepository,
         },
+        { provide: EmailService, useValue: emailService },
       ],
     }).compile();
 
@@ -296,6 +318,40 @@ describe('UsersService', () => {
       await expect(
         service.update('nonexistent', { name: 'Test' }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('archives, sends goodbye email, anonymises and soft-deletes the user', async () => {
+      repository.findOne.mockResolvedValue({
+        ...mockUser,
+        types: [UserType.CLIENT],
+        passwordHash: 'hash',
+      } as User);
+      contractorProfileRepository.findOne.mockResolvedValue(null);
+      clientProfileRepository.findOne.mockResolvedValue(null);
+      ratingRepository.find.mockResolvedValue([]);
+      deletedAccountRepository.create.mockReturnValue({
+        id: 'archive-1',
+      } as DeletedAccount);
+      deletedAccountRepository.save.mockResolvedValue({
+        id: 'archive-1',
+      } as DeletedAccount);
+      repository.save.mockResolvedValue({
+        ...mockUser,
+        email: 'deleted_user-123@deleted.invalid',
+        phone: 'del_user-123',
+        status: UserStatus.DELETED,
+      } as User);
+      repository.softDelete.mockResolvedValue({ affected: 1, raw: [] } as any);
+
+      await service.deleteAccount('user-123');
+
+      expect(emailService.sendAccountDeletionGoodbye).toHaveBeenCalledWith(
+        'test@example.com',
+        'Test',
+      );
+      expect(repository.softDelete).toHaveBeenCalledWith('user-123');
     });
   });
 

@@ -71,8 +71,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
   @override
   Widget build(BuildContext context) {
     // WebSocket: new task available
-    ref.listen<AsyncValue<NewTaskEvent>>(newTaskAvailableProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<NewTaskEvent>>(newTaskAvailableProvider, (
+      previous,
+      next,
+    ) {
       next.whenData((newTask) {
         ref.read(availableTasksProvider.notifier).refresh();
         _showNewTaskAlert(newTask);
@@ -80,8 +82,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     });
 
     // WebSocket: application accepted/rejected
-    ref.listen<AsyncValue<Map<String, dynamic>>>(applicationResultProvider,
-        (previous, next) {
+    ref.listen<AsyncValue<Map<String, dynamic>>>(applicationResultProvider, (
+      previous,
+      next,
+    ) {
       next.whenData((event) {
         final status = event['status']?.toString().toLowerCase();
         final taskId = event['taskId']?.toString();
@@ -95,17 +99,22 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     final kycState = ref.watch(kycProvider);
     final myApps = ref.watch(myApplicationsProvider);
     final appliedTaskIds = myApps.applications
-        .where((a) =>
-            a.status == ApplicationStatus.pending ||
-            a.status == ApplicationStatus.accepted)
+        .where(
+          (a) =>
+              a.status == ApplicationStatus.pending ||
+              a.status == ApplicationStatus.accepted,
+        )
         .map((a) => a.taskId)
         .toSet();
     final baseTasks = tasksState.tasks.where(_isActiveOrNew).toList();
     final availableCategories = _getAvailableCategories(baseTasks);
-    final effectiveSelectedFilters =
-        _getEffectiveSelectedFilters(availableCategories);
-    final filteredTasks =
-        _getFilteredTasks(baseTasks, effectiveSelectedFilters);
+    final effectiveSelectedFilters = _getEffectiveSelectedFilters(
+      availableCategories,
+    );
+    final filteredTasks = _getFilteredTasks(
+      baseTasks,
+      effectiveSelectedFilters,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -158,7 +167,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
       body: Column(
         children: [
           // KYC completion banner (if not yet verified)
-          if (!kycState.isLoading && !kycState.selfieVerified)
+          if (!kycState.isLoading && kycState.needsIdentityVerification)
             _buildCompletionBanner(),
 
           // Tab content
@@ -204,8 +213,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
   Widget _buildGreeting() {
     final userName = ref.watch(authProvider).user?.name ?? 'Wykonawco';
     final hour = DateTime.now().hour;
-    final greeting =
-        hour < 12 ? 'Dzień dobry' : (hour < 18 ? 'Cześć' : 'Dobry wieczór');
+    final greeting = hour < 12
+        ? 'Dzień dobry'
+        : (hour < 18 ? 'Cześć' : 'Dobry wieczór');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,10 +225,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
           greeting,
           style: AppTypography.caption.copyWith(color: AppColors.gray500),
         ),
-        Text(
-          userName,
-          style: AppTypography.h5,
-        ),
+        Text(userName, style: AppTypography.h5),
       ],
     );
   }
@@ -268,10 +275,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
   }
 
   Set<TaskCategory> _getEffectiveSelectedFilters(
-      Set<TaskCategory> availableCategories) {
-    return _selectedCategoryFilters
-        .where(availableCategories.contains)
-        .toSet();
+    Set<TaskCategory> availableCategories,
+  ) {
+    return _selectedCategoryFilters.where(availableCategories.contains).toSet();
   }
 
   List<ContractorTask> _getFilteredTasks(
@@ -301,8 +307,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () =>
-            _openCategoryFilterDropdown(availableCategories: availableCategories),
+        onTap: () => _openCategoryFilterDropdown(
+          availableCategories: availableCategories,
+        ),
         borderRadius: AppRadius.radiusMD,
         child: Container(
           padding: EdgeInsets.symmetric(
@@ -363,8 +370,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               SizedBox(width: AppSpacing.gapSM),
           itemBuilder: (context, index) {
             final data = availableCategoryData[index];
-            final isSelected =
-                effectiveSelectedFilters.contains(data.category);
+            final isSelected = effectiveSelectedFilters.contains(data.category);
             return FilterChip(
               showCheckmark: true,
               visualDensity: VisualDensity.compact,
@@ -427,8 +433,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                     Row(
                       children: [
                         Expanded(
-                          child: Text('Wybierz kategorie',
-                              style: AppTypography.h4),
+                          child: Text(
+                            'Wybierz kategorie',
+                            style: AppTypography.h4,
+                          ),
                         ),
                         TextButton(
                           onPressed: draft.isEmpty
@@ -441,8 +449,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                     SizedBox(height: AppSpacing.gapSM),
                     Text(
                       'Możesz zaznaczyć wiele kategorii',
-                      style: AppTypography.bodySmall
-                          .copyWith(color: AppColors.gray600),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.gray600,
+                      ),
                     ),
                     SizedBox(height: AppSpacing.gapMD),
                     Expanded(
@@ -450,16 +459,18 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                           ? Center(
                               child: Text(
                                 'Brak kategorii do filtrowania',
-                                style: AppTypography.bodySmall
-                                    .copyWith(color: AppColors.gray500),
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.gray500,
+                                ),
                               ),
                             )
                           : ListView.builder(
                               itemCount: availableCategoryData.length,
                               itemBuilder: (context, index) {
                                 final data = availableCategoryData[index];
-                                final isSelected =
-                                    draft.contains(data.category);
+                                final isSelected = draft.contains(
+                                  data.category,
+                                );
                                 return InkWell(
                                   onTap: () {
                                     setModalState(() {
@@ -494,12 +505,17 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                                           },
                                         ),
                                         SizedBox(width: AppSpacing.gapSM),
-                                        Icon(data.icon,
-                                            color: data.color, size: 20),
+                                        Icon(
+                                          data.icon,
+                                          color: data.color,
+                                          size: 20,
+                                        ),
                                         SizedBox(width: AppSpacing.gapSM),
                                         Expanded(
-                                          child: Text(data.name,
-                                              style: AppTypography.bodyMedium),
+                                          child: Text(
+                                            data.name,
+                                            style: AppTypography.bodyMedium,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -521,8 +537,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              setState(
-                                  () => _selectedCategoryFilters = draft);
+                              setState(() => _selectedCategoryFilters = draft);
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
@@ -554,15 +569,19 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     if (tasksState.error != null) return _buildErrorState(tasksState.error!);
 
     final clusterableTasks = tasks
-        .map((task) => ClusterableTask(
-              id: task.id,
-              position: LatLng(task.latitude, task.longitude),
-              category: task.category.name,
-              price: task.price.toDouble(),
-            ))
+        .map(
+          (task) => ClusterableTask(
+            id: task.id,
+            position: LatLng(task.latitude, task.longitude),
+            category: task.category.name,
+            price: task.price.toDouble(),
+          ),
+        )
         .toList();
-    final clusters =
-        TaskClusterManager.clusterTasks(clusterableTasks, _currentZoom);
+    final clusters = TaskClusterManager.clusterTasks(
+      clusterableTasks,
+      _currentZoom,
+    );
 
     return Stack(
       children: [
@@ -612,8 +631,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                     height: 54,
                     child: GestureDetector(
                       onTap: () => _showTaskDetails(task),
-                      child: TaskMarker(position: cluster.center)
-                          .build(context),
+                      child: TaskMarker(
+                        position: cluster.center,
+                      ).build(context),
                     ),
                   );
                 } else {
@@ -694,8 +714,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                 SizedBox(width: AppSpacing.gapSM),
                 Text(
                   '${tasks.length} zleceń',
-                  style: AppTypography.labelMedium
-                      .copyWith(fontWeight: FontWeight.w600),
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -811,7 +832,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text(
-                    'Brak dostępu do lokalizacji. Włącz w ustawieniach.'),
+                  'Brak dostępu do lokalizacji. Włącz w ustawieniach.',
+                ),
                 backgroundColor: AppColors.warning,
                 behavior: SnackBarBehavior.floating,
                 action: SnackBarAction(
@@ -891,7 +913,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
   }) {
     if (tasksState.isLoading && tasks.isEmpty) return _buildLoadingState();
     if (tasksState.error != null) return _buildErrorState(tasksState.error!);
-    if (tasks.isEmpty) return _buildEmptyState(hasActiveFilter: hasActiveFilter);
+    if (tasks.isEmpty)
+      return _buildEmptyState(hasActiveFilter: hasActiveFilter);
 
     return ListView.separated(
       padding: EdgeInsets.all(AppSpacing.paddingMD),
@@ -924,8 +947,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
             SizedBox(height: AppSpacing.gapMD),
             Text(
               'Ładowanie zleceń...',
-              style:
-                  AppTypography.bodyMedium.copyWith(color: AppColors.gray600),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.gray600,
+              ),
             ),
           ],
         ),
@@ -949,8 +973,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
             SizedBox(height: AppSpacing.gapSM),
             Text(
               error,
-              style:
-                  AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
@@ -987,9 +1010,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               hasActiveFilter
                   ? 'Brak zleceń dla wybranych kategorii.'
                   : 'Obecnie nie ma żadnych dostępnych zleceń w Twojej okolicy. '
-                      'Sprawdź ponownie później.',
-              style:
-                  AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+                        'Sprawdź ponownie później.',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.space6),
@@ -1029,34 +1051,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
   Future<bool> _ensureVerifiedPhoneForApplications() async {
     final user = ref.read(authProvider).user;
     if (user?.phone?.trim().isNotEmpty == true) return true;
-    if (!mounted) return false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Dodaj numer telefonu'),
-        content: const Text(
-          'Aby zgłaszać się do zleceń, dodaj i potwierdź numer telefonu kodem SMS.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Później'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push(Routes.phoneLink);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-            ),
-            child: const Text('Dodaj numer'),
-          ),
-        ],
-      ),
-    );
+    await _showPhoneRequiredDialog();
 
     return false;
   }
@@ -1065,7 +1060,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     if (!await _ensureVerifiedPhoneForApplications()) return;
 
     final kycState = ref.read(kycProvider);
-    if (!kycState.selfieVerified) {
+    if (kycState.needsIdentityVerification) {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -1082,7 +1077,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                context.push(Routes.contractorKyc);
+                if (!mounted) return;
+                this.context.push(Routes.contractorKyc);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -1099,8 +1095,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     final credits = ref.read(creditsProvider);
     final hasSufficientBalance = credits.balance >= 10;
 
-    final priceController =
-        TextEditingController(text: task.price.toString());
+    final priceController = TextEditingController(text: task.price.toString());
     final messageController = TextEditingController();
 
     final result = await showDialog<bool>(
@@ -1113,8 +1108,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
           children: [
             Text(
               'Budżet klienta: ${task.price} zł',
-              style:
-                  AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
             ),
             SizedBox(height: AppSpacing.paddingSM),
             Container(
@@ -1178,8 +1172,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               decoration: InputDecoration(
                 labelText: 'Twoja cena (zł)',
                 hintText: 'Min. 35 zł',
-                border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusMD),
+                border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
                 suffixText: 'zł',
               ),
             ),
@@ -1191,8 +1184,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               decoration: InputDecoration(
                 labelText: 'Wiadomość (opcjonalnie)',
                 hintText: 'Opisz swoje doświadczenie...',
-                border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusMD),
+                border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
               ),
             ),
           ],
@@ -1231,7 +1223,9 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
     }
 
     try {
-      await ref.read(availableTasksProvider.notifier).applyForTask(
+      await ref
+          .read(availableTasksProvider.notifier)
+          .applyForTask(
             task.id,
             proposedPrice: price,
             message: messageController.text.isNotEmpty
@@ -1245,7 +1239,8 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-                'Zgłoszenie wysłane! Czekaj na decyzję klienta.'),
+              'Zgłoszenie wysłane! Czekaj na decyzję klienta.',
+            ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1258,6 +1253,10 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
           ref.read(myApplicationsProvider.notifier).loadApplications();
           _goToTaskRoom(task);
           return;
+        } else if (_isMissingPhoneApplicationError(e)) {
+          await _showPhoneRequiredDialog();
+        } else if (_isIncompleteProfileApplicationError(e)) {
+          await _showProfileRequiredDialog();
         } else if (e is ForbiddenException) {
           showDialog(
             context: context,
@@ -1291,6 +1290,85 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
         }
       }
     }
+  }
+
+  bool _isMissingPhoneApplicationError(Object error) {
+    final user = ref.read(authProvider).user;
+    if (user?.phone?.trim().isEmpty ?? true) {
+      return true;
+    }
+
+    if (error is ApiException) {
+      final message = error.message.toLowerCase();
+      return message.contains('phone') || message.contains('telefon');
+    }
+
+    return false;
+  }
+
+  bool _isIncompleteProfileApplicationError(Object error) {
+    if (error is ApiException) {
+      return error.message.toLowerCase().contains(
+        'complete your contractor profile before applying for tasks',
+      );
+    }
+
+    return false;
+  }
+
+  Future<void> _showPhoneRequiredDialog() async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dodaj numer telefonu'),
+        content: const Text(
+          'Przed wysłaniem oferty musisz dodać i potwierdzić numer telefonu kodem SMS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Później'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push(Routes.phoneLink);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Dodaj numer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showProfileRequiredDialog() async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Uzupełnij profil wykonawcy'),
+        content: const Text(
+          'Zanim wyślesz ofertę, uzupełnij wymagane dane profilu wykonawcy i zakończ weryfikację konta.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Rozumiem'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── WebSocket alert modals ────────────────────────────────────────────────
@@ -1366,8 +1444,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               ),
             ),
             Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
               child: Column(
                 children: [
                   Row(
@@ -1375,20 +1452,21 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                       Container(
                         padding: EdgeInsets.all(AppSpacing.paddingMD),
                         decoration: BoxDecoration(
-                          color:
-                              categoryData.color.withValues(alpha: 0.1),
+                          color: categoryData.color.withValues(alpha: 0.1),
                           borderRadius: AppRadius.radiusLG,
                         ),
-                        child: Icon(categoryData.icon,
-                            color: categoryData.color, size: 32),
+                        child: Icon(
+                          categoryData.icon,
+                          color: categoryData.color,
+                          size: 32,
+                        ),
                       ),
                       SizedBox(width: AppSpacing.gapMD),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(categoryData.name,
-                                style: AppTypography.h5),
+                            Text(categoryData.name, style: AppTypography.h5),
                             if (taskTitle.isNotEmpty) ...[
                               SizedBox(height: AppSpacing.gapXS),
                               Text(
@@ -1415,8 +1493,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.celebration,
-                            color: AppColors.success, size: 24),
+                        Icon(
+                          Icons.celebration,
+                          color: AppColors.success,
+                          size: 24,
+                        ),
                         SizedBox(width: AppSpacing.gapSM),
                         Expanded(
                           child: Text(
@@ -1449,9 +1530,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.white,
                         padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.paddingMD),
+                          vertical: AppSpacing.paddingMD,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.radiusLG),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
                       ),
                     ),
                   ),
@@ -1464,8 +1547,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                         context.push(
                           Routes.contractorTaskChatRoute(taskId),
                           extra: {
-                            'otherUserId':
-                                event['clientId']?.toString() ?? '',
+                            'otherUserId': event['clientId']?.toString() ?? '',
                             'taskTitle': taskTitle.isNotEmpty
                                 ? taskTitle
                                 : 'Czat',
@@ -1481,9 +1563,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                         backgroundColor: AppColors.success,
                         foregroundColor: AppColors.white,
                         padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.paddingMD),
+                          vertical: AppSpacing.paddingMD,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.radiusLG),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
                       ),
                     ),
                   ),
@@ -1574,8 +1658,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.directions_walk,
-                              size: 14, color: AppColors.info),
+                          Icon(
+                            Icons.directions_walk,
+                            size: 14,
+                            color: AppColors.info,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             '${task.distance!.toStringAsFixed(1)} km',
@@ -1591,8 +1678,7 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
               ),
             ),
             Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.paddingMD),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1601,20 +1687,21 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                       Container(
                         padding: EdgeInsets.all(AppSpacing.paddingMD),
                         decoration: BoxDecoration(
-                          color:
-                              categoryData.color.withValues(alpha: 0.1),
+                          color: categoryData.color.withValues(alpha: 0.1),
                           borderRadius: AppRadius.radiusLG,
                         ),
-                        child: Icon(categoryData.icon,
-                            color: categoryData.color, size: 32),
+                        child: Icon(
+                          categoryData.icon,
+                          color: categoryData.color,
+                          size: 32,
+                        ),
                       ),
                       SizedBox(width: AppSpacing.gapMD),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(categoryData.name,
-                                style: AppTypography.h4),
+                            Text(categoryData.name, style: AppTypography.h4),
                             SizedBox(height: 4),
                             Text(
                               task.address,
@@ -1671,9 +1758,11 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.gray700,
                         padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.paddingMD),
+                          vertical: AppSpacing.paddingMD,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.radiusLG),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
                         side: BorderSide(color: AppColors.gray300),
                       ),
                       child: const Text('Pomiń'),
@@ -1685,16 +1774,17 @@ class _ContractorHomeScreenState extends ConsumerState<ContractorHomeScreen>
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        context.push(
-                            Routes.contractorTaskAlertRoute(task.id));
+                        context.push(Routes.contractorTaskAlertRoute(task.id));
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: AppColors.white,
                         padding: EdgeInsets.symmetric(
-                            vertical: AppSpacing.paddingMD),
+                          vertical: AppSpacing.paddingMD,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.radiusLG),
+                          borderRadius: AppRadius.radiusLG,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

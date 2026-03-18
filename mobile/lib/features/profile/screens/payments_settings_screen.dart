@@ -16,7 +16,8 @@ class PaymentsSettingsScreen extends ConsumerStatefulWidget {
       _PaymentsSettingsScreenState();
 }
 
-class _PaymentsSettingsScreenState extends ConsumerState<PaymentsSettingsScreen> {
+class _PaymentsSettingsScreenState
+    extends ConsumerState<PaymentsSettingsScreen> {
   @override
   void initState() {
     super.initState();
@@ -32,7 +33,6 @@ class _PaymentsSettingsScreenState extends ConsumerState<PaymentsSettingsScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final isContractor = user?.isContractor == true;
-    final kycState = ref.watch(kycProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -56,10 +56,7 @@ class _PaymentsSettingsScreenState extends ConsumerState<PaymentsSettingsScreen>
                   icon: Icons.credit_card,
                   title: 'Karty',
                   subtitle: 'Dodaj, usuń lub zmień kartę',
-                  onTap: () => _showComingSoon(
-                    context,
-                    'Zarządzanie kartami',
-                  ),
+                  onTap: () => _showComingSoon(context, 'Zarządzanie kartami'),
                 ),
               ],
             ),
@@ -71,16 +68,17 @@ class _PaymentsSettingsScreenState extends ConsumerState<PaymentsSettingsScreen>
                   icon: Icons.account_balance_outlined,
                   title: 'Numer konta do wypłat',
                   subtitle: isContractor
-                      ? (kycState.bankVerified
-                          ? 'Konto zweryfikowane'
-                          : 'Wymaga weryfikacji (KYC)')
+                      ? 'Dodawanie konta do wypłat będzie dostępne wkrótce'
                       : 'Dostępne tylko dla wykonawców',
                   onTap: () {
                     if (!isContractor) {
-                      _showInfo(context, 'Ta opcja jest dostępna tylko dla wykonawców.');
+                      _showInfo(
+                        context,
+                        'Ta opcja jest dostępna tylko dla wykonawców.',
+                      );
                       return;
                     }
-                    context.push(Routes.contractorKyc);
+                    _showComingSoon(context, 'Numer konta do wypłat');
                   },
                 ),
                 if (isContractor) ...[
@@ -181,4 +179,3 @@ class _PaymentsSettingsScreenState extends ConsumerState<PaymentsSettingsScreen>
     );
   }
 }
-

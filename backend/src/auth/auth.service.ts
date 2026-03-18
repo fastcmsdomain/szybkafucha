@@ -21,22 +21,47 @@ import { UsersService } from '../users/users.service';
 import { User, UserType, UserStatus } from '../users/entities/user.entity';
 import { EmailService } from './email.service';
 import twilio from 'twilio';
+import { createClient } from 'redis';
 
 // Configuration constants
 const OTP_CONFIG = {
   LENGTH: 6,
   EXPIRES_IN_MINUTES: 5,
   DEV_CODE: '123456', // Fixed code for development/testing
+  PHONE_MAX_ATTEMPTS: 4,
 };
 
 const BCRYPT_SALT_ROUNDS = 12;
 const LOCKOUT_THRESHOLD = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
 
+type OtpFallbackEntry = {
+  code: string;
+  expiresAt: Date;
+  attemptsLeft?: number;
+};
+
+declare global {
+  // Persist OTP fallback across service re-instantiation in dev/watch mode.
+  // eslint-disable-next-line no-var
+  var __szybkafuchaOtpFallbackStore: Map<string, OtpFallbackEntry> | undefined;
+}
+
+const otpFallbackStore =
+  globalThis.__szybkafuchaOtpFallbackStore ??
+  (globalThis.__szybkafuchaOtpFallbackStore = new Map<
+    string,
+    OtpFallbackEntry
+  >());
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private twilioClient: twilio.Twilio | null = null;
+  private otpRedisClient:
+    | ReturnType<typeof createClient>
+    | null = null;
+  private otpRedisReady: Promise<void> | null = null;
 
   constructor(
     private readonly usersService: UsersService,
@@ -45,6 +70,8 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly emailService: EmailService,
   ) {
+    this.initializeOtpRedisClient();
+
     // Initialize Twilio client if credentials are provided
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
@@ -57,6 +84,45 @@ export class AuthService {
         'Twilio credentials not configured - OTP will only be logged to console',
       );
     }
+  }
+
+  private initializeOtpRedisClient(): void {
+    if (process.env.JEST_WORKER_ID) {
+      return;
+    }
+
+    const host = this.configService.get<string>('REDIS_HOST') || 'localhost';
+    const port = Number.parseInt(
+      this.configService.get<string>('REDIS_PORT') || '6379',
+      10,
+    );
+    const password = this.configService.get<string>('REDIS_PASSWORD');
+
+    const client = createClient({
+      socket: { host, port },
+      password: password || undefined,
+    });
+
+    client.on('error', (error) => {
+      this.logger.warn(
+        `Dedicated OTP Redis client error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+
+    this.otpRedisClient = client;
+    this.otpRedisReady = client
+      .connect()
+      .then(() => {
+        this.logger.log(
+          `Dedicated OTP Redis client connected (${host}:${port})`,
+        );
+      })
+      .catch((error) => {
+        this.logger.warn(
+          `Failed to connect dedicated OTP Redis client: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        this.otpRedisClient = null;
+      });
   }
 
   /**
@@ -100,9 +166,9 @@ export class AuthService {
     );
 
     // Store OTP in Redis with TTL (milliseconds)
-    await this.cacheManager.set(
+    await this.persistOtp(
       `otp:${normalizedPhone}`,
-      { code, expiresAt },
+      { code, expiresAt, attemptsLeft: OTP_CONFIG.PHONE_MAX_ATTEMPTS },
       OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
     );
 
@@ -136,10 +202,14 @@ export class AuthService {
       Date.now() + OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
     );
 
-    await this.cacheManager.set(
+    await this.persistOtp(
       `phone_link:${userId}:${normalizedPhone}`,
-      { code, expiresAt },
+      { code, expiresAt, attemptsLeft: OTP_CONFIG.PHONE_MAX_ATTEMPTS },
       OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
+    );
+
+    this.logger.log(
+      `Phone link OTP cached for user=${userId}, phone=${normalizedPhone}, expiresIn=${OTP_CONFIG.EXPIRES_IN_MINUTES}m`,
     );
 
     if (!isDev) {
@@ -166,28 +236,32 @@ export class AuthService {
     userType?: UserType,
   ): Promise<{ accessToken: string; user: Partial<User>; isNewUser: boolean }> {
     const normalizedPhone = this.normalizePhone(phone);
+    const cacheKey = `otp:${normalizedPhone}`;
 
     // Get stored OTP from Redis
-    const storedOtp = await this.cacheManager.get<{
+    const storedOtp = await this.getOtpWithFallback<{
       code: string;
       expiresAt: Date;
-    }>(`otp:${normalizedPhone}`);
+      attemptsLeft?: number;
+    }>(cacheKey);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP not found or expired');
+      throw new BadRequestException(
+        'Kod wygasł lub nie został znaleziony. Wyślij nowy kod.',
+      );
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
-      await this.cacheManager.del(`otp:${normalizedPhone}`);
-      throw new BadRequestException('OTP expired. Please request a new one.');
+      await this.deleteOtp(cacheKey);
+      throw new BadRequestException('Kod wygasł. Wyślij nowy kod.');
     }
 
     if (storedOtp.code !== code) {
-      throw new BadRequestException('Invalid OTP code');
+      await this.handleInvalidPhoneOtpAttempt(cacheKey, storedOtp);
     }
 
     // OTP is valid, remove from Redis (one-time use)
-    await this.cacheManager.del(`otp:${normalizedPhone}`);
+    await this.deleteOtp(cacheKey);
 
     // Find or create user
     let user = await this.usersService.findByPhone(normalizedPhone);
@@ -216,22 +290,69 @@ export class AuthService {
   ): Promise<Partial<User>> {
     const normalizedPhone = this.normalizePhone(phone);
     const cacheKey = `phone_link:${userId}:${normalizedPhone}`;
-    const storedOtp = await this.cacheManager.get<{
+    const isDev = this.configService.get<string>('NODE_ENV') !== 'production';
+
+    if (isDev && code === OTP_CONFIG.DEV_CODE) {
+      this.logger.warn(
+        `Using development shortcut for phone link verification user=${userId}, phone=${normalizedPhone}`,
+      );
+
+      const existingUser = await this.usersService.findByPhone(normalizedPhone);
+      if (existingUser && existingUser.id !== userId) {
+        throw new ConflictException('Ten numer telefonu jest już używany.');
+      }
+
+      await this.deleteOtp(cacheKey);
+      const updatedUser = await this.usersService.update(userId, {
+        phone: normalizedPhone,
+      });
+
+      if (updatedUser.email) {
+        await this.emailService
+          .sendSecurityPhoneChangedEmail(
+            updatedUser.email,
+            normalizedPhone,
+            updatedUser.name?.trim()?.split(/\s+/)[0] ?? null,
+          )
+          .catch(() => undefined);
+      }
+
+      return {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        avatarUrl: updatedUser.avatarUrl,
+        status: updatedUser.status,
+        types: updatedUser.types,
+      };
+    }
+
+    const storedOtp = await this.getOtpWithFallback<{
       code: string;
       expiresAt: Date;
+      attemptsLeft?: number;
     }>(cacheKey);
 
     if (!storedOtp) {
-      throw new BadRequestException('OTP not found or expired');
+      this.logger.warn(
+        `Phone link OTP missing for user=${userId}, phone=${normalizedPhone}, cacheKey=${cacheKey}`,
+      );
+      throw new BadRequestException(
+        'Kod wygasł lub nie został znaleziony. Wyślij nowy kod.',
+      );
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
-      await this.cacheManager.del(cacheKey);
-      throw new BadRequestException('OTP expired. Please request a new one.');
+      this.logger.warn(
+        `Phone link OTP expired for user=${userId}, phone=${normalizedPhone}, cacheKey=${cacheKey}`,
+      );
+      await this.deleteOtp(cacheKey);
+      throw new BadRequestException('Kod wygasł. Wyślij nowy kod.');
     }
 
     if (storedOtp.code !== code) {
-      throw new BadRequestException('Invalid OTP code');
+      await this.handleInvalidPhoneOtpAttempt(cacheKey, storedOtp);
     }
 
     const existingUser = await this.usersService.findByPhone(normalizedPhone);
@@ -239,10 +360,20 @@ export class AuthService {
       throw new ConflictException('Ten numer telefonu jest już używany.');
     }
 
-    await this.cacheManager.del(cacheKey);
+    await this.deleteOtp(cacheKey);
     const updatedUser = await this.usersService.update(userId, {
       phone: normalizedPhone,
     });
+
+    if (updatedUser.email) {
+      await this.emailService
+        .sendSecurityPhoneChangedEmail(
+          updatedUser.email,
+          normalizedPhone,
+          updatedUser.name?.trim()?.split(/\s+/)[0] ?? null,
+        )
+        .catch(() => undefined);
+    }
 
     return {
       id: updatedUser.id,
@@ -253,6 +384,46 @@ export class AuthService {
       status: updatedUser.status,
       types: updatedUser.types,
     };
+  }
+
+  private async handleInvalidPhoneOtpAttempt(
+    cacheKey: string,
+    storedOtp: {
+      code: string;
+      expiresAt: Date;
+      attemptsLeft?: number;
+    },
+  ): Promise<never> {
+    const currentAttempts =
+      storedOtp.attemptsLeft ?? OTP_CONFIG.PHONE_MAX_ATTEMPTS;
+    const attemptsLeft = currentAttempts - 1;
+
+    if (attemptsLeft <= 0) {
+      await this.deleteOtp(cacheKey);
+      throw new BadRequestException({
+        message:
+          'Wykorzystano limit prób dla tego kodu. Wyślij nowy kod lub poczekaj na możliwość ponownej wysyłki.',
+        attemptsLeft: 0,
+        code: 'OTP_ATTEMPTS_EXCEEDED',
+      });
+    }
+
+    const remainingTtl = Math.max(
+      new Date(storedOtp.expiresAt).getTime() - Date.now(),
+      1000,
+    );
+
+    await this.persistOtp(
+      cacheKey,
+      { ...storedOtp, attemptsLeft },
+      remainingTtl,
+    );
+
+    throw new BadRequestException({
+      message: `Nieprawidłowy kod. Pozostały ${attemptsLeft} próby.`,
+      attemptsLeft,
+      code: 'OTP_INVALID',
+    });
   }
 
   /**
@@ -288,6 +459,8 @@ export class AuthService {
           types: [userType || UserType.CLIENT],
           status: UserStatus.ACTIVE,
         });
+
+        await this.sendWelcomeEmailIfPossible(email, name);
       }
     } else if (userType && user.types.length === 0) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
@@ -333,6 +506,10 @@ export class AuthService {
           types: [userType || UserType.CLIENT],
           status: UserStatus.ACTIVE,
         });
+
+        if (email) {
+          await this.sendWelcomeEmailIfPossible(email, name);
+        }
       }
     } else if (userType && user.types.length === 0) {
       // MVP: Only add role if user has no roles yet (prevents role switching)
@@ -448,32 +625,37 @@ export class AuthService {
     code: string,
   ): Promise<{ message: string }> {
     const cacheKey = `email-verify:${email.toLowerCase()}`;
-    const storedOtp = await this.cacheManager.get<{
+    const storedOtp = await this.getOtpWithFallback<{
       code: string;
       expiresAt: Date;
+      attemptsLeft?: number;
     }>(cacheKey);
 
     if (!storedOtp) {
       throw new BadRequestException(
-        'Kod weryfikacyjny nie został znaleziony lub wygasł',
+        'Kod weryfikacyjny wygasł lub nie został znaleziony. Wyślij nowy.',
       );
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
-      await this.cacheManager.del(cacheKey);
+      await this.deleteOtp(cacheKey);
       throw new BadRequestException('Kod weryfikacyjny wygasł. Wyślij nowy.');
     }
 
     if (storedOtp.code !== code) {
-      throw new BadRequestException('Nieprawidłowy kod weryfikacyjny');
+      await this.handleInvalidEmailOtpAttempt(cacheKey, storedOtp);
     }
 
     // OTP valid - mark email as verified
-    await this.cacheManager.del(cacheKey);
+    await this.deleteOtp(cacheKey);
 
     const user = await this.usersService.findByEmail(email);
     if (user) {
       await this.usersService.setEmailVerified(user.id);
+      await this.sendWelcomeEmailIfPossible(
+        user.email ?? email,
+        user.name?.trim()?.split(/\s+/)[0] ?? null,
+      );
     }
 
     return { message: 'Email zweryfikowany pomyślnie' };
@@ -539,7 +721,7 @@ export class AuthService {
     );
 
     const cacheKey = `password-reset:${email.toLowerCase()}`;
-    await this.cacheManager.set(
+    await this.persistOtp(
       cacheKey,
       { code, expiresAt },
       OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
@@ -563,7 +745,7 @@ export class AuthService {
     newPassword: string,
   ): Promise<{ message: string }> {
     const cacheKey = `password-reset:${email.toLowerCase()}`;
-    const storedOtp = await this.cacheManager.get<{
+    const storedOtp = await this.getOtpWithFallback<{
       code: string;
       expiresAt: Date;
     }>(cacheKey);
@@ -575,7 +757,7 @@ export class AuthService {
     }
 
     if (new Date() > new Date(storedOtp.expiresAt)) {
-      await this.cacheManager.del(cacheKey);
+      await this.deleteOtp(cacheKey);
       throw new BadRequestException('Kod resetowania wygasł. Wyślij nowy.');
     }
 
@@ -584,7 +766,7 @@ export class AuthService {
     }
 
     // OTP valid - update password
-    await this.cacheManager.del(cacheKey);
+    await this.deleteOtp(cacheKey);
 
     const user = await this.usersService.findByEmail(email);
     if (!user) {
@@ -593,6 +775,15 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     await this.usersService.updatePassword(user.id, passwordHash);
+
+    if (user.email) {
+      await this.emailService
+        .sendSecurityPasswordChangedEmail(
+          user.email,
+          user.name?.trim()?.split(/\s+/)[0] ?? null,
+        )
+        .catch(() => undefined);
+    }
 
     return { message: 'Hasło zostało zmienione pomyślnie' };
   }
@@ -608,13 +799,68 @@ export class AuthService {
     );
 
     const cacheKey = `email-verify:${email.toLowerCase()}`;
-    await this.cacheManager.set(
+    await this.persistOtp(
       cacheKey,
-      { code, expiresAt },
+      { code, expiresAt, attemptsLeft: OTP_CONFIG.PHONE_MAX_ATTEMPTS },
       OTP_CONFIG.EXPIRES_IN_MINUTES * 60 * 1000,
     );
 
     await this.emailService.sendVerificationOtp(email, code);
+  }
+
+  private async sendWelcomeEmailIfPossible(
+    email?: string | null,
+    name?: string | null,
+  ): Promise<void> {
+    if (!email) {
+      return;
+    }
+
+    await this.emailService.sendWelcomeEmail(email, name).catch((error) => {
+      this.logger.warn(
+        `Failed to send welcome email to ${email}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+  }
+
+  private async handleInvalidEmailOtpAttempt(
+    cacheKey: string,
+    storedOtp: {
+      code: string;
+      expiresAt: Date;
+      attemptsLeft?: number;
+    },
+  ): Promise<never> {
+    const currentAttempts =
+      storedOtp.attemptsLeft ?? OTP_CONFIG.PHONE_MAX_ATTEMPTS;
+    const attemptsLeft = currentAttempts - 1;
+
+    if (attemptsLeft <= 0) {
+      await this.deleteOtp(cacheKey);
+      throw new BadRequestException({
+        message:
+          'Wykorzystano limit prób dla tego kodu email. Wyślij nowy kod lub poczekaj na możliwość ponownej wysyłki.',
+        attemptsLeft: 0,
+        code: 'EMAIL_OTP_ATTEMPTS_EXCEEDED',
+      });
+    }
+
+    const remainingTtl = Math.max(
+      new Date(storedOtp.expiresAt).getTime() - Date.now(),
+      1000,
+    );
+
+    await this.persistOtp(
+      cacheKey,
+      { ...storedOtp, attemptsLeft },
+      remainingTtl,
+    );
+
+    throw new BadRequestException({
+      message: `Nieprawidłowy kod weryfikacyjny. Pozostały ${attemptsLeft} próby.`,
+      attemptsLeft,
+      code: 'EMAIL_OTP_INVALID',
+    });
   }
 
   // ──────────────────────────────────────────────────────
@@ -668,5 +914,84 @@ export class AuthService {
     }
 
     return normalized;
+  }
+
+  private storeOtpFallback(
+    key: string,
+    value: OtpFallbackEntry,
+  ): void {
+    otpFallbackStore.set(key, value);
+  }
+
+  private async getOtpRedisClient(): Promise<ReturnType<typeof createClient> | null> {
+    if (!this.otpRedisClient || !this.otpRedisReady) {
+      return null;
+    }
+
+    await this.otpRedisReady;
+    return this.otpRedisClient?.isOpen ? this.otpRedisClient : null;
+  }
+
+  private async persistOtp(
+    key: string,
+    value: OtpFallbackEntry,
+    ttlMs: number,
+  ): Promise<void> {
+    this.storeOtpFallback(key, value);
+
+    const redisClient = await this.getOtpRedisClient();
+    if (redisClient) {
+      await redisClient.set(key, JSON.stringify(value), { PX: ttlMs });
+      return;
+    }
+
+    await this.cacheManager.set(key, value, ttlMs);
+  }
+
+  private async getOtpWithFallback<T extends { expiresAt: Date }>(
+    key: string,
+  ): Promise<T | undefined> {
+    const redisClient = await this.getOtpRedisClient();
+    if (redisClient) {
+      const raw = await redisClient.get(key);
+      if (raw) {
+        const parsed = JSON.parse(raw) as OtpFallbackEntry;
+        return {
+          ...parsed,
+          expiresAt: new Date(parsed.expiresAt),
+        } as unknown as T;
+      }
+    }
+
+    const cached = await this.cacheManager.get<T>(key);
+    if (cached) {
+      return cached;
+    }
+
+    const fallback = otpFallbackStore.get(key);
+    if (!fallback) {
+      this.logger.warn(
+        `OTP fallback missing for key=${key}, fallbackSize=${otpFallbackStore.size}`,
+      );
+      return undefined;
+    }
+
+    if (new Date() > new Date(fallback.expiresAt)) {
+      otpFallbackStore.delete(key);
+      return undefined;
+    }
+
+    this.logger.warn(`Using in-memory OTP fallback for key=${key}`);
+    return fallback as unknown as T;
+  }
+
+  private async deleteOtp(key: string): Promise<void> {
+    otpFallbackStore.delete(key);
+    const redisClient = await this.getOtpRedisClient();
+    if (redisClient) {
+      await redisClient.del(key);
+      return;
+    }
+    await this.cacheManager.del(key);
   }
 }

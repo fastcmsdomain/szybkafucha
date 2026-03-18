@@ -42,6 +42,7 @@ import {
 } from './dto/kyc.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/constants/notification-templates';
+import { EmailService } from '../auth/email.service';
 
 @Injectable()
 export class KycService {
@@ -58,6 +59,7 @@ export class KycService {
     private readonly kycCheckRepository: Repository<KycCheck>,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly emailService: EmailService,
   ) {
     const apiToken = this.configService.get<string>('ONFIDO_API_TOKEN');
     const region = this.configService.get<string>('ONFIDO_REGION', 'EU');
@@ -530,6 +532,10 @@ export class KycService {
             `Failed to send KYC_DOCUMENT_VERIFIED notification: ${err}`,
           ),
         );
+      void this.sendKycEmailIfPossible(
+        kycCheck.userId,
+        'document_verified',
+      );
     } else if (kycCheck.type === KycCheckType.FACIAL_SIMILARITY) {
       profile.kycSelfieVerified = true;
       // Send notification
@@ -540,6 +546,7 @@ export class KycService {
             `Failed to send KYC_SELFIE_VERIFIED notification: ${err}`,
           ),
         );
+      void this.sendKycEmailIfPossible(kycCheck.userId, 'selfie_verified');
     }
 
     await this.profileRepository.save(profile);
@@ -565,6 +572,7 @@ export class KycService {
         .catch((err) =>
           this.logger.error(`Failed to send KYC_COMPLETE notification: ${err}`),
         );
+      void this.sendKycEmailIfPossible(userId, 'kyc_complete');
     }
   }
 
@@ -581,6 +589,7 @@ export class KycService {
           .catch((err) =>
             this.logger.error(`Failed to send KYC_FAILED notification: ${err}`),
           );
+        void this.sendKycEmailIfPossible(userId, 'kyc_failed');
       }
     } catch (error) {
       this.logger.error(
@@ -594,6 +603,34 @@ export class KycService {
     // Show first 4 and last 4 characters
     if (iban.length <= 8) return iban;
     return `${iban.substring(0, 4)}****${iban.substring(iban.length - 4)}`;
+  }
+
+  private async sendKycEmailIfPossible(
+    userId: string,
+    kind:
+      | 'document_verified'
+      | 'selfie_verified'
+      | 'kyc_complete'
+      | 'kyc_failed',
+  ): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user?.email) {
+      return;
+    }
+
+    await this.emailService
+      .sendKycUpdateEmail(
+        user.email,
+        kind,
+        user.name?.trim()?.split(/\s+/)[0] ?? null,
+      )
+      .catch((error) =>
+        this.logger.error(
+          `Failed to send ${kind} email to ${user.email}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        ),
+      );
   }
 
   private async mockVerificationComplete(

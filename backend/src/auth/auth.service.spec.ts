@@ -108,6 +108,9 @@ describe('AuthService', () => {
     const mockEmailService = {
       sendVerificationOtp: jest.fn(),
       sendPasswordResetOtp: jest.fn(),
+      sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+      sendSecurityPasswordChangedEmail: jest.fn().mockResolvedValue(undefined),
+      sendSecurityPhoneChangedEmail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -198,7 +201,11 @@ describe('AuthService', () => {
   describe('verifyPhoneOtp', () => {
     const phone = '+48123456789';
     const code = '123456';
-    const validOtp = { code, expiresAt: new Date(Date.now() + 60000) };
+    const validOtp = {
+      code,
+      expiresAt: new Date(Date.now() + 60000),
+      attemptsLeft: 4,
+    };
 
     it('should return JWT token for valid OTP', async () => {
       cacheManager.get.mockResolvedValue(validOtp);
@@ -253,7 +260,7 @@ describe('AuthService', () => {
         BadRequestException,
       );
       await expect(service.verifyPhoneOtp(phone, code)).rejects.toThrow(
-        'OTP not found or expired',
+        'Kod wygasł lub nie został znaleziony',
       );
     });
 
@@ -273,9 +280,33 @@ describe('AuthService', () => {
       await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
         BadRequestException,
       );
-      await expect(service.verifyPhoneOtp(phone, 'wrong-code')).rejects.toThrow(
-        'Invalid OTP code',
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        `otp:${phone}`,
+        expect.objectContaining({ attemptsLeft: 3 }),
+        expect.any(Number),
       );
+    });
+
+    it('should invalidate the OTP after the last allowed wrong attempt', async () => {
+      cacheManager.get.mockResolvedValue({
+        code,
+        expiresAt: new Date(Date.now() + 60000),
+        attemptsLeft: 1,
+      });
+
+      try {
+        await service.verifyPhoneOtp(phone, 'wrong-code');
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect((error as BadRequestException).getResponse()).toEqual({
+          message:
+            'Wykorzystano limit prób dla tego kodu. Wyślij nowy kod lub poczekaj na możliwość ponownej wysyłki.',
+          attemptsLeft: 0,
+          code: 'OTP_ATTEMPTS_EXCEEDED',
+        });
+      }
+
+      expect(cacheManager.del).toHaveBeenCalledWith(`otp:${phone}`);
     });
   });
 
@@ -338,6 +369,7 @@ describe('AuthService', () => {
         types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
+      expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith(email, name);
       expect(result.isNewUser).toBe(true);
     });
 
@@ -401,6 +433,7 @@ describe('AuthService', () => {
         types: [UserType.CLIENT],
         status: UserStatus.ACTIVE,
       });
+      expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith(email, name);
       expect(result.isNewUser).toBe(true);
     });
 
@@ -587,7 +620,11 @@ describe('AuthService', () => {
     const email = 'test@example.com';
     const code = '123456';
     const cacheKey = `email-verify:${email}`;
-    const validOtp = { code, expiresAt: new Date(Date.now() + 60000) };
+    const validOtp = {
+      code,
+      expiresAt: new Date(Date.now() + 60000),
+      attemptsLeft: 4,
+    };
 
     it('should verify email successfully with valid code', async () => {
       cacheManager.get.mockResolvedValue(validOtp);
@@ -602,6 +639,10 @@ describe('AuthService', () => {
       expect(result.message).toContain('zweryfikowany');
       expect(cacheManager.del).toHaveBeenCalledWith(cacheKey);
       expect(usersService.setEmailVerified).toHaveBeenCalledWith(mockUser.id);
+      expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        'Test',
+      );
     });
 
     it('should throw BadRequestException for expired code', async () => {
@@ -619,6 +660,67 @@ describe('AuthService', () => {
       await expect(service.verifyEmailOtp(email, '000000')).rejects.toThrow(
         BadRequestException,
       );
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        cacheKey,
+        expect.objectContaining({ attemptsLeft: 3 }),
+        expect.any(Number),
+      );
+    });
+
+    it('should invalidate email OTP after the last allowed wrong attempt', async () => {
+      cacheManager.get.mockResolvedValue({
+        code,
+        expiresAt: new Date(Date.now() + 60000),
+        attemptsLeft: 1,
+      });
+
+      try {
+        await service.verifyEmailOtp(email, '000000');
+      } catch (error) {
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect((error as BadRequestException).getResponse()).toEqual({
+          message:
+            'Wykorzystano limit prób dla tego kodu email. Wyślij nowy kod lub poczekaj na możliwość ponownej wysyłki.',
+          attemptsLeft: 0,
+          code: 'EMAIL_OTP_ATTEMPTS_EXCEEDED',
+        });
+      }
+
+      expect(cacheManager.del).toHaveBeenCalledWith(cacheKey);
+    });
+  });
+
+  describe('resendEmailVerificationOtp', () => {
+    const email = 'contractor@example.com';
+
+    it('should resend verification OTP for an unverified account', async () => {
+      usersService.findByEmail.mockResolvedValue({
+        ...mockContractor,
+        email,
+        emailVerified: false,
+      });
+
+      const result = await service.resendEmailVerificationOtp(email);
+
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        `email-verify:${email}`,
+        expect.objectContaining({ code: expect.any(String) }),
+        5 * 60 * 1000,
+      );
+      expect(emailService.sendVerificationOtp).toHaveBeenCalledWith(
+        email,
+        expect.any(String),
+      );
+      expect(result.expiresIn).toBe(5 * 60);
+    });
+
+    it('should return a generic response when the account does not exist', async () => {
+      usersService.findByEmail.mockResolvedValue(null);
+
+      const result = await service.resendEmailVerificationOtp(email);
+
+      expect(emailService.sendVerificationOtp).not.toHaveBeenCalled();
+      expect(result.message).toContain('Jeśli konto istnieje');
     });
   });
 

@@ -19,7 +19,10 @@ import {
   ApplicationStatus,
 } from './entities/task-application.entity';
 import { Rating } from './entities/rating.entity';
-import { ContractorProfile } from '../contractor/entities/contractor-profile.entity';
+import {
+  ContractorProfile,
+  KycStatus,
+} from '../contractor/entities/contractor-profile.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { ApplyTaskDto } from './dto/apply-task.dto';
@@ -30,6 +33,8 @@ import { NotificationType } from '../notifications/constants/notification-templa
 import { ServerEvent } from '../realtime/realtime.gateway';
 import { ContractorService } from '../contractor/contractor.service';
 import { CreditsService } from '../payments/credits.service';
+import { UsersService } from '../users/users.service';
+import { EmailService } from '../auth/email.service';
 
 // MVP Phase 1: Flat fee per side (client pays 10 zł, contractor pays 10 zł)
 const MATCHING_FEE_PER_SIDE = 10;
@@ -76,6 +81,8 @@ export class TasksService {
     @Inject(forwardRef(() => ContractorService))
     private readonly contractorService: ContractorService,
     private readonly creditsService: CreditsService,
+    private readonly usersService: UsersService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -563,6 +570,11 @@ export class TasksService {
       `Contractor ${contractorId} applied for task ${task.id} with price ${dto.proposedPrice} PLN`,
     );
 
+    void this.sendTaskEmailToUser(task.clientId, 'application_received', {
+      taskTitle: task.title,
+      counterpartName: contractorProfile?.user?.name || 'Wykonawca',
+    });
+
     return application;
   }
 
@@ -765,6 +777,14 @@ export class TasksService {
 
     this.logger.log(
       `Client ${clientId} accepted application ${applicationId} for task ${taskId}. Contractor: ${application.contractorId}`,
+    );
+
+    void this.sendTaskEmailToUser(
+      application.contractorId,
+      'application_accepted',
+      {
+        taskTitle: task.title,
+      },
     );
 
     return savedTask;
@@ -1060,6 +1080,11 @@ export class TasksService {
         this.logger.error(`Failed to send TASK_STARTED notification: ${err}`),
       );
 
+    void this.sendTaskEmailToUser(task.clientId, 'task_started', {
+      taskTitle: task.title,
+      counterpartName: contractorProfile?.user?.name || 'Wykonawca',
+    });
+
     return savedTask;
   }
 
@@ -1141,6 +1166,14 @@ export class TasksService {
             `Failed to send completion confirmation notification: ${err}`,
           ),
         );
+
+      void this.sendTaskEmailToUser(
+        task.contractorId,
+        'task_completion_confirmed',
+        {
+          taskTitle: task.title,
+        },
+      );
     }
 
     return savedTask;
@@ -1250,6 +1283,13 @@ export class TasksService {
           ),
         );
 
+      void this.sendTaskEmailToUser(task.clientId, 'task_cancelled', {
+        taskTitle: task.title,
+        reason:
+          reason ||
+          'Wykonawca zrezygnowal ze zlecenia. Zlecenie jest ponownie dostepne.',
+      });
+
       return savedTask;
     } else {
       // CLIENT is cancelling - truly cancel the task
@@ -1330,7 +1370,16 @@ export class TasksService {
               `Failed to send TASK_CANCELLED notification: ${err}`,
             ),
           );
+        void this.sendTaskEmailToUser(previousContractorId, 'task_cancelled', {
+          taskTitle: task.title,
+          reason: reason || 'Zlecenie zostalo anulowane',
+        });
       }
+
+      void this.sendTaskEmailToUser(task.clientId, 'task_cancelled', {
+        taskTitle: task.title,
+        reason: reason || 'Zlecenie zostalo anulowane',
+      });
 
       return savedTask;
     }
@@ -1427,6 +1476,13 @@ export class TasksService {
             `Failed to send TASK_COMPLETED notification to contractor: ${err}`,
           ),
         );
+
+      void this.sendTaskEmailToUser(task.clientId, 'task_completed', {
+        taskTitle: task.title,
+      });
+      void this.sendTaskEmailToUser(task.contractorId, 'task_completed', {
+        taskTitle: task.title,
+      });
     }
 
     await this.tasksRepository.save(task);
@@ -1563,13 +1619,11 @@ export class TasksService {
     maxRadius: number = 20,
     limit: number = MAX_CONTRACTORS_TO_NOTIFY,
   ): Promise<RankedContractor[]> {
-    // Find all online contractors with matching category
-    // TODO: Re-enable KYC check before production: kycStatus: KycStatus.VERIFIED
+    // Find all online contractors who completed KYC.
     const contractors = await this.contractorProfileRepository.find({
       where: {
         isOnline: true,
-        // MVP: Allow non-verified contractors for testing
-        // kycStatus: KycStatus.VERIFIED,
+        kycStatus: KycStatus.VERIFIED,
       },
       relations: ['user'],
     });
@@ -1702,5 +1756,41 @@ export class TasksService {
     const parts = fullAddress.split(',').map((p) => p.trim());
     // Return only first 2 parts (e.g., "Warszawa, Śródmieście")
     return parts.slice(0, 2).join(', ');
+  }
+
+  private async sendTaskEmailToUser(
+    userId: string,
+    event:
+      | 'application_received'
+      | 'application_accepted'
+      | 'task_started'
+      | 'task_completion_confirmed'
+      | 'task_completed'
+      | 'task_cancelled',
+    params: {
+      taskTitle: string;
+      counterpartName?: string | null;
+      reason?: string | null;
+    },
+  ): Promise<void> {
+    const user = await this.usersService.findById(userId);
+    if (!user?.email) {
+      return;
+    }
+
+    await this.emailService
+      .sendTaskLifecycleEmail(user.email, event, {
+        firstName: user.name?.trim()?.split(/\s+/)[0] ?? null,
+        taskTitle: params.taskTitle,
+        counterpartName: params.counterpartName,
+        reason: params.reason,
+      })
+      .catch((error) =>
+        this.logger.error(
+          `Failed to send ${event} email to ${user.email}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        ),
+      );
   }
 }

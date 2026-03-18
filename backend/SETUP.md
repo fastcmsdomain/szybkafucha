@@ -44,6 +44,15 @@ REDIS_PORT=6379
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 
+# SMTP Configuration (required for production email delivery)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=noreply@szybkafucha.app
+SMTP_PASSWORD=your_smtp_password
+SMTP_FROM=Szybka Fucha <noreply@szybkafucha.app>
+# Optional: set to true/1/on for SMTPS, defaults to true for port 465
+SMTP_SECURE=false
+
 # Application Port
 PORT=3000
 
@@ -116,6 +125,11 @@ npm run start:dev
 ```
 
 The application will start on `http://localhost:3000`
+
+## Email Verification Notes
+
+- In `development`, verification and password reset OTPs are logged locally instead of being delivered by SMTP.
+- In `production`, configure all `SMTP_*` variables above so registration, resend verification, and password reset emails can be sent.
 
 ## Troubleshooting
 
@@ -228,4 +242,3 @@ Or to reset and seed:
 ```bash
 npm run seed:fresh
 ```
-
