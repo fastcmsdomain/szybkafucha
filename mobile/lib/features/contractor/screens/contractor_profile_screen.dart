@@ -36,6 +36,39 @@ class _ContractorProfileScreenState
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
 
+  // Bio moderation patterns (mirrors chat restrictions)
+  static final _phoneRegex = RegExp(r'(\+?(?:\d[\s\-\.\(\)]?){8,}\d)', caseSensitive: false);
+  static final _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', caseSensitive: false);
+  static final _urlRegex = RegExp(r'(https?://|www\.)\S+', caseSensitive: false);
+  static final _atHandleRegex = RegExp(r'(?<!\w)@[a-zA-Z0-9._]{3,}', caseSensitive: false);
+  static final _socialMediaRegex = RegExp(
+    r'\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b',
+    caseSensitive: false,
+  );
+  static final _contactPhraseRegex = RegExp(
+    r'\b(napisz (do mnie )?na|mój profil|znajdź mnie|dodaj mnie|zadzwoń (do mnie )?na|mój numer|mój mail|mój email|kontakt do mnie|prywatna wiadomość)\b',
+    caseSensitive: false,
+  );
+  static final _polishNumberWordsRegex = RegExp(
+    r'\b(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b'
+    r'(\s+(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b){2,}',
+    caseSensitive: false,
+  );
+
+  String? _checkBioModeration(String text) {
+    if (text.isEmpty) return null;
+    if (_phoneRegex.hasMatch(text) || text.replaceAll(RegExp(r'\D'), '').length >= 7) {
+      return 'Opis nie może zawierać numeru telefonu.';
+    }
+    if (_emailRegex.hasMatch(text)) return 'Opis nie może zawierać adresu email.';
+    if (_urlRegex.hasMatch(text)) return 'Opis nie może zawierać linków.';
+    if (_atHandleRegex.hasMatch(text)) return 'Opis nie może zawierać nazw użytkowników (@handle).';
+    if (_socialMediaRegex.hasMatch(text)) return 'Opis nie może zawierać nazw platform społecznościowych.';
+    if (_contactPhraseRegex.hasMatch(text)) return 'Opis nie może zawierać danych kontaktowych.';
+    if (_polishNumberWordsRegex.hasMatch(text)) return 'Opis nie może zawierać numeru telefonu zapisanego słowami.';
+    return null;
+  }
+
   // Categories and service radius
   Set<String> _selectedCategories = {};
   double _serviceRadius = 10.0;
@@ -324,6 +357,18 @@ class _ContractorProfileScreenState
     // Validation
     if (_nameController.text.trim().isEmpty) {
       _showError('Imię i nazwisko jest wymagane');
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    if (email.isNotEmpty && !_emailRegex.hasMatch(email)) {
+      _showError('Podaj poprawny adres email (np. jan@example.com)');
+      return;
+    }
+
+    final bioError = _checkBioModeration(_bioController.text.trim());
+    if (bioError != null) {
+      _showError(bioError);
       return;
     }
 

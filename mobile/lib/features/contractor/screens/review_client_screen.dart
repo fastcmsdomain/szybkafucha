@@ -11,13 +11,11 @@ import '../../../core/theme/theme.dart';
 class ReviewClientScreen extends ConsumerStatefulWidget {
   final String taskId;
   final String? clientName;
-  final int? earnings;
 
   const ReviewClientScreen({
     super.key,
     required this.taskId,
     this.clientName,
-    this.earnings,
   });
 
   @override
@@ -124,17 +122,6 @@ class _ReviewClientScreenState extends ConsumerState<ReviewClientScreen>
           style: AppTypography.h2,
           textAlign: TextAlign.center,
         ),
-        if (widget.earnings != null) ...[
-          SizedBox(height: AppSpacing.gapSM),
-          Text(
-            'Zarobiłeś ${widget.earnings} zł',
-            style: AppTypography.bodyLarge.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
         SizedBox(height: AppSpacing.gapSM),
         Text(
           'Oceń swojego klienta',

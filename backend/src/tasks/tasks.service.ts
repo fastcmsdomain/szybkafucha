@@ -226,12 +226,24 @@ export class TasksService {
   /**
    * List tasks for a client
    */
-  async findByClient(clientId: string): Promise<Task[]> {
-    return this.tasksRepository.find({
+  async findByClient(clientId: string): Promise<any[]> {
+    const tasks = await this.tasksRepository.find({
       where: { clientId },
       relations: ['contractor'],
       order: { createdAt: 'DESC' },
     });
+
+    return Promise.all(
+      tasks.map(async (task) => {
+        const applicationCount = await this.taskApplicationRepository.count({
+          where: {
+            taskId: task.id,
+            status: ApplicationStatus.PENDING,
+          },
+        });
+        return { ...task, applicationCount };
+      }),
+    );
   }
 
   /**
@@ -779,11 +791,15 @@ export class TasksService {
       `Client ${clientId} accepted application ${applicationId} for task ${taskId}. Contractor: ${application.contractorId}`,
     );
 
+    const clientUser = await this.usersService.findById(clientId);
+    const clientName = clientUser?.name?.trim() || null;
+
     void this.sendTaskEmailToUser(
       application.contractorId,
       'application_accepted',
       {
         taskTitle: task.title,
+        counterpartName: clientName,
       },
     );
 
@@ -1487,6 +1503,17 @@ export class TasksService {
 
     await this.tasksRepository.save(task);
 
+    // Send immediate rating-received email to the rated user
+    const raterUser = await this.usersService.findById(fromUserId);
+    const raterName = raterUser?.name?.trim() || null;
+
+    void this.sendTaskEmailToUser(toUserId, 'rating_received', {
+      taskTitle: task.title,
+      counterpartName: raterName,
+      rating: dto.rating,
+      comment: dto.comment ?? null,
+    });
+
     // Notify the rated user
     this.notificationsService
       .sendToUser(toUserId, NotificationType.TASK_RATED, {
@@ -1766,11 +1793,14 @@ export class TasksService {
       | 'task_started'
       | 'task_completion_confirmed'
       | 'task_completed'
-      | 'task_cancelled',
+      | 'task_cancelled'
+      | 'rating_received',
     params: {
       taskTitle: string;
       counterpartName?: string | null;
       reason?: string | null;
+      rating?: number | null;
+      comment?: string | null;
     },
   ): Promise<void> {
     const user = await this.usersService.findById(userId);
@@ -1784,6 +1814,8 @@ export class TasksService {
         taskTitle: params.taskTitle,
         counterpartName: params.counterpartName,
         reason: params.reason,
+        rating: params.rating,
+        comment: params.comment,
       })
       .catch((error) =>
         this.logger.error(

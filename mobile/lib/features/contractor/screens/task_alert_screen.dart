@@ -9,6 +9,7 @@ import '../../../core/api/api_exceptions.dart';
 import '../../../core/providers/api_provider.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/task_provider.dart';
+import '../../../core/providers/credits_provider.dart';
 import '../../client/models/task_application.dart';
 import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
@@ -32,6 +33,39 @@ class TaskAlertScreen extends ConsumerStatefulWidget {
 class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   bool _isAccepting = false;
   bool _isApplyDialogOpen = false;
+
+  // Offer message moderation patterns (mirrors chat restrictions)
+  static final _phoneRegex = RegExp(r'(\+?(?:\d[\s\-\.\(\)]?){8,}\d)', caseSensitive: false);
+  static final _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', caseSensitive: false);
+  static final _urlRegex = RegExp(r'(https?://|www\.)\S+', caseSensitive: false);
+  static final _atHandleRegex = RegExp(r'(?<!\w)@[a-zA-Z0-9._]{3,}', caseSensitive: false);
+  static final _socialMediaRegex = RegExp(
+    r'\b(instagram|facebook|tiktok|linkedin|whatsapp|telegram|signal|snapchat|viber|discord|twitter|youtube|skype|messenger|gg|x\.com)\b',
+    caseSensitive: false,
+  );
+  static final _contactPhraseRegex = RegExp(
+    r'\b(napisz (do mnie )?na|mój profil|znajdź mnie|dodaj mnie|zadzwoń (do mnie )?na|mój numer|mój mail|mój email|kontakt do mnie|prywatna wiadomość)\b',
+    caseSensitive: false,
+  );
+  static final _polishNumberWordsRegex = RegExp(
+    r'\b(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b'
+    r'(\s+(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b){2,}',
+    caseSensitive: false,
+  );
+
+  String? _checkMessageModeration(String text) {
+    if (text.isEmpty) return null;
+    if (_phoneRegex.hasMatch(text) || text.replaceAll(RegExp(r'\D'), '').length >= 7) {
+      return 'Wiadomość nie może zawierać numeru telefonu.';
+    }
+    if (_emailRegex.hasMatch(text)) return 'Wiadomość nie może zawierać adresu email.';
+    if (_urlRegex.hasMatch(text)) return 'Wiadomość nie może zawierać linków.';
+    if (_atHandleRegex.hasMatch(text)) return 'Wiadomość nie może zawierać nazw użytkowników (@handle).';
+    if (_socialMediaRegex.hasMatch(text)) return 'Wiadomość nie może zawierać nazw platform społecznościowych.';
+    if (_contactPhraseRegex.hasMatch(text)) return 'Wiadomość nie może zawierać danych kontaktowych.';
+    if (_polishNumberWordsRegex.hasMatch(text)) return 'Wiadomość nie może zawierać numeru telefonu zapisanego słowami.';
+    return null;
+  }
   double? _clientRatingAvg;
   int? _clientRatingCount;
 
@@ -43,6 +77,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   void initState() {
     super.initState();
     _fetchClientRatingSummary();
+    ref.read(creditsProvider.notifier).fetchBalance();
   }
 
   /// Navigate back safely - use go() if nothing to pop
@@ -702,6 +737,52 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
 
   Future<void> _handleAccept() async {
     if (_isApplyDialogOpen || _isAccepting) return;
+
+    // Balance gate: contractor must have funds before applying
+    final credits = ref.read(creditsProvider);
+    if (credits.balance <= 0) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Brak środków w portfelu'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Aby zgłosić się do zlecenia, musisz mieć środki w portfelu.',
+                style: AppTypography.bodyMedium,
+              ),
+              SizedBox(height: AppSpacing.gapMD),
+              Text(
+                'Doładuj portfel, aby móc aplikować na zlecenia.',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Anuluj'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.push(Routes.contractorWallet);
+              },
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              label: const Text('Doładuj portfel'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     await _showApplyDialog();
   }
 
@@ -714,84 +795,124 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     final messageController = TextEditingController();
 
     try {
+      double? validatedPrice;
+
       final result = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Zgłoś się do zlecenia'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Budżet klienta: ${_task.price} zł',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.gray500,
+        builder: (dialogContext) {
+          String? errorText;
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: const Text('Zgłoś się do zlecenia'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Budżet klienta: ${_task.price} zł',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.gray500,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.paddingSM),
+                      TextField(
+                        controller: priceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Twoja cena (zł)',
+                          hintText: 'Min. 35 zł',
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                          suffixText: 'zł',
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.paddingSM),
+                      TextField(
+                        controller: messageController,
+                        maxLines: 3,
+                        maxLength: 500,
+                        decoration: InputDecoration(
+                          labelText: 'Wiadomość (opcjonalnie)',
+                          hintText: 'Opisz swoje doświadczenie...',
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                        ),
+                      ),
+                      if (errorText != null) ...[
+                        SizedBox(height: AppSpacing.paddingSM),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: AppColors.error,
+                              size: 16,
+                            ),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                errorText!,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              SizedBox(height: AppSpacing.paddingSM),
-              TextField(
-                controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Anuluj'),
                 ),
-                decoration: InputDecoration(
-                  labelText: 'Twoja cena (zł)',
-                  hintText: 'Min. 35 zł',
-                  border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
-                  suffixText: 'zł',
-                ),
-              ),
-              SizedBox(height: AppSpacing.paddingSM),
-              TextField(
-                controller: messageController,
-                maxLines: 3,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  labelText: 'Wiadomość (opcjonalnie)',
-                  hintText: 'Opisz swoje doświadczenie...',
-                  border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Anuluj'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-              ),
-              child: const Text('Wyślij zgłoszenie'),
-            ),
-          ],
-        ),
-      );
+                ElevatedButton(
+                  onPressed: () {
+                    // Validate price
+                    final normalizedPrice =
+                        priceController.text.trim().replaceAll(',', '.');
+                    final price = double.tryParse(normalizedPrice);
+                    if (price == null || price < 35) {
+                      setDialogState(() => errorText = 'Minimalna cena to 35 zł.');
+                      return;
+                    }
 
-      if (result != true) {
-        return;
-      }
+                    // Validate message
+                    final msg = messageController.text.trim();
+                    final msgError = _checkMessageModeration(msg);
+                    if (msgError != null) {
+                      setDialogState(() => errorText = msgError);
+                      return;
+                    }
 
-      final normalizedPrice = priceController.text.trim().replaceAll(',', '.');
-      final price = double.tryParse(normalizedPrice);
-      if (price == null || price < 35) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Minimalna cena to 35 zł'),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
+                    validatedPrice = price;
+                    Navigator.pop(context, true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                  ),
+                  child: const Text('Wyślij zgłoszenie'),
+                ),
+              ],
             ),
           );
-        }
-        return;
-      }
+        },
+      );
+
+      if (result != true || validatedPrice == null) return;
 
       final message = messageController.text.trim();
-      await _submitApplication(price, message.isNotEmpty ? message : null);
+      await _submitApplication(validatedPrice!, message.isNotEmpty ? message : null);
     } finally {
       priceController.dispose();
       messageController.dispose();

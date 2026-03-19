@@ -555,7 +555,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               return contractor.ReviewClientScreen(
                 taskId: taskId,
                 clientName: extra?['clientName'] as String?,
-                earnings: extra?['earnings'] as int?,
               );
             },
           ),

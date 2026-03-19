@@ -440,12 +440,15 @@ export class EmailService {
       | 'task_started'
       | 'task_completion_confirmed'
       | 'task_completed'
-      | 'task_cancelled',
+      | 'task_cancelled'
+      | 'rating_received',
     params: {
       firstName?: string | null;
       taskTitle: string;
       counterpartName?: string | null;
       reason?: string | null;
+      rating?: number | null;
+      comment?: string | null;
     },
   ): Promise<void> {
     const safeName = this.escapeHtml(params.firstName?.trim() || 'Tam');
@@ -454,6 +457,10 @@ export class EmailService {
       params.counterpartName?.trim() || '',
     );
     const safeReason = this.escapeHtml(params.reason?.trim() || '');
+    const safeComment = this.escapeHtml(params.comment?.trim() || '');
+    const ratingStars = params.rating
+      ? '★'.repeat(params.rating) + '☆'.repeat(5 - params.rating)
+      : '';
 
     const config = {
       application_received: {
@@ -468,7 +475,9 @@ export class EmailService {
         subject: 'Szybka Fucha - Twoje zgloszenie zostalo zaakceptowane',
         title: 'Twoje zgloszenie zostalo zaakceptowane',
         intro: `Czesc ${safeName}. Twoje zgloszenie do "${safeTaskTitle}" zostalo zaakceptowane.`,
-        body: 'Wejdz do aplikacji, aby sprawdzic szczegoly i przygotowac sie do realizacji.',
+        body: safeCounterpart
+          ? `Klient ${safeCounterpart} wybral Cie do realizacji. Wejdz do aplikacji, aby sprawdzic szczegoly i przygotowac sie do realizacji.`
+          : 'Wejdz do aplikacji, aby sprawdzic szczegoly i przygotowac sie do realizacji.',
       },
       task_started: {
         subject: 'Szybka Fucha - Zlecenie zostalo rozpoczęte',
@@ -497,6 +506,21 @@ export class EmailService {
         body: safeReason
           ? `Powod: ${safeReason}`
           : 'Sprawdz szczegoly w aplikacji.',
+      },
+      rating_received: {
+        subject: 'Szybka Fucha - Otrzymales nowa opinie',
+        title: 'Nowa opinia o Tobie',
+        intro: safeCounterpart
+          ? `Czesc ${safeName}. ${safeCounterpart} wystawil Ci opinie za "${safeTaskTitle}".`
+          : `Czesc ${safeName}. Otrzymales nowa opinie za "${safeTaskTitle}".`,
+        body: [
+          ratingStars ? `Ocena: ${ratingStars} (${params.rating}/5)` : '',
+          safeComment
+            ? `Komentarz: &ldquo;${safeComment}&rdquo;`
+            : 'Brak komentarza.',
+        ]
+          .filter(Boolean)
+          .join('<br><br>'),
       },
     }[event];
 

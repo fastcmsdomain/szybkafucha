@@ -70,6 +70,12 @@ final _contactPhraseRegex = RegExp(
   caseSensitive: false,
 );
 
+final _polishNumberWordsRegex = RegExp(
+  r'\b(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b'
+  r'(\s+(zero|jeden|dwa|trzy|cztery|pi[eę][ćc]|sze[śs][ćc]|siedem|osiem|dziewi[eę][ćc]|dziesi[eę][ćc])\b){2,}',
+  caseSensitive: false,
+);
+
 /// Returns a Polish error message if content violates moderation rules, or null if OK.
 String? _checkModeration(String text) {
   if (_phoneRegex.hasMatch(text) || _containsHiddenPhone(text)) {
@@ -89,6 +95,9 @@ String? _checkModeration(String text) {
   }
   if (_contactPhraseRegex.hasMatch(text)) {
     return 'Udostępnianie danych kontaktowych w czacie jest niedozwolone.';
+  }
+  if (_polishNumberWordsRegex.hasMatch(text)) {
+    return 'Udostępnianie numerów telefonu zapisanych słowami jest niedozwolone.';
   }
   return null;
 }

@@ -475,11 +475,6 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
 
             SizedBox(height: AppSpacing.space4),
 
-            // Task details section (same placement as contractor active task screen)
-            _buildTaskDetailsSection(),
-
-            SizedBox(height: AppSpacing.space4),
-
             // Application list (when waiting for bids)
             if (_status == TrackingStatus.applications) _buildApplicationsList(),
 

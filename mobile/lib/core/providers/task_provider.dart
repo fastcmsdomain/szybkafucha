@@ -125,6 +125,40 @@ class ClientTasksNotifier extends StateNotifier<ClientTasksState> {
         next.whenData((event) => _handleTaskStatusUpdate(event));
       },
     );
+    // Listen for application count updates (new application, withdrawal, count sync)
+    _ref.listen<AsyncValue<Map<String, dynamic>>>(
+      applicationUpdatesProvider,
+      (previous, next) {
+        next.whenData((data) => _handleApplicationCountUpdate(data));
+      },
+    );
+  }
+
+  /// Handle application count updates from WebSocket.
+  /// Data shape from application:new  → { taskId, applicationCount, maxApplications, ... }
+  /// Data shape from application:count → { taskId, count, max }
+  void _handleApplicationCountUpdate(Map<String, dynamic> data) {
+    final taskId = data['taskId'] as String?;
+    if (taskId == null) return;
+
+    final taskIndex = state.tasks.indexWhere((t) => t.id == taskId);
+    if (taskIndex == -1) return;
+
+    // application:new sends applicationCount; application:count sends count
+    final rawCount = data['applicationCount'] ?? data['count'];
+    final rawMax = data['maxApplications'] ?? data['max'];
+
+    final count = rawCount is int ? rawCount : int.tryParse(rawCount?.toString() ?? '');
+    final max = rawMax is int ? rawMax : int.tryParse(rawMax?.toString() ?? '');
+
+    if (count == null) return;
+
+    final updated = state.tasks[taskIndex].copyWith(
+      applicationCount: count,
+      maxApplications: max ?? state.tasks[taskIndex].maxApplications,
+    );
+    final newList = List<Task>.from(state.tasks)..[taskIndex] = updated;
+    state = state.copyWith(tasks: newList);
   }
 
   /// Handle incoming task status update from WebSocket

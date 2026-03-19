@@ -39,6 +39,7 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   int? _clientRatingCount;
   String? _loadedClientId;
   bool _isClientRatingLoading = false;
+  bool _hasAutoStarted = false;
 
   @override
   void initState() {
@@ -232,6 +233,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     // Keep local status in sync with provider updates (e.g., client confirmation)
     if (_currentStatus != task.status) {
       _currentStatus = task.status;
+    }
+    // Auto-start when client confirms the contractor (skip manual Rozpocznij step)
+    if (_currentStatus == ContractorTaskStatus.confirmed && !_hasAutoStarted && !_isUpdating) {
+      _hasAutoStarted = true;
+      Future.microtask(() => _startTask());
     }
     _ensureClientReviewSummaryLoaded(task);
 
@@ -754,12 +760,8 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         isWaitingForStart = true;
         break;
       case ContractorTaskStatus.confirmed:
-        // Client confirmed - can now start work
-        buttonText = 'Rozpocznij';
-        onPressed = () => _startTask();
-        break;
       case ContractorTaskStatus.inProgress:
-        // Work is in progress but completion must be confirmed by the client first
+        // Client confirmed or work in progress — waiting for client to confirm completion
         buttonText = 'Zakończ zlecenie';
         onPressed = null;
         isWaitingForCompletion = true;
@@ -768,26 +770,18 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
         buttonText = 'Oceń i zakończ';
         onPressed = () => _completeTask(task);
         break;
+
       default:
         buttonText = 'Zakończono';
         onPressed = null;
         break;
     }
 
-    // Show cancel button for accepted and confirmed tasks (before work starts)
-    final showCancelButton = _currentStatus == ContractorTaskStatus.accepted ||
-        _currentStatus == ContractorTaskStatus.confirmed;
-    final showSideBySideActions =
-        _currentStatus == ContractorTaskStatus.confirmed && onPressed != null;
-    final sideBySideActionHeight = 52.0;
-    final isStartAction = _currentStatus == ContractorTaskStatus.confirmed;
-    final primaryActionColor = isStartAction ? AppColors.success : AppColors.primary;
-    final primaryVerticalPadding = showSideBySideActions
-        ? AppSpacing.paddingSM
-        : AppSpacing.paddingLG;
-    final cancelVerticalPadding = showSideBySideActions
-        ? AppSpacing.paddingSM
-        : AppSpacing.paddingMD;
+    // Show cancel button only when waiting for client confirmation (before work starts)
+    final showCancelButton = _currentStatus == ContractorTaskStatus.accepted;
+    const primaryActionColor = AppColors.primary;
+    const primaryVerticalPadding = AppSpacing.paddingLG;
+    const cancelVerticalPadding = AppSpacing.paddingMD;
 
     final primaryActionButton = ElevatedButton(
       onPressed: _isUpdating ? null : onPressed,
@@ -893,31 +887,11 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
           ),
           SizedBox(height: AppSpacing.gapMD),
         ],
-        if (showCancelButton && showSideBySideActions) ...[
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: sideBySideActionHeight,
-                  child: primaryActionButton,
-                ),
-              ),
-              SizedBox(width: AppSpacing.gapMD),
-              Expanded(
-                child: SizedBox(
-                  height: sideBySideActionHeight,
-                  child: cancelActionButton,
-                ),
-              ),
-            ],
-          ),
-        ] else ...[
-          SizedBox(
-            width: double.infinity,
-            child: primaryActionButton,
-          ),
-        ],
-        if (showCancelButton && !showSideBySideActions) ...[
+        SizedBox(
+          width: double.infinity,
+          child: primaryActionButton,
+        ),
+        if (showCancelButton) ...[
           SizedBox(height: AppSpacing.gapMD),
           SizedBox(
             width: double.infinity,
@@ -977,12 +951,35 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
     }
   }
 
-  void _completeTask(ContractorTask task) {
-    // Navigate to completion screen
-    context.push(
-      '/contractor/task/${widget.taskId}/complete',
-      extra: task,
-    );
+  Future<void> _completeTask(ContractorTask task) async {
+    setState(() => _isUpdating = true);
+
+    try {
+      await ref.read(activeTaskProvider.notifier).completeTask(
+        widget.taskId,
+        photos: null,
+      );
+
+      if (mounted) {
+        context.go(
+          Routes.contractorTaskReviewRoute(widget.taskId),
+          extra: {
+            'clientName': task.clientName,
+            'earnings': null,
+          },
+        );
+      }
+    } catch (e) {
+      setState(() => _isUpdating = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Błąd zakończenia zlecenia: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openNavigation(ContractorTask task) async {
