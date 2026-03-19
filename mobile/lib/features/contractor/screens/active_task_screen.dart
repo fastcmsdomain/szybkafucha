@@ -419,35 +419,27 @@ class _ActiveTaskScreenState extends ConsumerState<ActiveTaskScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // Keep status step visuals aligned with client tracking screen (5 steps)
-    const steps = ['Zgłoszenia', 'Zaakceptowane', 'W trakcie', 'Ocena', 'Gotowe'];
+    // Aligned with client tracking screen (4 steps)
+    const steps = ['Zgłoszenia', 'Zaakceptowane', 'Ocena', 'Gotowe'];
 
-    // Map current status to step index (0-4)
     int currentStep;
     switch (_currentStatus) {
       case ContractorTaskStatus.accepted:
-        currentStep = 0;
-        break;
       case ContractorTaskStatus.confirmed:
-        currentStep = 1;
-        break;
       case ContractorTaskStatus.inProgress:
-        currentStep = 2;
+        currentStep = 1; // Zaakceptowane
         break;
       case ContractorTaskStatus.pendingComplete:
-        currentStep = 3;
+        currentStep = 2; // Ocena
         break;
       case ContractorTaskStatus.completed:
-        currentStep = 4;
+        currentStep = 3; // Gotowe
         break;
       default:
-        currentStep = 0;
+        currentStep = 1;
     }
 
-    return SFRainbowProgress(
-      steps: steps,
-      currentStep: currentStep,
-    );
+    return SFRainbowProgress(steps: steps, currentStep: currentStep);
   }
 
   Widget _buildTaskInfoCard(ContractorTask task, TaskCategoryData categoryData) {

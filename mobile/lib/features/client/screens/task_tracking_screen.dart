@@ -22,12 +22,11 @@ import '../models/task.dart';
 import '../models/task_application.dart';
 import '../widgets/application_card.dart';
 
-/// Task tracking status (5 states - bidding system with rating step)
+/// Task tracking status (4 states - simplified for client UX)
 enum TrackingStatus {
   applications, // Waiting for contractor applications (bidding)
-  confirmed, // Client accepted an application - contractor confirmed
-  inProgress,
-  rating, // Awaiting ratings from both parties
+  accepted, // Contractor assigned & working (covers confirmed + inProgress)
+  rating, // Awaiting client rating (pendingComplete)
   completed,
 }
 
@@ -37,26 +36,22 @@ extension TrackingStatusExtension on TrackingStatus {
   String get title {
     switch (this) {
       case TrackingStatus.applications:
-        return 'Zgłoszenia wykonawców';
-      case TrackingStatus.confirmed:
-        return 'Wykonawca potwierdzony';
-      case TrackingStatus.inProgress:
-        return 'Praca w toku';
+        return 'Zgłoszenia';
+      case TrackingStatus.accepted:
+        return 'Zaakceptowane';
       case TrackingStatus.rating:
         return 'Ocena';
       case TrackingStatus.completed:
-        return 'Zakończone';
+        return 'Gotowe';
     }
   }
 
   String get subtitle {
     switch (this) {
       case TrackingStatus.applications:
-        return 'Czekamy na zgłoszenia...';
-      case TrackingStatus.confirmed:
-        return 'Czekamy na rozpoczęcie pracy';
-      case TrackingStatus.inProgress:
-        return 'Zadanie jest realizowane';
+        return 'Czekamy na zgłoszenia wykonawców...';
+      case TrackingStatus.accepted:
+        return 'Wykonawca jest w drodze lub pracuje';
       case TrackingStatus.rating:
         return 'Oceń wykonawcę aby zakończyć';
       case TrackingStatus.completed:
@@ -68,14 +63,12 @@ extension TrackingStatusExtension on TrackingStatus {
     switch (this) {
       case TrackingStatus.applications:
         return 0;
-      case TrackingStatus.confirmed:
+      case TrackingStatus.accepted:
         return 1;
-      case TrackingStatus.inProgress:
-        return 2;
       case TrackingStatus.rating:
-        return 3;
+        return 2;
       case TrackingStatus.completed:
-        return 4;
+        return 3;
     }
   }
 }
@@ -156,18 +149,15 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     }
   }
 
-  /// Map TaskStatus to TrackingStatus (4 states - bidding system)
+  /// Map TaskStatus to TrackingStatus (4 simplified states for client UX)
   TrackingStatus _mapTaskStatus(TaskStatus status) {
     switch (status) {
       case TaskStatus.posted:
         return TrackingStatus.applications;
       case TaskStatus.accepted:
-        // Backward compat: accepted maps to confirmed in new flow
-        return TrackingStatus.confirmed;
       case TaskStatus.confirmed:
-        return TrackingStatus.confirmed;
       case TaskStatus.inProgress:
-        return TrackingStatus.inProgress;
+        return TrackingStatus.accepted;
       case TaskStatus.pendingComplete:
         return TrackingStatus.rating;
       case TaskStatus.completed:
@@ -222,12 +212,9 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   TrackingStatus _mapStringStatus(String status) {
     switch (status.toLowerCase()) {
       case 'accepted':
-        return TrackingStatus
-            .confirmed; // In new bidding flow, accepted → confirmed
       case 'confirmed':
-        return TrackingStatus.confirmed;
       case 'in_progress':
-        return TrackingStatus.inProgress;
+        return TrackingStatus.accepted;
       case 'pending_complete':
         return TrackingStatus.rating;
       case 'completed':
@@ -500,8 +487,8 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
             if (_contractor != null && _status != TrackingStatus.applications)
               _buildContractorCard(),
 
-            // Complete button (when in progress)
-            if (_status == TrackingStatus.inProgress) _buildCompleteButton(),
+            // Complete button (when contractor is accepted/working)
+            if (_status == TrackingStatus.accepted) _buildCompleteButton(),
 
             // Cancel button (hide for rating and completed stages)
             if (_status != TrackingStatus.completed &&
@@ -676,9 +663,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
     switch (_status) {
       case TrackingStatus.applications:
         return Icons.people;
-      case TrackingStatus.confirmed:
-        return Icons.check_circle;
-      case TrackingStatus.inProgress:
+      case TrackingStatus.accepted:
         return Icons.handyman;
       case TrackingStatus.rating:
         return Icons.star_outline;
@@ -688,8 +673,7 @@ class _TaskTrackingScreenState extends ConsumerState<TaskTrackingScreen> {
   }
 
   Widget _buildProgressSteps() {
-    // 5 steps - rainbow colored
-    const steps = ['Zgłoszenia', 'Zaakceptowane', 'W trakcie', 'Ocena', 'Gotowe'];
+    const steps = ['Zgłoszenia', 'Zaakceptowane', 'Ocena', 'Gotowe'];
     final currentStep = _status.stepIndex;
 
     return SFRainbowProgress(steps: steps, currentStep: currentStep);
