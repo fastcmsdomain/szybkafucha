@@ -21,6 +21,7 @@ import {
 } from '../contractor/entities/contractor-profile.entity';
 import { DocumentType } from './dto/kyc.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../auth/email.service';
 
 describe('KycService', () => {
   let service: KycService;
@@ -116,6 +117,10 @@ describe('KycService', () => {
         .mockResolvedValue({ successCount: 1, failureCount: 0, results: [] }),
     };
 
+    const mockEmailService = {
+      sendKycUpdateEmail: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         KycService,
@@ -130,6 +135,7 @@ describe('KycService', () => {
         },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 

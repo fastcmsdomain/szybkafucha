@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_exceptions.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/providers/providers.dart';
+import '../../../core/router/routes.dart';
 import '../../../core/theme/theme.dart';
 
 /// OTP verification screen
@@ -32,15 +34,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     6,
     (_) => TextEditingController(),
   );
-  final List<FocusNode> _focusNodes = List.generate(
-    6,
-    (_) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _isLoading = false;
   int _resendCountdown = 60;
   Timer? _timer;
   late String _selectedUserType;
+  String? _errorMessage;
+  int _attemptsLeft = 4;
+  bool _attemptLimitReached = false;
 
   @override
   void initState() {
@@ -63,7 +65,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   void _startResendTimer() {
     _timer?.cancel();
-    _resendCountdown = 60;
+    setState(() {
+      _resendCountdown = 60;
+      _errorMessage = null;
+      _attemptsLeft = 4;
+      _attemptLimitReached = false;
+    });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendCountdown > 0) {
         setState(() => _resendCountdown--);
@@ -82,7 +89,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          widget.linkMode ? 'Potwierdź numer telefonu' : AppStrings.verificationCode,
+          widget.linkMode
+              ? 'Potwierdź numer telefonu'
+              : AppStrings.verificationCode,
           style: AppTypography.h4,
         ),
         centerTitle: true,
@@ -122,6 +131,33 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               // OTP input boxes
               _buildOtpInputs(),
 
+              if (_errorMessage != null) ...[
+                SizedBox(height: AppSpacing.gapSM),
+                Text(
+                  _errorMessage!,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+
+              SizedBox(height: AppSpacing.gapSM),
+              Text(
+                _attemptLimitReached
+                    ? _resendCountdown > 0
+                          ? 'Limit prób wykorzystany. Poczekaj ${_resendCountdown}s lub wyślij nowy kod.'
+                          : 'Limit prób wykorzystany. Wyślij nowy kod.'
+                    : 'Pozostałe próby: $_attemptsLeft',
+                style: AppTypography.bodySmall.copyWith(
+                  color: _attemptLimitReached
+                      ? AppColors.warning
+                      : AppColors.gray500,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
               SizedBox(height: AppSpacing.space8),
 
               // Resend code
@@ -131,14 +167,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
               // Verify button
               ElevatedButton(
-                onPressed: _isLoading ? null : _verifyCode,
+                onPressed: _isLoading || _attemptLimitReached
+                    ? null
+                    : _verifyCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.button,
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 child: _isLoading
                     ? SizedBox(
@@ -176,10 +212,15 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           child: TextFormField(
             controller: _controllers[index],
             focusNode: _focusNodes[index],
+            enabled: !_attemptLimitReached,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
+            textAlignVertical: TextAlignVertical.center,
             maxLength: 1,
-            style: AppTypography.h3,
+            style: AppTypography.h4.copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+            ),
             decoration: InputDecoration(
               counterText: '',
               filled: true,
@@ -194,16 +235,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.radiusMD,
-                borderSide: BorderSide(
-                  color: AppColors.primary,
-                  width: 2,
-                ),
+                borderSide: BorderSide(color: AppColors.primary, width: 2),
               ),
-              contentPadding: EdgeInsets.zero,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
               if (value.isNotEmpty && index < 5) {
                 _focusNodes[index + 1].requestFocus();
@@ -212,7 +249,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 _focusNodes[index - 1].requestFocus();
               }
               // Auto-submit when all filled
-              if (_getOtp().length == 6) {
+              if (!_attemptLimitReached && _getOtp().length == 6) {
                 _verifyCode();
               }
             },
@@ -230,8 +267,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             ? '${AppStrings.resendCodeIn} ${_resendCountdown}s'
             : AppStrings.resendCode,
         style: AppTypography.bodyMedium.copyWith(
-          color:
-              _resendCountdown > 0 ? AppColors.gray400 : AppColors.primary,
+          color: _resendCountdown > 0 ? AppColors.gray400 : AppColors.primary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -254,16 +290,29 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    if (_attemptLimitReached) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       if (widget.linkMode) {
-        await ref.read(authProvider.notifier).verifyPhoneLinkOtp(
-              phone: widget.phoneNumber,
-              otp: otp,
-            );
+        await ref
+            .read(authProvider.notifier)
+            .verifyPhoneLinkOtp(phone: widget.phoneNumber, otp: otp);
+
+        if (!mounted) return;
+        final user = ref.read(authProvider).user;
+        final profileRoute = user?.isContractor == true
+            ? Routes.contractorProfile
+            : Routes.clientProfile;
+        context.go(profileRoute);
       } else {
-        await ref.read(authProvider.notifier).verifyPhoneOtp(
+        await ref
+            .read(authProvider.notifier)
+            .verifyPhoneOtp(
               phone: widget.phoneNumber,
               otp: otp,
               userType: _selectedUserType,
@@ -273,12 +322,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       // Navigation is handled by auth state change in router
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        final feedback = _mapOtpError(e);
+        setState(() {
+          _errorMessage = feedback.message;
+          if (feedback.attemptsLeft != null) {
+            _attemptsLeft = feedback.attemptsLeft!;
+          }
+          _attemptLimitReached = feedback.locked;
+        });
         // Clear OTP inputs
         for (var controller in _controllers) {
           controller.clear();
@@ -295,9 +346,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Future<void> _resendCode() async {
     try {
       if (widget.linkMode) {
-        await ref.read(authProvider.notifier).requestPhoneLinkOtp(widget.phoneNumber);
+        await ref
+            .read(authProvider.notifier)
+            .requestPhoneLinkOtp(widget.phoneNumber);
       } else {
-        await ref.read(authProvider.notifier).requestPhoneOtp(widget.phoneNumber);
+        await ref
+            .read(authProvider.notifier)
+            .requestPhoneOtp(widget.phoneNumber);
       }
       _startResendTimer();
       if (mounted) {
@@ -319,4 +374,42 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       }
     }
   }
+
+  _OtpErrorFeedback _mapOtpError(Object error) {
+    if (error is ValidationException) {
+      final data = error.data;
+      final attemptsLeft = data is Map<String, dynamic>
+          ? data['attemptsLeft'] as int?
+          : null;
+      final code = data is Map<String, dynamic>
+          ? data['code'] as String?
+          : null;
+
+      return _OtpErrorFeedback(
+        message: error.message,
+        attemptsLeft: attemptsLeft,
+        locked: code == 'OTP_ATTEMPTS_EXCEEDED' || attemptsLeft == 0,
+      );
+    }
+
+    if (error is ApiException) {
+      return _OtpErrorFeedback(message: error.message);
+    }
+
+    return const _OtpErrorFeedback(
+      message: 'Nie udało się zweryfikować kodu. Spróbuj ponownie.',
+    );
+  }
+}
+
+class _OtpErrorFeedback {
+  final String message;
+  final int? attemptsLeft;
+  final bool locked;
+
+  const _OtpErrorFeedback({
+    required this.message,
+    this.attemptsLeft,
+    this.locked = false,
+  });
 }

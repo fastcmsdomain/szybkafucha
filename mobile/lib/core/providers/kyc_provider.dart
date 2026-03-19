@@ -31,6 +31,8 @@ class KycState {
   });
 
   bool get isBusy => isLoading || isPolling;
+  bool get isVerified => overallStatus == 'verified';
+  bool get needsIdentityVerification => !canAcceptTasks;
 
   KycState copyWith({
     String? overallStatus,
@@ -76,8 +78,9 @@ class KycNotifier extends StateNotifier<KycState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final api = _ref.read(apiClientProvider);
-      final data =
-          await api.get<Map<String, dynamic>>('/contractor/kyc/status');
+      final data = await api.get<Map<String, dynamic>>(
+        '/contractor/kyc/status',
+      );
       state = _parseStatus(data).copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _parseError(e));
@@ -162,7 +165,8 @@ class KycNotifier extends StateNotifier<KycState> {
     }
   }
 
-  /// Verify Polish bank account (IBAN) for payouts
+  /// Legacy bank-account verification endpoint.
+  /// The current app flow does not require bank verification for KYC.
   Future<void> verifyBankAccount({
     required String iban,
     required String accountHolderName,
@@ -174,10 +178,7 @@ class KycNotifier extends StateNotifier<KycState> {
 
       await api.post<Map<String, dynamic>>(
         '/contractor/kyc/bank',
-        data: {
-          'iban': cleanIban,
-          'accountHolderName': accountHolderName,
-        },
+        data: {'iban': cleanIban, 'accountHolderName': accountHolderName},
       );
 
       // Bank verification is synchronous — refresh status immediately
@@ -200,11 +201,13 @@ class KycNotifier extends StateNotifier<KycState> {
 
       try {
         final api = _ref.read(apiClientProvider);
-        final data =
-            await api.get<Map<String, dynamic>>('/contractor/kyc/status');
+        final data = await api.get<Map<String, dynamic>>(
+          '/contractor/kyc/status',
+        );
         final newState = _parseStatus(data);
 
-        final isVerified = (field == 'idVerified' && newState.idVerified) ||
+        final isVerified =
+            (field == 'idVerified' && newState.idVerified) ||
             (field == 'selfieVerified' && newState.selfieVerified);
 
         if (isVerified) {

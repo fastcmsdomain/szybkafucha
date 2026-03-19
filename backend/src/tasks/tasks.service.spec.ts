@@ -17,6 +17,8 @@ import { ContractorService } from '../contractor/contractor.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreditsService } from '../payments/credits.service';
+import { UsersService } from '../users/users.service';
+import { EmailService } from '../auth/email.service';
 
 describe('TasksService', () => {
   let service: TasksService;
@@ -125,6 +127,14 @@ describe('TasksService', () => {
       handlePaymentSuccess: jest.fn(),
     };
 
+    const mockUsersService = {
+      findById: jest.fn(),
+    };
+
+    const mockEmailService = {
+      sendTaskLifecycleEmail: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TasksService,
@@ -142,6 +152,8 @@ describe('TasksService', () => {
         { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: ContractorService, useValue: mockContractorService },
         { provide: CreditsService, useValue: mockCreditsService },
+        { provide: UsersService, useValue: mockUsersService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 

@@ -18,8 +18,7 @@ class KycVerificationScreen extends ConsumerStatefulWidget {
       _KycVerificationScreenState();
 }
 
-class _KycVerificationScreenState
-    extends ConsumerState<KycVerificationScreen> {
+class _KycVerificationScreenState extends ConsumerState<KycVerificationScreen> {
   File? _idFront;
   File? _idBack;
   File? _selfie;
@@ -33,7 +32,7 @@ class _KycVerificationScreenState
       await ref.read(kycProvider.notifier).fetchStatus();
       if (!mounted) return;
       final kycState = ref.read(kycProvider);
-      if (kycState.selfieVerified) {
+      if (kycState.canAcceptTasks) {
         _showSuccessDialog();
       } else if (kycState.idVerified) {
         setState(() => _currentStep = 1);
@@ -51,8 +50,8 @@ class _KycVerificationScreenState
 
       if (!previous.idVerified && next.idVerified && _currentStep == 0) {
         setState(() => _currentStep = 1);
-      } else if (!previous.selfieVerified &&
-          next.selfieVerified &&
+      } else if (!previous.canAcceptTasks &&
+          next.canAcceptTasks &&
           _currentStep == 1) {
         _showSuccessDialog();
       }
@@ -85,9 +84,7 @@ class _KycVerificationScreenState
           if (kycState.isPolling) _buildPollingBanner(kycState),
 
           // Step content
-          Expanded(
-            child: _buildCurrentStep(),
-          ),
+          Expanded(child: _buildCurrentStep()),
 
           // Navigation buttons
           _buildNavigationButtons(kycState),
@@ -160,8 +157,8 @@ class _KycVerificationScreenState
                         color: isCompleted
                             ? AppColors.success
                             : isCurrent
-                                ? AppColors.primary
-                                : AppColors.gray200,
+                            ? AppColors.primary
+                            : AppColors.gray200,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -179,10 +176,11 @@ class _KycVerificationScreenState
                         color: isCurrent
                             ? AppColors.primary
                             : isCompleted
-                                ? AppColors.gray700
-                                : AppColors.gray400,
-                        fontWeight:
-                            isCurrent ? FontWeight.w600 : FontWeight.normal,
+                            ? AppColors.gray700
+                            : AppColors.gray400,
+                        fontWeight: isCurrent
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -191,12 +189,10 @@ class _KycVerificationScreenState
                   Expanded(
                     child: Container(
                       height: 2,
-                      margin: EdgeInsets.only(
-                        left: 8,
-                        right: 8,
-                        bottom: 20,
-                      ),
-                      color: isCompleted ? AppColors.success : AppColors.gray200,
+                      margin: EdgeInsets.only(left: 8, right: 8, bottom: 20),
+                      color: isCompleted
+                          ? AppColors.success
+                          : AppColors.gray200,
                     ),
                   ),
               ],
@@ -235,24 +231,16 @@ class _KycVerificationScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Dokument tożsamości',
-            style: AppTypography.h3,
-          ),
+          Text('Dokument tożsamości', style: AppTypography.h3),
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Zrób zdjęcie dowodu osobistego lub paszportu',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
           ),
           SizedBox(height: AppSpacing.gapXL),
 
           // Front of ID
-          Text(
-            'Przód dokumentu',
-            style: AppTypography.labelLarge,
-          ),
+          Text('Przód dokumentu', style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapMD),
           _buildDocumentUploader(
             file: _idFront,
@@ -264,10 +252,7 @@ class _KycVerificationScreenState
           SizedBox(height: AppSpacing.gapLG),
 
           // Back of ID
-          Text(
-            'Tył dokumentu',
-            style: AppTypography.labelLarge,
-          ),
+          Text('Tył dokumentu', style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapMD),
           _buildDocumentUploader(
             file: _idBack,
@@ -309,10 +294,7 @@ class _KycVerificationScreenState
             width: file != null ? 2 : 1,
           ),
           image: file != null
-              ? DecorationImage(
-                  image: FileImage(file),
-                  fit: BoxFit.cover,
-                )
+              ? DecorationImage(image: FileImage(file), fit: BoxFit.cover)
               : null,
         ),
         child: file == null
@@ -325,11 +307,7 @@ class _KycVerificationScreenState
                       color: AppColors.gray200,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      icon,
-                      size: 32,
-                      color: AppColors.gray500,
-                    ),
+                    child: Icon(icon, size: 32, color: AppColors.gray500),
                   ),
                   SizedBox(height: AppSpacing.gapMD),
                   Text(
@@ -422,16 +400,11 @@ class _KycVerificationScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Zdjęcie selfie',
-            style: AppTypography.h3,
-          ),
+          Text('Zdjęcie selfie', style: AppTypography.h3),
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Zrób zdjęcie swojej twarzy do weryfikacji',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
           ),
           SizedBox(height: AppSpacing.gapXL),
 
@@ -446,7 +419,9 @@ class _KycVerificationScreenState
                   color: _selfie != null ? null : AppColors.gray100,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: _selfie != null ? AppColors.success : AppColors.gray300,
+                    color: _selfie != null
+                        ? AppColors.success
+                        : AppColors.gray300,
                     width: _selfie != null ? 3 : 2,
                   ),
                   image: _selfie != null
@@ -460,11 +435,7 @@ class _KycVerificationScreenState
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.face,
-                            size: 64,
-                            color: AppColors.gray400,
-                          ),
+                          Icon(Icons.face, size: 64, color: AppColors.gray400),
                           SizedBox(height: AppSpacing.gapMD),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -540,20 +511,14 @@ class _KycVerificationScreenState
       decoration: BoxDecoration(
         color: AppColors.accent.withValues(alpha: 0.05),
         borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.lightbulb_outline,
-                size: 18,
-                color: AppColors.accent,
-              ),
+              Icon(Icons.lightbulb_outline, size: 18, color: AppColors.accent),
               SizedBox(width: 8),
               Text(
                 'Wskazówki',
@@ -564,28 +529,30 @@ class _KycVerificationScreenState
             ],
           ),
           SizedBox(height: AppSpacing.gapSM),
-          ...tips.map((tip) => Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '• ',
+          ...tips.map(
+            (tip) => Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '• ',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.gray600,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      tip,
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.gray600,
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        tip,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.gray600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -612,11 +579,13 @@ class _KycVerificationScreenState
             if (_currentStep > 0)
               Expanded(
                 child: OutlinedButton(
-                  onPressed:
-                      kycState.isBusy ? null : () => setState(() => _currentStep--),
+                  onPressed: kycState.isBusy
+                      ? null
+                      : () => setState(() => _currentStep--),
                   style: OutlinedButton.styleFrom(
-                    padding:
-                        EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.paddingMD,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.radiusMD,
                     ),
@@ -633,8 +602,7 @@ class _KycVerificationScreenState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
-                  padding:
-                      EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                   shape: RoundedRectangleBorder(
                     borderRadius: AppRadius.radiusMD,
                   ),
@@ -646,8 +614,7 @@ class _KycVerificationScreenState
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation(AppColors.white),
+                          valueColor: AlwaysStoppedAnimation(AppColors.white),
                         ),
                       )
                     : const Text(
@@ -679,10 +646,9 @@ class _KycVerificationScreenState
   Future<void> _handleNextStep() async {
     switch (_currentStep) {
       case 0:
-        await ref.read(kycProvider.notifier).uploadIdDocument(
-              frontFile: _idFront!,
-              backFile: _idBack,
-            );
+        await ref
+            .read(kycProvider.notifier)
+            .uploadIdDocument(frontFile: _idFront!, backFile: _idBack);
       case 1:
         await ref.read(kycProvider.notifier).uploadSelfie(_selfie!);
     }
@@ -750,9 +716,7 @@ class _KycVerificationScreenState
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.radiusXL,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusXL),
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.paddingXL),
           child: Column(
@@ -787,8 +751,9 @@ class _KycVerificationScreenState
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: AppColors.white,
-                    padding:
-                        EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.paddingMD,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.radiusMD,
                     ),

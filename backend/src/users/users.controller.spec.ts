@@ -86,6 +86,7 @@ describe('UsersController', () => {
     it('should update user name', async () => {
       const updateDto = { name: 'New Name' };
       const updatedUser = { ...mockUser, name: 'New Name' };
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.updateProfile(
@@ -100,6 +101,7 @@ describe('UsersController', () => {
     it('should update avatar URL', async () => {
       const updateDto = { avatarUrl: 'https://example.com/new-avatar.jpg' };
       const updatedUser = { ...mockUser, avatarUrl: updateDto.avatarUrl };
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.updateProfile(
@@ -113,6 +115,7 @@ describe('UsersController', () => {
     it('should update FCM token', async () => {
       const updateDto = { fcmToken: 'new-fcm-token' };
       const updatedUser = { ...mockUser, fcmToken: 'new-fcm-token' };
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.updateProfile(
@@ -126,6 +129,7 @@ describe('UsersController', () => {
     it('should handle partial updates', async () => {
       const updateDto = { name: 'Only Name' };
       const updatedUser = { ...mockUser, name: 'Only Name' };
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
       usersService.update.mockResolvedValue(updatedUser);
 
       const result = await controller.updateProfile(
@@ -137,6 +141,18 @@ describe('UsersController', () => {
         name: 'Only Name',
       });
       expect(result.avatarUrl).toBeNull(); // unchanged
+    });
+
+    it('should reject direct phone number changes without SMS verification', async () => {
+      usersService.findByIdOrFail.mockResolvedValue(mockUser);
+
+      await expect(
+        controller.updateProfile(mockRequest as any, {
+          phone: '+48987654321',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(usersService.update).not.toHaveBeenCalled();
     });
   });
 

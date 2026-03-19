@@ -109,6 +109,15 @@ ADMIN_URL=https://admin.szybkafucha.app
 # JWT Secret (wygeneruj bezpieczny klucz)
 JWT_SECRET=twoj_bardzo_dlugi_i_bezpieczny_secret_key_minimum_32_znaki
 
+# SMTP (wymagane do email verification i resetu hasla)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=noreply@szybkafucha.app
+SMTP_PASSWORD=twoje_haslo_smtp
+SMTP_FROM=Szybka Fucha <noreply@szybkafucha.app>
+# Opcjonalne; jesli brak, aplikacja ustawi true dla portu 465
+SMTP_SECURE=false
+
 # Stripe (jeśli używasz płatności)
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -119,6 +128,11 @@ ONFIDO_API_TOKEN=...
 # SMS/OTP Provider (jeśli używasz)
 # Dodaj konfigurację swojego providera
 ```
+
+**Email verification**
+- Rejestracja email dla `client` i `contractor` korzysta z tego samego szablonu OTP.
+- Bez poprawnej konfiguracji `SMTP_*` backend zapisze kod OTP, ale nie dostarczy maila do użytkownika.
+- Po wdrozeniu wykonaj smoke test: rejestracja, resend verification i reset hasla.
 
 **⚠️ WAŻNE:**
 - NIE commituj pliku `.env` do git (jest w `.gitignore`)

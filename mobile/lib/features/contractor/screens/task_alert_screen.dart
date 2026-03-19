@@ -23,11 +23,7 @@ class TaskAlertScreen extends ConsumerStatefulWidget {
   final String taskId;
   final ContractorTask? task;
 
-  const TaskAlertScreen({
-    super.key,
-    required this.taskId,
-    this.task,
-  });
+  const TaskAlertScreen({super.key, required this.taskId, this.task});
 
   @override
   ConsumerState<TaskAlertScreen> createState() => _TaskAlertScreenState();
@@ -206,7 +202,8 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                         ],
 
                         // Images
-                        if (_task.imageUrls != null && _task.imageUrls!.isNotEmpty) ...[
+                        if (_task.imageUrls != null &&
+                            _task.imageUrls!.isNotEmpty) ...[
                           SizedBox(height: AppSpacing.gapMD),
                           Text(
                             'Zdjęcia',
@@ -227,10 +224,14 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                   child: Container(
                                     width: 80,
                                     height: 80,
-                                    margin: EdgeInsets.only(right: AppSpacing.gapSM),
+                                    margin: EdgeInsets.only(
+                                      right: AppSpacing.gapSM,
+                                    ),
                                     decoration: BoxDecoration(
                                       borderRadius: AppRadius.radiusSM,
-                                      border: Border.all(color: AppColors.gray200),
+                                      border: Border.all(
+                                        color: AppColors.gray200,
+                                      ),
                                     ),
                                     child: ClipRRect(
                                       borderRadius: AppRadius.radiusSM,
@@ -273,11 +274,17 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                             child: Stack(
                               children: [
                                 SFMapView(
-                                  center: LatLng(_task.latitude, _task.longitude),
+                                  center: LatLng(
+                                    _task.latitude,
+                                    _task.longitude,
+                                  ),
                                   zoom: 15,
                                   markers: [
                                     TaskMarker(
-                                      position: LatLng(_task.latitude, _task.longitude),
+                                      position: LatLng(
+                                        _task.latitude,
+                                        _task.longitude,
+                                      ),
                                     ),
                                   ],
                                   interactive: false,
@@ -310,10 +317,11 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                                             SizedBox(width: 6),
                                             Text(
                                               'Nawiguj',
-                                              style: AppTypography.labelMedium.copyWith(
-                                                color: AppColors.white,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                              style: AppTypography.labelMedium
+                                                  .copyWith(
+                                                    color: AppColors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                             ),
                                           ],
                                         ),
@@ -462,10 +470,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.bolt,
-                            color: AppColors.warning,
-                          ),
+                          Icon(Icons.bolt, color: AppColors.warning),
                           SizedBox(width: AppSpacing.gapMD),
                           Expanded(
                             child: Column(
@@ -561,10 +566,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
             padding: EdgeInsets.all(AppSpacing.paddingMD),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.primaryDark,
-                ],
+                colors: [AppColors.primary, AppColors.primaryDark],
               ),
               borderRadius: AppRadius.radiusLG,
             ),
@@ -592,10 +594,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     );
   }
 
-  Widget _buildSection({
-    required String title,
-    required Widget child,
-  }) {
+  Widget _buildSection({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.paddingMD),
@@ -615,9 +614,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         children: [
           Text(
             title,
-            style: AppTypography.labelMedium.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.labelMedium.copyWith(color: AppColors.gray500),
           ),
           SizedBox(height: AppSpacing.gapMD),
           child,
@@ -629,8 +626,10 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   Widget _buildBottomBar() {
     final myApps = ref.watch(myApplicationsProvider);
     final hasApplied = myApps.applications.any(
-      (a) => a.taskId == _task.id &&
-          (a.status == ApplicationStatus.pending || a.status == ApplicationStatus.accepted),
+      (a) =>
+          a.taskId == _task.id &&
+          (a.status == ApplicationStatus.pending ||
+              a.status == ApplicationStatus.accepted),
     );
 
     return Container(
@@ -652,18 +651,18 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
             onPressed: _isAccepting
                 ? null
                 : hasApplied
-                    ? () => context.push(
-                          Routes.contractorTaskRoomRoute(_task.id),
-                          extra: _task,
-                        )
-                    : _handleAccept,
+                ? () => context.push(
+                    Routes.contractorTaskRoomRoute(_task.id),
+                    extra: _task,
+                  )
+                : _handleAccept,
             style: ElevatedButton.styleFrom(
-              backgroundColor: hasApplied ? AppColors.primary : AppColors.success,
+              backgroundColor: hasApplied
+                  ? AppColors.primary
+                  : AppColors.success,
               foregroundColor: AppColors.white,
               padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingLG),
-              shape: RoundedRectangleBorder(
-                borderRadius: AppRadius.radiusLG,
-              ),
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLG),
               disabledBackgroundColor: AppColors.success.withValues(alpha: 0.5),
             ),
             child: _isAccepting
@@ -678,10 +677,15 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(hasApplied ? Icons.visibility : Icons.send, size: 24),
+                      Icon(
+                        hasApplied ? Icons.visibility : Icons.send,
+                        size: 24,
+                      ),
                       SizedBox(width: AppSpacing.gapMD),
                       Text(
-                        hasApplied ? 'ZOBACZ ZLECENIE' : 'ZGŁOŚ SIĘ DO ZLECENIA',
+                        hasApplied
+                            ? 'ZOBACZ ZLECENIE'
+                            : 'ZGŁOŚ SIĘ DO ZLECENIA',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -706,9 +710,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     if (_isApplyDialogOpen) return;
     _isApplyDialogOpen = true;
 
-    final priceController = TextEditingController(
-      text: _task.price.toString(),
-    );
+    final priceController = TextEditingController(text: _task.price.toString());
     final messageController = TextEditingController();
 
     try {
@@ -722,7 +724,9 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
             children: [
               Text(
                 'Budżet klienta: ${_task.price} zł',
-                style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.gray500,
+                ),
               ),
               SizedBox(height: AppSpacing.paddingSM),
               TextField(
@@ -798,33 +802,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
   Future<void> _submitApplication(double proposedPrice, String? message) async {
     final user = ref.read(authProvider).user;
     if (user?.phone?.trim().isEmpty ?? true) {
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Dodaj numer telefonu'),
-          content: const Text(
-            'Aby zgłosić się do zlecenia, dodaj i potwierdź numer telefonu kodem SMS.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Później'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.push(Routes.phoneLink);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-              ),
-              child: const Text('Dodaj numer'),
-            ),
-          ],
-        ),
-      );
+      await _showPhoneRequiredDialog();
       return;
     }
 
@@ -832,7 +810,9 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
     setState(() => _isAccepting = true);
 
     try {
-      await ref.read(availableTasksProvider.notifier).applyForTask(
+      await ref
+          .read(availableTasksProvider.notifier)
+          .applyForTask(
             _task.id,
             proposedPrice: proposedPrice,
             message: message,
@@ -853,11 +833,12 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         final errorMsg = e.toString().toLowerCase();
         if (errorMsg.contains('already applied')) {
           ref.read(myApplicationsProvider.notifier).loadApplications();
-          context.push(
-            Routes.contractorTaskRoomRoute(_task.id),
-            extra: _task,
-          );
+          context.push(Routes.contractorTaskRoomRoute(_task.id), extra: _task);
           return;
+        } else if (_isMissingPhoneApplicationError(e)) {
+          await _showPhoneRequiredDialog();
+        } else if (_isIncompleteProfileApplicationError(e)) {
+          await _showProfileRequiredDialog();
         } else if (e is ForbiddenException) {
           _showKickedDialog();
         } else {
@@ -875,6 +856,85 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
         setState(() => _isAccepting = false);
       }
     }
+  }
+
+  bool _isMissingPhoneApplicationError(Object error) {
+    final user = ref.read(authProvider).user;
+    if (user?.phone?.trim().isEmpty ?? true) {
+      return true;
+    }
+
+    if (error is ApiException) {
+      final message = error.message.toLowerCase();
+      return message.contains('phone') || message.contains('telefon');
+    }
+
+    return false;
+  }
+
+  bool _isIncompleteProfileApplicationError(Object error) {
+    if (error is ApiException) {
+      return error.message.toLowerCase().contains(
+        'complete your contractor profile before applying for tasks',
+      );
+    }
+
+    return false;
+  }
+
+  Future<void> _showPhoneRequiredDialog() async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dodaj numer telefonu'),
+        content: const Text(
+          'Przed wysłaniem oferty musisz dodać i potwierdzić numer telefonu kodem SMS.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Później'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push(Routes.phoneLink);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Dodaj numer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showProfileRequiredDialog() async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Uzupełnij profil wykonawcy'),
+        content: const Text(
+          'Zanim wyślesz ofertę, uzupełnij wymagane dane profilu wykonawcy i zakończ weryfikację konta.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Rozumiem'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showKickedDialog() {
@@ -995,11 +1055,7 @@ class _TaskAlertScreenState extends ConsumerState<TaskAlertScreen> {
                     color: AppColors.gray900.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.close,
-                    color: AppColors.white,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.close, color: AppColors.white, size: 24),
                 ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -1115,7 +1171,9 @@ class _TaskAlertClientProfileSheetState
     }
 
     try {
-      final reviewsResponse = await api.get('/client/${widget.clientId}/reviews');
+      final reviewsResponse = await api.get(
+        '/client/${widget.clientId}/reviews',
+      );
       final reviewsData = reviewsResponse as Map<String, dynamic>;
       final reviewsList = (reviewsData['reviews'] as List<dynamic>? ?? [])
           .whereType<Map<String, dynamic>>()
@@ -1173,9 +1231,7 @@ class _TaskAlertClientProfileSheetState
               const Spacer(),
               Text(
                 _formatDate(review.createdAt),
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.gray500,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.gray500),
               ),
             ],
           ),
@@ -1184,9 +1240,7 @@ class _TaskAlertClientProfileSheetState
             review.comment?.trim().isNotEmpty == true
                 ? review.comment!.trim()
                 : 'Brak komentarza.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray700,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray700),
           ),
         ],
       ),
@@ -1224,9 +1278,7 @@ class _TaskAlertClientProfileSheetState
             SizedBox(width: 8),
             Text(
               'na podstawie $reviewCount opinii',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.gray500,
-              ),
+              style: AppTypography.caption.copyWith(color: AppColors.gray500),
             ),
           ],
         ),
@@ -1234,12 +1286,12 @@ class _TaskAlertClientProfileSheetState
         if (_reviews.isEmpty)
           Text(
             'Brak opinii do wyświetlenia.',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodySmall.copyWith(color: AppColors.gray500),
           )
         else
-          ..._reviews.take(5).map(
+          ..._reviews
+              .take(5)
+              .map(
                 (review) => Padding(
                   padding: EdgeInsets.only(bottom: AppSpacing.gapSM),
                   child: _buildReviewCard(review),
@@ -1293,8 +1345,9 @@ class _TaskAlertClientProfileSheetState
                       CircleAvatar(
                         radius: 32,
                         backgroundColor: AppColors.gray200,
-                        backgroundImage:
-                            avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                        backgroundImage: avatarUrl != null
+                            ? NetworkImage(avatarUrl)
+                            : null,
                         child: avatarUrl == null
                             ? Text(
                                 widget.clientName.isNotEmpty
@@ -1366,26 +1419,26 @@ class _TaskAlertClientProfileSheetState
                           ),
                         )
                       : _error != null
-                          ? Text(
-                              'Nie udało się pobrać pełnego profilu',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.gray400,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            )
-                          : Text(
-                              _bio?.isNotEmpty == true
-                                  ? _bio!
-                                  : 'Brak opisu klienta.',
-                              style: AppTypography.bodySmall.copyWith(
-                                color: _bio?.isNotEmpty == true
-                                    ? AppColors.gray600
-                                    : AppColors.gray400,
-                                fontStyle: _bio?.isNotEmpty == true
-                                    ? FontStyle.normal
-                                    : FontStyle.italic,
-                              ),
-                            ),
+                      ? Text(
+                          'Nie udało się pobrać pełnego profilu',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.gray400,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      : Text(
+                          _bio?.isNotEmpty == true
+                              ? _bio!
+                              : 'Brak opisu klienta.',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: _bio?.isNotEmpty == true
+                                ? AppColors.gray600
+                                : AppColors.gray400,
+                            fontStyle: _bio?.isNotEmpty == true
+                                ? FontStyle.normal
+                                : FontStyle.italic,
+                          ),
+                        ),
                   SizedBox(height: AppSpacing.gapMD),
                   Text(
                     'Opinie',

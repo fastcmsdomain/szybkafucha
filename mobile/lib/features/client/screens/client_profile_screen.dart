@@ -22,8 +22,7 @@ class ClientProfileScreen extends ConsumerStatefulWidget {
       _ClientProfileScreenState();
 }
 
-class _ClientProfileScreenState
-    extends ConsumerState<ClientProfileScreen> {
+class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
@@ -40,7 +39,9 @@ class _ClientProfileScreenState
     _nameController = TextEditingController(text: user?.name ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
-    _bioController = TextEditingController(text: ''); // Bio loaded from client profile
+    _bioController = TextEditingController(
+      text: '',
+    ); // Bio loaded from client profile
     _addressController = TextEditingController(text: user?.address ?? '');
     _loadClientProfile();
     ref.read(creditsProvider.notifier).fetchBalance();
@@ -65,7 +66,9 @@ class _ClientProfileScreenState
           debugPrint('DEBUG: Loading bio = $bio');
           // Always set controller text to match backend state (even if null/empty)
           _bioController.text = bio ?? '';
-          debugPrint('DEBUG: Set bioController.text to: ${_bioController.text}');
+          debugPrint(
+            'DEBUG: Set bioController.text to: ${_bioController.text}',
+          );
         });
       }
     } catch (e) {
@@ -86,10 +89,7 @@ class _ClientProfileScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Wybierz zdjęcie',
-                style: AppTypography.h4,
-              ),
+              Text('Wybierz zdjęcie', style: AppTypography.h4),
               SizedBox(height: AppSpacing.gapMD),
               ListTile(
                 leading: Container(
@@ -148,9 +148,11 @@ class _ClientProfileScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(source == ImageSource.camera
-                ? 'Nie można uzyskać dostępu do aparatu'
-                : 'Nie można uzyskać dostępu do galerii'),
+            content: Text(
+              source == ImageSource.camera
+                  ? 'Nie można uzyskać dostępu do aparatu'
+                  : 'Nie można uzyskać dostępu do galerii',
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -233,7 +235,6 @@ class _ClientProfileScreenState
       final userPayload = <String, dynamic>{};
       final name = _nameController.text.trim();
       if (name.isNotEmpty) userPayload['name'] = name;
-      userPayload['phone'] = _phoneController.text.trim();
       final email = _emailController.text.trim();
       if (email.isNotEmpty) userPayload['email'] = email;
       userPayload['address'] = _addressController.text.trim();
@@ -285,18 +286,19 @@ class _ClientProfileScreenState
     }
   }
 
+  void _goToPhoneChangeFlow() {
+    context.push(Routes.phoneLink);
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final trimmedName = user?.name?.trim() ?? '';
-    final userInitial =
-        (trimmedName.isNotEmpty ? trimmedName[0] : 'K').toUpperCase();
+    final userInitial = (trimmedName.isNotEmpty ? trimmedName[0] : 'K')
+        .toUpperCase();
 
     return Scaffold(
-      appBar: AppBar(
-        title: SFRainbowText('Mój profil'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: SFRainbowText('Mój profil'), centerTitle: true),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppSpacing.paddingLG),
         child: Column(
@@ -309,28 +311,31 @@ class _ClientProfileScreenState
                   CircleAvatar(
                     radius: 48,
                     backgroundColor: AppColors.gray200,
-                    backgroundImage:
-                        user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
+                    backgroundImage: user?.avatarUrl != null
+                        ? NetworkImage(user!.avatarUrl!)
+                        : null,
                     child: _isUploadingAvatar
                         ? const CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppColors.primary,
                           )
                         : user?.avatarUrl == null
-                            ? Text(
-                                userInitial,
-                                style: AppTypography.h3.copyWith(
-                                  color: AppColors.gray600,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              )
-                            : null,
+                        ? Text(
+                            userInitial,
+                            style: AppTypography.h3.copyWith(
+                              color: AppColors.gray600,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Material(
-                      color: _isUploadingAvatar ? AppColors.gray400 : AppColors.primary,
+                      color: _isUploadingAvatar
+                          ? AppColors.gray400
+                          : AppColors.primary,
                       shape: const CircleBorder(),
                       child: Semantics(
                         label: 'Zmień zdjęcie profilowe',
@@ -338,10 +343,16 @@ class _ClientProfileScreenState
                         enabled: !_isUploadingAvatar,
                         child: InkWell(
                           customBorder: const CircleBorder(),
-                          onTap: _isUploadingAvatar ? null : _showPhotoSourceOptions,
+                          onTap: _isUploadingAvatar
+                              ? null
+                              : _showPhotoSourceOptions,
                           child: Padding(
                             padding: EdgeInsets.all(AppSpacing.paddingSM),
-                            child: const Icon(Icons.camera_alt, color: AppColors.white, size: 20),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: AppColors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -375,6 +386,17 @@ class _ClientProfileScreenState
               label: 'Numer telefonu',
               icon: Icons.phone_outlined,
               keyboardType: TextInputType.phone,
+              readOnly: true,
+              helperText: 'Aby zmienić numer telefonu, użyj weryfikacji SMS.',
+              onTap: _goToPhoneChangeFlow,
+              suffixIcon: IconButton(
+                tooltip: 'Zmień numer telefonu',
+                onPressed: _goToPhoneChangeFlow,
+                icon: Icon(
+                  Icons.verified_user_outlined,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
             _buildTextField(
               controller: _emailController,
@@ -414,9 +436,7 @@ class _ClientProfileScreenState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.white,
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppSpacing.paddingMD,
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.paddingMD),
                 ),
               ),
             ),
@@ -498,10 +518,7 @@ class _ClientProfileScreenState
               Container(
                 width: 32,
                 height: 32,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     number,
@@ -513,16 +530,15 @@ class _ClientProfileScreenState
                 ),
               ),
               if (!isLast)
-                Expanded(
-                  child: Container(width: 2, color: AppColors.gray200),
-                ),
+                Expanded(child: Container(width: 2, color: AppColors.gray200)),
             ],
           ),
           SizedBox(width: AppSpacing.gapMD),
           Expanded(
             child: Padding(
-              padding:
-                  EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.paddingMD),
+              padding: EdgeInsets.only(
+                bottom: isLast ? 0 : AppSpacing.paddingMD,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -562,6 +578,9 @@ class _ClientProfileScreenState
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     bool readOnly = false,
+    String? helperText,
+    VoidCallback? onTap,
+    Widget? suffixIcon,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.gapMD),
@@ -570,12 +589,16 @@ class _ClientProfileScreenState
         keyboardType: keyboardType,
         maxLines: maxLines,
         readOnly: readOnly,
+        onTap: onTap,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
-          border: OutlineInputBorder(
-            borderRadius: AppRadius.radiusMD,
-          ),
+          helperText: helperText,
+          helperStyle: AppTypography.caption.copyWith(color: AppColors.gray400),
+          suffixIcon: suffixIcon,
+          border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+          filled: readOnly,
+          fillColor: readOnly ? AppColors.gray50 : null,
         ),
       ),
     );
@@ -590,12 +613,17 @@ class _ClientProfileScreenState
         border: Border.all(color: AppColors.gray200),
       ),
       child: ListTile(
-        leading: Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary),
+        leading: Icon(
+          Icons.account_balance_wallet_outlined,
+          color: AppColors.primary,
+        ),
         title: Text('Portfel', style: AppTypography.bodyMedium),
         subtitle: Text(
           '${credits.balance.toStringAsFixed(2)} zł',
           style: AppTypography.caption.copyWith(
-            color: credits.balance >= 10 ? AppColors.success : AppColors.warning,
+            color: credits.balance >= 10
+                ? AppColors.success
+                : AppColors.warning,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -647,7 +675,9 @@ class _ClientProfileScreenState
           if (!isContractor) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Weryfikacja KYC jest dostępna tylko dla wykonawców.'),
+                content: const Text(
+                  'Weryfikacja KYC jest dostępna tylko dla wykonawców.',
+                ),
                 behavior: SnackBarBehavior.floating,
                 backgroundColor: AppColors.info,
               ),
@@ -659,5 +689,4 @@ class _ClientProfileScreenState
       ),
     );
   }
-
 }

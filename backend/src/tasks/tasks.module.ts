@@ -20,6 +20,7 @@ import { ContractorModule } from '../contractor/contractor.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PaymentsModule } from '../payments/payments.module';
     forwardRef(() => RealtimeModule),
     NotificationsModule,
     PaymentsModule,
+    AuthModule,
   ],
   controllers: [
     TasksController,

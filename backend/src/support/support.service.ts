@@ -35,6 +35,7 @@ export class SupportService {
   ): Promise<ContactSupportResponse> {
     const reporterName = dto.name.trim();
     const message = dto.message.trim();
+    const referenceId = `SF-${Date.now().toString().slice(-8)}`;
 
     if (!reporterName || !message) {
       throw new BadRequestException('Imię i treść wiadomości są wymagane.');
@@ -50,6 +51,14 @@ export class SupportService {
         reporterRoles: user.types ?? [],
         message,
       });
+
+      if (user.email) {
+        await this.emailService.sendSupportContactConfirmation(
+          user.email,
+          reporterName.split(/\s+/)[0] ?? reporterName,
+          referenceId,
+        );
+      }
 
       return {
         success: true,

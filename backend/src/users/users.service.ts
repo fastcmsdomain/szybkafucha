@@ -18,6 +18,7 @@ import {
   NotificationPreferences,
 } from '../notifications/constants/notification-preferences';
 import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
+import { EmailService } from '../auth/email.service';
 
 @Injectable()
 export class UsersService {
@@ -32,6 +33,7 @@ export class UsersService {
     private readonly contractorProfileRepository: Repository<ContractorProfile>,
     @InjectRepository(ClientProfile)
     private readonly clientProfileRepository: Repository<ClientProfile>,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -247,6 +249,8 @@ export class UsersService {
    */
   async deleteAccount(userId: string): Promise<void> {
     const user = await this.findByIdOrFail(userId);
+    const originalEmail = user.email;
+    const firstName = user.name?.trim()?.split(/\s+/)[0] ?? null;
 
     // ── 1. Collect all associated data ──────────────────────────────────────
 
@@ -291,6 +295,12 @@ export class UsersService {
     });
 
     await this.deletedAccountRepository.save(archive);
+
+    if (originalEmail) {
+      await this.emailService
+        .sendAccountDeletionGoodbye(originalEmail, firstName)
+        .catch(() => undefined);
+    }
 
     // ── 4. Anonymise live record and soft-delete ──────────────────────────────
 

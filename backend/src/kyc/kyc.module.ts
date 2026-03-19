@@ -11,12 +11,14 @@ import { ContractorProfile } from '../contractor/entities/contractor-profile.ent
 import { User } from '../users/entities/user.entity';
 import { KycCheck } from './entities/kyc-check.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ContractorProfile, User, KycCheck]),
     ConfigModule,
     NotificationsModule,
+    AuthModule,
   ],
   controllers: [KycController, KycWebhookController],
   providers: [KycService],

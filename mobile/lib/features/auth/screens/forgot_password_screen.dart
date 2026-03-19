@@ -22,8 +22,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final List<TextEditingController> _otpControllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
 
   final _emailFormKey = GlobalKey<FormState>();
@@ -112,7 +114,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      await ref.read(authProvider.notifier).resetPassword(
+      await ref
+          .read(authProvider.notifier)
+          .resetPassword(
             email: _emailController.text.trim(),
             code: _otpCode,
             newPassword: _newPasswordController.text,
@@ -170,11 +174,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           SizedBox(height: AppSpacing.space8),
 
-          Icon(
-            Icons.lock_reset,
-            size: 64,
-            color: AppColors.primary,
-          ),
+          Icon(Icons.lock_reset, size: 64, color: AppColors.primary),
 
           SizedBox(height: AppSpacing.paddingLG),
 
@@ -186,9 +186,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Podaj adres email, na który wyślemy kod do resetowania hasła.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
 
@@ -204,9 +202,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               child: Text(
                 _errorMessage!,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.error,
-                ),
+                style: AppTypography.bodySmall.copyWith(color: AppColors.error),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -221,9 +217,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               labelText: 'Email',
               hintText: 'jan@example.com',
               prefixIcon: const Icon(Icons.email_outlined),
-              border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-              ),
+              border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
             ),
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
@@ -244,9 +238,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               onPressed: _isLoading ? null : _requestReset,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.radiusMD,
-                ),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMD),
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -300,9 +292,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           SizedBox(height: AppSpacing.gapSM),
           Text(
             'Podaj kod z emaila i nowe hasło',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.gray500,
-            ),
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.gray500),
             textAlign: TextAlign.center,
           ),
 
@@ -336,18 +326,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               child: Text(
                 _errorMessage!,
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.error,
-                ),
+                style: AppTypography.bodySmall.copyWith(color: AppColors.error),
                 textAlign: TextAlign.center,
               ),
             ),
 
           // OTP input
-          Text(
-            'Kod weryfikacyjny',
-            style: AppTypography.labelLarge,
-          ),
+          Text('Kod weryfikacyjny', style: AppTypography.labelLarge),
           SizedBox(height: AppSpacing.gapSM),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -361,11 +346,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   focusNode: _otpFocusNodes[index],
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
+                  textAlignVertical: TextAlignVertical.center,
                   maxLength: 1,
-                  style: AppTypography.h5,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
+                  style: AppTypography.h4.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                  ),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     counterText: '',
                     border: OutlineInputBorder(
@@ -378,6 +365,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         width: 2,
                       ),
                     ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onChanged: (value) {
                     if (value.isNotEmpty && index < 5) {
@@ -436,9 +425,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   setState(() => _obscurePassword = !_obscurePassword);
                 },
               ),
-              border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-              ),
+              border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -448,8 +435,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 return 'Hasło musi mieć minimum 8 znaków';
               }
               if (!RegExp(
-                      r'(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])')
-                  .hasMatch(value)) {
+                r'(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])',
+              ).hasMatch(value)) {
                 return 'Hasło musi zawierać dużą i małą literę, cyfrę i znak specjalny';
               }
               return null;
@@ -476,9 +463,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   setState(() => _obscureConfirm = !_obscureConfirm);
                 },
               ),
-              border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
-              ),
+              border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
             ),
             validator: (value) {
               if (value != _newPasswordController.text) {
@@ -497,9 +482,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               onPressed: _isLoading ? null : _resetPassword,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.radiusMD,
-                ),
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMD),
               ),
               child: _isLoading
                   ? const SizedBox(
