@@ -43,7 +43,7 @@ type OtpFallbackEntry = {
 
 declare global {
   // Persist OTP fallback across service re-instantiation in dev/watch mode.
-  // eslint-disable-next-line no-var
+
   var __szybkafuchaOtpFallbackStore: Map<string, OtpFallbackEntry> | undefined;
 }
 
@@ -58,9 +58,7 @@ const otpFallbackStore =
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private twilioClient: twilio.Twilio | null = null;
-  private otpRedisClient:
-    | ReturnType<typeof createClient>
-    | null = null;
+  private otpRedisClient: ReturnType<typeof createClient> | null = null;
   private otpRedisReady: Promise<void> | null = null;
 
   constructor(
@@ -916,14 +914,13 @@ export class AuthService {
     return normalized;
   }
 
-  private storeOtpFallback(
-    key: string,
-    value: OtpFallbackEntry,
-  ): void {
+  private storeOtpFallback(key: string, value: OtpFallbackEntry): void {
     otpFallbackStore.set(key, value);
   }
 
-  private async getOtpRedisClient(): Promise<ReturnType<typeof createClient> | null> {
+  private async getOtpRedisClient(): Promise<ReturnType<
+    typeof createClient
+  > | null> {
     if (!this.otpRedisClient || !this.otpRedisReady) {
       return null;
     }

@@ -158,7 +158,9 @@ describe('EmailService', () => {
     );
     expect(sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
-        html: expect.stringContaining('Dziekujemy Ci za czas spedzony z nami, Jan.'),
+        html: expect.stringContaining(
+          'Dziekujemy Ci za czas spedzony z nami, Jan.',
+        ),
       }),
     );
   });

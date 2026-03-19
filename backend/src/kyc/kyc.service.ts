@@ -532,10 +532,7 @@ export class KycService {
             `Failed to send KYC_DOCUMENT_VERIFIED notification: ${err}`,
           ),
         );
-      void this.sendKycEmailIfPossible(
-        kycCheck.userId,
-        'document_verified',
-      );
+      void this.sendKycEmailIfPossible(kycCheck.userId, 'document_verified');
     } else if (kycCheck.type === KycCheckType.FACIAL_SIMILARITY) {
       profile.kycSelfieVerified = true;
       // Send notification
@@ -558,10 +555,7 @@ export class KycService {
   private async updateOverallKycStatus(userId: string): Promise<void> {
     const profile = await this.getContractorProfile(userId);
 
-    if (
-      profile.kycIdVerified &&
-      profile.kycSelfieVerified
-    ) {
+    if (profile.kycIdVerified && profile.kycSelfieVerified) {
       profile.kycStatus = KycStatus.VERIFIED;
       await this.profileRepository.save(profile);
       this.logger.log(`User ${userId} fully KYC verified`);

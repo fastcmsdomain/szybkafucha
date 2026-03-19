@@ -4,7 +4,6 @@ import * as nodemailer from 'nodemailer';
 
 const OTP_EXPIRY_MINUTES = 5;
 const BRAND_PRIMARY = '#E94560';
-const BRAND_PRIMARY_DARK = '#D13A54';
 const BRAND_SECONDARY = '#1A1A2E';
 const FACEBOOK_URL = 'https://www.facebook.com/61585993722753';
 const PRIVACY_URL = 'https://szybkafucha.app/privacy.html';
@@ -325,8 +324,7 @@ export class EmailService {
     const safeName = this.escapeHtml(firstName?.trim() || 'Tam');
     const subject = 'Szybka Fucha - Haslo zostalo zmienione';
     const html = this.buildBrandedEmailShell({
-      preheader:
-        'Potwierdzenie zmiany hasla w koncie SzybkaFucha.',
+      preheader: 'Potwierdzenie zmiany hasla w koncie SzybkaFucha.',
       eyebrow: 'Bezpieczenstwo',
       title: 'Twoje haslo zostalo zmienione',
       intro: `Czesc ${safeName}. Potwierdzamy, ze haslo do Twojego konta w Szybka Fucha zostalo wlasnie zmienione.`,
@@ -352,8 +350,7 @@ export class EmailService {
     const safeName = this.escapeHtml(firstName?.trim() || 'Tam');
     const subject = 'Szybka Fucha - Numer telefonu zostal zmieniony';
     const html = this.buildBrandedEmailShell({
-      preheader:
-        'Potwierdzenie zmiany numeru telefonu w koncie SzybkaFucha.',
+      preheader: 'Potwierdzenie zmiany numeru telefonu w koncie SzybkaFucha.',
       eyebrow: 'Bezpieczenstwo',
       title: 'Numer telefonu zostal zaktualizowany',
       intro: `Czesc ${safeName}. Potwierdzamy zmiane numeru telefonu przypisanego do Twojego konta.`,
@@ -388,7 +385,8 @@ export class EmailService {
         title: 'Dokument zostal zweryfikowany',
         intro: `Czesc ${safeName}. Twoj dokument tozsamosci zostal pozytywnie zweryfikowany.`,
         body: 'Kolejny krok to selfie, aby dokonczyc weryfikacje tozsamosci.',
-        footer: 'Dziekujemy za cierpliwosc. Jestes juz bardzo blisko pelnej aktywacji.',
+        footer:
+          'Dziekujemy za cierpliwosc. Jestes juz bardzo blisko pelnej aktywacji.',
       },
       selfie_verified: {
         subject: 'Szybka Fucha - Selfie zweryfikowane',
@@ -452,7 +450,9 @@ export class EmailService {
   ): Promise<void> {
     const safeName = this.escapeHtml(params.firstName?.trim() || 'Tam');
     const safeTaskTitle = this.escapeHtml(params.taskTitle);
-    const safeCounterpart = this.escapeHtml(params.counterpartName?.trim() || '');
+    const safeCounterpart = this.escapeHtml(
+      params.counterpartName?.trim() || '',
+    );
     const safeReason = this.escapeHtml(params.reason?.trim() || '');
 
     const config = {
@@ -494,7 +494,9 @@ export class EmailService {
         subject: 'Szybka Fucha - Zlecenie zostalo anulowane',
         title: 'Zlecenie zostalo anulowane',
         intro: `Czesc ${safeName}. Zlecenie "${safeTaskTitle}" zostalo anulowane.`,
-        body: safeReason ? `Powod: ${safeReason}` : 'Sprawdz szczegoly w aplikacji.',
+        body: safeReason
+          ? `Powod: ${safeReason}`
+          : 'Sprawdz szczegoly w aplikacji.',
       },
     }[event];
 
@@ -510,7 +512,8 @@ export class EmailService {
           </p>
         </div>
       `,
-      footer: 'Najswiezsze szczegoly zawsze znajdziesz w aplikacji Szybka Fucha.',
+      footer:
+        'Najswiezsze szczegoly zawsze znajdziesz w aplikacji Szybka Fucha.',
     });
 
     await this.sendEmail(email, config.subject, html);
@@ -586,11 +589,11 @@ export class EmailService {
           <tr>
             <td style="padding:8px 24px 0; background:#ffffff;">
               <p style="margin:0 0 12px; font-size:12px; font-weight:800; letter-spacing:1.8px; text-transform:uppercase; color:${BRAND_PRIMARY};">${this.escapeHtml(
-      input.eyebrow,
-    )}</p>
+                input.eyebrow,
+              )}</p>
               <h1 style="margin:0; font-family:Nunito, Arial, sans-serif; font-size:30px; line-height:1.2; color:${BRAND_SECONDARY};">${this.escapeHtml(
-      input.title,
-    )}</h1>
+                input.title,
+              )}</h1>
               <p style="margin:14px 0 0; font-size:15px; line-height:1.7; color:#4b5563;">
               ${this.escapeHtml(input.intro)}
               </p>
